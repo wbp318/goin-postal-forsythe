@@ -1,0 +1,101 @@
+<svg text-rendering="geometricPrecision" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1700 2200" width="1700" height="2200">
+  <title>Goin' Postal Forsythe - counter flyer (8.5 x 11 in)</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&amp;family=IBM+Plex+Sans:wght@400;600&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap');
+    .d8 { font-family: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif; font-weight: 800; text-transform: uppercase; }
+    .d6 { font-family: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif; font-weight: 600; text-transform: uppercase; }
+    .sans { font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif; font-weight: 400; }
+    .sans6 { font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif; font-weight: 600; }
+    .mono { font-family: 'IBM Plex Mono', Consolas, Menlo, 'DejaVu Sans Mono', monospace; font-weight: 500; letter-spacing: 3px; }
+  </style>
+
+  <!-- Navy ground, white shipping label -->
+  <rect x="0" y="0" width="1700" height="2200" fill="#0f1d3a"/>
+  <rect x="70" y="70" width="1560" height="2060" fill="#ffffff"/>
+  <rect x="90" y="90" width="1520" height="2020" fill="none" stroke="#17202d" stroke-width="6"/>
+
+  <!-- Packing tape across the top-left corner -->
+  <polygon points="20,250 250,20 340,110 110,340" fill="#b98a55" fill-opacity="0.92"/>
+  <polygon points="20,250 250,20 258,28 28,258" fill="#9a7142" fill-opacity="0.9"/>
+  <polygon points="102,332 332,102 340,110 110,340" fill="#9a7142" fill-opacity="0.9"/>
+
+  <!-- Row 1: FROM -->
+  <text x="380" y="160" class="mono" font-size="26" fill="#1d4ed8">FROM</text>
+  <text x="380" y="228" class="sans6" font-size="54" fill="#17202d">Goin' Postal · Forsythe</text>
+  <text x="380" y="288" class="sans" font-size="38" fill="#17202d">Forsythe Ave &amp; N 18th St · Monroe, LA</text>
+  <rect x="1190" y="120" width="380" height="190" fill="#ffffff" stroke="#17202d" stroke-width="3" stroke-dasharray="14 10"/>
+  <text x="1380" y="224" class="mono" font-size="24" fill="#17202d" text-anchor="middle">OFFICIAL LOGO</text>
+  <rect x="90" y="340" width="1520" height="8" fill="#17202d"/>
+
+  <!-- Row 2: headline -->
+  <text x="130" y="410" class="mono" font-size="26" fill="#1d4ed8">CONTENTS</text>
+  <text x="124" y="640" class="d8" font-size="270" fill="#17202d" textLength="850" lengthAdjust="spacingAndGlyphs">PACKED.</text>
+  <text x="124" y="880" class="d8" font-size="270" fill="#17202d" textLength="980" lengthAdjust="spacingAndGlyphs">SHIPPED.</text>
+
+  <!-- Holiday routing block -->
+  <rect x="1190" y="390" width="380" height="490" fill="#0f1d3a"/>
+  <text x="1220" y="450" class="mono" font-size="24" fill="#f2b705">ROUTE · HOLIDAY</text>
+  <text x="1220" y="580" class="d8" font-size="118" fill="#ffffff" textLength="320" lengthAdjust="spacingAndGlyphs">SHIP</text>
+  <text x="1220" y="700" class="d8" font-size="118" fill="#f2b705" textLength="320" lengthAdjust="spacingAndGlyphs">EARLY</text>
+  <text x="1220" y="780" class="sans" font-size="32" fill="#ffffff">Bring gifts in now.</text>
+  <text x="1220" y="826" class="sans" font-size="32" fill="#ffffff">We'll box them up.</text>
+
+  <!-- Yellow band: DONE. -->
+  <rect x="90" y="920" width="1520" height="250" fill="#f2b705"/>
+  <text x="124" y="1130" class="d8" font-size="270" fill="#3b2c00" textLength="640" lengthAdjust="spacingAndGlyphs">DONE.</text>
+  <text x="1570" y="1060" class="d6" font-size="64" fill="#3b2c00" text-anchor="end">YOU DROP IT OFF.</text>
+  <text x="1570" y="1130" class="d6" font-size="64" fill="#3b2c00" text-anchor="end">WE HANDLE THE REST.</text>
+
+  <!-- Row 3: services -->
+  <rect x="90" y="1170" width="1520" height="8" fill="#17202d"/>
+  <rect x="596" y="1178" width="4" height="420" fill="#17202d"/>
+  <rect x="1104" y="1178" width="4" height="420" fill="#17202d"/>
+
+  <text x="130" y="1250" class="mono" font-size="24" fill="#1d4ed8">SERVICE</text>
+  <text x="130" y="1350" class="d8" font-size="96" fill="#17202d">SHIPPING</text>
+  <text x="130" y="1430" class="sans6" font-size="36" fill="#17202d">UPS · FedEx</text>
+  <text x="130" y="1478" class="sans6" font-size="36" fill="#17202d">DHL · USPS</text>
+  <text x="130" y="1540" class="sans" font-size="32" fill="#5a6573">Four carriers, one stop</text>
+
+  <text x="636" y="1250" class="mono" font-size="24" fill="#1d4ed8">SERVICE</text>
+  <text x="636" y="1350" class="d8" font-size="96" fill="#17202d">PACKING</text>
+  <text x="636" y="1430" class="sans" font-size="36" fill="#17202d">Boxes, tape and</text>
+  <text x="636" y="1478" class="sans" font-size="36" fill="#17202d">packing materials</text>
+  <text x="636" y="1540" class="sans" font-size="32" fill="#5a6573">We can pack it for you</text>
+
+  <text x="1144" y="1250" class="mono" font-size="24" fill="#1d4ed8">SERVICE</text>
+  <text x="1144" y="1350" class="d8" font-size="96" fill="#17202d" textLength="400" lengthAdjust="spacingAndGlyphs">MAILBOXES</text>
+  <text x="1144" y="1430" class="sans" font-size="36" fill="#17202d">A real street address</text>
+  <text x="1144" y="1478" class="sans" font-size="36" fill="#17202d">for mail and packages</text>
+  <text x="1144" y="1540" class="sans" font-size="32" fill="#5a6573">Ask about sizes</text>
+
+  <!-- Row 4: sponsor -->
+  <rect x="90" y="1598" width="1520" height="8" fill="#17202d"/>
+  <text x="130" y="1676" class="mono" font-size="24" fill="#1d4ed8">PROUD LOCAL SPONSOR</text>
+  <text x="130" y="1780" class="d8" font-size="88" fill="#0f1d3a" textLength="1300" lengthAdjust="spacingAndGlyphs">MONROE MOCCASINS <tspan fill="#f2b705">·</tspan> NEVILLE TIGERS</text>
+  <text x="130" y="1846" class="sans" font-size="34" fill="#17202d">Look for us at the Monroe Civic Center and on Friday nights at Neville.</text>
+
+  <!-- Row 5: fill-in fields and barcode -->
+  <rect x="90" y="1890" width="1520" height="8" fill="#17202d"/>
+  <text x="130" y="1966" class="mono" font-size="24" fill="#1d4ed8">HOURS</text>
+  <rect x="130" y="2050" width="560" height="3" fill="#17202d"/>
+  <text x="740" y="1966" class="mono" font-size="24" fill="#1d4ed8">PHONE</text>
+  <rect x="740" y="2050" width="400" height="3" fill="#17202d"/>
+
+  <g fill="#17202d">
+    <rect x="1200" y="1930" width="8" height="120"/><rect x="1216" y="1930" width="4" height="120"/>
+    <rect x="1228" y="1930" width="12" height="120"/><rect x="1248" y="1930" width="4" height="120"/>
+    <rect x="1258" y="1930" width="6" height="120"/><rect x="1272" y="1930" width="10" height="120"/>
+    <rect x="1290" y="1930" width="4" height="120"/><rect x="1300" y="1930" width="8" height="120"/>
+    <rect x="1316" y="1930" width="4" height="120"/><rect x="1326" y="1930" width="12" height="120"/>
+    <rect x="1346" y="1930" width="6" height="120"/><rect x="1360" y="1930" width="4" height="120"/>
+    <rect x="1370" y="1930" width="10" height="120"/><rect x="1388" y="1930" width="4" height="120"/>
+    <rect x="1398" y="1930" width="8" height="120"/><rect x="1414" y="1930" width="4" height="120"/>
+    <rect x="1424" y="1930" width="12" height="120"/><rect x="1444" y="1930" width="6" height="120"/>
+    <rect x="1458" y="1930" width="4" height="120"/><rect x="1468" y="1930" width="10" height="120"/>
+    <rect x="1486" y="1930" width="4" height="120"/><rect x="1496" y="1930" width="8" height="120"/>
+    <rect x="1512" y="1930" width="4" height="120"/><rect x="1522" y="1930" width="12" height="120"/>
+    <rect x="1542" y="1930" width="6" height="120"/><rect x="1556" y="1930" width="4" height="120"/>
+  </g>
+  <text x="1200" y="2084" class="mono" font-size="20" fill="#17202d">TRK FORSYTHE 0018 MLU</text>
+</svg>

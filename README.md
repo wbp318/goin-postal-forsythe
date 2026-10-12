@@ -28,6 +28,7 @@ flowchart LR
   D --> D6["sponsor-badge.svg"]
   D --> D7["game-day-social.svg"]
   D --> D8["scoreboard-spot.svg"]
+  D --> D9["counter-flyer.svg"]
 ```
 
 Open any `.html` file in a browser. The SVG designs open in a browser too, and import into Illustrator, Inkscape, Canva or a printer's workflow.
@@ -44,6 +45,7 @@ Open any `.html` file in a browser. The SVG designs open in a browser too, and i
 | `designs/sponsor-badge.svg` | Social posts, programs, scoreboards | Square |
 | `designs/game-day-social.svg` | Instagram / Facebook | 1080 × 1350 |
 | `designs/scoreboard-spot.svg` | Football LED video board | 16:9 |
+| `designs/counter-flyer.svg` | Store counter handout | 8.5 × 11 in |
 
 Confirm the exact size with each team, school or sign company before final art. Every venue has its own specs.
 
