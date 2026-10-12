@@ -1,0 +1,34 @@
+"""Pull every Mermaid diagram out of README.md and launch-book.html into .mmd files.
+
+Run from the repo root:  python scripts/extract_mermaid.py OUT_DIR
+CI renders each file with mermaid-cli, so a broken chart fails the build.
+"""
+import html
+import re
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+SOURCES = {
+    "README.md": re.compile(r"```mermaid\n(.*?)```", re.S),
+    "launch-book.html": re.compile(r'<pre class="mermaid">(.*?)</pre>', re.S),
+}
+
+
+def main():
+    out = Path(sys.argv[1] if len(sys.argv) > 1 else "build/mermaid")
+    out.mkdir(parents=True, exist_ok=True)
+    total = 0
+    for name, pattern in SOURCES.items():
+        text = (ROOT / name).read_text(encoding="utf-8")
+        for i, body in enumerate(pattern.findall(text), 1):
+            body = html.unescape(body).strip() + "\n"
+            (out / f"{Path(name).stem}-{i}.mmd").write_text(body, encoding="utf-8")
+            total += 1
+    print(f"Extracted {total} diagrams to {out}")
+    if total == 0:
+        sys.exit("No Mermaid diagrams found")
+
+
+if __name__ == "__main__":
+    main()

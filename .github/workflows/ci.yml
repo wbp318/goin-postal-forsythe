@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  designs:
+    name: Check designs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate SVGs, PNG exports, README and gallery
+        run: python scripts/check_designs.py
+
+  export:
+    name: Export PNG and PDF
+    needs: designs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Render every design with Chrome
+        run: python scripts/export_designs.py --out build --browser google-chrome
+      - uses: actions/upload-artifact@v4
+        with:
+          name: goin-postal-designs
+          path: build/
+          retention-days: 30
+
+  mermaid:
+    name: Render Mermaid charts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Extract diagrams from README and plan page
+        run: python scripts/extract_mermaid.py build/mermaid
+      - name: Render each diagram
+        run: |
+          echo '{"args":["--no-sandbox"]}' > puppeteer.json
+          for f in build/mermaid/*.mmd; do
+            echo "::group::$f"
+            npx -y @mermaid-js/mermaid-cli@11 -p puppeteer.json -i "$f" -o "${f%.mmd}.svg"
+            echo "::endgroup::"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mermaid-charts
+          path: build/mermaid/
+          retention-days: 30

@@ -1,5 +1,7 @@
 # goin-postal-forsythe
 
+[![CI](https://github.com/wbp318/goin-postal-forsythe/actions/workflows/ci.yml/badge.svg)](https://github.com/wbp318/goin-postal-forsythe/actions/workflows/ci.yml)
+
 Marketing kit for the Goin' Postal store at **Forsythe Ave & N 18th St, Monroe, Louisiana** (Ouachita Parish), owned by Rin Ho and Peter Ho.
 
 The store is open. This repo covers getting its name in front of local families:
@@ -29,9 +31,44 @@ flowchart LR
   D --> D7["game-day-social.svg"]
   D --> D8["scoreboard-spot.svg"]
   D --> D9["counter-flyer.svg"]
+  D --> P["png/<br/>one PNG per design,<br/>for WhatsApp and texts"]
+  D --> F["pdf/counter-flyer.pdf<br/>print-ready"]
+  R --> S["scripts/<br/>export and checks"]
+  R --> W[".github/workflows/ci.yml"]
 ```
 
-Open any `.html` file in a browser. The SVG designs open in a browser too, and import into Illustrator, Inkscape, Canva or a printer's workflow.
+## Sharing and printing
+
+Each design comes in three formats:
+
+| Format | Folder | Use it for |
+|---|---|---|
+| **PNG** | `designs/png/` | WhatsApp, texts, email, Facebook, Instagram |
+| **PDF** | `designs/pdf/` | Printing the counter flyer (8.5 × 11 in, fonts embedded) |
+| **SVG** | `designs/` | The editable source for a designer, sign shop or printer |
+
+Windows opens `.svg` files in the web browser, and WhatsApp won't send them as pictures. Send the PNG instead.
+
+After changing an SVG, rebuild the PNGs and the PDF (needs Chrome or Edge and an internet connection for the fonts):
+
+```
+python scripts/export_designs.py
+```
+
+## CI
+
+Every push runs [GitHub Actions](.github/workflows/ci.yml):
+
+```mermaid
+flowchart LR
+  A["Push to main"] --> B["Check designs<br/>valid SVG, logo slot,<br/>no phone or prices,<br/>PNG and PDF up to date"]
+  A --> C["Render every Mermaid chart<br/>in README and plan page"]
+  B --> D["Export PNG and PDF<br/>with Chrome"]
+  D --> E["Download from the<br/>run's Artifacts"]
+  C --> E
+```
+
+Run the same check locally with `python scripts/check_designs.py`.
 
 ## Designs
 
