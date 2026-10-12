@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1000" viewBox="0 0 1500 1000">
+<svg text-rendering="geometricPrecision" xmlns="http://www.w3.org/2000/svg" width="1500" height="1000" viewBox="0 0 1500 1000">
   <title>Goin' Postal Forsythe - Neville program ad (half page)</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&amp;family=IBM+Plex+Sans:wght@400;600&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap');
     .d8 { font-family: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif; font-weight: 800; text-transform: uppercase; }
     .d6 { font-family: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif; font-weight: 600; text-transform: uppercase; }
     .b  { font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif; }
-    .m  { font-family: 'IBM Plex Mono', 'Courier New', Courier, monospace; font-weight: 500; letter-spacing: 2px; }
+    .m  { font-family: 'IBM Plex Mono', Consolas, Menlo, 'DejaVu Sans Mono', monospace; font-weight: 500; letter-spacing: 2px; }
   </style>
 
   <!-- Ground -->
