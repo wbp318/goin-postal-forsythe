@@ -4,10 +4,10 @@
   <!-- Concept: the whole banner is a shipping label addressed to the Neville Tigers, FROM the store on Forsythe. Grommet-safe margin 72px; text margin 96px. -->
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&amp;family=IBM+Plex+Sans:wght@400;600&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap');
-    .d8 { font-family: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif; font-weight: 800; text-transform: uppercase; }
-    .d6 { font-family: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif; font-weight: 600; text-transform: uppercase; }
+    .d8 { font-family: 'Barlow Condensed', 'Arial Narrow', 'Avenir Next Condensed', Impact, sans-serif; font-weight: 800; text-transform: uppercase; }
+    .d6 { font-family: 'Barlow Condensed', 'Arial Narrow', 'Avenir Next Condensed', Impact, sans-serif; font-weight: 600; text-transform: uppercase; }
     .body { font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif; font-weight: 600; }
-    .mono { font-family: 'IBM Plex Mono', Consolas, Menlo, 'DejaVu Sans Mono', monospace; font-weight: 500; letter-spacing: 0.12em; }
+    .mono { font-family: 'IBM Plex Mono', Consolas, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace; font-weight: 500; letter-spacing: 0.12em; }
   </style>
 
   <!-- Ground -->

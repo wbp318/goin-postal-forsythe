@@ -2,10 +2,10 @@
   <title>Goin' Postal Forsythe - Neville program ad (half page)</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&amp;family=IBM+Plex+Sans:wght@400;600&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap');
-    .d8 { font-family: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif; font-weight: 800; text-transform: uppercase; }
-    .d6 { font-family: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif; font-weight: 600; text-transform: uppercase; }
+    .d8 { font-family: 'Barlow Condensed', 'Arial Narrow', 'Avenir Next Condensed', Impact, sans-serif; font-weight: 800; text-transform: uppercase; }
+    .d6 { font-family: 'Barlow Condensed', 'Arial Narrow', 'Avenir Next Condensed', Impact, sans-serif; font-weight: 600; text-transform: uppercase; }
     .b  { font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif; }
-    .m  { font-family: 'IBM Plex Mono', Consolas, Menlo, 'DejaVu Sans Mono', monospace; font-weight: 500; letter-spacing: 2px; }
+    .m  { font-family: 'IBM Plex Mono', Consolas, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace; font-weight: 500; letter-spacing: 2px; }
   </style>
 
   <!-- Ground -->
@@ -56,9 +56,9 @@
 
   <!-- Coupon -->
   <rect x="1010" y="700" width="390" height="205" fill="#ffffff" stroke="#1d4ed8" stroke-width="4" stroke-dasharray="14 10"/>
-  <text x="1040" y="745" class="m" font-size="20" fill="#1d4ed8">SHOW CODE</text>
+  <text x="1040" y="745" class="m" font-size="20" fill="#1d4ed8" textLength="330" lengthAdjust="spacingAndGlyphs">SHOW CODE · ONE PER CUSTOMER</text>
   <text x="1040" y="838" class="d8" font-size="88" fill="#17202d">TIGERS10</text>
-  <text x="1040" y="882" class="m" font-size="20" fill="#1d4ed8">AT THE COUNTER</text>
+  <text x="1040" y="882" class="m" font-size="20" fill="#1d4ed8">NAME + PHONE REQUIRED</text>
 
   <!-- Packing tape across the top-left corner -->
   <g transform="rotate(-45 60 60)">

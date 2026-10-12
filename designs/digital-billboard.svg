@@ -2,9 +2,9 @@
   <title>Goin' Postal Forsythe - Digital Bulletin (Holiday Tape)</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&amp;family=IBM+Plex+Sans:wght@400;600&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap');
-    .d8 { font-family: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif; font-weight: 800; text-transform: uppercase; }
-    .d6 { font-family: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
-    .mono { font-family: 'IBM Plex Mono', Consolas, Menlo, 'DejaVu Sans Mono', monospace; font-weight: 500; letter-spacing: 2px; }
+    .d8 { font-family: 'Barlow Condensed', 'Arial Narrow', 'Avenir Next Condensed', Impact, sans-serif; font-weight: 800; text-transform: uppercase; }
+    .d6 { font-family: 'Barlow Condensed', 'Arial Narrow', 'Avenir Next Condensed', Impact, sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+    .mono { font-family: 'IBM Plex Mono', Consolas, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace; font-weight: 500; letter-spacing: 2px; }
   </style>
 
   <!-- Ground: solid navy for LED contrast -->

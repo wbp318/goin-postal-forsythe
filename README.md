@@ -19,6 +19,7 @@ The store is open. This repo covers getting its name in front of local families:
 flowchart LR
   R["goin-postal-forsythe/"] --> A["launch-book.html<br/>marketing plan, flowcharts,<br/>billboard calculator"]
   R --> B["ad-concepts.html<br/>first-round concept sheet"]
+  R --> CC["coupon-counter.html<br/>one-time code redemption"]
   R --> D["designs/"]
   R --> G[".gitattributes<br/>shows every language on GitHub"]
   D --> D0["index.html<br/>gallery of all designs"]
@@ -201,6 +202,30 @@ pie showData
   "Moccasins dasher board" : 2500
   "Neville fence banner and program" : 1000
   "Other school banners" : 400
+```
+
+## Redeeming codes
+
+Each code (MOCS10, TIGERS10) is good for **one use per customer**. The ads say so, and the counter enforces it with the **Coupon Counter** page on claude.ai (`coupon-counter.html`):
+- Staff type in the code, the customer's name and a 10-digit phone number. Email is optional.
+- The page records the redemption and refuses any later use of the same code with the same phone number.
+- It shows a running count per code and a searchable log, and exports the log as CSV.
+- Only people the owner shares the page with as **Contributor** or higher can see customer info or redeem codes. Only **Editors** can add or pause codes.
+
+It runs in any modern browser (Chrome, Edge, Safari, Firefox) on Windows or Mac, signed in to claude.ai. Opening the local `.html` file won't connect to the log. Use the claude.ai link.
+
+```mermaid
+flowchart TD
+  A["Customer gives a code"] --> B["Staff enter code, name, phone"]
+  B --> C{"Code active?"}
+  C -- "No" --> X["Refuse: not a current code"]
+  C -- "Yes" --> D{"Name and 10-digit<br/>phone entered?"}
+  D -- "No" --> Y["Ask for the missing info"]
+  D -- "Yes" --> E{"This phone already<br/>used this code?"}
+  E -- "Yes" --> Z["Refuse: already used,<br/>shows the earlier date"]
+  E -- "No" --> F["Record it and approve"]
+  F --> G["Apply the offer"]
+  F --> H["Count goes up for that code"]
 ```
 
 ## Measuring what works

@@ -2,11 +2,11 @@
   <title>Goin' Postal Forsythe - counter flyer (8.5 x 11 in)</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&amp;family=IBM+Plex+Sans:wght@400;600&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap');
-    .d8 { font-family: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif; font-weight: 800; text-transform: uppercase; }
-    .d6 { font-family: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif; font-weight: 600; text-transform: uppercase; }
+    .d8 { font-family: 'Barlow Condensed', 'Arial Narrow', 'Avenir Next Condensed', Impact, sans-serif; font-weight: 800; text-transform: uppercase; }
+    .d6 { font-family: 'Barlow Condensed', 'Arial Narrow', 'Avenir Next Condensed', Impact, sans-serif; font-weight: 600; text-transform: uppercase; }
     .sans { font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif; font-weight: 400; }
     .sans6 { font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif; font-weight: 600; }
-    .mono { font-family: 'IBM Plex Mono', Consolas, Menlo, 'DejaVu Sans Mono', monospace; font-weight: 500; letter-spacing: 3px; }
+    .mono { font-family: 'IBM Plex Mono', Consolas, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace; font-weight: 500; letter-spacing: 3px; }
   </style>
 
   <!-- Navy ground, white shipping label -->
