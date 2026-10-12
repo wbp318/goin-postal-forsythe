@@ -1,0 +1,54 @@
+# Normalize line endings; keep Windows checkouts happy.
+* text=auto
+
+# Show every language in GitHub's language bar.
+# Linguist hides "data" and "prose" types (SVG, Markdown, JSON, YAML, CSV...)
+# and anything it thinks is vendored, generated or documentation.
+* linguist-vendored=false
+* linguist-generated=false
+* linguist-documentation=false
+
+# Markup and styles
+*.html     linguist-detectable=true linguist-language=HTML
+*.htm      linguist-detectable=true linguist-language=HTML
+*.css      linguist-detectable=true linguist-language=CSS
+*.scss     linguist-detectable=true linguist-language=SCSS
+*.svg      linguist-detectable=true linguist-language=SVG
+*.xml      linguist-detectable=true linguist-language=XML
+
+# Scripts
+*.js       linguist-detectable=true linguist-language=JavaScript
+*.mjs      linguist-detectable=true linguist-language=JavaScript
+*.ts       linguist-detectable=true linguist-language=TypeScript
+*.py       linguist-detectable=true linguist-language=Python
+*.ps1      linguist-detectable=true linguist-language=PowerShell eol=crlf
+*.sh       linguist-detectable=true linguist-language=Shell eol=lf
+*.bat      linguist-detectable=true linguist-language=Batchfile eol=crlf
+
+# Prose and data (hidden by default, shown here)
+*.md       linguist-detectable=true linguist-language=Markdown
+*.txt      linguist-detectable=true linguist-language=Text
+*.json     linguist-detectable=true linguist-language=JSON
+*.yml      linguist-detectable=true linguist-language=YAML
+*.yaml     linguist-detectable=true linguist-language=YAML
+*.csv      linguist-detectable=true linguist-language=CSV
+*.toml     linguist-detectable=true linguist-language=TOML
+
+# Mermaid diagram sources, if added later
+*.mmd      linguist-detectable=true linguist-language=Mermaid
+
+# Binary assets: never diff or normalize
+*.png      binary
+*.jpg      binary
+*.jpeg     binary
+*.gif      binary
+*.webp     binary
+*.ico      binary
+*.pdf      binary
+*.ai       binary
+*.psd      binary
+*.eps      binary
+*.woff     binary
+*.woff2    binary
+*.ttf      binary
+*.otf      binary

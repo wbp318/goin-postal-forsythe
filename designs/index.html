@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forsythe Ad Designs</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Gallery: each design at its true proportions on a neutral wall, captioned like a print spec. */
+:root { --wall:#e7eaec; --paper:#fff; --ink:#17202d; --muted:#5a6573; --rule:#cfd5da; --gold:#f2b705; --navy:#0f1d3a; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--wall); color:var(--ink); font:400 15px/1.55 "IBM Plex Sans", system-ui, sans-serif; }
+.wrap { max-width:1200px; margin:0 auto; padding:32px 20px 64px; display:grid; gap:40px; }
+header { display:grid; gap:10px; }
+h1 { font:800 clamp(2.2rem,5vw,3.4rem)/1 "Barlow Condensed","Arial Narrow",sans-serif; text-transform:uppercase; margin:0; }
+h2 { font:600 1.35rem/1.1 "Barlow Condensed","Arial Narrow",sans-serif; text-transform:uppercase; margin:0; letter-spacing:.02em; }
+.tag { font:500 .74rem/1.2 "IBM Plex Mono",monospace; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+.note { background:var(--paper); border-left:4px solid var(--gold); padding:14px 16px; max-width:78ch; }
+.row { display:grid; gap:28px; }
+.two { grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; }
+.three { grid-template-columns:repeat(3,minmax(0,1fr)); align-items:start; }
+@media (max-width:820px){ .two,.three { grid-template-columns:1fr; } }
+figure { margin:0; display:grid; gap:10px; min-width:0; }
+figure a { display:block; }
+figure img { width:100%; height:auto; display:block; background:var(--paper); box-shadow:0 1px 0 rgba(15,29,58,.08), 0 8px 24px rgba(15,29,58,.14); }
+figure a:focus-visible { outline:3px solid var(--navy); outline-offset:4px; }
+.badge img { background:transparent; box-shadow:none; }
+figcaption { display:grid; gap:3px; }
+.spec { display:flex; flex-wrap:wrap; gap:4px 16px; font-size:.88rem; color:var(--muted); }
+code { font:500 .85rem "IBM Plex Mono",monospace; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="tag">Goin' Postal · Forsythe Ave &amp; N 18th St · Monroe</span>
+    <h1>Ad designs</h1>
+    <div class="note"><strong>Before printing:</strong> put the official logo from corporate into each dashed <em>OFFICIAL LOGO</em> box, get corporate's brand approval, and confirm the exact size with the venue or sign company. Set the terms for codes MOCS10 and TIGERS10 before they run. Click any design to open the full-size SVG.</div>
+  </header>
+
+  <figure>
+    <a href="moccasins-dasher-board.svg"><img src="moccasins-dasher-board.svg" alt="Dasher board: Ship it like a slapshot"></a>
+    <figcaption><span class="tag">Monroe Moccasins · Monroe Civic Center</span><h2>Dasher board</h2><span class="spec"><span>8:1 panel</span><code>moccasins-dasher-board.svg</code></span></figcaption>
+  </figure>
+
+  <figure>
+    <a href="neville-fence-banner.svg"><img src="neville-fence-banner.svg" alt="Fence banner: Proud neighbor of the Neville Tigers"></a>
+    <figcaption><span class="tag">Neville High · stadium fence · 0.6 mi from the store</span><h2>Fence banner</h2><span class="spec"><span>8 ft × 3 ft vinyl</span><code>neville-fence-banner.svg</code></span></figcaption>
+  </figure>
+
+  <div class="row two">
+    <figure>
+      <a href="billboard-poster.svg"><img src="billboard-poster.svg" alt="Poster billboard: Packed. Shipped. Done."></a>
+      <figcaption><span class="tag">Static billboard</span><h2>Poster billboard</h2><span class="spec"><span>22'8" × 10'5"</span><code>billboard-poster.svg</code></span></figcaption>
+    </figure>
+    <figure>
+      <a href="digital-billboard.svg"><img src="digital-billboard.svg" alt="Digital billboard: Holiday boxes? We've got tape."></a>
+      <figcaption><span class="tag">Digital bulletin · holiday season</span><h2>Digital billboard</h2><span class="spec"><span>14 × 48 ft, 8-second slot</span><code>digital-billboard.svg</code></span></figcaption>
+    </figure>
+  </div>
+
+  <div class="row two">
+    <figure>
+      <a href="program-ad-half-page.svg"><img src="program-ad-half-page.svg" alt="Program ad: Game day to ship day"></a>
+      <figcaption><span class="tag">Neville game program</span><h2>Half-page program ad</h2><span class="spec"><span>7.5 × 5 in</span><code>program-ad-half-page.svg</code></span></figcaption>
+    </figure>
+    <figure>
+      <a href="scoreboard-spot.svg"><img src="scoreboard-spot.svg" alt="Scoreboard spot: Touchdown? We deliver."></a>
+      <figcaption><span class="tag">Football video board</span><h2>Scoreboard spot</h2><span class="spec"><span>16:9 LED</span><code>scoreboard-spot.svg</code></span></figcaption>
+    </figure>
+  </div>
+
+  <div class="row two">
+    <figure>
+      <a href="game-day-social.svg"><img src="game-day-social.svg" alt="Game day social post template"></a>
+      <figcaption><span class="tag">Instagram / Facebook · edit the matchup line each game</span><h2>Game day post</h2><span class="spec"><span>1080 × 1350</span><code>game-day-social.svg</code></span></figcaption>
+    </figure>
+    <figure class="badge">
+      <a href="sponsor-badge.svg"><img src="sponsor-badge.svg" alt="Proud local sponsor badge"></a>
+      <figcaption><span class="tag">Store campaign seal · transparent background</span><h2>Local sponsor badge</h2><span class="spec"><span>Square</span><code>sponsor-badge.svg</code></span></figcaption>
+    </figure>
+  </div>
+</div>
+</body>
+</html>

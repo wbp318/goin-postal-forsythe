@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1000" viewBox="0 0 1500 1000">
+  <title>Goin' Postal Forsythe - Neville program ad (half page)</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&amp;family=IBM+Plex+Sans:wght@400;600&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap');
+    .d8 { font-family: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif; font-weight: 800; text-transform: uppercase; }
+    .d6 { font-family: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif; font-weight: 600; text-transform: uppercase; }
+    .b  { font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif; }
+    .m  { font-family: 'IBM Plex Mono', 'Courier New', Courier, monospace; font-weight: 500; letter-spacing: 2px; }
+  </style>
+
+  <!-- Ground -->
+  <rect x="0" y="0" width="1500" height="1000" fill="#0f1d3a"/>
+
+  <!-- The label -->
+  <rect x="60" y="60" width="1380" height="880" fill="#ffffff" stroke="#17202d" stroke-width="6"/>
+
+  <!-- Row 1: FROM + logo slot -->
+  <text x="100" y="110" class="m" font-size="20" fill="#1d4ed8">FROM:</text>
+  <text x="100" y="170" class="d6" font-size="58" fill="#17202d" textLength="500" lengthAdjust="spacingAndGlyphs">THE HOME BLEACHERS</text>
+  <text x="640" y="110" class="m" font-size="20" fill="#17202d">PKG 1 OF 1</text>
+  <text x="640" y="140" class="m" font-size="20" fill="#17202d">NEVILLE TIGERS PROGRAM</text>
+
+  <rect x="1080" y="85" width="320" height="105" fill="#ffffff" stroke="#17202d" stroke-width="2" stroke-dasharray="10 8"/>
+  <text x="1240" y="144" class="m" font-size="18" fill="#17202d" text-anchor="middle">OFFICIAL LOGO</text>
+
+  <rect x="60" y="207" width="1380" height="6" fill="#17202d"/>
+
+  <!-- Row 2: SHIP TO headline -->
+  <text x="100" y="255" class="m" font-size="20" fill="#1d4ed8">SHIP TO:</text>
+  <text x="100" y="420" class="d8" font-size="190" fill="#17202d">GAME DAY</text>
+  <rect x="90" y="458" width="990" height="182" fill="#f2b705"/>
+  <text x="110" y="612" class="d8" font-size="190" fill="#3b2c00">TO SHIP DAY</text>
+
+  <!-- Routing block -->
+  <rect x="1110" y="240" width="290" height="230" fill="#17202d"/>
+  <text x="1130" y="275" class="m" font-size="18" fill="#f2b705">ROUTE</text>
+  <text x="1255" y="430" class="d8" font-size="150" fill="#ffffff" text-anchor="middle">MLU</text>
+
+  <rect x="1110" y="490" width="290" height="160" fill="#ffffff" stroke="#17202d" stroke-width="3"/>
+  <text x="1130" y="525" class="m" font-size="18" fill="#1d4ed8">CARRIERS</text>
+  <text x="1130" y="578" class="d6" font-size="46" fill="#17202d">UPS · FEDEX</text>
+  <text x="1130" y="628" class="d6" font-size="46" fill="#17202d">DHL · USPS</text>
+
+  <rect x="60" y="667" width="1380" height="6" fill="#17202d"/>
+
+  <!-- Row 3: services + barcode + coupon -->
+  <text x="100" y="745" class="d6" font-size="48" fill="#17202d">SHIPPING · PACKING</text>
+  <text x="100" y="800" class="d6" font-size="48" fill="#1d4ed8">MAILBOXES</text>
+  <text x="100" y="850" class="b" font-size="22" font-weight="400" fill="#17202d">Goin' Postal · Forsythe</text>
+  <text x="100" y="892" class="b" font-size="26" font-weight="600" fill="#17202d">Forsythe Ave &amp; N 18th St · Monroe</text>
+
+  <g>
+    <rect x="640" y="712" width="6" height="140" fill="#17202d"/><rect x="650" y="712" width="3" height="140" fill="#17202d"/><rect x="659" y="712" width="9" height="140" fill="#17202d"/><rect x="671" y="712" width="3" height="140" fill="#17202d"/><rect x="682" y="712" width="4" height="140" fill="#17202d"/><rect x="690" y="712" width="12" height="140" fill="#17202d"/><rect x="705" y="712" width="3" height="140" fill="#17202d"/><rect x="714" y="712" width="6" height="140" fill="#17202d"/><rect x="724" y="712" width="3" height="140" fill="#17202d"/><rect x="732" y="712" width="9" height="140" fill="#17202d"/><rect x="745" y="712" width="6" height="140" fill="#17202d"/><rect x="757" y="712" width="3" height="140" fill="#17202d"/><rect x="763" y="712" width="4" height="140" fill="#17202d"/><rect x="775" y="712" width="8" height="140" fill="#17202d"/><rect x="787" y="712" width="3" height="140" fill="#17202d"/><rect x="793" y="712" width="6" height="140" fill="#17202d"/><rect x="805" y="712" width="3" height="140" fill="#17202d"/><rect x="812" y="712" width="9" height="140" fill="#17202d"/><rect x="826" y="712" width="3" height="140" fill="#17202d"/><rect x="833" y="712" width="4" height="140" fill="#17202d"/><rect x="843" y="712" width="12" height="140" fill="#17202d"/><rect x="858" y="712" width="3" height="140" fill="#17202d"/><rect x="869" y="712" width="6" height="140" fill="#17202d"/><rect x="879" y="712" width="3" height="140" fill="#17202d"/><rect x="885" y="712" width="9" height="140" fill="#17202d"/><rect x="900" y="712" width="6" height="140" fill="#17202d"/><rect x="910" y="712" width="3" height="140" fill="#17202d"/><rect x="918" y="712" width="4" height="140" fill="#17202d"/><rect x="926" y="712" width="8" height="140" fill="#17202d"/><rect x="940" y="712" width="3" height="140" fill="#17202d"/><rect x="946" y="712" width="6" height="140" fill="#17202d"/><rect x="960" y="712" width="3" height="140" fill="#17202d"/>
+  </g>
+  <text x="640" y="890" class="m" font-size="20" fill="#17202d">TRK GAMEDAY 0001 MLU</text>
+
+  <!-- Coupon -->
+  <rect x="1010" y="700" width="390" height="205" fill="#ffffff" stroke="#1d4ed8" stroke-width="4" stroke-dasharray="14 10"/>
+  <text x="1040" y="745" class="m" font-size="20" fill="#1d4ed8">SHOW CODE</text>
+  <text x="1040" y="838" class="d8" font-size="88" fill="#17202d">TIGERS10</text>
+  <text x="1040" y="882" class="m" font-size="20" fill="#1d4ed8">AT THE COUNTER</text>
+
+  <!-- Packing tape across the top-left corner -->
+  <g transform="rotate(-45 60 60)">
+    <rect x="-80" y="34" width="280" height="52" fill="#b98a55" fill-opacity="0.9"/>
+    <rect x="-80" y="40" width="280" height="2" fill="#ffffff" fill-opacity="0.35"/>
+    <rect x="-80" y="78" width="280" height="2" fill="#ffffff" fill-opacity="0.35"/>
+  </g>
+</svg>

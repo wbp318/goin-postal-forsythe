@@ -1,0 +1,286 @@
+<title>Goin' Postal Forsythe Marketing Book</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column with a shipping-label header; each section is a "parcel" tagged with a mono tracking line. */
+:root {
+  --bg: #f3f5f4;
+  --paper: #ffffff;
+  --ink: #17202d;
+  --muted: #5a6573;
+  --rule: #d5dbe0;
+  --accent: #1d4ed8;
+  --signal: #f2b705;
+  --signal-ink: #3b2c00;
+  --good: #1f7a4d;
+  --display: "Barlow Condensed", "Arial Narrow", Impact, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11161e; --paper: #19202b; --ink: #e8ecf1; --muted: #9aa6b4; --rule: #2c3644;
+    --accent: #7aa2ff; --signal: #f5c533; --signal-ink: #2a1f00; --good: #5cc796; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11161e; --paper: #19202b; --ink: #e8ecf1; --muted: #9aa6b4; --rule: #2c3644;
+  --accent: #7aa2ff; --signal: #f5c533; --signal-ink: #2a1f00; --good: #5cc796; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 400 16px/1.6 var(--body); }
+.wrap { max-width: 980px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 64px; display: grid; gap: 40px; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.05; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(2.4rem, 6vw, 3.8rem); font-weight: 800; text-transform: uppercase; letter-spacing: .01em; }
+h2 { font-size: 2rem; font-weight: 800; text-transform: uppercase; }
+h3 { font-size: 1.3rem; font-weight: 600; text-transform: uppercase; letter-spacing: .02em; }
+p { margin: 0; max-width: 68ch; }
+a { color: var(--accent); }
+.tag { font: 500 .78rem/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
+header.label { background: var(--paper); border: 2px solid var(--ink); display: grid; grid-template-columns: 1fr auto; }
+header.label > div { padding: 20px 22px; display: grid; gap: 12px; min-width: 0; }
+header.label .side { border-left: 2px solid var(--ink); background: var(--signal); color: var(--signal-ink); display: grid; place-content: center; text-align: center; min-width: 140px; }
+header.label .side b { font: 800 2.6rem/1 var(--display); }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: .92rem; color: var(--muted); }
+.meta strong { color: var(--ink); font-weight: 600; }
+@media (max-width: 560px) { header.label { grid-template-columns: 1fr; } header.label .side { border-left: 0; border-top: 2px solid var(--ink); padding: 12px; } }
+
+section { display: grid; gap: 16px; }
+section > header { display: grid; gap: 6px; border-top: 2px solid var(--ink); padding-top: 12px; }
+.panel { background: var(--paper); border: 1px solid var(--rule); padding: 18px; min-width: 0; }
+.diagram { background: var(--paper); border: 1px solid var(--rule); padding: 16px; overflow-x: auto; }
+.diagram pre { margin: 0; }
+
+.scroll { overflow-x: auto; background: var(--paper); border: 1px solid var(--rule); }
+table { border-collapse: collapse; width: 100%; font-size: .93rem; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font: 500 .74rem/1.2 var(--mono); text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+.pill { display: inline-block; font: 500 .72rem/1 var(--mono); padding: 4px 7px; border: 1px solid currentColor; border-radius: 3px; white-space: nowrap; }
+.pill.now { color: var(--accent); }
+.pill.later { color: var(--muted); }
+
+.calc { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0; background: var(--paper); border: 2px solid var(--ink); }
+.calc .inputs { padding: 20px; display: grid; gap: 18px; align-content: start; }
+.calc .out { padding: 20px; border-left: 2px solid var(--ink); display: grid; gap: 10px; align-content: start; }
+@media (max-width: 720px) { .calc { grid-template-columns: 1fr; } .calc .out { border-left: 0; border-top: 2px solid var(--ink); } }
+fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 8px; }
+legend, label.lbl { font: 500 .76rem/1.2 var(--mono); text-transform: uppercase; letter-spacing: .07em; color: var(--muted); padding: 0; margin-bottom: 6px; }
+.opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.opt { position: relative; }
+.opt input { position: absolute; opacity: 0; }
+.opt span { display: grid; gap: 2px; padding: 10px; border: 1px solid var(--rule); cursor: pointer; font-size: .88rem; line-height: 1.3; }
+.opt span b { font-family: var(--display); font-size: 1.15rem; text-transform: uppercase; font-weight: 600; }
+.opt input:checked + span { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.opt input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+.check { display: flex; gap: 8px; align-items: center; font-size: .92rem; }
+.check input { accent-color: var(--accent); width: 18px; height: 18px; }
+.line { display: flex; justify-content: space-between; gap: 12px; font-variant-numeric: tabular-nums; border-bottom: 1px dashed var(--rule); padding-bottom: 8px; }
+.line span:first-child { color: var(--muted); }
+.line.save span:last-child { color: var(--good); }
+.total { display: grid; gap: 2px; margin-top: 6px; }
+.total b { font: 800 3rem/1 var(--display); font-variant-numeric: tabular-nums; }
+.note { font-size: .85rem; color: var(--muted); }
+
+.cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 760px) { .cols { grid-template-columns: 1fr; } }
+.phase { background: var(--paper); border: 1px solid var(--rule); padding: 16px; display: grid; gap: 8px; align-content: start; }
+.phase ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: .93rem; }
+.callout { border-left: 4px solid var(--signal); background: var(--paper); padding: 14px 16px; display: grid; gap: 6px; }
+.sources { font-size: .88rem; color: var(--muted); }
+.sources ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+
+<header class="label">
+  <div>
+    <span class="tag">Marketing book · Ouachita Parish, LA · Updated Oct 12, 2026</span>
+    <h1>Goin' Postal Forsythe</h1>
+    <p>The marketing plan for getting the store's name in front of families at Moccasins games and Friday nights at Neville and other local high schools.</p>
+    <div class="meta">
+      <span>Owners <strong>Rin Ho · Peter Ho</strong></span>
+      <span>Store <strong>Forsythe Ave &amp; N 18th St, Monroe</strong></span>
+      <span>Format <strong>Goin' Postal franchise</strong></span>
+    </div>
+  </div>
+  <div class="side"><span class="tag" style="color:inherit">First-year ad budget</span><b>$9–14K</b><span style="font-size:.8rem">recommended range</span></div>
+</header>
+
+<section>
+  <header>
+    <span class="tag">Section 1 · Getting an ad made</span>
+    <h2>From idea to the fence line</h2>
+  </header>
+  <p>Every banner, program ad and billboard goes through the same steps. Corporate's brand review is the step most likely to slow things down, so send files early.</p>
+  <div class="diagram"><pre class="mermaid">
+flowchart TD
+  A["Pick the venue and placement"] --> B["Get size and deadline<br/>from the team or booster club"]
+  B --> C["Drop the official logo into<br/>the matching concept"]
+  C --> D["Add the venue coupon code<br/>such as MOCS10 or TIGERS10"]
+  D --> E["Send to corporate<br/>for brand review"]
+  E --> F{"Approved?"}
+  F -- "Changes requested" --> C
+  F -- "Yes" --> G["Send print-ready file<br/>to the printer or venue"]
+  G --> H["Proof check: spelling,<br/>address, code"]
+  H --> I["Installed or aired"]
+  I --> J["Take a photo for social media<br/>and your records"]
+  </pre></div>
+  <div class="callout">
+    <h3>Check with corporate before any ad goes to print</h3>
+    <p>Goin' Postal owns its name and logo. Franchise agreements almost always require local ads to use the official logo files and pass a brand review. Ask your franchise rep for the brand guide and the approval process before ordering banners or a billboard.</p>
+  </div>
+</section>
+
+<section>
+  <header>
+    <span class="tag">Section 2 · Local sponsorships</span>
+    <h2>Moccasins and Friday nights</h2>
+  </header>
+  <p>The Monroe Moccasins' 2026–27 season opened at the Monroe Civic Center on Oct 9 and runs into April. Upcoming home dates include Oct 17, Nov 6–7 and Nov 21, all at 7:05 PM. High school football runs through November, with basketball and baseball after. Those seasons overlap, so one sponsor package can cover most of the year.</p>
+  <p>The Moccasins don't publish sponsorship prices. Use the partner inquiry form at <a href="https://www.moccasinshockey.com/sponsors">moccasinshockey.com/sponsors</a>. 103 Rocks (103.1 FM) carries every game, so radio spots are another way to reach the same fans.</p>
+  <div class="diagram"><pre class="mermaid">
+flowchart LR
+  A["Pick a venue"] --> B{"Who is in the seats?"}
+  B -- "Families, all of Monroe" --> C["Moccasins hockey<br/>Monroe Civic Center"]
+  B -- "Parents and neighbors<br/>near the store" --> D["High school athletics"]
+  C --> C1["Call the team's<br/>corporate partnerships office"]
+  D --> D1["Call the athletic director<br/>or booster club"]
+  C1 --> E["Choose a package:<br/>dasher board, PA read,<br/>promo night"]
+  D1 --> F["Choose a package:<br/>fence banner, program ad,<br/>scoreboard spot"]
+  E --> G["Send the ad file through<br/>corporate brand review"]
+  F --> G
+  G --> H["Print and install"]
+  H --> I["Track it: ask every new<br/>customer how they heard of you"]
+  I --> J{"Did it bring customers?"}
+  J -- "Yes" --> K["Renew next season"]
+  J -- "No" --> A
+  </pre></div>
+  <div class="scroll"><table>
+    <thead><tr><th>Venue</th><th>Placement</th><th class="num">Typical cost (est.)</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Monroe Moccasins</td><td>Dasher board, one season</td><td class="num">$1,500–$4,000</td><td>Best reach. Ask about bundles with PA reads and social posts.</td></tr>
+      <tr><td>Monroe Moccasins</td><td>Sponsored promo night</td><td class="num">$500–$1,500</td><td>Good for grand opening. Hand out coupons at the door.</td></tr>
+      <tr><td>Neville Tigers</td><td>Stadium fence banner, one year</td><td class="num">$500–$1,000</td><td>Monroe City Schools. The booster club usually sells these. For comparison, C.E. Byrd in Shreveport charges $1,000 a season.</td></tr>
+      <tr><td>Neville Tigers</td><td>Game-day program ad</td><td class="num">$100–$400</td><td>Cheap and good for a coupon code.</td></tr>
+      <tr><td>West Monroe (1.8 mi), St. Frederick (2.0 mi), Carroll (2.1 mi), Wossman (3.3 mi)</td><td>Fence banner or program ad, each</td><td class="num">$150–$800</td><td>Neville is 0.6 mi away on Forsythe, so it comes first. Then add the next-closest schools.</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">These ranges are typical for small Louisiana markets and are not quotes. Ask each team or booster club for its rate card.</p>
+</section>
+
+<section>
+  <header>
+    <span class="tag">Section 3 · Billboards</span>
+    <h2>What a billboard would cost</h2>
+  </header>
+  <p>Monroe listings show these monthly rates. Change the size and length below to see the estimated total. Lamar's Monroe office (2200 Millhaven Rd, 318-322-2970) offers free design but doesn't publish prices, so treat these as estimates until you have a quote. Printed vinyl is a separate one-time cost. Digital boards have no printing. The closest listed board to the store is at N 18th St and Louisville Ave.</p>
+
+  <div class="calc">
+    <div class="inputs">
+      <fieldset>
+        <legend>Board type</legend>
+        <div class="opts" id="types">
+          <label class="opt"><input type="radio" name="bb" id="bb-junior" value="junior"><span><b>Junior poster</b>11' × 5' · $800/mo</span></label>
+          <label class="opt"><input type="radio" name="bb" id="bb-poster" value="poster" checked><span><b>Poster</b>22'8" × 10'5" · $1,500/mo</span></label>
+          <label class="opt"><input type="radio" name="bb" id="bb-digital" value="digital"><span><b>Digital bulletin</b>Rotating slot · $2,500/mo</span></label>
+          <label class="opt"><input type="radio" name="bb" id="bb-bulletin" value="bulletin"><span><b>Bulletin</b>48' × 14' · $3,500/mo</span></label>
+        </div>
+      </fieldset>
+      <div>
+        <label class="lbl" for="months">Months: <span id="monthsVal">3</span></label>
+        <input type="range" id="months" min="1" max="12" value="3">
+      </div>
+      <label class="check"><input type="checkbox" id="disc" checked> Apply a typical long-contract discount (6+ months 10%, 12 months 15%)</label>
+    </div>
+    <div class="out" aria-live="polite">
+      <span class="tag">Estimate</span>
+      <div class="line"><span>Space rent</span><span id="oMedia">$0</span></div>
+      <div class="line save"><span>Contract discount</span><span id="oDisc">$0</span></div>
+      <div class="line"><span>Vinyl printing and install (one time)</span><span id="oProd">$0</span></div>
+      <div class="total"><span class="tag">Estimated total</span><b id="oTotal">$0</b><span class="note" id="oPerDay"></span></div>
+    </div>
+  </div>
+
+  <div class="scroll"><table>
+    <thead><tr><th>Plan</th><th>What you get</th><th class="num">Est. total</th></tr></thead>
+    <tbody>
+      <tr><td>Starter</td><td>Junior poster near the store, 3 months</td><td class="num">$2,600</td></tr>
+      <tr><td>Recommended</td><td>Poster on a commuter route, 6 months</td><td class="num">$8,800</td></tr>
+      <tr><td>Holiday burst</td><td>Digital bulletin on a main road, 2 months</td><td class="num">$5,000</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="diagram"><pre class="mermaid">
+flowchart TD
+  A["Set the budget"] --> B["Ask Lamar and one other<br/>company for available boards"]
+  B --> C{"Board on a route past<br/>Forsythe and N 18th?"}
+  C -- "No" --> B
+  C -- "Yes" --> D{"Static or digital?"}
+  D -- "Static" --> E["Free design proof<br/>plus printed vinyl"]
+  D -- "Digital" --> F["Design only, no printing,<br/>easy to change the message"]
+  E --> G["Corporate brand approval"]
+  F --> G
+  G --> H["Sign the contract,<br/>ask for a longer-term rate"]
+  H --> I["Board goes up"]
+  I --> J["Ask about the proof-of-posting photo"]
+  </pre></div>
+  <p class="note">Rates from Monroe listings on billboardsin.com. AdQuick lists an average near $1,167 per month across Monroe boards. Printing estimates assume about $3 per square foot of vinyl, the middle of the national $0.75–$8 range. Discounts for longer contracts are an assumption; ask for them.</p>
+</section>
+
+<section>
+  <header>
+    <span class="tag">Section 4 · Next 90 days</span>
+    <h2>Who does what</h2>
+  </header>
+  <div class="cols">
+    <div class="phase"><span class="tag">Days 1–30</span><h3>Brand and rate cards</h3><ul><li>Get the brand guide and logo files from corporate</li><li>Request rate cards from the Moccasins, Neville and the next-closest schools</li><li>Finish the ad files in the designs folder</li></ul></div>
+    <div class="phase"><span class="tag">Days 31–60</span><h3>Book the ads</h3><ul><li>Lock in the Moccasins package for this season</li><li>Order fence banners at the nearest schools</li><li>Get two billboard quotes</li></ul></div>
+    <div class="phase"><span class="tag">Days 61–90</span><h3>Run and measure</h3><ul><li>Sponsor a Moccasins promo night with coupons at the door</li><li>Coupon codes per venue, such as MOCS10 and TIGERS10</li><li>Count which code brings the most customers</li></ul></div>
+  </div>
+</section>
+
+<footer class="sources">
+  <span class="tag">Sources</span>
+  <ul>
+    <li><a href="https://workhorse.billboardsin.com/market/monroe-louisiana/billboards/71201/">Billboards in Monroe 71201, billboardsin.com</a></li>
+    <li><a href="https://AdQuick.com/billboard-locations/louisiana/monroe">Billboards in Monroe, AdQuick</a></li>
+    <li><a href="https://www.moccasinshockey.com/news/moccasins-open-2026-with-statement-win-extend-stre">Monroe Moccasins news, moccasinshockey.com</a></li>
+    <li><a href="https://www.moccasinshockey.com/sponsors">Monroe Moccasins sponsors page</a></li>
+    <li><a href="https://www.lamar.com/monroe">Lamar Advertising, Monroe</a></li>
+    <li><a href="https://www.franchising.com/goinpostal/">Goin' Postal franchise overview, franchising.com</a></li>
+  </ul>
+</footer>
+</div>
+
+<script>
+(function () {
+  var RATES = { junior: 800, poster: 1500, digital: 2500, bulletin: 3500 };
+  var PROD = { junior: 200, poster: 700, digital: 0, bulletin: 2000 };
+  var fmt = function (n) { return "$" + Math.round(n).toLocaleString("en-US"); };
+  var months = document.getElementById("months");
+  var disc = document.getElementById("disc");
+  function calc() {
+    var t = document.querySelector('input[name="bb"]:checked').value;
+    var m = +months.value;
+    var media = RATES[t] * m;
+    var rate = !disc.checked ? 0 : m >= 12 ? 0.15 : m >= 6 ? 0.10 : 0;
+    var off = media * rate;
+    var total = media - off + PROD[t];
+    document.getElementById("monthsVal").textContent = m;
+    document.getElementById("oMedia").textContent = fmt(media);
+    document.getElementById("oDisc").textContent = off ? "−" + fmt(off) : "$0";
+    document.getElementById("oProd").textContent = PROD[t] ? fmt(PROD[t]) : "None (digital)";
+    document.getElementById("oTotal").textContent = fmt(total);
+    document.getElementById("oPerDay").textContent = "About " + fmt(total / (m * 30)) + " per day over " + m + (m === 1 ? " month" : " months");
+  }
+  document.querySelectorAll('input[name="bb"]').forEach(function (r) { r.addEventListener("change", calc); });
+  months.addEventListener("input", calc);
+  disc.addEventListener("change", calc);
+  calc();
+})();
+</script>
