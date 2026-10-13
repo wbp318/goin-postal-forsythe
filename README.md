@@ -53,16 +53,18 @@ journey
   title From the stands to the counter
   section See the ad
     Sees MOCS10 on the rink board: 4: Customer
-    Passes the billboard on the drive home: 4: Customer
+    Passes the billboard on the drive home: 3: Customer
   section Visit
     Walks in at Forsythe and N 18th: 4: Customer
-    Gives code, name and phone: 4: Customer, Staff
+    Gives code, name and phone: 3: Customer, Staff
   section Redeem
     Coupon Counter checks one use: 5: Staff
     Package packed and shipped: 5: Customer, Staff
   section Come back
     Returns for holiday shipping: 4: Customer
 ```
+
+Faces show how smooth each step feels (5 is best). The two flat faces mark small friction points: a billboard is a quick glance from the road, and some customers hesitate to give a phone number. Staff can help by explaining that the number is how the store keeps each code to one use.
 
 ## What's in the repo
 
