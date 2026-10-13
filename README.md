@@ -2,6 +2,82 @@
 
 [![CI](https://github.com/wbp318/goin-postal-forsythe/actions/workflows/ci.yml/badge.svg)](https://github.com/wbp318/goin-postal-forsythe/actions/workflows/ci.yml)
 
+## Our board at the rink
+
+Dasher boards wrap all the way around the ice at the Monroe Civic Center. The Goin' Postal board (yellow) is planned for a side board at center ice, where fans look most often.
+
+```mermaid
+block-beta
+  columns 9
+  cTL["Corner"] t1["Board"] t2["Board"] t3["Board"] t4["Goin' Postal<br/>MOCS10"] t5["Board"] t6["Board"] t7["Board"] cTR["Corner"]
+  l1["End<br/>board"] f1["Faceoff"] i1[" "] i2[" "] i3[" "] i4[" "] i5[" "] f2["Faceoff"] r1["End<br/>board"]
+  l2["Behind<br/>the net"] gL["Goal"] bL["Blue<br/>line"] i6[" "] ctr["Center<br/>ice"] i7[" "] bR["Blue<br/>line"] gR["Goal"] r2["Behind<br/>the net"]
+  l3["End<br/>board"] f3["Faceoff"] i8[" "] i9[" "] i10[" "] i11[" "] i12[" "] f4["Faceoff"] r3["End<br/>board"]
+  cBL["Corner"] b1["Board"] hb["Home<br/>bench"] b2["Board"] pb["Penalty<br/>boxes"] b3["Board"] vb["Visitor<br/>bench"] b4["Board"] cBR["Corner"]
+
+  classDef ours fill:#f2b705,stroke:#3b2c00,color:#3b2c00,stroke-width:3px
+  classDef board fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
+  classDef ice fill:#e8f1fb,stroke:#e8f1fb,color:#17202d
+  classDef mark fill:#e8f1fb,stroke:#9fb7d4,color:#1d4ed8
+  classDef team fill:#5a6573,stroke:#5a6573,color:#ffffff
+  class t4 ours
+  class cTL,t1,t2,t3,t5,t6,t7,cTR,l1,l2,l3,r1,r2,r3,cBL,b1,b2,b3,b4,cBR board
+  class i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12 ice
+  class f1,f2,f3,f4,gL,gR,bL,bR,ctr mark
+  class hb,pb,vb team
+```
+
+- **Center-ice side boards** are in view whenever play crosses the middle of the rink. Ask for one of these first.
+- **Behind the net** is in view every time play heads for a goal.
+- **Corners** are often priced lower, but curved corner glass and puck battles along the boards block the view.
+- **Board across from the camera:** the Moccasins stream every game on MoccasinsTV on YouTube. Ask the team which side the main camera faces. Boards on the far side from the camera show up on every stream.
+
+## Getting our logo onto the board
+
+Yellow steps are the store's, navy steps are corporate's, and light blue steps are the team's and their printer's.
+
+```mermaid
+flowchart TB
+  subgraph S1["1 · Book"]
+    direction LR
+    A["Book the board through<br/>moccasinshockey.com/sponsors"] --> B["Get the specs: panel size,<br/>bleed, file type, deadline,<br/>who prints"]
+  end
+  subgraph S2["2 · Design"]
+    direction LR
+    L["Corporate sends the<br/>official logo files"] --> D["Drop the logo into<br/>moccasins-dasher-board.svg"]
+  end
+  subgraph S3["3 · Approve"]
+    direction LR
+    R{"Corporate brand<br/>review"}
+  end
+  subgraph S4["4 · Print and install"]
+    direction LR
+    P["Team's printer makes<br/>the board vinyl"] --> Q{"Proof matches<br/>approved file?"}
+    Q -- "Yes" --> I["Installed on the<br/>dasher board"]
+  end
+  subgraph S5["5 · Track"]
+    direction LR
+    K["Count MOCS10 in<br/>the Coupon Counter"] --> Z{"Worth it at<br/>season's end?"}
+    Z -- "Yes" --> RN["Renew"]
+    Z -- "No" --> X["Let it lapse"]
+  end
+  B --> D
+  D --> R
+  R -- "Changes" --> D
+  R -- "Approved" --> P
+  Q -- "No" --> P
+  I --> K
+
+  classDef store fill:#f2b705,stroke:#3b2c00,color:#3b2c00
+  classDef corp fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
+  classDef team fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
+  class A,B,D,K,Z,RN,X store
+  class L,R corp
+  class P,Q,I team
+```
+
+The design is ready in `designs/moccasins-dasher-board.svg` (preview: `designs/png/moccasins-dasher-board.png`). The official logo replaces its dashed **OFFICIAL LOGO** box. Ask the team for the exact panel size early, because the design is drawn at an 8:1 ratio and may need resizing to fit their boards.
+
 Marketing kit for the Goin' Postal store at **Forsythe Ave & N 18th St, Monroe, Louisiana** (Ouachita Parish), owned by Rin Ho and Peter Ho.
 
 The store is open. This repo covers getting its name in front of local families:

@@ -19,13 +19,32 @@ _Last updated: Oct 12, 2026_
 | 8 | Moccasins promo night kit | Handout, table sign, social post, PA script | ✅ Done |
 | 9 | Brand kit page | Colors, fonts and layout rules for printers and designers | ✅ Done |
 
+### Round 2
+
+| # | Item | What you get | Status |
+|---|---|---|---|
+| 10 | Rink diagram | README chart of where the board sits around the rink | ✅ Done |
+| 11 | Logo-on-the-board process | README chart from booking to install to renewal | ✅ Done |
+| 12 | **QR codes to the store's Google listing** | Point every QR at the store's own Google Maps listing instead of the street corner | ⏸ Waiting on the listing link |
+| 13 | Google Business Profile kit | Photos to take, description, weekly post template | ⏳ Not started |
+| 14 | Thank-you texts | Monthly list of returning customers, with a separate opt-in | ⏳ Not started |
+| 15 | Busiest hours | Results tab shows which days and hours codes get used | ⏳ Not started |
+| 16 | Season wrap-up report | Cost, customers and renew-or-drop per sponsorship, for April | ⏳ Not started |
+| 17 | Window and door signs | Storefront services sign and an hours sign | ⏳ Not started |
+| 18 | Community board flyers | Tear-off-tab flyer for churches, the library, coffee shops | ⏳ Not started |
+| 19 | Year-round shipping calendar | Mother's Day, back to school, tax season, each with a sign and post | ⏳ Not started |
+| 20 | Holiday Hub display | Counter display pairing the deadline sign with box sizes | ⏳ Not started |
+| 21 | Automatic game-day posts | Next game's post made a few days ahead and sent to whoever posts | ⏳ Not started |
+| 22 | Calendar deadline reminders | Reminder 2 weeks before any book-by date | ⏳ Not started |
+
 ## Progress
 
 ```mermaid
 pie showData
   title Items by status
-  "Done" : 10
-  "In progress" : 0
+  "Done" : 12
+  "Waiting on you" : 1
+  "Not started" : 10
 ```
 
 ## How the pieces connect
@@ -42,6 +61,45 @@ flowchart LR
   S8["#8 Promo night kit"] --> V
   S3["#3 Holiday deadline sign"] --> V
   S9["#9 Brand kit"] --> P["Printers and designers<br/>match the look"]
+```
+
+## Round 2: where to start
+
+Rough judgment of effort and payoff, not measured.
+
+```mermaid
+quadrantChart
+  title Round 2 effort vs payoff
+  x-axis Less effort --> More effort
+  y-axis Smaller payoff --> Bigger payoff
+  quadrant-1 Plan it
+  quadrant-2 Do first
+  quadrant-3 Fill-ins
+  quadrant-4 Skip for now
+  QR to Google listing: [0.12, 0.82]
+  Google Business Profile kit: [0.35, 0.9]
+  Season wrap-up: [0.45, 0.72]
+  Busiest hours: [0.25, 0.48]
+  Window and door signs: [0.2, 0.6]
+  Community flyers: [0.15, 0.38]
+  Shipping calendar: [0.6, 0.62]
+  Holiday Hub display: [0.3, 0.66]
+  Thank-you texts: [0.55, 0.5]
+  Auto game-day posts: [0.78, 0.4]
+  Deadline reminders: [0.7, 0.35]
+```
+
+```mermaid
+flowchart LR
+  L["You send the store's<br/>Google Maps link"] --> Q["#12 QR codes point<br/>to the listing"]
+  G["#13 Google Business<br/>Profile kit"] --> Q
+  O["Second opt-in line<br/>at the counter"] --> T["#14 Thank-you texts"]
+  CC["Coupon Counter data"] --> H["#15 Busiest hours"]
+  CC --> W["#16 Season wrap-up"]
+  CAL["Ad calendar"] --> W
+  CAL --> R["#22 Deadline reminders"]
+  GP["make_game_posts.py"] --> A["#21 Automatic posts"]
+  HS["Holiday sign"] --> HH["#20 Holiday Hub"]
 ```
 
 ## Plan
@@ -110,3 +168,4 @@ flowchart LR
 - **Oct 12:** #8 done. Promo night handout, table sign and social post in `designs/promo-night/`, plus `docs/promo-night-kit.md` with PA scripts and checklists.
 - **Oct 12:** #9 done. `brand-kit.html`: colors, type, label layout, logo slot, copy rules, legibility by medium, file formats.
 - **Oct 12:** Everything added to the gallery, README and CI checks.
+- **Oct 12:** Round 2 added (#10–#22). #10 and #11 done: the README now opens with a rink diagram showing where the board sits and a chart of getting the logo onto the board. #12, repointing the QR codes to the store's Google listing, is waiting on the listing link.
