@@ -2,7 +2,7 @@
 
 This is the same guide as the top of the [README](../README.md).
 
-Claude Code is an AI helper that runs in your terminal. You type what you want in plain English, and it reads files, runs commands and makes changes for you. Install it once (Part 1), then let it set up Python and R for you (Part 2). TypeScript is optional (Part 3).
+Claude Code is an AI helper that runs in your terminal. You type what you want in plain English, and it reads files, runs commands and makes changes for you. Install it once (Part 1), then let it set up Python and R for you (Part 2). TypeScript and F# are optional (Part 3).
 
 ## Before you start
 
@@ -151,9 +151,13 @@ Restart Claude Code (`/exit`, then `claude`) so it picks up the new PATH, then p
 
 > Check that Python, pip, R and Rscript are all on my PATH and print their versions. If any are missing, fix them.
 
-## Part 3 (optional): Node.js and TypeScript for React dashboards
+## Part 3 (optional): TypeScript and F#
 
-Skip this until we start on the React dashboards. Do it inside Claude Code, like Part 2.
+Skip these until we need them. Do them inside Claude Code, like Part 2.
+
+### Node.js and TypeScript for React dashboards
+
+Skip this until we start on the React dashboards.
 
 **Paste into Claude Code:**
 
@@ -171,6 +175,25 @@ Skip this until we start on the React dashboards. Do it inside Claude Code, like
 
 **Starting a dashboard later:** ask Claude Code "create a React + TypeScript dashboard with Vite in a new `dashboard` folder." It runs `npm create vite@latest dashboard -- --template react-ts` and sets it up.
 
+### F# (.NET)
+
+F# comes with the .NET SDK, so installing .NET gives you F# and the `dotnet` command that runs it.
+
+**Paste into Claude Code:**
+
+> Install the current LTS .NET SDK so I can write F#, and make sure `dotnet` is on my PATH. On Windows use `winget install Microsoft.DotNet.SDK.10`; on Mac use `brew install --cask dotnet-sdk`. Then show me `dotnet --version` and `dotnet --list-sdks` working, and run a one-line F# check with `dotnet fsi` that prints "hello from F#". Tell me if I need to restart the terminal.
+
+**Manual backup (Windows and Mac):**
+
+1. Download the **.NET SDK** (not just the Runtime), marked **LTS**, from [dotnet.microsoft.com/download](https://dotnet.microsoft.com/download). On a Mac pick **Arm64** for M1/M2/M3/M4 or **x64** for older Intel Macs.
+2. Run the installer with all defaults. It adds `dotnet` to the PATH (Windows: `C:\Program Files\dotnet\`; Mac: `/usr/local/share/dotnet`).
+3. Open a new terminal and run `dotnet --version`.
+4. Try F# Interactive: run `dotnet fsi`, type `printfn "hello from F#";;` and press **Enter**. Type `#quit;;` to leave.
+
+**Starting an F# project later:** ask Claude Code "create a new F# console app in a `fsharp-hello` folder and run it." It runs `dotnet new console -lang "F#" -o fsharp-hello`, then `dotnet run` inside that folder.
+
+> **Tip:** for editing F# in VS Code, add the **Ionide-fsharp** extension. Claude Code itself only needs `dotnet` on the PATH.
+
 ## Troubleshooting
 
 Once Claude Code is running, the easiest fix for almost anything is to paste the exact error into Claude Code and ask "how do I fix this?"
@@ -186,6 +209,8 @@ Once Claude Code is running, the easiest fix for almost anything is to paste the
 - **Updating Claude Code:** it updates itself. To force it, run `claude update`.
 - **Cloning the repo fails with "Repository not found" or "permission denied":** the GitHub invite hasn't been accepted yet, or `gh` is logged in to a different GitHub account. Accept the invite, then run `gh auth status` to see which account is logged in, and `gh auth login` to switch.
 - **Antivirus or a work laptop blocks the install:** these steps need admin rights. Use a personal computer or ask whoever manages the laptop.
+- **`dotnet` works but says "No .NET SDKs were found":** only the .NET *Runtime* is installed. Install the **SDK** (Part 3, F#).
+- **`dotnet fsi` seems stuck:** F# Interactive waits for `;;` at the end of each line. Type `;;` and press **Enter**, or `#quit;;` to leave.
 
 **Windows**
 
@@ -213,6 +238,77 @@ Once Claude Code is running, the easiest fix for almost anything is to paste the
 - **The wrong Python or R runs:** `which -a python3` or `which -a Rscript` lists every copy in PATH order.
 - **`npm install -g` fails with "EACCES" / permission denied:** don't use `sudo`. Remove the website version of Node, install it with `brew install node`, and try again.
 - **"App can't be opened because it is from an unidentified developer":** open System Settings > Privacy & Security, scroll down, and click **Open Anyway**.
+- **`dotnet` not found after installing on a Mac:** quit and reopen Terminal. If it's still missing, run `echo 'export PATH="/usr/local/share/dotnet:$PATH"' >> ~/.zshrc` and reopen Terminal again.
 
 **Still stuck?** Run `/doctor` inside Claude Code, see the official guide at [code.claude.com/docs/en/setup](https://code.claude.com/docs/en/setup), or open an issue on this repo with a screenshot of the error.
 
+## How Claude Code works
+
+Yellow steps happen on your computer, navy steps happen at Anthropic, and light blue steps are you deciding. The only Mac/Windows differences are where things live and which shell runs commands; the loop in the middle is the same on both.
+
+```mermaid
+flowchart TB
+  subgraph START["1 · Start"]
+    direction LR
+    T{"Which computer?"}
+    T -- "Windows" --> W["PowerShell: type claude<br/>runs claude.exe from<br/>%USERPROFILE%\.local\bin"]
+    T -- "Mac" --> M["Terminal (zsh): type claude<br/>runs claude from<br/>~/.local/bin"]
+  end
+
+  subgraph SETUP["2 · Load"]
+    direction LR
+    U["Check for updates<br/>and update itself"] --> A{"Signed in?"}
+    A -- "No" --> L["Browser opens:<br/>log in to claude.ai"] --> K["Save login<br/>Mac: Keychain<br/>Windows: ~/.claude"]
+    A -- "Yes" --> S
+    K --> S["Read settings<br/>~/.claude/settings.json<br/>+ project .claude/settings.json"]
+    S --> C["Read CLAUDE.md notes<br/>and start any MCP tools"]
+  end
+
+  subgraph LOOP["3 · The loop (same on Mac and Windows)"]
+    direction TB
+    P["You type a request"] --> SEND["Send your request, the chat so far,<br/>CLAUDE.md and the tool list"]
+    SEND --> MODEL["Claude model at Anthropic<br/>decides the next step"]
+    MODEL --> D{"Answer or<br/>use a tool?"}
+    D -- "Use a tool" --> PERM{"Allowed by settings,<br/>or do you say Yes?"}
+    PERM -- "No" --> NO["Tell Claude 'not allowed'"] --> SEND2
+    PERM -- "Yes" --> RUN{"Which tool?"}
+    RUN -- "Read / search files" --> F["Read, Grep, Glob<br/>on your disk"]
+    RUN -- "Change files" --> E["Edit or Write<br/>on your disk"]
+    RUN -- "Run a command" --> SH{"Which shell?"}
+    SH -- "Windows" --> GB["Git Bash or PowerShell"]
+    SH -- "Mac" --> ZS["zsh / bash"]
+    RUN -- "Look something up" --> WEB["Web fetch or search"]
+    F --> SEND2["Send the tool's result<br/>back to the model"]
+    E --> SEND2
+    GB --> SEND2
+    ZS --> SEND2
+    WEB --> SEND2
+    SEND2 --> MODEL
+    D -- "Answer" --> OUT["Show the answer<br/>in your terminal"]
+    OUT --> P
+  end
+
+  subgraph CTRL["4 · Your controls, any time"]
+    direction LR
+    ESC["Esc: stop<br/>the current step"]
+    FULL["Chat too long:<br/>auto-summarize it"]
+    EXIT["/exit: quit<br/>back to the terminal"]
+  end
+
+  W --> U
+  M --> U
+  C --> P
+  OUT -.-> CTRL
+
+  classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
+  classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
+  classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
+  class W,M,U,K,S,C,SEND,NO,F,E,GB,ZS,SEND2,OUT,FULL local
+  class L,MODEL,WEB cloud
+  class T,A,P,D,PERM,RUN,SH,ESC,EXIT you
+```
+
+1. **Start:** typing `claude` runs the program the installer put in your `.local\bin` (Windows) or `.local/bin` (Mac) folder. That's why that folder has to be on your PATH.
+2. **Load:** it updates itself, makes sure you're signed in, then reads your settings and any `CLAUDE.md` notes in the project.
+3. **The loop:** your request goes to the Claude model at Anthropic. The model either answers or asks to use a tool. Every tool runs **on your computer**, only after the permission check, and its result goes back to the model. This repeats until the model has an answer for you.
+4. **Your controls:** Esc stops the current step, long chats get summarized automatically, and `/exit` quits.

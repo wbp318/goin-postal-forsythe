@@ -14,6 +14,7 @@ SOURCES = {
     "README.md": MD,
     "AGENDA.md": MD,
     "docs/promo-night-kit.md": MD,
+    "docs/claude-code-setup.md": MD,
     "launch-book.html": re.compile(r'<pre class="mermaid">(.*?)</pre>', re.S),
 }
 
