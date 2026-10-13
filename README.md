@@ -13,6 +13,57 @@ The store is open. This repo covers getting its name in front of local families:
 
 > **Brand note:** Goin' Postal owns its name and logo. Every design here has a dashed **OFFICIAL LOGO** slot. Drop in the logo file from corporate and get each ad through corporate's brand review before printing. Team and school names appear as text only. No team or school logos or mascots are used.
 
+## Live pages
+
+| Page | What it's for | Link |
+|---|---|---|
+| **Coupon Counter** | Redeem MOCS10, TIGERS10 and other codes, one use per customer | [Open Coupon Counter](https://claude.ai/artifact/1yb2fzWW61nSKtMiaUhNH6) |
+| **Marketing plan** | Flowcharts, sponsorship costs, billboard calculator | [Open the plan](https://claude.ai/artifact/8uW684TKgZYJ8CwDmX1CmJ) |
+
+Both pages are private. They open only for people the owner has shared them with, signed in to claude.ai. Share the Coupon Counter as **Contributor** with everyone who works the counter.
+
+## Marketing at a glance
+
+```mermaid
+mindmap
+  root((Forsythe store))
+    Hockey
+      Rink board MOCS10
+      Promo night
+      103 Rocks radio
+    High schools
+      Neville fence banner
+      Program ad TIGERS10
+      Scoreboard spot
+    Roadside
+      Poster billboard
+      Digital holiday board
+    In the store
+      Counter flyer
+      Coupon Counter
+    Online
+      Game day posts
+      Sponsor badge
+```
+
+## A customer's path
+
+```mermaid
+journey
+  title From the stands to the counter
+  section See the ad
+    Sees MOCS10 on the rink board: 4: Customer
+    Passes the billboard on the drive home: 3: Customer
+  section Visit
+    Walks in at Forsythe and N 18th: 4: Customer
+    Gives code, name and phone: 3: Customer, Staff
+  section Redeem
+    Coupon Counter checks one use: 5: Staff
+    Package packed and shipped: 5: Customer, Staff
+  section Come back
+    Returns for holiday shipping: 4: Customer
+```
+
 ## What's in the repo
 
 ```mermaid
@@ -133,6 +184,27 @@ flowchart LR
 
 These ranges are estimates, not quotes. None of these teams publish prices. For comparison, C.E. Byrd in Shreveport charges $1,000 a season for a football banner. Moccasins sponsorships go through the [partner inquiry form](https://www.moccasinshockey.com/sponsors), and 103 Rocks (103.1 FM) carries every game on the radio.
 
+Where each option lands on cost and local reach (rough judgment from the estimates above, not measured data):
+
+```mermaid
+quadrantChart
+  title Cost vs reach near the store
+  x-axis Low cost --> High cost
+  y-axis Low local reach --> High local reach
+  quadrant-1 Big bets
+  quadrant-2 Best value
+  quadrant-3 Fill-ins
+  quadrant-4 Rethink
+  Neville program ad: [0.12, 0.55]
+  Neville fence banner: [0.25, 0.72]
+  Other school banners: [0.2, 0.4]
+  Moccasins promo night: [0.35, 0.78]
+  Moccasins rink board: [0.5, 0.86]
+  Junior poster billboard: [0.42, 0.45]
+  Digital holiday burst: [0.68, 0.62]
+  Poster billboard 6 months: [0.78, 0.8]
+```
+
 ## Billboards
 
 Estimated monthly rates in Monroe (billboardsin.com). Lamar's Monroe office (2200 Millhaven Rd, 318-322-2970) doesn't publish prices, so get a quote. The closest listed board to the store is at **N 18th St and Louisville Ave**.
@@ -191,6 +263,24 @@ gantt
   Count coupon codes monthly :2026-11-01, 2027-05-15
 ```
 
+Moccasins home games found so far (from ticket listings; check the team schedule for changes):
+
+```mermaid
+timeline
+  title Moccasins home games, Monroe Civic Center, 7.05 PM
+  section October
+    Oct 9 and 10 : Season opens vs Mid-South
+    Oct 17 : vs Baton Rouge
+    Oct 30 and 31 : Home weekend
+  section November
+    Nov 6 and 7 : vs Columbus
+    Nov 21 : vs Baton Rouge
+  section Winter
+    Dec 29 : vs Mid-South
+    Jan 8 and 9 : vs Mid-South
+    Feb 5 : vs Mid-South
+```
+
 ## Example budget split
 
 An example of a first-year budget around $12,700. Change it to fit the actual rate cards.
@@ -228,19 +318,90 @@ flowchart TD
   F --> H["Count goes up for that code"]
 ```
 
+What happens behind the Redeem button:
+
+```mermaid
+sequenceDiagram
+  actor C as Customer
+  actor S as Staff
+  participant P as Coupon Counter
+  participant L as Redemption log
+  C->>S: Code, name and phone
+  S->>P: Enter code, name and phone
+  P->>P: Code active? Name and 10-digit phone filled?
+  P->>L: Hold this code and phone for 8 seconds
+  P->>L: Look up this code and phone
+  alt Already used
+    L-->>P: Earlier redemption found
+    P-->>S: Already used, with the date
+    S-->>C: One use per customer
+  else First use
+    P->>L: Save name, phone, time and staff member
+    P-->>S: Approved
+    S-->>C: Offer applied
+  end
+```
+
+How a code moves between states:
+
+```mermaid
+stateDiagram-v2
+  [*] --> Active: Editor adds the code
+  Active --> Paused: Editor pauses it
+  Paused --> Active: Editor turns it back on
+  Active --> Active: Redeemed, once per phone number
+  Paused --> [*]: Season over
+```
+
+What the log stores:
+
+```mermaid
+erDiagram
+  CODE ||--o{ REDEMPTION : "redeemed as"
+  CODE {
+    string code PK "MOCS10"
+    string label "where it runs"
+    boolean active
+  }
+  REDEMPTION {
+    string id PK "code plus phone"
+    string code FK
+    string name
+    string phone "10 digits"
+    string email "optional"
+    string redeemedAt
+    string redeemedBy "staff member"
+  }
+```
+
 ## Measuring what works
 
 ```mermaid
 flowchart LR
   A["Customer at the counter"] --> B{"Has a code?"}
-  B -- "MOCS10" --> C["Tally: Moccasins"]
-  B -- "TIGERS10" --> D["Tally: Neville"]
+  B -- "MOCS10" --> C["Coupon Counter<br/>counts Moccasins"]
+  B -- "TIGERS10" --> D["Coupon Counter<br/>counts Neville"]
   B -- "No code" --> E["Ask: how did you hear about us?"]
-  E --> F["Tally: billboard, word of mouth, other"]
+  E --> F["Tally sheet: billboard,<br/>word of mouth, other"]
   C --> G["Monthly review"]
   D --> G
   F --> G
   G --> H["Put more money into<br/>what brings customers"]
+```
+
+The monthly review:
+
+```mermaid
+flowchart TD
+  A["First Monday of the month"] --> B["Export the CSV<br/>from Coupon Counter"]
+  B --> C["Count redemptions per code<br/>and the tally sheet"]
+  C --> D["Divide each placement's cost<br/>by customers it brought in"]
+  D --> E{"Cost per customer<br/>reasonable?"}
+  E -- "Yes" --> F["Keep it, or renew<br/>next season"]
+  E -- "No" --> G{"Fixable?<br/>new headline, new spot"}
+  G -- "Yes" --> H["Change the ad<br/>in designs/"]
+  G -- "No" --> I["Drop it and move<br/>the money"]
+  H --> J["Re-export PNG and PDF,<br/>push, CI checks it"]
 ```
 
 ## Sources
