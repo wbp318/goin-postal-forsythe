@@ -53,10 +53,10 @@ journey
   title From the stands to the counter
   section See the ad
     Sees MOCS10 on the rink board: 4: Customer
-    Passes the billboard on the drive home: 3: Customer
+    Passes the billboard on the drive home: 4: Customer
   section Visit
     Walks in at Forsythe and N 18th: 4: Customer
-    Gives code, name and phone: 3: Customer, Staff
+    Gives code, name and phone: 4: Customer, Staff
   section Redeem
     Coupon Counter checks one use: 5: Staff
     Package packed and shipped: 5: Customer, Staff
