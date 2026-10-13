@@ -4,7 +4,7 @@
 
 ## Start here: set up Claude Code
 
-Claude Code is an AI helper that runs in your terminal. You type what you want in plain English, and it reads files, runs commands and makes changes for you. Install it once (Part 1), then let it set up Python and R for you (Part 2). TypeScript is optional (Part 3).
+Claude Code is an AI helper that runs in your terminal. You type what you want in plain English, and it reads files, runs commands and makes changes for you. Install it once (Part 1), then let it set up Python and R for you (Part 2). TypeScript is optional (Part 3). A copy of this guide also lives in [`docs/claude-code-setup.md`](docs/claude-code-setup.md).
 
 ### Before you start
 
