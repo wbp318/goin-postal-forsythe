@@ -1,4 +1,4 @@
-"""Pull every Mermaid diagram out of README.md and launch-book.html into .mmd files.
+"""Pull every Mermaid diagram out of the README, agenda, docs and plan page into .mmd files.
 
 Run from the repo root:  python scripts/extract_mermaid.py OUT_DIR
 CI renders each file with mermaid-cli, so a broken chart fails the build.
@@ -9,8 +9,11 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+MD = re.compile(r"```mermaid\n(.*?)```", re.S)
 SOURCES = {
-    "README.md": re.compile(r"```mermaid\n(.*?)```", re.S),
+    "README.md": MD,
+    "AGENDA.md": MD,
+    "docs/promo-night-kit.md": MD,
     "launch-book.html": re.compile(r'<pre class="mermaid">(.*?)</pre>', re.S),
 }
 

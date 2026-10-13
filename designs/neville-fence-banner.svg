@@ -27,7 +27,7 @@
   <!-- FROM field -->
   <rect x="120" y="580" width="1496" height="5" fill="#17202d"/>
   <text x="152" y="630" class="mono" font-size="30" fill="#17202d">FROM</text>
-  <text x="152" y="704" class="d6" font-size="60" fill="#17202d">Forsythe Ave &amp; N 18th St · Monroe</text>
+  <text x="152" y="704" class="d6" font-size="60" fill="#17202d" textLength="776" lengthAdjust="spacingAndGlyphs">Forsythe Ave &amp; N 18th St · Monroe</text>
   <text x="152" y="760" class="body" font-size="30" fill="#17202d">Goin' Postal · your neighbor on Forsythe</text>
 
   <!-- Tracking barcode -->

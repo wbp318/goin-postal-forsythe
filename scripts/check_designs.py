@@ -28,7 +28,7 @@ def png_size(path):
 
 
 def check_svg(path, problems):
-    name = path.name
+    name = path.relative_to(DESIGNS).as_posix()
     try:
         doc = xml.dom.minidom.parse(str(path))
     except Exception as e:  # noqa: BLE001 - report any parse failure
@@ -46,26 +46,27 @@ def check_svg(path, problems):
 
     text = " ".join(t.firstChild.data if t.firstChild and t.firstChild.nodeType == t.TEXT_NODE else t.toxml()
                     for t in doc.getElementsByTagName("text"))
-    if name not in NO_LOGO_SLOT and "OFFICIAL LOGO" not in text:
+    if path.name not in NO_LOGO_SLOT and "OFFICIAL LOGO" not in text:
         problems.append(f"{name}: no OFFICIAL LOGO slot for corporate's logo")
     if PHONE.search(text):
         problems.append(f"{name}: contains a phone number; leave phone numbers off the designs")
     if PRICE.search(text):
         problems.append(f"{name}: contains a dollar price; set offer terms with corporate first")
 
-    png = PNG_DIR / (path.stem + ".png")
+    rel = path.relative_to(DESIGNS).with_suffix(".png")
+    png = PNG_DIR / rel
     if not png.exists():
-        problems.append(f"{name}: missing designs/png/{png.name} (run scripts/export_designs.py)")
+        problems.append(f"{name}: missing designs/png/{rel.as_posix()} (run scripts/export_designs.py)")
     else:
         size = png_size(png)
         want = (int(float(svg.getAttribute("width") or 0)), int(float(svg.getAttribute("height") or 0)))
         if size != want:
-            problems.append(f"{name}: png/{png.name} is {size}, expected {want} (re-run the export)")
+            problems.append(f"{name}: png/{rel.as_posix()} is {size}, expected {want} (re-run the export)")
 
 
 def main():
     problems = []
-    svgs = sorted(DESIGNS.glob("*.svg"))
+    svgs = sorted(p for p in DESIGNS.rglob("*.svg") if p.relative_to(DESIGNS).parts[0] not in ("png", "pdf"))
     if not svgs:
         problems.append("designs/: no SVG files found")
     for path in svgs:
@@ -74,6 +75,15 @@ def main():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     gallery = (DESIGNS / "index.html").read_text(encoding="utf-8")
     for path in svgs:
+        rel = path.relative_to(DESIGNS)
+        if len(rel.parts) > 1:
+            # Files in a subfolder (game-day posts, promo kit) only need their folder listed.
+            folder = "designs/" + rel.parts[0] + "/"
+            if folder not in readme:
+                problems.append(f"README.md: does not mention {folder}")
+            if rel.parts[0] + "/" not in gallery:
+                problems.append(f"designs/index.html: gallery does not link {rel.parts[0]}/")
+            continue
         if path.name not in readme:
             problems.append(f"README.md: does not list designs/{path.name}")
         if path.name not in gallery:

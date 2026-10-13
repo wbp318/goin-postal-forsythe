@@ -44,6 +44,11 @@ def run(browser, *args):
     subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=120)
 
 
+def design_files():
+    """Every SVG under designs/, skipping the export folders."""
+    return sorted(p for p in DESIGNS.rglob("*.svg") if p.relative_to(DESIGNS).parts[0] not in ("png", "pdf"))
+
+
 def size_of(svg_text):
     m = re.search(r'<svg[^>]*\bwidth="(\d+)"[^>]*\bheight="(\d+)"', svg_text)
     if not m:
@@ -62,13 +67,15 @@ def main():
     (out / "pdf").mkdir(parents=True, exist_ok=True)
 
     with tempfile.TemporaryDirectory() as tmp:
-        for svg in sorted(DESIGNS.glob("*.svg")):
+        for svg in design_files():
             text = svg.read_text(encoding="utf-8")
             w, h = size_of(text)
-            png = (out / "png" / (svg.stem + ".png")).resolve()
+            rel = svg.relative_to(DESIGNS).with_suffix(".png")
+            png = (out / "png" / rel).resolve()
+            png.parent.mkdir(parents=True, exist_ok=True)
             run(browser, "--default-background-color=00000000", f"--window-size={w},{h}",
                 f"--screenshot={png}", svg.resolve().as_uri())
-            print(f"png  {png.name}")
+            print(f"png  {rel.as_posix()}")
 
             if svg.name in PRINT_PDFS:
                 pw, ph = PRINT_PDFS[svg.name]

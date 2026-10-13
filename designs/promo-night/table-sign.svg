@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg text-rendering="geometricPrecision" xmlns="http://www.w3.org/2000/svg" width="2200" height="1700" viewBox="0 0 2200 1700">
+  <title>Promo Night Table Sign: Goin' Postal Forsythe (11 x 8.5 in)</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&amp;family=IBM+Plex+Sans:wght@400;600&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap');
+    .d8 { font-family: 'Barlow Condensed', 'Arial Narrow', 'Avenir Next Condensed', Impact, sans-serif; font-weight: 800; text-transform: uppercase; }
+    .d6 { font-family: 'Barlow Condensed', 'Arial Narrow', 'Avenir Next Condensed', Impact, sans-serif; font-weight: 600; text-transform: uppercase; }
+    .sans { font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif; font-weight: 400; }
+    .sans6 { font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif; font-weight: 600; }
+    .mono { font-family: 'IBM Plex Mono', Consolas, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace; font-weight: 500; letter-spacing: 3px; }
+  </style>
+
+  <!-- Navy ground, white shipping label -->
+  <rect x="0" y="0" width="2200" height="1700" fill="#0f1d3a"/>
+  <rect x="90" y="90" width="2020" height="1520" fill="#ffffff" stroke="#17202d" stroke-width="6"/>
+
+  <!-- Packing tape across top edge -->
+  <rect x="980" y="62" width="240" height="64" fill="#b98a55" fill-opacity="0.85"/>
+  <rect x="980" y="62" width="240" height="5" fill="#9a7142" fill-opacity="0.85"/>
+  <rect x="980" y="121" width="240" height="5" fill="#9a7142" fill-opacity="0.85"/>
+
+  <!-- ROW A: FROM + logo slot -->
+  <text x="140" y="180" class="mono" font-size="28" fill="#1d4ed8">FROM · TONIGHT'S SPONSOR</text>
+  <text x="140" y="250" class="sans6" font-size="54" fill="#17202d">Goin' Postal · Forsythe</text>
+  <text x="140" y="310" class="sans" font-size="40" fill="#17202d">Forsythe Ave &amp; N 18th St · Monroe</text>
+
+  <rect x="1640" y="130" width="420" height="200" fill="#ffffff" stroke="#17202d" stroke-width="3" stroke-dasharray="14 10"/>
+  <text x="1850" y="239" class="mono" font-size="26" fill="#17202d" text-anchor="middle">OFFICIAL LOGO</text>
+
+  <rect x="90" y="360" width="2020" height="8" fill="#17202d"/>
+
+  <!-- ROW B: big headline -->
+  <text x="140" y="430" class="mono" font-size="28" fill="#1d4ed8">CONTENTS</text>
+  <text x="132" y="710" class="d8" font-size="300" fill="#17202d" textLength="1920" lengthAdjust="spacingAndGlyphs">PACK IT. SHIP IT.</text>
+
+  <rect x="90" y="760" width="2020" height="8" fill="#17202d"/>
+
+  <!-- ROW C: yellow band with code + holiday ask -->
+  <rect x="90" y="768" width="2020" height="452" fill="#f2b705"/>
+  <text x="140" y="836" class="mono" font-size="28" fill="#3b2c00">PROMO CODE</text>
+  <text x="132" y="1090" class="d8" font-size="300" fill="#3b2c00" textLength="880" lengthAdjust="spacingAndGlyphs">MOCS10</text>
+  <text x="140" y="1170" class="sans6" font-size="38" fill="#3b2c00">One per customer · Name + phone required</text>
+
+  <rect x="1110" y="810" width="6" height="370" fill="#3b2c00"/>
+
+  <text x="1160" y="836" class="mono" font-size="28" fill="#3b2c00">ROUTE · HOLIDAY</text>
+  <text x="1160" y="960" class="d6" font-size="110" fill="#3b2c00" textLength="560" lengthAdjust="spacingAndGlyphs">ASK US ABOUT</text>
+  <text x="1160" y="1090" class="d8" font-size="130" fill="#0f1d3a" textLength="900" lengthAdjust="spacingAndGlyphs">HOLIDAY SHIPPING</text>
+  <text x="1160" y="1170" class="sans" font-size="38" fill="#3b2c00">Bring gifts in early. We'll box them up.</text>
+
+  <rect x="90" y="1220" width="2020" height="8" fill="#17202d"/>
+
+  <!-- ROW D: services + location -->
+  <text x="140" y="1300" class="mono" font-size="28" fill="#1d4ed8">SERVICES</text>
+  <text x="140" y="1440" class="d8" font-size="124" fill="#0f1d3a" textLength="1380" lengthAdjust="spacingAndGlyphs">SHIPPING · PACKING · MAILBOXES</text>
+  <text x="140" y="1530" class="mono" font-size="40" fill="#17202d">UPS · FEDEX · DHL · USPS</text>
+
+  <rect x="1590" y="1228" width="6" height="382" fill="#17202d"/>
+
+  <text x="1640" y="1300" class="mono" font-size="28" fill="#1d4ed8">DELIVER TO</text>
+  <text x="1640" y="1390" class="d6" font-size="72" fill="#17202d" textLength="420" lengthAdjust="spacingAndGlyphs">FORSYTHE AVE &amp;</text>
+  <text x="1640" y="1466" class="d6" font-size="72" fill="#17202d">N 18TH ST</text>
+  <text x="1640" y="1542" class="d6" font-size="72" fill="#17202d">MONROE</text>
+</svg>

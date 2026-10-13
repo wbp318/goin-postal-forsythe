@@ -1,7 +1,7 @@
 <title>Forsythe Coupon Counter</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
 <style>
-/* Layout: counter-terminal. Redeem form and verdict on the left, tallies and log on the right; stacks on phones. */
+/* Layout: counter terminal with three tabs (Redeem, Results, Ad calendar); each tab is a two-column grid that stacks on phones. */
 :root {
   --bg: #eef1f3;
   --paper: #ffffff;
@@ -17,6 +17,8 @@
   --bad: #b42318;
   --bad-bg: #fde8e6;
   --warn-bg: #fff4d1;
+  --bar: #1d4ed8;
+  --bar-2: #f2b705;
   --display: "Barlow Condensed", "Arial Narrow", "Avenir Next Condensed", "Helvetica Neue", Impact, sans-serif;
   --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "IBM Plex Mono", Consolas, "SF Mono", Menlo, monospace;
@@ -25,17 +27,19 @@
   :root:not([data-theme="light"]) {
     --bg: #0f141b; --paper: #18202b; --ink: #e8ecf1; --muted: #9aa6b4; --rule: #2c3644;
     --navy: #0b1530; --accent: #7aa2ff; --signal: #f5c533; --signal-ink: #2a1f00;
-    --ok: #5cc796; --ok-bg: #12301f; --bad: #ff8a80; --bad-bg: #3a1714; --warn-bg: #3a2f0c; color-scheme: dark;
+    --ok: #5cc796; --ok-bg: #12301f; --bad: #ff8a80; --bad-bg: #3a1714; --warn-bg: #3a2f0c;
+    --bar: #7aa2ff; --bar-2: #f5c533; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0f141b; --paper: #18202b; --ink: #e8ecf1; --muted: #9aa6b4; --rule: #2c3644;
   --navy: #0b1530; --accent: #7aa2ff; --signal: #f5c533; --signal-ink: #2a1f00;
-  --ok: #5cc796; --ok-bg: #12301f; --bad: #ff8a80; --bad-bg: #3a1714; --warn-bg: #3a2f0c; color-scheme: dark;
+  --ok: #5cc796; --ok-bg: #12301f; --bad: #ff8a80; --bad-bg: #3a1714; --warn-bg: #3a2f0c;
+  --bar: #7aa2ff; --bar-2: #f5c533; color-scheme: dark;
 }
 * { box-sizing: border-box; }
 body { background: var(--bg); color: var(--ink); font: 400 16px/1.5 var(--body); }
-.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 48px; display: grid; gap: 20px; }
+.wrap { max-width: 1160px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 48px; display: grid; gap: 18px; }
 header.top { background: var(--navy); color: #fff; display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 8px 20px; padding: 16px 20px; border-bottom: 6px solid var(--signal); }
 header.top h1 { margin: 0; font: 800 clamp(1.9rem, 5vw, 2.6rem)/1 var(--display); text-transform: uppercase; letter-spacing: .01em; }
 header.top p { margin: 4px 0 0; color: #c9d2e3; font-size: .92rem; }
@@ -44,8 +48,14 @@ header.top .tag { color: var(--signal); }
 .status { font: 500 .78rem/1.2 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: #c9d2e3; }
 .status b { color: var(--signal); font-weight: 500; }
 
+nav.tabs { display: flex; gap: 0; border-bottom: 2px solid var(--ink); overflow-x: auto; }
+nav.tabs button { font: 800 1.15rem/1 var(--display); text-transform: uppercase; letter-spacing: .03em; background: transparent; color: var(--muted); border: 0; border-bottom: 4px solid transparent; padding: 12px 16px 10px; cursor: pointer; white-space: nowrap; }
+nav.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--signal); }
+nav.tabs button:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+
 .grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 20px; align-items: start; }
 @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+.stack { display: grid; gap: 20px; min-width: 0; }
 .card { background: var(--paper); border: 1px solid var(--rule); padding: 20px; display: grid; gap: 16px; min-width: 0; }
 .card.form { border: 2px solid var(--ink); }
 h2 { margin: 0; font: 800 1.6rem/1.05 var(--display); text-transform: uppercase; }
@@ -53,32 +63,38 @@ h3 { margin: 0; font: 600 1.15rem/1.1 var(--display); text-transform: uppercase;
 p { margin: 0; }
 
 form { display: grid; gap: 14px; }
-.field { display: grid; gap: 6px; }
-.field label { font: 500 .76rem/1.2 var(--mono); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
-.field label .req { color: var(--bad); }
+.field { display: grid; gap: 6px; min-width: 0; }
+.field label, .lbl { font: 500 .76rem/1.2 var(--mono); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.req { color: var(--bad); }
 .row2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
-@media (max-width: 520px) { .row2 { grid-template-columns: 1fr; } }
-input[type=text], input[type=tel], input[type=email] {
-  width: 100%; font: 500 1.05rem/1.2 var(--body); color: var(--ink); background: var(--bg);
-  border: 1px solid var(--rule); border-bottom: 2px solid var(--ink); padding: 11px 12px; border-radius: 0;
+.row3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 560px) { .row2, .row3 { grid-template-columns: 1fr; } }
+input[type=text], input[type=tel], input[type=email], input[type=date], input[type=number], select, textarea {
+  width: 100%; font: 500 1rem/1.25 var(--body); color: var(--ink); background: var(--bg);
+  border: 1px solid var(--rule); border-bottom: 2px solid var(--ink); padding: 10px 12px; border-radius: 0;
 }
+textarea { min-height: 64px; resize: vertical; }
 input#code { font: 800 1.6rem/1 var(--display); letter-spacing: .04em; text-transform: uppercase; }
-input:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
-input[aria-invalid="true"] { border-bottom-color: var(--bad); }
+input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
+[aria-invalid="true"] { border-bottom-color: var(--bad) !important; }
 .hint { font-size: .84rem; color: var(--muted); }
-.err { font-size: .84rem; color: var(--bad); min-height: 0; }
+.err { font-size: .84rem; color: var(--bad); }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip { font: 500 .8rem/1 var(--mono); letter-spacing: .05em; padding: 8px 10px; border: 1px solid var(--rule); background: var(--paper); color: var(--ink); cursor: pointer; }
 .chip:hover { border-color: var(--accent); }
 .chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .check { display: flex; gap: 10px; align-items: flex-start; font-size: .92rem; }
 .check input { width: 20px; height: 20px; accent-color: var(--accent); margin-top: 2px; flex: none; }
+.consent { background: var(--warn-bg); border-left: 4px solid var(--signal); padding: 10px 12px; display: grid; gap: 8px; }
+.consent q { font-style: normal; font-weight: 600; }
 button.primary { font: 800 1.35rem/1 var(--display); text-transform: uppercase; letter-spacing: .03em; background: var(--signal); color: var(--signal-ink); border: 0; padding: 16px 18px; cursor: pointer; }
 button.primary:hover { filter: brightness(1.05); }
 button.primary:disabled { opacity: .5; cursor: not-allowed; }
-button.primary:focus-visible, button.ghost:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 button.ghost { font: 500 .8rem/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; background: transparent; color: var(--ink); border: 1px solid var(--rule); padding: 9px 12px; cursor: pointer; }
 button.ghost:hover { border-color: var(--ink); }
+button.ghost.danger { color: var(--bad); border-color: var(--bad); }
+button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.btnrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 
 .verdict { padding: 16px; display: grid; gap: 4px; border-left: 6px solid var(--muted); background: var(--bg); }
 .verdict strong { font: 800 1.7rem/1 var(--display); text-transform: uppercase; }
@@ -87,30 +103,70 @@ button.ghost:hover { border-color: var(--ink); }
 .verdict.bad { border-color: var(--bad); background: var(--bad-bg); }
 .verdict.bad strong { color: var(--bad); }
 .verdict.warn { border-color: var(--signal); background: var(--warn-bg); }
+.badge { display: inline-block; font: 500 .72rem/1 var(--mono); letter-spacing: .05em; text-transform: uppercase; padding: 5px 8px; background: var(--navy); color: var(--signal); }
 
 .tallies { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
-.tally { border: 1px solid var(--rule); padding: 12px; display: grid; gap: 2px; }
+.tally { border: 1px solid var(--rule); padding: 12px; display: grid; gap: 2px; align-content: start; }
 .tally b { font: 800 2.2rem/1 var(--display); font-variant-numeric: tabular-nums; }
 .tally.off { opacity: .55; }
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 720px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.kpi { border: 1px solid var(--rule); background: var(--paper); padding: 14px; display: grid; gap: 4px; align-content: start; }
+.kpi b { font: 800 2.4rem/1 var(--display); font-variant-numeric: tabular-nums; }
 .logbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; justify-content: space-between; }
-.logbar .field { flex: 1 1 200px; }
 .scroll { overflow-x: auto; max-height: 460px; overflow-y: auto; border: 1px solid var(--rule); }
+.scroll.free { max-height: none; }
 table { border-collapse: collapse; width: 100%; font-size: .9rem; }
 th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
 th { position: sticky; top: 0; background: var(--paper); font: 500 .7rem/1.2 var(--mono); text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
 td.code { font: 500 .85rem var(--mono); }
-td.num { font-variant-numeric: tabular-nums; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .empty { padding: 18px; color: var(--muted); font-size: .92rem; }
 .rules { font-size: .88rem; color: var(--muted); display: grid; gap: 4px; }
 .rules ul { margin: 0; padding-left: 18px; display: grid; gap: 2px; }
 details.admin summary { cursor: pointer; font: 600 1.05rem/1.1 var(--display); text-transform: uppercase; }
 details.admin[open] { display: grid; gap: 12px; }
-.codes-list { display: grid; gap: 8px; }
 .code-row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between; border: 1px solid var(--rule); padding: 10px 12px; }
 .code-row span.c { font: 800 1.2rem/1 var(--display); }
-.pill { font: 500 .7rem/1 var(--mono); padding: 4px 7px; border: 1px solid currentColor; text-transform: uppercase; letter-spacing: .05em; }
-.pill.on { color: var(--ok); }
-.pill.offp { color: var(--muted); }
+.pill { display: inline-block; font: 500 .7rem/1 var(--mono); padding: 4px 7px; border: 1px solid currentColor; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+.pill.on, .pill.running { color: var(--ok); }
+.pill.offp, .pill.ended { color: var(--muted); }
+.pill.planned { color: var(--accent); }
+.pill.booked { color: var(--signal-ink); background: var(--signal); border-color: var(--signal); }
+.pill.due { color: var(--bad); }
+
+/* Results charts */
+.chart svg { width: 100%; height: auto; display: block; }
+.chart text { font-family: var(--mono); font-size: 11px; fill: var(--muted); }
+.chart .val { fill: var(--ink); font-size: 12px; }
+.chart .gridl { stroke: var(--rule); stroke-width: 1; }
+.chart .bar { fill: var(--bar); }
+.chart .bar.alt { fill: var(--bar-2); }
+.chart .end { fill: var(--bar-2); stroke: var(--paper); stroke-width: 2; }
+
+/* Calendar */
+.timeline { overflow-x: auto; border: 1px solid var(--rule); background: var(--paper); }
+.tl { display: grid; min-width: 760px; }
+.tl-head, .tl-row { display: grid; grid-template-columns: 210px repeat(8, minmax(0, 1fr)); align-items: center; }
+.tl-head div { font: 500 .7rem/1 var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding: 8px 6px; border-bottom: 1px solid var(--rule); border-left: 1px solid var(--rule); }
+.tl-head div:first-child { border-left: 0; }
+.tl-row { position: relative; border-bottom: 1px solid var(--rule); min-height: 38px; }
+.tl-row .nm { padding: 8px 10px; font-size: .86rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tl-track { grid-column: 2 / -1; position: relative; height: 38px; background-image: linear-gradient(to right, var(--rule) 1px, transparent 1px); background-size: calc(100% / 8) 100%; }
+.tl-bar { position: absolute; top: 10px; height: 18px; background: var(--accent); min-width: 6px; }
+.tl-bar.booked, .tl-bar.running { background: var(--signal); }
+.tl-bar.ended { background: var(--muted); }
+.tl-today { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--bad); }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: .84rem; color: var(--muted); }
+.legend i { display: inline-block; width: 14px; height: 10px; margin-right: 6px; vertical-align: middle; }
+.placements { display: grid; gap: 10px; }
+.pl { border: 1px solid var(--rule); background: var(--paper); padding: 14px; display: grid; gap: 8px; }
+.pl-top { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; }
+.pl-top h3 { font-size: 1.25rem; }
+.pl-meta { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 6px 16px; font-size: .9rem; }
+.pl-meta span.k { display: block; }
+.pl-meta a { color: var(--accent); word-break: break-word; }
+.confirm { background: var(--bad-bg); padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
 
@@ -124,96 +180,182 @@ details.admin[open] { display: grid; gap: 12px; }
     <span class="status" id="status">Connecting…</span>
   </header>
 
-  <div class="grid">
-    <section class="card form" aria-labelledby="redeemH">
-      <h2 id="redeemH">Redeem a code</h2>
-      <form id="redeemForm" novalidate>
-        <div class="field">
-          <label for="code">Code <span class="req">*</span></label>
-          <input type="text" id="code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="MOCS10" required>
-          <div class="chips" id="codeChips" aria-label="Active codes"></div>
-          <span class="err" id="codeErr"></span>
-        </div>
-        <div class="field">
-          <label for="name">Customer name <span class="req">*</span></label>
-          <input type="text" id="name" autocomplete="off" placeholder="First and last name" required>
-          <span class="err" id="nameErr"></span>
-        </div>
-        <div class="row2">
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button type="button" role="tab" id="tab-redeem" aria-controls="panel-redeem" aria-selected="true">Redeem</button>
+    <button type="button" role="tab" id="tab-results" aria-controls="panel-results" aria-selected="false">Results</button>
+    <button type="button" role="tab" id="tab-calendar" aria-controls="panel-calendar" aria-selected="false">Ad calendar</button>
+  </nav>
+
+  <!-- ================= REDEEM ================= -->
+  <section id="panel-redeem" role="tabpanel" aria-labelledby="tab-redeem">
+    <div class="grid">
+      <section class="card form" aria-labelledby="redeemH">
+        <h2 id="redeemH">Redeem a code</h2>
+        <form id="redeemForm" novalidate>
           <div class="field">
-            <label for="phone">Phone <span class="req">*</span></label>
-            <input type="tel" id="phone" autocomplete="off" inputmode="tel" placeholder="(318) 555-0123" required>
-            <span class="err" id="phoneErr"></span>
+            <label for="code">Code <span class="req">*</span></label>
+            <input type="text" id="code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="MOCS10" required>
+            <div class="chips" id="codeChips" aria-label="Active codes"></div>
+            <span class="err" id="codeErr"></span>
           </div>
           <div class="field">
-            <label for="email">Email (optional)</label>
-            <input type="email" id="email" autocomplete="off" placeholder="name@example.com">
-            <span class="err" id="emailErr"></span>
+            <label for="name">Customer name <span class="req">*</span></label>
+            <input type="text" id="name" autocomplete="off" placeholder="First and last name" required>
+            <span class="err" id="nameErr"></span>
           </div>
-        </div>
-        <label class="check"><input type="checkbox" id="idChecked"> I checked that the name matches the customer in front of me.</label>
-        <button type="submit" class="primary" id="redeemBtn" disabled>Redeem code</button>
-      </form>
-      <div class="verdict" id="verdict" aria-live="polite">
-        <strong>Ready</strong>
-        <span id="verdictMsg">Type the customer's code, name and phone, then press Redeem.</span>
-      </div>
-      <div class="rules">
-        <span class="tag">House rules</span>
-        <ul>
-          <li>One use per code per customer, checked by phone number.</li>
-          <li>Name and a 10-digit phone number are required.</li>
-          <li>Only codes listed as active are accepted.</li>
-        </ul>
-      </div>
-    </section>
-
-    <div style="display:grid;gap:20px;min-width:0">
-      <section class="card" aria-labelledby="talH">
-        <div class="logbar"><h2 id="talH">Redemptions by code</h2><span class="tag" id="totalTag">0 total</span></div>
-        <div class="tallies" id="tallies"><div class="empty">Codes appear here once they're set up.</div></div>
-      </section>
-
-      <section class="card" aria-labelledby="logH">
-        <div class="logbar">
-          <h3 id="logH">Redemption log</h3>
-          <button type="button" class="ghost" id="exportBtn" hidden>Export CSV</button>
-        </div>
-        <div class="field">
-          <label for="search">Look up a customer</label>
-          <input type="text" id="search" autocomplete="off" placeholder="Name, phone or code">
-        </div>
-        <div class="scroll">
-          <table>
-            <thead><tr><th>When</th><th>Code</th><th>Customer</th><th>Phone</th><th>By</th></tr></thead>
-            <tbody id="logBody"><tr><td colspan="5" class="empty">No redemptions yet. The first one you enter shows up here.</td></tr></tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="card" id="adminCard" hidden>
-        <details class="admin">
-          <summary>Manage codes</summary>
-          <div class="codes-list" id="codesList"></div>
-          <form id="addCodeForm" novalidate>
-            <div class="row2">
-              <div class="field"><label for="newCode">New code</label><input type="text" id="newCode" autocomplete="off" placeholder="WOSSMAN10"></div>
-              <div class="field"><label for="newLabel">Where it runs</label><input type="text" id="newLabel" autocomplete="off" placeholder="Wossman program ad"></div>
+          <div class="row2">
+            <div class="field">
+              <label for="phone">Phone <span class="req">*</span></label>
+              <input type="tel" id="phone" autocomplete="off" inputmode="tel" placeholder="(318) 555-0123" required>
+              <span class="err" id="phoneErr"></span>
             </div>
-            <span class="err" id="newCodeErr"></span>
-            <button type="submit" class="ghost">Add code</button>
-          </form>
-        </details>
+            <div class="field">
+              <label for="email">Email (optional)</label>
+              <input type="email" id="email" autocomplete="off" placeholder="name@example.com">
+              <span class="err" id="emailErr"></span>
+            </div>
+          </div>
+          <div class="consent">
+            <span>Say to the customer: <q>We save your name and number only to keep each code to one use per customer. We won't share it.</q></span>
+            <label class="check"><input type="checkbox" id="consent"> The customer said OK.</label>
+          </div>
+          <label class="check"><input type="checkbox" id="idChecked"> I checked that the name matches the customer in front of me.</label>
+          <button type="submit" class="primary" id="redeemBtn" disabled>Redeem code</button>
+        </form>
+        <div class="verdict" id="verdict" aria-live="polite">
+          <strong>Ready</strong>
+          <span id="verdictMsg">Type the customer's code, name and phone, then press Redeem.</span>
+        </div>
+        <div class="rules">
+          <span class="tag">House rules</span>
+          <ul>
+            <li>One use per code per customer, checked by phone number.</li>
+            <li>Name and a 10-digit phone number are required, and the customer must say OK.</li>
+            <li>Only codes listed as active are accepted.</li>
+          </ul>
+        </div>
+      </section>
+
+      <div class="stack">
+        <section class="card" aria-labelledby="talH">
+          <div class="logbar"><h2 id="talH">Redemptions by code</h2><span class="tag" id="totalTag">0 total</span></div>
+          <div class="tallies" id="tallies"><div class="empty">Codes appear here once they're set up.</div></div>
+        </section>
+
+        <section class="card" aria-labelledby="logH">
+          <div class="logbar">
+            <h3 id="logH">Redemption log</h3>
+            <button type="button" class="ghost" id="exportBtn" hidden>Export CSV</button>
+          </div>
+          <div class="field">
+            <label for="search">Look up a customer</label>
+            <input type="text" id="search" autocomplete="off" placeholder="Name, phone or code">
+          </div>
+          <div class="scroll">
+            <table>
+              <thead><tr><th>When</th><th>Code</th><th>Customer</th><th>Phone</th><th>Visit</th><th>By</th></tr></thead>
+              <tbody id="logBody"><tr><td colspan="6" class="empty">No redemptions yet. The first one you enter shows up here.</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card" id="adminCard" hidden>
+          <details class="admin">
+            <summary>Manage codes</summary>
+            <div class="placements" id="codesList"></div>
+            <form id="addCodeForm" novalidate>
+              <div class="row2">
+                <div class="field"><label for="newCode">New code</label><input type="text" id="newCode" autocomplete="off" placeholder="WOSSMAN10"></div>
+                <div class="field"><label for="newLabel">Where it runs</label><input type="text" id="newLabel" autocomplete="off" placeholder="Wossman program ad"></div>
+              </div>
+              <span class="err" id="newCodeErr"></span>
+              <button type="submit" class="ghost">Add code</button>
+            </form>
+          </details>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= RESULTS ================= -->
+  <section id="panel-results" role="tabpanel" aria-labelledby="tab-results" hidden>
+    <div class="stack">
+      <div class="kpis">
+        <div class="kpi"><span class="tag">Redemptions</span><b id="kRed">0</b><span class="hint">All codes</span></div>
+        <div class="kpi"><span class="tag">Customers</span><b id="kCust">0</b><span class="hint">Different phone numbers</span></div>
+        <div class="kpi"><span class="tag">Came back</span><b id="kRet">0</b><span class="hint" id="kRetHint">Used 2 or more codes</span></div>
+        <div class="kpi"><span class="tag">Spend tracked</span><b id="kSpend">$0</b><span class="hint" id="kSpendHint">From the ad calendar</span></div>
+      </div>
+      <div class="grid">
+        <section class="card" aria-labelledby="cpcH">
+          <h2 id="cpcH">Cost per customer</h2>
+          <p class="hint">Actual cost of every placement using a code, divided by that code's redemptions. Enter costs in the Ad calendar tab.</p>
+          <div class="scroll free">
+            <table>
+              <thead><tr><th>Code</th><th>Where</th><th class="num">Customers</th><th class="num">Spend</th><th class="num">Per customer</th></tr></thead>
+              <tbody id="cpcBody"><tr><td colspan="5" class="empty">Numbers appear after the first redemption.</td></tr></tbody>
+            </table>
+          </div>
+          <p class="hint" id="untracked"></p>
+        </section>
+        <section class="card chart" aria-labelledby="wkH">
+          <h2 id="wkH">Redemptions per week</h2>
+          <p class="hint">Last 12 weeks. Blue is new customers, yellow is customers who came back.</p>
+          <div id="weekChart"><div class="empty">The chart fills in as codes are redeemed.</div></div>
+        </section>
+      </div>
+      <section class="card chart" aria-labelledby="newRetH">
+        <h2 id="newRetH">New vs returning, by code</h2>
+        <div id="codeChart"><div class="empty">The chart fills in as codes are redeemed.</div></div>
       </section>
     </div>
-  </div>
+  </section>
+
+  <!-- ================= CALENDAR ================= -->
+  <section id="panel-calendar" role="tabpanel" aria-labelledby="tab-calendar" hidden>
+    <div class="stack">
+      <section class="card" aria-labelledby="tlH">
+        <div class="logbar"><h2 id="tlH">Ad calendar</h2><span class="tag" id="dueTag"></span></div>
+        <div class="legend"><span><i style="background:var(--accent)"></i>Planned</span><span><i style="background:var(--signal)"></i>Booked or running</span><span><i style="background:var(--muted)"></i>Ended</span><span><i style="background:var(--bad);width:2px"></i>Today</span></div>
+        <div class="timeline"><div class="tl" id="timeline"><div class="empty">Placements appear here once they're added.</div></div></div>
+      </section>
+      <section class="card" aria-labelledby="plH">
+        <h2 id="plH">Placements</h2>
+        <div class="placements" id="plList"><div class="empty">No placements yet.</div></div>
+      </section>
+      <section class="card form" id="plFormCard" hidden aria-labelledby="plFormH">
+        <h2 id="plFormH">Add a placement</h2>
+        <form id="plForm" novalidate>
+          <div class="row2">
+            <div class="field"><label for="plName">Placement <span class="req">*</span></label><input type="text" id="plName" autocomplete="off" placeholder="Neville fence banner"></div>
+            <div class="field"><label for="plVenue">Venue</label><input type="text" id="plVenue" autocomplete="off" placeholder="Neville High"></div>
+          </div>
+          <div class="row3">
+            <div class="field"><label for="plCode">Code</label><select id="plCode"><option value="">No code</option></select></div>
+            <div class="field"><label for="plStatus">Status</label><select id="plStatus"><option value="planned">Planned</option><option value="booked">Booked</option><option value="running">Running</option><option value="ended">Ended</option></select></div>
+            <div class="field"><label for="plCost">Actual cost ($)</label><input type="number" id="plCost" min="0" step="1" inputmode="numeric" placeholder="Leave blank until booked"></div>
+          </div>
+          <div class="row3">
+            <div class="field"><label for="plStart">Starts</label><input type="date" id="plStart"></div>
+            <div class="field"><label for="plEnd">Ends</label><input type="date" id="plEnd"></div>
+            <div class="field"><label for="plRenew">Renew or book by</label><input type="date" id="plRenew"></div>
+          </div>
+          <div class="field"><label for="plContact">Contact</label><input type="text" id="plContact" autocomplete="off" placeholder="Booster club, phone or web page"></div>
+          <div class="field"><label for="plNotes">Notes</label><textarea id="plNotes" placeholder="Estimate, size, deadlines"></textarea></div>
+          <span class="err" id="plErr"></span>
+          <div class="btnrow"><button type="submit" class="primary" id="plSave">Save placement</button><button type="button" class="ghost" id="plCancel" hidden>Cancel edit</button></div>
+        </form>
+      </section>
+    </div>
+  </section>
 </div>
 
 <script>
 (function () {
   "use strict";
   var $ = function (id) { return document.getElementById(id); };
-  var state = { db: null, user: null, uid: null, canWrite: null, admin: false, codes: {}, rows: [], names: {}, busy: false, readOnly: false };
+  var state = { db: null, user: null, uid: null, canWrite: null, admin: false, codes: {}, rows: [], placements: [], names: {}, busy: false, readOnly: false, editId: null, confirmId: null };
+  var TL_START = new Date(2026, 9, 1), TL_MONTHS = 8; // Oct 2026 to May 2027
 
   function normCode(s) { return String(s || "").toUpperCase().replace(/[^A-Z0-9]/g, ""); }
   function normPhone(s) {
@@ -228,6 +370,10 @@ details.admin[open] { display: grid; gap: 12px; }
     if (isNaN(d)) return "";
     return d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + " " + d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
   }
+  function parseDay(s) { if (!s || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return null; var p = s.split("-"); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function fmtDay(s) { var d = parseDay(s); return d ? d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"; }
+  function money(n) { return "$" + Math.round(n).toLocaleString("en-US"); }
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function setStatus(html) { $("status").innerHTML = html; }
   function verdict(kind, title, msg) {
     var v = $("verdict");
@@ -235,24 +381,44 @@ details.admin[open] { display: grid; gap: 12px; }
     v.querySelector("strong").textContent = title;
     $("verdictMsg").textContent = msg;
   }
-  function fieldErr(id, msg) {
-    $(id + "Err").textContent = msg || "";
-    $(id).setAttribute("aria-invalid", msg ? "true" : "false");
-  }
-  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function fieldErr(id, msg) { $(id + "Err").textContent = msg || ""; $(id).setAttribute("aria-invalid", msg ? "true" : "false"); }
+  function sortedCodes() { return Object.keys(state.codes).map(function (k) { return state.codes[k]; }).sort(function (a, b) { return a.code < b.code ? -1 : 1; }); }
 
-  // ---------- rendering ----------
-  function activeCodes() {
-    return Object.keys(state.codes).map(function (k) { return state.codes[k]; })
-      .sort(function (a, b) { return a.code < b.code ? -1 : 1; });
+  // Visit numbers: each redemption's position among that phone's redemptions (1 = first visit).
+  function visitIndex() {
+    var byPhone = {};
+    state.rows.slice().sort(function (a, b) { return a.redeemedAt < b.redeemedAt ? -1 : 1; }).forEach(function (r) {
+      byPhone[r.phone] = (byPhone[r.phone] || 0) + 1;
+      r._visit = byPhone[r.phone];
+    });
+    return byPhone;
   }
+
+  // ---------- tabs ----------
+  var TABS = ["redeem", "results", "calendar"];
+  function showTab(name) {
+    TABS.forEach(function (t) {
+      $("tab-" + t).setAttribute("aria-selected", t === name ? "true" : "false");
+      $("tab-" + t).tabIndex = t === name ? 0 : -1;
+      $("panel-" + t).hidden = t !== name;
+    });
+    try { localStorage.setItem("cc-tab", name); } catch (e) {}
+  }
+  TABS.forEach(function (t, i) {
+    $("tab-" + t).addEventListener("click", function () { showTab(t); });
+    $("tab-" + t).addEventListener("keydown", function (e) {
+      if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+      var n = TABS[(i + (e.key === "ArrowRight" ? 1 : TABS.length - 1)) % TABS.length];
+      showTab(n); $("tab-" + n).focus();
+    });
+  });
+  (function () { var t = null; try { t = localStorage.getItem("cc-tab"); } catch (e) {} if (location.hash && TABS.indexOf(location.hash.slice(1)) >= 0) t = location.hash.slice(1); showTab(TABS.indexOf(t) >= 0 ? t : "redeem"); })();
+
+  // ---------- redeem tab rendering ----------
   function renderChips() {
-    var box = $("codeChips");
-    box.textContent = "";
-    activeCodes().filter(function (c) { return c.active; }).forEach(function (c) {
-      var b = document.createElement("button");
-      b.type = "button"; b.className = "chip"; b.textContent = c.code;
-      b.title = c.label || "";
+    var box = $("codeChips"); box.textContent = "";
+    sortedCodes().filter(function (c) { return c.active; }).forEach(function (c) {
+      var b = el("button", "chip", c.code); b.type = "button"; b.title = c.label || "";
       b.addEventListener("click", function () { $("code").value = c.code; fieldErr("code", ""); $("name").focus(); });
       box.appendChild(b);
     });
@@ -260,92 +426,270 @@ details.admin[open] { display: grid; gap: 12px; }
   function renderTallies() {
     var counts = {};
     state.rows.forEach(function (r) { counts[r.code] = (counts[r.code] || 0) + 1; });
-    var list = activeCodes();
+    var list = sortedCodes();
     Object.keys(counts).forEach(function (c) { if (!state.codes[c]) list.push({ code: c, label: "Code no longer listed", active: false }); });
-    var box = $("tallies");
-    box.textContent = "";
-    if (!list.length) { box.innerHTML = '<div class="empty">Codes appear here once they\'re set up.</div>'; }
+    var box = $("tallies"); box.textContent = "";
+    if (!list.length) box.appendChild(el("div", "empty", "Codes appear here once they're set up."));
     list.forEach(function (c) {
-      var d = document.createElement("div");
-      d.className = "tally" + (c.active ? "" : " off");
-      var t = document.createElement("span"); t.className = "tag"; t.textContent = c.code;
-      var n = document.createElement("b"); n.textContent = counts[c.code] || 0;
-      var l = document.createElement("span"); l.className = "hint"; l.textContent = c.label || "";
-      d.appendChild(t); d.appendChild(n); d.appendChild(l);
+      var d = el("div", "tally" + (c.active ? "" : " off"));
+      d.appendChild(el("span", "tag", c.code)); d.appendChild(el("b", "", String(counts[c.code] || 0))); d.appendChild(el("span", "hint", c.label || ""));
       box.appendChild(d);
     });
-    $("totalTag").textContent = state.rows.length + (state.rows.length === 1 ? " total" : " total");
+    $("totalTag").textContent = state.rows.length + " total";
   }
   function renderLog() {
-    var q = $("search").value.trim().toLowerCase();
-    var qd = q.replace(/\D/g, "");
+    var q = $("search").value.trim().toLowerCase(), qd = q.replace(/\D/g, "");
     var rows = state.rows.filter(function (r) {
       if (!q) return true;
-      return (r.name || "").toLowerCase().indexOf(q) >= 0 || r.code.toLowerCase().indexOf(q) >= 0 ||
-        (qd.length >= 3 && r.phone.indexOf(qd) >= 0);
+      return (r.name || "").toLowerCase().indexOf(q) >= 0 || r.code.toLowerCase().indexOf(q) >= 0 || (qd.length >= 3 && r.phone.indexOf(qd) >= 0);
     });
-    var body = $("logBody");
-    body.textContent = "";
+    var body = $("logBody"); body.textContent = "";
     if (!rows.length) {
-      var tr = document.createElement("tr"), td = document.createElement("td");
-      td.colSpan = 5; td.className = "empty";
-      td.textContent = state.rows.length ? "No redemptions match that search." : "No redemptions yet. The first one you enter shows up here.";
-      tr.appendChild(td); body.appendChild(tr); return;
+      var tr = el("tr"), td = el("td", "empty", state.rows.length ? "No redemptions match that search." : "No redemptions yet. The first one you enter shows up here.");
+      td.colSpan = 6; tr.appendChild(td); body.appendChild(tr); return;
     }
     rows.slice(0, 300).forEach(function (r) {
-      var tr = document.createElement("tr");
-      [[fmtWhen(r.redeemedAt), "num"], [r.code, "code"], [r.name, ""], [fmtPhone(r.phone), "num"], [state.names[r.redeemedBy] || "Staff", ""]]
-        .forEach(function (c) { var td = document.createElement("td"); td.textContent = c[0]; if (c[1]) td.className = c[1]; tr.appendChild(td); });
+      var tr = el("tr");
+      tr.appendChild(el("td", "num", fmtWhen(r.redeemedAt)));
+      tr.appendChild(el("td", "code", r.code));
+      tr.appendChild(el("td", "", r.name));
+      tr.appendChild(el("td", "num", fmtPhone(r.phone)));
+      var v = el("td"); v.appendChild(r._visit > 1 ? el("span", "badge", "Visit " + r._visit) : el("span", "hint", "First"));
+      tr.appendChild(v);
+      tr.appendChild(el("td", "", state.names[r.redeemedBy] || "Staff"));
       body.appendChild(tr);
     });
   }
   function renderAdmin() {
-    if (!state.admin) { $("adminCard").hidden = true; return; }
-    $("adminCard").hidden = false;
-    var box = $("codesList");
-    box.textContent = "";
-    activeCodes().forEach(function (c) {
-      var row = document.createElement("div"); row.className = "code-row";
-      var left = document.createElement("div");
-      var cs = document.createElement("span"); cs.className = "c"; cs.textContent = c.code;
-      var lab = document.createElement("div"); lab.className = "hint"; lab.textContent = c.label || "";
-      left.appendChild(cs); left.appendChild(lab);
-      var right = document.createElement("div"); right.style.display = "flex"; right.style.gap = "8px"; right.style.alignItems = "center";
-      var pill = document.createElement("span"); pill.className = "pill " + (c.active ? "on" : "offp"); pill.textContent = c.active ? "Active" : "Paused";
-      var btn = document.createElement("button"); btn.type = "button"; btn.className = "ghost"; btn.textContent = c.active ? "Pause" : "Turn on";
+    $("adminCard").hidden = !state.admin;
+    $("plFormCard").hidden = !state.admin;
+    if (!state.admin) return;
+    var box = $("codesList"); box.textContent = "";
+    var list = sortedCodes();
+    if (!list.length) box.appendChild(el("div", "empty", "No codes yet."));
+    list.forEach(function (c) {
+      var row = el("div", "code-row"), left = el("div");
+      left.appendChild(el("span", "c", c.code)); left.appendChild(el("div", "hint", c.label || ""));
+      var right = el("div", "btnrow");
+      right.appendChild(el("span", "pill " + (c.active ? "on" : "offp"), c.active ? "Active" : "Paused"));
+      var btn = el("button", "ghost", c.active ? "Pause" : "Turn on"); btn.type = "button";
       btn.addEventListener("click", function () { toggleCode(c, btn); });
-      right.appendChild(pill); right.appendChild(btn);
-      row.appendChild(left); row.appendChild(right);
-      box.appendChild(row);
+      right.appendChild(btn); row.appendChild(left); row.appendChild(right); box.appendChild(row);
     });
-    if (!activeCodes().length) box.innerHTML = '<div class="empty">No codes yet. Add MOCS10 and TIGERS10 below.</div>';
+    var sel = $("plCode"), keep = sel.value; sel.textContent = "";
+    var none = el("option", "", "No code"); none.value = ""; sel.appendChild(none);
+    list.forEach(function (c) { var o = el("option", "", c.code + (c.label ? " · " + c.label : "")); o.value = c.code; sel.appendChild(o); });
+    sel.value = keep;
   }
-  function renderAll() { renderChips(); renderTallies(); renderLog(); renderAdmin(); updateButton(); }
+
+  // ---------- results tab ----------
+  function spendByCode() {
+    var s = {}, untracked = 0, unpriced = 0;
+    state.placements.forEach(function (p) {
+      var cost = typeof p.cost === "number" && p.cost >= 0 ? p.cost : null;
+      if (cost == null) { unpriced++; return; }
+      if (p.code) s[p.code] = (s[p.code] || 0) + cost; else untracked += cost;
+    });
+    return { byCode: s, untracked: untracked, unpriced: unpriced };
+  }
+  function renderResults() {
+    var byPhone = visitIndex();
+    var phones = Object.keys(byPhone);
+    var returning = phones.filter(function (p) { return byPhone[p] > 1; }).length;
+    var sp = spendByCode();
+    var tracked = Object.keys(sp.byCode).reduce(function (a, k) { return a + sp.byCode[k]; }, 0);
+    $("kRed").textContent = state.rows.length;
+    $("kCust").textContent = phones.length;
+    $("kRet").textContent = returning;
+    $("kRetHint").textContent = phones.length ? Math.round(100 * returning / phones.length) + "% used 2 or more codes" : "Used 2 or more codes";
+    $("kSpend").textContent = money(tracked + sp.untracked);
+    $("kSpendHint").textContent = sp.unpriced ? sp.unpriced + " placement" + (sp.unpriced === 1 ? "" : "s") + " still need a cost" : "From the ad calendar";
+
+    var counts = {}, newC = {}, retC = {};
+    state.rows.forEach(function (r) { counts[r.code] = (counts[r.code] || 0) + 1; if (r._visit > 1) retC[r.code] = (retC[r.code] || 0) + 1; else newC[r.code] = (newC[r.code] || 0) + 1; });
+    var codes = sortedCodes().map(function (c) { return c.code; });
+    Object.keys(counts).forEach(function (c) { if (codes.indexOf(c) < 0) codes.push(c); });
+
+    var body = $("cpcBody"); body.textContent = "";
+    if (!codes.length) { var tr0 = el("tr"), td0 = el("td", "empty", "Numbers appear after the first redemption."); td0.colSpan = 5; tr0.appendChild(td0); body.appendChild(tr0); }
+    codes.forEach(function (code) {
+      var n = counts[code] || 0, spend = sp.byCode[code];
+      var tr = el("tr");
+      tr.appendChild(el("td", "code", code));
+      tr.appendChild(el("td", "", (state.codes[code] && state.codes[code].label) || ""));
+      tr.appendChild(el("td", "num", String(n)));
+      tr.appendChild(el("td", "num", spend != null ? money(spend) : "—"));
+      tr.appendChild(el("td", "num", spend != null && n ? money(spend / n) : spend != null ? "No customers yet" : "Add cost"));
+      body.appendChild(tr);
+    });
+    $("untracked").textContent = sp.untracked ? money(sp.untracked) + " went to placements with no code (billboards, fence banners). Ask customers how they heard about you to track those." : "";
+
+    renderWeekChart();
+    renderCodeChart(codes, newC, retC);
+  }
+  function renderWeekChart() {
+    var box = $("weekChart"); box.textContent = "";
+    if (!state.rows.length) { box.appendChild(el("div", "empty", "The chart fills in as codes are redeemed.")); return; }
+    var now = new Date(), day = (now.getDay() + 6) % 7;
+    var thisMon = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day);
+    var weeks = [];
+    for (var i = 11; i >= 0; i--) weeks.push({ start: new Date(thisMon.getFullYear(), thisMon.getMonth(), thisMon.getDate() - 7 * i), n: 0, r: 0 });
+    state.rows.forEach(function (r) {
+      var t = new Date(r.redeemedAt);
+      for (var j = weeks.length - 1; j >= 0; j--) { if (t >= weeks[j].start) { if (r._visit > 1) weeks[j].r++; else weeks[j].n++; break; } }
+    });
+    var max = Math.max(1, Math.max.apply(null, weeks.map(function (w) { return w.n + w.r; })));
+    var W = 560, H = 220, L = 34, B = 30, T = 12, bw = (W - L - 8) / 12;
+    var ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H); svg.setAttribute("role", "img"); svg.setAttribute("aria-label", "Redemptions per week, last 12 weeks");
+    function add(tag, attrs, text) { var e = document.createElementNS(ns, tag); Object.keys(attrs).forEach(function (k) { e.setAttribute(k, attrs[k]); }); if (text != null) e.textContent = text; svg.appendChild(e); return e; }
+    var step = max <= 5 ? 1 : Math.ceil(max / 4);
+    for (var g = 0; g <= max; g += step) { var y = H - B - (H - B - T) * g / max; add("line", { x1: L, x2: W - 4, y1: y, y2: y, "class": "gridl" }); add("text", { x: L - 6, y: y + 4, "text-anchor": "end" }, String(g)); }
+    weeks.forEach(function (w, k) {
+      var x = L + k * bw + 4, hN = (H - B - T) * w.n / max, hR = (H - B - T) * w.r / max;
+      if (w.n) add("rect", { x: x, y: H - B - hN, width: bw - 8, height: hN, "class": "bar" });
+      if (w.r) add("rect", { x: x, y: H - B - hN - hR, width: bw - 8, height: hR, "class": "bar alt" });
+      if (w.n + w.r) add("text", { x: x + (bw - 8) / 2, y: H - B - hN - hR - 4, "text-anchor": "middle", "class": "val" }, String(w.n + w.r));
+      if (k % 2 === 1 || k === 11) add("text", { x: x + (bw - 8) / 2, y: H - 10, "text-anchor": "middle" }, w.start.toLocaleDateString("en-US", { month: "short", day: "numeric" }));
+    });
+    box.appendChild(svg);
+  }
+  function renderCodeChart(codes, newC, retC) {
+    var box = $("codeChart"); box.textContent = "";
+    var data = codes.filter(function (c) { return (newC[c] || 0) + (retC[c] || 0) > 0; });
+    if (!data.length) { box.appendChild(el("div", "empty", "The chart fills in as codes are redeemed.")); return; }
+    var max = Math.max.apply(null, data.map(function (c) { return (newC[c] || 0) + (retC[c] || 0); }));
+    var rowH = 34, W = 760, L = 110, R = 50, H = data.length * rowH + 10;
+    var ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H); svg.setAttribute("role", "img"); svg.setAttribute("aria-label", "New and returning customers by code");
+    function add(tag, attrs, text) { var e = document.createElementNS(ns, tag); Object.keys(attrs).forEach(function (k) { e.setAttribute(k, attrs[k]); }); if (text != null) e.textContent = text; svg.appendChild(e); return e; }
+    data.forEach(function (c, i) {
+      var y = 6 + i * rowH, n = newC[c] || 0, r = retC[c] || 0, span = W - L - R;
+      var wn = span * n / max, wr = span * r / max;
+      add("text", { x: L - 10, y: y + 18, "text-anchor": "end", "class": "val" }, c);
+      if (n) add("rect", { x: L, y: y + 4, width: wn, height: 20, "class": "bar" });
+      if (r) add("rect", { x: L + wn, y: y + 4, width: wr, height: 20, "class": "bar alt" });
+      add("text", { x: L + wn + wr + 8, y: y + 18 }, n + " new" + (r ? " · " + r + " back" : ""));
+    });
+    box.appendChild(svg);
+  }
+
+  // ---------- calendar tab ----------
+  function renderCalendar() {
+    var tl = $("timeline"); tl.textContent = "";
+    var list = state.placements.slice().sort(function (a, b) { return (a.start || "9999") < (b.start || "9999") ? -1 : 1; });
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    var due = list.filter(function (p) { var d = parseDay(p.renewBy); return d && p.status !== "ended" && (d - today) / 864e5 <= 30; });
+    $("dueTag").textContent = due.length ? due.length + " deadline" + (due.length === 1 ? "" : "s") + " in the next 30 days" : "";
+
+    if (!list.length) { tl.appendChild(el("div", "empty", "Placements appear here once they're added.")); }
+    else {
+      var head = el("div", "tl-head"); head.appendChild(el("div", "", "Placement"));
+      for (var m = 0; m < TL_MONTHS; m++) head.appendChild(el("div", "", new Date(TL_START.getFullYear(), TL_START.getMonth() + m, 1).toLocaleDateString("en-US", { month: "short", year: "2-digit" })));
+      tl.appendChild(head);
+      var tlEnd = new Date(TL_START.getFullYear(), TL_START.getMonth() + TL_MONTHS, 1), span = tlEnd - TL_START;
+      var pos = function (d) { return Math.max(0, Math.min(1, (d - TL_START) / span)) * 100; };
+      list.forEach(function (p) {
+        var row = el("div", "tl-row"), nm = el("div", "nm", p.name); nm.title = p.name; row.appendChild(nm);
+        var track = el("div", "tl-track"), s = parseDay(p.start), e = parseDay(p.end) || s;
+        if (s) { var bar = el("div", "tl-bar " + (p.status || "planned")); bar.style.left = pos(s) + "%"; bar.style.width = Math.max(0.8, pos(e) - pos(s)) + "%"; bar.title = fmtDay(p.start) + " to " + fmtDay(p.end); track.appendChild(bar); }
+        if (today >= TL_START && today < tlEnd) { var t = el("div", "tl-today"); t.style.left = pos(today) + "%"; track.appendChild(t); }
+        row.appendChild(track); tl.appendChild(row);
+      });
+    }
+
+    var box = $("plList"); box.textContent = "";
+    if (!list.length) box.appendChild(el("div", "empty", state.admin ? "No placements yet. Add the first one below." : "No placements yet."));
+    list.forEach(function (p) {
+      var card = el("div", "pl"), top = el("div", "pl-top"), h = el("h3", "", p.name);
+      var pills = el("div", "btnrow");
+      var st = p.status || "planned";
+      pills.appendChild(el("span", "pill " + st, { planned: "Planned", booked: "Booked", running: "Running", ended: "Ended" }[st] || st));
+      if (p.code) pills.appendChild(el("span", "pill planned", p.code));
+      var rd = parseDay(p.renewBy);
+      if (rd && st !== "ended") { var days = Math.round((rd - today) / 864e5); if (days <= 30) pills.appendChild(el("span", "pill due", days < 0 ? "Deadline passed" : days === 0 ? "Due today" : "Due in " + days + " days")); }
+      top.appendChild(h); top.appendChild(pills); card.appendChild(top);
+      var meta = el("div", "pl-meta");
+      function kv(k, v, isNode) { var d = el("div"); d.appendChild(el("span", "k tag", k)); if (isNode) d.appendChild(v); else d.appendChild(el("span", "", v)); meta.appendChild(d); }
+      kv("Venue", p.venue || "—");
+      kv("Runs", p.start ? fmtDay(p.start) + (p.end ? " to " + fmtDay(p.end) : "") : "Dates not set");
+      kv("Book or renew by", p.renewBy ? fmtDay(p.renewBy) : "—");
+      kv("Actual cost", typeof p.cost === "number" ? money(p.cost) : "Not entered");
+      if (p.contact) {
+        if (/^https?:\/\/\S+$/.test(p.contact)) { var a = el("a", "", p.contact.replace(/^https?:\/\//, "")); a.href = p.contact; a.target = "_blank"; a.rel = "noopener"; kv("Contact", a, true); }
+        else kv("Contact", p.contact);
+      }
+      card.appendChild(meta);
+      if (p.notes) card.appendChild(el("p", "hint", p.notes));
+      if (state.admin) {
+        var actions = el("div", "btnrow");
+        var eb = el("button", "ghost", "Edit"); eb.type = "button"; eb.addEventListener("click", function () { editPlacement(p); });
+        var db = el("button", "ghost danger", "Delete"); db.type = "button"; db.addEventListener("click", function () { state.confirmId = p.id; renderCalendar(); });
+        actions.appendChild(eb); actions.appendChild(db); card.appendChild(actions);
+        if (state.confirmId === p.id) {
+          var c = el("div", "confirm"); c.appendChild(el("span", "", "Delete " + p.name + "? This can't be undone."));
+          var yes = el("button", "ghost danger", "Delete it"); yes.type = "button"; yes.addEventListener("click", function () { deletePlacement(p); });
+          var no = el("button", "ghost", "Keep it"); no.type = "button"; no.addEventListener("click", function () { state.confirmId = null; renderCalendar(); });
+          c.appendChild(yes); c.appendChild(no); card.appendChild(c);
+        }
+      }
+      box.appendChild(card);
+    });
+  }
+  function editPlacement(p) {
+    state.editId = p.id;
+    $("plFormH").textContent = "Edit placement";
+    $("plName").value = p.name || ""; $("plVenue").value = p.venue || ""; $("plCode").value = p.code || "";
+    $("plStatus").value = p.status || "planned"; $("plCost").value = typeof p.cost === "number" ? p.cost : "";
+    $("plStart").value = p.start || ""; $("plEnd").value = p.end || ""; $("plRenew").value = p.renewBy || "";
+    $("plContact").value = p.contact || ""; $("plNotes").value = p.notes || "";
+    $("plCancel").hidden = false; $("plSave").textContent = "Save changes";
+    $("plFormCard").scrollIntoView({ behavior: "smooth", block: "start" }); $("plName").focus();
+  }
+  function resetPlForm() {
+    state.editId = null; $("plForm").reset(); $("plFormH").textContent = "Add a placement";
+    $("plCancel").hidden = true; $("plSave").textContent = "Save placement"; $("plErr").textContent = "";
+  }
+  async function savePlacement(ev) {
+    ev.preventDefault();
+    var name = $("plName").value.trim(), start = $("plStart").value, end = $("plEnd").value, costRaw = $("plCost").value.trim();
+    $("plErr").textContent = "";
+    if (!name) { $("plErr").textContent = "Give the placement a name."; return; }
+    if (start && end && end < start) { $("plErr").textContent = "The end date is before the start date."; return; }
+    var cost = costRaw === "" ? null : Number(costRaw);
+    if (cost != null && (!isFinite(cost) || cost < 0)) { $("plErr").textContent = "Cost must be a dollar amount, or blank."; return; }
+    var rec = { name: name, venue: $("plVenue").value.trim(), code: $("plCode").value, status: $("plStatus").value, cost: cost,
+      start: start, end: end, renewBy: $("plRenew").value, contact: $("plContact").value.trim(), notes: $("plNotes").value.trim(), updatedAt: new Date().toISOString() };
+    $("plSave").disabled = true;
+    try {
+      var col = state.db.collection("placements");
+      await (state.editId ? col.doc(state.editId) : col.doc()).set(rec);
+      resetPlForm();
+    } catch (e) { $("plErr").textContent = e && e.code === "invalid_argument" ? "Only editors can change the ad calendar." : "Couldn't save. Check the connection and try again."; }
+    finally { $("plSave").disabled = false; }
+  }
+  async function deletePlacement(p) {
+    try { await state.db.collection("placements").doc(p.id).delete(); state.confirmId = null; if (state.editId === p.id) resetPlForm(); }
+    catch (e) { state.confirmId = null; renderCalendar(); }
+  }
+
+  function renderAll() { visitIndex(); renderChips(); renderTallies(); renderLog(); renderAdmin(); renderResults(); renderCalendar(); updateButton(); }
 
   async function resolveNames() {
     if (!state.user) return;
     var ids = [];
     state.rows.forEach(function (r) { if (r.redeemedBy && !(r.redeemedBy in state.names) && ids.indexOf(r.redeemedBy) < 0) ids.push(r.redeemedBy); });
     if (!ids.length) return;
-    try {
-      var ps = await state.user.profiles(ids);
-      ids.forEach(function (id) { state.names[id] = (ps[id] && ps[id].name) || "Staff"; });
-      renderLog();
-    } catch (e) { /* names are a convenience */ }
+    try { var ps = await state.user.profiles(ids); ids.forEach(function (id) { state.names[id] = (ps[id] && ps[id].name) || "Staff"; }); renderLog(); } catch (e) {}
   }
-
-  function updateButton() {
-    $("redeemBtn").disabled = !state.db || state.busy || state.readOnly;
-  }
+  function updateButton() { $("redeemBtn").disabled = !state.db || state.busy || state.readOnly; }
 
   // ---------- redeem ----------
   async function redeem(ev) {
     ev.preventDefault();
     if (!state.db || state.busy || state.readOnly) return;
-    var code = normCode($("code").value);
-    var name = $("name").value.trim().replace(/\s+/g, " ");
-    var phone = normPhone($("phone").value);
-    var email = $("email").value.trim();
+    var code = normCode($("code").value), name = $("name").value.trim().replace(/\s+/g, " ");
+    var phone = normPhone($("phone").value), email = $("email").value.trim();
     var ok = true;
     fieldErr("code", ""); fieldErr("name", ""); fieldErr("phone", ""); fieldErr("email", "");
     if (!code) { fieldErr("code", "Enter the code the customer gave you."); ok = false; }
@@ -354,11 +698,9 @@ details.admin[open] { display: grid; gap: 12px; }
     if (name.length < 2 || !/[a-z]/i.test(name)) { fieldErr("name", "Enter the customer's name."); ok = false; }
     if (!phone) { fieldErr("phone", "Enter a 10-digit US phone number."); ok = false; }
     if (!validEmail(email)) { fieldErr("email", "That email doesn't look right. Fix it or leave it blank."); ok = false; }
-    if (!$("idChecked").checked) { ok = false; verdict("warn", "Check the name", "Confirm the name matches the customer, then press Redeem."); }
-    if (!ok) {
-      if ($("idChecked").checked) verdict("bad", "Not redeemed", "Fix the highlighted fields.");
-      return;
-    }
+    if (!ok) { verdict("bad", "Not redeemed", "Fix the highlighted fields."); return; }
+    if (!$("consent").checked) { verdict("warn", "Ask first", "Read the line in the yellow box to the customer and tick \"The customer said OK.\""); return; }
+    if (!$("idChecked").checked) { verdict("warn", "Check the name", "Confirm the name matches the customer, then press Redeem."); return; }
 
     state.busy = true; updateButton();
     verdict("", "Checking…", "Looking up " + code + " for " + fmtPhone(phone) + ".");
@@ -366,43 +708,37 @@ details.admin[open] { display: grid; gap: 12px; }
     try {
       // Hold a short lease so two counters can't redeem the same code for the same customer at once.
       var lease = await ref.acquire({ holder: state.uid || ("tab-" + Math.random().toString(36).slice(2)), ttlMs: 8000 });
-      if (!lease.acquired) {
-        verdict("bad", "Try again", "Someone else is redeeming this code for this customer right now. Wait a few seconds and look them up in the log.");
-        return;
-      }
+      if (!lease.acquired) { verdict("bad", "Try again", "Someone else is redeeming this code for this customer right now. Wait a few seconds and look them up in the log."); return; }
       var snap = await ref.get();
       var prior = snap.exists ? snap.data() : null;
       if (prior && prior.phone) {
         verdict("bad", "Already used", code + " was already redeemed for " + fmtPhone(phone) + " (" + (prior.name || "customer") + ") on " + fmtWhen(prior.redeemedAt) + ". It can only be used once.");
         return;
       }
-      var rec = {
-        code: code, label: state.codes[code].label || "", name: name, phone: phone,
-        email: email || "", redeemedAt: new Date().toISOString(), redeemedBy: state.uid || ""
-      };
-      await ref.set(rec);
-      verdict("ok", "Approved", code + " redeemed for " + name + ", " + fmtPhone(phone) + ". Apply the offer.");
-      $("name").value = ""; $("phone").value = ""; $("email").value = ""; $("code").value = ""; $("idChecked").checked = false;
-      $("code").focus();
+      var earlier = state.rows.filter(function (r) { return r.phone === phone; });
+      await ref.set({ code: code, label: state.codes[code].label || "", name: name, phone: phone, email: email || "",
+        consent: true, redeemedAt: new Date().toISOString(), redeemedBy: state.uid || "" });
+      var back = earlier.length ? " Returning customer: visit " + (earlier.length + 1) + " (used " + earlier.map(function (r) { return r.code; }).join(", ") + " before)." : " First visit with a code.";
+      verdict("ok", earlier.length ? "Approved · welcome back" : "Approved", code + " redeemed for " + name + ", " + fmtPhone(phone) + "." + back + " Apply the offer.");
+      ["name", "phone", "email", "code"].forEach(function (id) { $(id).value = ""; });
+      $("idChecked").checked = false; $("consent").checked = false; $("code").focus();
     } catch (e) {
       var c = e && e.code;
-      if (c === "invalid_argument") {
-        state.readOnly = true;
-        verdict("bad", "Can't save", "Your access to this page is view-only. Ask the owner to make you a Contributor.");
-      } else if (c === "quota_exceeded") {
-        verdict("bad", "Storage full", "The redemption log is full. Export the CSV, then ask the owner to clear old entries.");
-      } else if (c === "revoked") {
-        state.readOnly = true;
-        verdict("bad", "Disconnected", "This page lost its connection. Reload to continue.");
-      } else {
-        verdict("bad", "Not saved", "Couldn't reach the log. Check the connection and press Redeem again. Nothing was recorded.");
-      }
-    } finally {
-      state.busy = false; updateButton();
-    }
+      if (c === "invalid_argument") { state.readOnly = true; verdict("bad", "Can't save", "Your access to this page is view-only. Ask the owner to make you a Contributor."); }
+      else if (c === "quota_exceeded") verdict("bad", "Storage full", "The redemption log is full. Export the CSV, then ask the owner to clear old entries.");
+      else if (c === "revoked") { state.readOnly = true; verdict("bad", "Disconnected", "This page lost its connection. Reload to continue."); }
+      else verdict("bad", "Not saved", "Couldn't reach the log. Check the connection and press Redeem again. Nothing was recorded.");
+    } finally { state.busy = false; updateButton(); }
+  }
+  function phoneLookup() {
+    var p = normPhone($("phone").value);
+    if (!p) return;
+    $("phone").value = fmtPhone(p);
+    var earlier = state.rows.filter(function (r) { return r.phone === p; });
+    if (earlier.length && !state.busy) verdict("warn", "Returning customer", (earlier[0].name || "This customer") + " has redeemed " + earlier.map(function (r) { return r.code; }).join(", ") + " before. Each code still works only once.");
   }
 
-  // ---------- admin ----------
+  // ---------- codes admin ----------
   async function toggleCode(c, btn) {
     btn.disabled = true;
     try { await state.db.collection("codes").doc(c.code).update({ active: !c.active }); }
@@ -415,10 +751,8 @@ details.admin[open] { display: grid; gap: 12px; }
     $("newCodeErr").textContent = "";
     if (code.length < 3 || code.length > 20) { $("newCodeErr").textContent = "Use 3 to 20 letters and numbers."; return; }
     if (state.codes[code]) { $("newCodeErr").textContent = code + " already exists."; return; }
-    try {
-      await state.db.collection("codes").doc(code).set({ code: code, label: label, active: true, createdAt: new Date().toISOString() });
-      $("newCode").value = ""; $("newLabel").value = "";
-    } catch (e) { $("newCodeErr").textContent = "Couldn't add the code. Only editors can manage codes."; }
+    try { await state.db.collection("codes").doc(code).set({ code: code, label: label, active: true, createdAt: new Date().toISOString() }); $("newCode").value = ""; $("newLabel").value = ""; }
+    catch (e) { $("newCodeErr").textContent = "Couldn't add the code. Only editors can manage codes."; }
   }
 
   // ---------- export ----------
@@ -426,19 +760,19 @@ details.admin[open] { display: grid; gap: 12px; }
     var dl = await window.claude.use("downloads");
     if (!dl) return;
     var esc = function (v) { v = String(v == null ? "" : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
-    var lines = [["redeemed_at", "code", "where", "name", "phone", "email", "staff"].join(",")];
-    state.rows.forEach(function (r) {
-      lines.push([r.redeemedAt, r.code, r.label, r.name, fmtPhone(r.phone), r.email, state.names[r.redeemedBy] || ""].map(esc).join(","));
-    });
-    try { await dl.save({ filename: "forsythe-redemptions.csv", data: lines.join("\n") + "\n" }); } catch (e) { /* viewer declined or unavailable */ }
+    var lines = [["redeemed_at", "code", "where", "name", "phone", "email", "visit_number", "staff"].join(",")];
+    state.rows.forEach(function (r) { lines.push([r.redeemedAt, r.code, r.label, r.name, fmtPhone(r.phone), r.email, r._visit, state.names[r.redeemedBy] || ""].map(esc).join(",")); });
+    try { await dl.save({ filename: "forsythe-redemptions.csv", data: lines.join("\n") + "\n" }); } catch (e) {}
   }
 
   // ---------- boot ----------
   $("redeemForm").addEventListener("submit", redeem);
   $("addCodeForm").addEventListener("submit", addCode);
+  $("plForm").addEventListener("submit", savePlacement);
+  $("plCancel").addEventListener("click", resetPlForm);
   $("search").addEventListener("input", renderLog);
   $("exportBtn").addEventListener("click", exportCsv);
-  $("phone").addEventListener("blur", function () { var p = normPhone(this.value); if (p) this.value = fmtPhone(p); });
+  $("phone").addEventListener("blur", phoneLookup);
   $("code").addEventListener("input", function () { fieldErr("code", ""); });
 
   async function boot() {
@@ -459,26 +793,25 @@ details.admin[open] { display: grid; gap: 12px; }
       try { state.admin = await state.user.canEdit(); } catch (e) {}
       try { state.canWrite = await state.user.can("data.write"); } catch (e) {}
     }
-    if (state.canWrite === false) {
-      state.readOnly = true;
-      verdict("warn", "View only", "You can see the log but not redeem codes. Ask the owner to make you a Contributor.");
-    }
+    if (state.canWrite === false) { state.readOnly = true; verdict("warn", "View only", "You can see the log but not redeem codes. Ask the owner to make you a Contributor."); }
     setStatus("<b>Live</b> · shared with the counter team");
-    updateButton();
+    renderAll();
 
+    var dead = function () { setStatus("<b>Disconnected</b> · reload the page"); };
     state.db.collection("codes").onSnapshot(function (snap) {
       var next = {};
       snap.docs.forEach(function (d) { var v = d.data(); if (v && v.code) next[v.code] = { code: v.code, label: v.label || "", active: v.active !== false }; });
-      state.codes = next;
-      renderAll();
-    }, function () { setStatus("<b>Disconnected</b> · reload the page"); });
-
+      state.codes = next; renderAll();
+    }, dead);
     state.db.collection("redemptions").orderBy("redeemedAt", "desc").limit(1000).onSnapshot(function (snap) {
-      state.rows = snap.docs.map(function (d) { return d.data(); }).filter(function (r) { return r && r.code && r.phone; });
+      state.rows = snap.docs.map(function (d) { return Object.assign({}, d.data()); }).filter(function (r) { return r && r.code && r.phone; });
       $("exportBtn").hidden = !state.rows.length;
+      renderAll(); resolveNames();
+    }, dead);
+    state.db.collection("placements").onSnapshot(function (snap) {
+      state.placements = snap.docs.map(function (d) { var v = Object.assign({}, d.data()); v.id = d.id; return v; }).filter(function (p) { return p.name; });
       renderAll();
-      resolveNames();
-    }, function () { setStatus("<b>Disconnected</b> · reload the page"); });
+    }, dead);
   }
   boot();
 })();

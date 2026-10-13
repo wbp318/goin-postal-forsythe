@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg text-rendering="geometricPrecision" xmlns="http://www.w3.org/2000/svg" width="2400" height="900" viewBox="0 0 2400 900">
+  <title>Goin' Postal Forsythe - Neville Junior High fence banner</title>
+  <!-- Concept: the whole banner is a shipping label addressed to the Neville Junior High Tigers, FROM the store on Forsythe. Grommet-safe margin 72px; text margin 96px. -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&amp;family=IBM+Plex+Sans:wght@400;600&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap');
+    .d8 { font-family: 'Barlow Condensed', 'Arial Narrow', 'Avenir Next Condensed', Impact, sans-serif; font-weight: 800; text-transform: uppercase; }
+    .d6 { font-family: 'Barlow Condensed', 'Arial Narrow', 'Avenir Next Condensed', Impact, sans-serif; font-weight: 600; text-transform: uppercase; }
+    .body { font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif; font-weight: 600; }
+    .mono { font-family: 'IBM Plex Mono', Consolas, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace; font-weight: 500; letter-spacing: 0.12em; }
+  </style>
+
+  <!-- Ground -->
+  <rect x="0" y="0" width="2400" height="900" fill="#0f1d3a"/>
+
+  <!-- Shipping label panel -->
+  <rect x="96" y="84" width="1544" height="732" fill="#ffffff"/>
+  <rect x="120" y="108" width="1496" height="684" fill="none" stroke="#17202d" stroke-width="5"/>
+
+  <!-- SHIP TO field -->
+  <text x="152" y="150" class="mono" font-size="30" fill="#17202d">SHIP TO</text>
+  <rect x="120" y="168" width="1496" height="5" fill="#17202d"/>
+
+  <text x="152" y="258" class="d8" font-size="96" fill="#17202d" textLength="960" lengthAdjust="spacingAndGlyphs">PROUD NEIGHBOR OF THE</text>
+  <text x="152" y="442" class="d8" font-size="190" fill="#1d4ed8" textLength="1400" lengthAdjust="spacingAndGlyphs">NEVILLE JR. HIGH</text>
+  <text x="152" y="556" class="d8" font-size="106" fill="#17202d">TIGERS</text>
+  <text x="560" y="548" class="mono" font-size="32" fill="#17202d" textLength="780" lengthAdjust="spacingAndGlyphs">CHEERING ON EVERY TIGER FAMILY</text>
+
+  <!-- FROM field -->
+  <rect x="120" y="580" width="1496" height="5" fill="#17202d"/>
+  <text x="152" y="630" class="mono" font-size="30" fill="#17202d">FROM</text>
+  <text x="152" y="704" class="d6" font-size="60" fill="#17202d" textLength="776" lengthAdjust="spacingAndGlyphs">Forsythe Ave &amp; N 18th St · Monroe</text>
+  <text x="152" y="760" class="body" font-size="30" fill="#17202d">Goin' Postal · your neighbor on Forsythe</text>
+
+  <!-- Tracking barcode -->
+  <g fill="#17202d">
+    <rect x="1200" y="612" width="8" height="136"/>
+    <rect x="1214" y="612" width="4" height="136"/>
+    <rect x="1224" y="612" width="12" height="136"/>
+    <rect x="1240" y="612" width="4" height="136"/>
+    <rect x="1252" y="612" width="6" height="136"/>
+    <rect x="1262" y="612" width="10" height="136"/>
+    <rect x="1278" y="612" width="4" height="136"/>
+    <rect x="1286" y="612" width="4" height="136"/>
+    <rect x="1298" y="612" width="14" height="136"/>
+    <rect x="1318" y="612" width="6" height="136"/>
+    <rect x="1328" y="612" width="4" height="136"/>
+    <rect x="1338" y="612" width="8" height="136"/>
+    <rect x="1354" y="612" width="4" height="136"/>
+    <rect x="1362" y="612" width="12" height="136"/>
+    <rect x="1380" y="612" width="6" height="136"/>
+    <rect x="1390" y="612" width="4" height="136"/>
+    <rect x="1402" y="612" width="10" height="136"/>
+    <rect x="1416" y="612" width="4" height="136"/>
+    <rect x="1426" y="612" width="8" height="136"/>
+    <rect x="1440" y="612" width="4" height="136"/>
+    <rect x="1448" y="612" width="14" height="136"/>
+    <rect x="1470" y="612" width="6" height="136"/>
+    <rect x="1480" y="612" width="4" height="136"/>
+    <rect x="1490" y="612" width="10" height="136"/>
+    <rect x="1506" y="612" width="4" height="136"/>
+    <rect x="1518" y="612" width="8" height="136"/>
+    <rect x="1530" y="612" width="6" height="136"/>
+    <rect x="1542" y="612" width="12" height="136"/>
+    <rect x="1558" y="612" width="4" height="136"/>
+    <rect x="1568" y="612" width="8" height="136"/>
+  </g>
+  <text x="1200" y="778" class="mono" font-size="22" fill="#17202d">1Z NJH 0018 TIGERS</text>
+
+  <!-- Packing tape across the label's top-right corner -->
+  <g transform="translate(1640 84) rotate(40)">
+    <rect x="-170" y="-35" width="340" height="70" fill="#b98a55"/>
+    <rect x="-170" y="-35" width="340" height="4" fill="#9a7142"/>
+    <rect x="-170" y="31" width="340" height="4" fill="#9a7142"/>
+  </g>
+
+  <!-- Right column: logo slot + services -->
+  <rect x="1736" y="250" width="568" height="220" fill="none" stroke="#ffffff" stroke-width="3" stroke-dasharray="14 10"/>
+  <text x="2020" y="370" class="mono" font-size="26" fill="#ffffff" text-anchor="middle">OFFICIAL LOGO</text>
+
+  <text x="1736" y="556" class="d8" font-size="68" fill="#f2b705">SHIPPING</text>
+  <text x="1736" y="628" class="d8" font-size="68" fill="#f2b705">PACKING</text>
+  <text x="1736" y="700" class="d8" font-size="68" fill="#f2b705">MAILBOXES</text>
+  <text x="1736" y="770" class="d6" font-size="40" fill="#ffffff">UPS · FEDEX · DHL · USPS</text>
+</svg>

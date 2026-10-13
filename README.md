@@ -17,8 +17,10 @@ The store is open. This repo covers getting its name in front of local families:
 
 | Page | What it's for | Link |
 |---|---|---|
-| **Coupon Counter** | Redeem MOCS10, TIGERS10 and other codes, one use per customer | [Open Coupon Counter](https://claude.ai/artifact/1yb2fzWW61nSKtMiaUhNH6) |
+| **Coupon Counter** | Redeem codes once per customer, see cost per customer and returning customers, and keep the shared ad calendar | [Open Coupon Counter](https://claude.ai/artifact/1yb2fzWW61nSKtMiaUhNH6) |
 | **Marketing plan** | Flowcharts, sponsorship costs, billboard calculator | [Open the plan](https://claude.ai/artifact/8uW684TKgZYJ8CwDmX1CmJ) |
+
+What's being worked on, and what's done, is in **[AGENDA.md](AGENDA.md)**.
 
 Both pages are private. They open only for people the owner has shared them with, signed in to claude.ai. Share the Coupon Counter as **Contributor** with everyone who works the counter.
 
@@ -34,6 +36,8 @@ mindmap
     High schools
       Neville fence banner
       Program ad TIGERS10
+      Neville Jr High NJH10
+      St. Frederick STFRED10
       Scoreboard spot
     Roadside
       Poster billboard
@@ -72,7 +76,10 @@ Faces show how smooth each step feels (5 is best). The two flat faces mark small
 flowchart LR
   R["goin-postal-forsythe/"] --> A["launch-book.html<br/>marketing plan, flowcharts,<br/>billboard calculator"]
   R --> B["ad-concepts.html<br/>first-round concept sheet"]
-  R --> CC["coupon-counter.html<br/>one-time code redemption"]
+  R --> CC["coupon-counter.html<br/>redeem, results, ad calendar"]
+  R --> BK["brand-kit.html<br/>colors, fonts, layout rules"]
+  R --> AG["AGENDA.md<br/>what's done and what's next"]
+  R --> DOC["docs/promo-night-kit.md<br/>PA scripts and checklist"]
   R --> D["designs/"]
   R --> G[".gitattributes<br/>shows every language on GitHub"]
   D --> D0["index.html<br/>gallery of all designs"]
@@ -85,6 +92,10 @@ flowchart LR
   D --> D7["game-day-social.svg"]
   D --> D8["scoreboard-spot.svg"]
   D --> D9["counter-flyer.svg"]
+  D --> D10["school ads:<br/>neville-jr-high-*, st-frederick-*"]
+  D --> D11["holiday-deadlines.svg"]
+  D --> GD["game-day/<br/>one post per home game"]
+  D --> PN["promo-night/<br/>handout, table sign, post"]
   D --> P["png/<br/>one PNG per design,<br/>for WhatsApp and texts"]
   D --> F["pdf/counter-flyer.pdf<br/>print-ready"]
   R --> S["scripts/<br/>export and checks"]
@@ -136,7 +147,20 @@ Run the same check locally with `python scripts/check_designs.py`.
 | `designs/sponsor-badge.svg` | Social posts, programs, scoreboards | Square |
 | `designs/game-day-social.svg` | Instagram / Facebook | 1080 × 1350 |
 | `designs/scoreboard-spot.svg` | Football LED video board | 16:9 |
-| `designs/counter-flyer.svg` | Store counter handout | 8.5 × 11 in |
+| `designs/counter-flyer.svg` | Store counter handout, with a directions QR | 8.5 × 11 in |
+| `designs/neville-jr-high-fence-banner.svg` | Neville Junior High fence | 8 ft × 3 ft vinyl |
+| `designs/neville-jr-high-program-ad.svg` | Neville Junior High program or flyer, code NJH10 | 7.5 × 5 in |
+| `designs/st-frederick-fence-banner.svg` | St. Frederick fence | 8 ft × 3 ft vinyl |
+| `designs/st-frederick-program-ad.svg` | St. Frederick football program, code STFRED10 | 7.5 × 5 in |
+| `designs/holiday-deadlines.svg` | Counter sign: 2026 ship-by dates (USPS, FedEx; UPS write-in) | 8.5 × 11 in |
+| `designs/game-day/` | One ready-to-post game-day image per Moccasins home game | 1080 × 1350 |
+| `designs/promo-night/` | Promo night handout, table sign and social post (kit: `docs/promo-night-kit.md`) | Various |
+
+The program ads and counter flyer carry a QR code that opens the store's corner in Google Maps. To change the link, edit `MAP_URL` in `scripts/add_qr.py` and run it (`pip install segno` first).
+
+To add game-day posts, add a line to the `GAMES` list at the top of `scripts/make_game_posts.py` and run it. The Oct 30 and 31 opponents are still unconfirmed, so those posts say "Moccasins home game".
+
+Printers, sign shops and designers should start with **[brand-kit.html](brand-kit.html)**: colors, fonts, layout rules and file formats.
 
 Confirm the exact size with each team, school or sign company before final art. Every venue has its own specs.
 
@@ -182,7 +206,10 @@ flowchart LR
 | Monroe Moccasins | Sponsored promo night | $500–$1,500 |
 | Neville Tigers (0.6 mi) | Stadium fence banner, one year | $500–$1,000 |
 | Neville Tigers | Game-day program ad | $100–$400 |
-| West Monroe, St. Frederick, Carroll, Wossman (1.8–3.3 mi) | Fence banner or program ad, each | $150–$1,000 |
+| Neville Junior High (0.4 mi) | Fence banner, program or flyer | No published rates. Ask the Tiger Foundation (njhtigerfoundation@gmail.com) or the school office, and check school board sign rules first |
+| St. Frederick (2.0 mi) | Football program ad | Prices on the school's agreement page. The 2026 program closed May 22; 2027 sales open Feb 1, 2027 (sfhsfootballprogram@stfrederickhigh.org) |
+| St. Frederick (2.0 mi) | Track sponsorship (2025 packet) | $500 (announcements, social, program) or $1,000 (adds event signage). Contact jwier@stfrederickhigh.org |
+| West Monroe, Carroll, Wossman (1.8–3.3 mi) | Fence banner or program ad, each | $150–$1,000 |
 
 These ranges are estimates, not quotes. None of these teams publish prices. For comparison, C.E. Byrd in Shreveport charges $1,000 a season for a football banner. Moccasins sponsorships go through the [partner inquiry form](https://www.moccasinshockey.com/sponsors), and 103 Rocks (103.1 FM) carries every game on the radio.
 
@@ -200,6 +227,8 @@ quadrantChart
   Neville program ad: [0.12, 0.55]
   Neville fence banner: [0.25, 0.72]
   Other school banners: [0.2, 0.4]
+  Neville Jr High banner: [0.15, 0.62]
+  St Fred track sponsor: [0.22, 0.5]
   Moccasins promo night: [0.35, 0.78]
   Moccasins rink board: [0.5, 0.86]
   Junior poster billboard: [0.42, 0.45]
@@ -299,10 +328,13 @@ pie showData
 ## Redeeming codes
 
 Each code (MOCS10, TIGERS10) is good for **one use per customer**. The ads say so, and the counter enforces it with the **Coupon Counter** page on claude.ai (`coupon-counter.html`):
-- Staff type in the code, the customer's name and a 10-digit phone number. Email is optional.
+- Staff type in the code, the customer's name and a 10-digit phone number. Email is optional. Staff read a one-line consent note to the customer, who must say OK.
 - The page records the redemption and refuses any later use of the same code with the same phone number.
-- It shows a running count per code and a searchable log, and exports the log as CSV.
-- Only people the owner shares the page with as **Contributor** or higher can see customer info or redeem codes. Only **Editors** can add or pause codes.
+- It flags **returning customers** ("welcome back, visit 3") as soon as staff type the phone number.
+- The **Results** tab shows customers, returning customers, redemptions per week, and **cost per customer** for each code.
+- The **Ad calendar** tab lists every placement with dates, cost, book-by deadline and contact, on a timeline from October to May. Deadlines within 30 days are flagged.
+- It keeps a searchable log and exports it as CSV.
+- Only people the owner shares the page with as **Contributor** or higher can see customer info or redeem codes. Only **Editors** can add or pause codes and change the ad calendar.
 
 It runs in any modern browser (Chrome, Edge, Safari, Firefox) on Windows or Mac, signed in to claude.ai. Opening the local `.html` file won't connect to the log. Use the claude.ai link.
 

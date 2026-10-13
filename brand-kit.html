@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Forsythe Brand Kit</title>
+<meta name="description" content="Local campaign look for Goin' Postal at Forsythe Ave & N 18th St, Monroe: colors, type, the shipping-label layout, copy and print rules.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Brand kit for the Forsythe campaign. The page is built like the ads:
+   mono field labels in postal blue, thick ink rules, one yellow band. */
+:root{
+  --navy:#0f1d3a; --blue:#1d4ed8; --yellow:#f2b705; --yink:#3b2c00; --white:#ffffff;
+  --ink:#17202d; --kraft:#b98a55; --kraft-d:#9a7142; --muted:#5a6573;
+
+  --bg:#e9e6df;          /* warm counter-top grey, lets white labels read as paper */
+  --paper:#ffffff;
+  --text:#17202d;
+  --text-2:#5a6573;
+  --rule:#17202d;
+  --hair:#d4d0c7;
+  --field:#1d4ed8;
+  --wall:#dcd8cf;
+  --ok:#1d4ed8;
+  --no:#17202d;
+
+  --display:'Barlow Condensed','Arial Narrow','Avenir Next Condensed',Impact,sans-serif;
+  --sans:'IBM Plex Sans','Helvetica Neue',Arial,sans-serif;
+  --mono:'IBM Plex Mono',Consolas,'SF Mono',Menlo,'DejaVu Sans Mono',monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0a1430; --paper:#132447; --text:#eef1f6; --text-2:#a9b3c4;
+    --rule:#eef1f6; --hair:#2a3b62; --field:#8fb0ff; --wall:#0d1a3a; --ok:#8fb0ff; --no:#eef1f6;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0a1430; --paper:#132447; --text:#eef1f6; --text-2:#a9b3c4;
+  --rule:#eef1f6; --hair:#2a3b62; --field:#8fb0ff; --wall:#0d1a3a; --ok:#8fb0ff; --no:#eef1f6;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:400 16px/1.6 var(--sans);}
+img{max-width:100%;display:block}
+a{color:var(--field)}
+.wrap{max-width:1180px;margin:0 auto;padding:40px 24px 80px}
+
+/* ---------- shared label vocabulary ---------- */
+.field{font:500 .76rem/1.2 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--field);margin:0}
+.d8{font-family:var(--display);font-weight:800;text-transform:uppercase;line-height:.9;letter-spacing:.005em}
+.d6{font-family:var(--display);font-weight:600;text-transform:uppercase;line-height:1}
+.label{background:var(--paper);border:5px solid var(--rule);position:relative}
+.label > .row{padding:22px 28px}
+.label > .row + .row{border-top:5px solid var(--rule)}
+.tape{position:absolute;width:150px;height:40px;left:50%;top:-22px;transform:translateX(-50%);
+  background:var(--kraft);opacity:.9;border-top:3px solid var(--kraft-d);border-bottom:3px solid var(--kraft-d)}
+.slot{border:2px dashed var(--rule);display:grid;place-items:center;font:500 .78rem/1 var(--mono);letter-spacing:.12em;color:var(--text);min-height:90px;padding:10px;text-align:center}
+.barcode{height:56px;background:repeating-linear-gradient(90deg,var(--rule) 0 6px,transparent 6px 9px,var(--rule) 9px 11px,transparent 11px 16px,var(--rule) 16px 25px,transparent 25px 28px,var(--rule) 28px 30px,transparent 30px 35px)}
+
+/* ---------- masthead ---------- */
+.mast .row.top{display:grid;grid-template-columns:1fr 260px;gap:24px;align-items:center}
+.mast h1{margin:6px 0 2px;font:600 clamp(1.3rem,2.6vw,1.8rem)/1.2 var(--sans);text-transform:none}
+.mast .addr{margin:0;color:var(--text)}
+.band{background:var(--yellow);color:var(--yink);padding:26px 28px 18px !important}
+.band p.big{font:800 clamp(4rem,13vw,10.5rem)/.9 var(--display);text-transform:uppercase;margin:0;color:var(--yink)}
+.band p{margin:10px 0 0;font:600 1.05rem/1.4 var(--sans);color:var(--yink);max-width:62ch}
+.mast .meta{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+.mast .meta div p:last-child{margin:4px 0 0;font:600 .98rem/1.35 var(--sans)}
+.toc{display:flex;flex-wrap:wrap;gap:8px 18px;margin:0;padding:0;list-style:none}
+.toc a{font:500 .8rem/1.6 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--text);text-decoration:none;border-bottom:2px solid var(--yellow)}
+.toc a:hover{color:var(--field)}
+
+/* ---------- sections ---------- */
+section{margin-top:72px;scroll-margin-top:20px}
+.sec-head{display:grid;grid-template-columns:80px 1fr;gap:6px 20px;align-items:end;border-bottom:5px solid var(--rule);padding-bottom:12px;margin-bottom:28px}
+.sec-head .num{font:800 4.4rem/.8 var(--display);color:var(--yellow);-webkit-text-stroke:0}
+.sec-head h2{margin:0;font:800 clamp(2rem,4.4vw,3rem)/.95 var(--display);text-transform:uppercase}
+.sec-head .lede{grid-column:2;margin:6px 0 0;color:var(--text-2);max-width:72ch}
+h3{font:600 1.45rem/1.1 var(--display);text-transform:uppercase;letter-spacing:.02em;margin:0 0 8px}
+p{margin:0 0 12px}
+.muted{color:var(--text-2)}
+.grid{display:grid;gap:22px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.card{background:var(--paper);border:1px solid var(--hair);padding:20px}
+.card.rule{border:0;border-top:5px solid var(--rule);padding:16px 0 0;background:transparent}
+.figure{background:var(--wall);padding:18px;border:1px solid var(--hair)}
+.figure img{box-shadow:0 1px 0 rgba(0,0,0,.08),0 10px 24px -14px rgba(0,0,0,.45);margin:0 auto}
+.cap{display:flex;justify-content:space-between;gap:12px;margin-top:10px;font:500 .72rem/1.4 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--text-2)}
+.cap b{color:var(--text);font-weight:500}
+ul.tight{margin:0;padding-left:18px}
+ul.tight li{margin:4px 0}
+code,kbd{font:500 .88em var(--mono);background:color-mix(in srgb,var(--hair) 55%,transparent);padding:1px 6px;border-radius:2px}
+
+/* ---------- color ---------- */
+.swatch{background:var(--paper);border:1px solid var(--hair);display:grid;grid-template-rows:130px auto}
+.chip{position:relative;display:flex;align-items:flex-end;padding:10px 12px}
+.chip span{font:500 .72rem/1 var(--mono);letter-spacing:.1em;text-transform:uppercase}
+.sw-body{padding:14px 14px 16px}
+.sw-body h3{font-size:1.3rem;margin:0}
+.hex{font:500 .95rem/1.4 var(--mono);letter-spacing:.06em;margin:4px 0 8px;color:var(--text)}
+.sw-body p{font-size:.88rem;line-height:1.45;margin:0;color:var(--text-2)}
+.pairs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:22px}
+.pair{padding:16px;border:1px solid var(--hair);min-height:110px;display:flex;flex-direction:column;justify-content:space-between}
+.pair .d8{font-size:2.2rem}
+.pair small{font:500 .7rem/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.ratio{display:grid;grid-template-columns:repeat(20,1fr);height:22px;margin-top:22px;border:1px solid var(--hair)}
+
+/* ---------- type ---------- */
+.face{display:grid;grid-template-columns:240px 1fr;gap:24px;padding:22px 0;border-top:1px solid var(--hair)}
+.face:first-child{border-top:0;padding-top:0}
+.face .spec p{margin:2px 0;font-size:.9rem}
+.face .sample{min-width:0;overflow:hidden}
+.scale{width:100%;border-collapse:collapse;margin-top:12px}
+.scale th,.scale td{text-align:left;padding:10px 12px 10px 0;border-top:1px solid var(--hair);vertical-align:baseline}
+.scale th{font:500 .7rem/1.2 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--field);font-weight:500}
+.scale td.s{white-space:nowrap;overflow:hidden;text-overflow:clip;max-width:520px}
+.scale td.n{font:500 .8rem/1.4 var(--mono);color:var(--text-2);white-space:nowrap}
+
+/* ---------- label anatomy ---------- */
+.anat{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:36px;align-items:start}
+.spec-label{max-width:520px;margin:28px auto 0;color:var(--ink);background:#fff;border-color:#17202d}
+.spec-label .row{padding:14px 18px;position:relative}
+.spec-label .row + .row{border-top-color:#17202d}
+.spec-label .field{color:#1d4ed8;font-size:.66rem}
+.spec-label .slot{border-color:#17202d;color:#17202d;min-height:62px;font-size:.66rem}
+.spec-label .barcode{background:repeating-linear-gradient(90deg,#17202d 0 6px,transparent 6px 9px,#17202d 9px 11px,transparent 11px 16px,#17202d 16px 25px,transparent 25px 28px,#17202d 28px 30px,transparent 30px 35px);height:46px}
+.pin{position:absolute;right:-14px;top:50%;transform:translate(100%,-50%);width:26px;height:26px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;font:600 .8rem/1 var(--mono)}
+.legend{counter-reset:k;list-style:none;margin:0;padding:0}
+.legend li{display:grid;grid-template-columns:30px 1fr;gap:12px;padding:12px 0;border-top:1px solid var(--hair)}
+.legend li:first-child{border-top:0;padding-top:0}
+.legend li > span{width:26px;height:26px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;font:600 .8rem/1 var(--mono)}
+.legend b{font:600 1.1rem/1.2 var(--display);text-transform:uppercase;letter-spacing:.02em;display:block}
+.legend p{margin:2px 0 0;font-size:.92rem;color:var(--text-2)}
+
+/* ---------- logo slot ---------- */
+.slotdemo{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.slotdemo .slot{min-height:120px;background:var(--paper)}
+.callout{border-left:6px solid var(--yellow);background:var(--paper);padding:18px 20px;margin-top:22px}
+.callout p:last-child{margin-bottom:0}
+
+/* ---------- copy ---------- */
+.svc{background:var(--navy);color:#fff;padding:22px 24px}
+.svc .field{color:var(--yellow)}
+.svc .d8{font-size:clamp(1.9rem,4vw,2.9rem);margin:8px 0 6px;color:#fff}
+.svc .carriers{font:500 .95rem/1.4 var(--mono);letter-spacing:.14em;color:#fff}
+.coupon{border:3px dashed var(--rule);padding:18px 20px;background:var(--paper);display:grid;grid-template-columns:auto 1fr;gap:6px 22px;align-items:center}
+.coupon .d8{font-size:3.6rem;color:var(--text)}
+.coupon p{margin:0;font-size:.95rem}
+
+/* ---------- legibility ---------- */
+.medium{display:grid;grid-template-rows:auto auto 1fr;gap:14px}
+.medium .figure{padding:12px}
+.medium .stat{display:flex;align-items:baseline;gap:10px;border-top:5px solid var(--rule);padding-top:10px}
+.medium .stat .d8{font-size:3.4rem;color:var(--text)}
+.medium .stat small{font:500 .72rem/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--text-2)}
+
+/* ---------- formats ---------- */
+.fmt{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border:5px solid var(--rule);background:var(--paper)}
+.fmt > div{padding:20px 22px}
+.fmt > div + div{border-left:5px solid var(--rule)}
+.fmt .ext{font:800 3.4rem/.9 var(--display);margin:6px 0 10px}
+.cmd{background:var(--ink);color:#e9eef6;font:500 .86rem/1.6 var(--mono);padding:16px 18px;margin-top:20px;overflow-x:auto;white-space:pre}
+.cmd .c{color:#8ea0b8}
+.cmd .y{color:var(--yellow)}
+
+/* ---------- do / don't ---------- */
+.dd{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
+.ex{border:1px solid var(--hair);background:var(--paper)}
+.ex .stage{background:var(--wall);padding:18px;min-height:190px;display:grid;place-items:center}
+.ex .verdict{display:flex;gap:10px;align-items:center;padding:12px 16px;border-top:5px solid var(--rule)}
+.ex .verdict .tag{font:800 1.4rem/1 var(--display);text-transform:uppercase;padding:4px 10px}
+.ex.do .tag{background:var(--blue);color:#fff}
+.ex.dont .tag{background:var(--ink);color:#fff;outline:2px solid var(--paper)}
+.ex .verdict p{margin:0;font-size:.92rem}
+.mini{width:100%;max-width:400px;background:#fff;border:3px solid #17202d;color:#17202d}
+.mini .r{padding:8px 12px}
+.mini .r + .r{border-top:3px solid #17202d}
+.mini .f{font:500 .58rem/1 var(--mono);letter-spacing:.12em;color:#1d4ed8}
+.mini .yb{background:#f2b705;color:#3b2c00}
+.mini .nv,.mini.nv{background:#0f1d3a;color:#fff}
+.x{position:relative}
+.x::after{content:"";position:absolute;inset:0;background:linear-gradient(to top right,transparent calc(50% - 2px),#17202d calc(50% - 2px),#17202d calc(50% + 2px),transparent calc(50% + 2px));opacity:.0}
+
+footer{margin-top:80px;border-top:5px solid var(--rule);padding-top:16px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;font:500 .74rem/1.5 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--text-2)}
+
+/* ---------- responsive ---------- */
+@media (max-width:980px){
+  .g4,.pairs{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .anat{grid-template-columns:1fr}
+  .mast .meta{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:720px){
+  .wrap{padding:28px 16px 56px}
+  .g2,.g3,.dd,.slotdemo,.fmt{grid-template-columns:1fr}
+  .fmt > div + div{border-left:0;border-top:5px solid var(--rule)}
+  .mast .row.top{grid-template-columns:1fr}
+  .mast .slot{min-height:70px}
+  .label > .row{padding:18px}
+  .sec-head{grid-template-columns:1fr}
+  .sec-head .lede{grid-column:1}
+  .sec-head .num{font-size:3rem}
+  .face{grid-template-columns:1fr;gap:10px}
+  .scale td.n:not(.r),.scale th:last-child{display:none}
+  .scale td.s{white-space:normal}
+  .scale td.r{font-size:.66rem;padding-right:8px}
+  .pin{right:6px;transform:translate(0,-50%)}
+  .spec-label .row{padding-right:44px}
+  .coupon{grid-template-columns:1fr}
+}
+@media (max-width:460px){
+  .g4,.pairs,.mast .meta{grid-template-columns:1fr}
+}
+@media print{
+  body{background:#fff}
+  section{break-inside:avoid-page}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ================= MASTHEAD: built as a shipping label ================= -->
+<header class="label mast">
+  <div class="tape" aria-hidden="true"></div>
+  <div class="row top">
+    <div>
+      <p class="field">From</p>
+      <h1>Goin' Postal · Forsythe</h1>
+      <p class="addr">Forsythe Ave &amp; N 18th St · Monroe, Louisiana</p>
+    </div>
+    <div class="slot" aria-label="Official logo slot">OFFICIAL LOGO</div>
+  </div>
+  <div class="row">
+    <p class="field">Contents</p>
+    <p class="d6" style="font-size:clamp(1.6rem,3.6vw,2.4rem);margin:8px 0 0">Local campaign brand kit · for printers, sign shops &amp; designers</p>
+  </div>
+  <div class="row band">
+    <p class="big d8">BRAND KIT</p>
+    <p>One look across every board, banner and post: a white shipping label on navy, one yellow band, plain-text names. Everything below is how to keep it that way.</p>
+  </div>
+  <div class="row">
+    <div class="meta">
+      <div><p class="field">Owners</p><p>Rin Ho · Peter Ho</p></div>
+      <div><p class="field">Source files</p><p><code>designs/*.svg</code></p></div>
+      <div><p class="field">Services</p><p>Shipping · Packing · Mailboxes</p></div>
+      <div><p class="field">Carriers</p><p>UPS · FedEx · DHL · USPS</p></div>
+    </div>
+  </div>
+  <div class="row">
+    <ul class="toc">
+      <li><a href="#color">01 Color</a></li>
+      <li><a href="#type">02 Type</a></li>
+      <li><a href="#label">03 Label system</a></li>
+      <li><a href="#logo">04 Logo slot</a></li>
+      <li><a href="#copy">05 Copy</a></li>
+      <li><a href="#legibility">06 Legibility</a></li>
+      <li><a href="#files">07 Files</a></li>
+      <li><a href="#dodont">08 Do / Don't</a></li>
+    </ul>
+  </div>
+</header>
+
+<!-- ================= 01 COLOR ================= -->
+<section id="color">
+  <div class="sec-head">
+    <span class="num">01</span>
+    <h2>Color</h2>
+    <p class="lede">Nine values, no others. No tints, gradients or "close enough" matches. Navy is the ground, white is the label, yellow happens once.</p>
+  </div>
+
+  <div class="grid g4">
+    <div class="swatch"><div class="chip" style="background:#0f1d3a"><span style="color:#fff">Ground</span></div>
+      <div class="sw-body"><h3>Navy</h3><p class="hex">#0F1D3A</p><p>Page ground behind every label. Big service lines, MOCS10, holiday routing block.</p></div></div>
+    <div class="swatch"><div class="chip" style="background:#1d4ed8"><span style="color:#fff">Field</span></div>
+      <div class="sw-body"><h3>Postal blue</h3><p class="hex">#1D4ED8</p><p>Mono field labels only: FROM, SHIP TO, SERVICE, PROMO CODE. Thin underlines on edit fields.</p></div></div>
+    <div class="swatch"><div class="chip" style="background:#f2b705"><span style="color:#3b2c00">Band</span></div>
+      <div class="sw-body"><h3>Signal yellow</h3><p class="hex">#F2B705</p><p>The one bold move: a single full-width band per piece. Small accents on navy (a dot, a route tag).</p></div></div>
+    <div class="swatch"><div class="chip" style="background:#3b2c00"><span style="color:#f2b705">On yellow</span></div>
+      <div class="sw-body"><h3>Yellow ink</h3><p class="hex">#3B2C00</p><p>Text set on the yellow band. Never used anywhere else.</p></div></div>
+    <div class="swatch"><div class="chip" style="background:#ffffff;box-shadow:inset 0 0 0 1px #d4d0c7"><span style="color:#17202d">Label</span></div>
+      <div class="sw-body"><h3>White</h3><p class="hex">#FFFFFF</p><p>The shipping label. Logo slot fill. Headline text on navy.</p></div></div>
+    <div class="swatch"><div class="chip" style="background:#17202d"><span style="color:#fff">Text · rules</span></div>
+      <div class="sw-body"><h3>Ink</h3><p class="hex">#17202D</p><p>Body copy, thick label rules, barcode bars, dashed slot outline. Use instead of pure black.</p></div></div>
+    <div class="swatch"><div class="chip" style="background:linear-gradient(180deg,#9a7142 0 10%,#b98a55 10% 90%,#9a7142 90%)"><span style="color:#17202d">Tape</span></div>
+      <div class="sw-body"><h3>Kraft</h3><p class="hex">#B98A55 · #9A7142</p><p>Packing tape only. Light body, dark edge strips. Laid across a label corner or top edge.</p></div></div>
+    <div class="swatch"><div class="chip" style="background:#5a6573"><span style="color:#fff">Quiet</span></div>
+      <div class="sw-body"><h3>Muted</h3><p class="hex">#5A6573</p><p>Secondary lines under service names ("Ask about sizes"). Print and close-range only.</p></div></div>
+  </div>
+
+  <p class="field" style="margin-top:30px">Approved pairings</p>
+  <div class="pairs">
+    <div class="pair" style="background:#ffffff;color:#17202d;border-color:#d4d0c7"><span class="d8">Ink on white</span><small style="color:#1d4ed8">Body · headlines · 16.4 : 1</small></div>
+    <div class="pair" style="background:#f2b705;color:#3b2c00;border-color:#f2b705"><span class="d8">Ink on yellow</span><small>The band · 7.5 : 1</small></div>
+    <div class="pair" style="background:#0f1d3a;color:#ffffff;border-color:#0f1d3a"><span class="d8">White on navy</span><small style="color:#f2b705">Grounds · 16.7 : 1</small></div>
+    <div class="pair" style="background:#0f1d3a;color:#f2b705;border-color:#0f1d3a"><span class="d8">Yellow on navy</span><small style="color:#fff">Accent words · 9.2 : 1</small></div>
+  </div>
+
+  <p class="field" style="margin-top:30px">Rough share of a finished piece</p>
+  <div class="ratio" aria-label="About 40 percent navy, 35 white, 12 yellow, 8 ink, 3 blue, 2 kraft">
+    <span style="grid-column:span 8;background:#0f1d3a"></span>
+    <span style="grid-column:span 7;background:#ffffff"></span>
+    <span style="grid-column:span 2;background:#f2b705"></span>
+    <span style="grid-column:span 2;background:#17202d"></span>
+    <span style="grid-column:span 1;background:linear-gradient(90deg,#1d4ed8 0 60%,#b98a55 60%)"></span>
+  </div>
+  <p class="cap"><span>Navy ground · white label · one yellow band · ink rules · blue + kraft details</span><span>CMYK: ask the printer to proof the yellow</span></p>
+</section>
+
+<!-- ================= 02 TYPE ================= -->
+<section id="type">
+  <div class="sec-head">
+    <span class="num">02</span>
+    <h2>Type</h2>
+    <p class="lede">Three free Google Fonts, three jobs. Each has a fallback stack so a file still holds together on a machine that does not have them, but final art should use the real faces.</p>
+  </div>
+
+  <div class="card">
+    <div class="face">
+      <div class="spec">
+        <p class="field">Display</p>
+        <h3>Barlow Condensed</h3>
+        <p>600 SemiBold · 800 ExtraBold</p>
+        <p class="muted">Always uppercase. Headlines, the yellow-band word, service names, edit fields (600).</p>
+      </div>
+      <div class="sample"><span class="d8" style="font-size:clamp(3.2rem,8vw,6rem);display:block">Packed. Shipped.</span><span class="d6" style="font-size:2rem;display:block;margin-top:8px">Moccasins vs. Opponent</span></div>
+    </div>
+    <div class="face">
+      <div class="spec">
+        <p class="field">Text</p>
+        <h3>IBM Plex Sans</h3>
+        <p>400 Regular · 600 SemiBold</p>
+        <p class="muted">Sentence case. Store name (600), address, coupon terms, short supporting lines.</p>
+      </div>
+      <div class="sample"><p style="font:600 1.8rem/1.2 var(--sans);margin:0">Goin' Postal · Forsythe</p><p style="font:400 1.3rem/1.4 var(--sans);margin:6px 0 0">Forsythe Ave &amp; N 18th St · Monroe. Bring gifts in now. We'll box them up.</p></div>
+    </div>
+    <div class="face">
+      <div class="spec">
+        <p class="field">Fields</p>
+        <h3>IBM Plex Mono</h3>
+        <p>500 Medium · tracked +2–3px</p>
+        <p class="muted">Uppercase. Field labels, carrier list, tracking numbers, logo slot text.</p>
+      </div>
+      <div class="sample"><p style="font:500 1.25rem/1.6 var(--mono);letter-spacing:.14em;margin:0;color:var(--field)">FROM · SHIP TO · SERVICE</p><p style="font:500 1.25rem/1.6 var(--mono);letter-spacing:.14em;margin:0">UPS · FEDEX · DHL · USPS</p><p style="font:500 1rem/1.6 var(--mono);letter-spacing:.14em;margin:0" class="muted">TRK 0318 1801 MOCS10</p></div>
+    </div>
+  </div>
+
+  <p class="field" style="margin-top:30px">Type scale · as a share of the artboard's short side</p>
+  <table class="scale">
+    <thead><tr><th>Role</th><th>Sample</th><th>Size</th></tr></thead>
+    <tbody>
+      <tr><td class="n r">Band word</td><td class="s"><span class="d8" style="font-size:4.6rem">Game Day</span></td><td class="n">18–25% · Barlow 800</td></tr>
+      <tr><td class="n r">Headline</td><td class="s"><span class="d8" style="font-size:3.2rem">Packed.</span></td><td class="n">12–20% · Barlow 800</td></tr>
+      <tr><td class="n r">Service line</td><td class="s"><span class="d8" style="font-size:2.2rem">Shipping · Packing · Mailboxes</span></td><td class="n">4–6% · Barlow 800</td></tr>
+      <tr><td class="n r">Edit field</td><td class="s"><span class="d6" style="font-size:1.8rem">Fri 7:05 PM · Monroe Civic Center</span></td><td class="n">4–5% · Barlow 600</td></tr>
+      <tr><td class="n r">Store name</td><td class="s"><span style="font:600 1.4rem var(--sans)">Goin' Postal · Forsythe</span></td><td class="n">2.5–3% · Plex 600</td></tr>
+      <tr><td class="n r">Body / terms</td><td class="s"><span style="font:400 1.1rem var(--sans)">One per customer. Name and phone required.</span></td><td class="n">≥ 1.8% · Plex 400</td></tr>
+      <tr><td class="n r">Field label</td><td class="s"><span style="font:500 .95rem var(--mono);letter-spacing:.14em;color:var(--field)">PROMO CODE</span></td><td class="n">1.2–1.5% · Mono 500</td></tr>
+    </tbody>
+  </table>
+  <div class="callout">
+    <p><b>Long lines are fitted, not wrapped.</b> Any display line over about 12 characters carries <code>textLength</code> with <code>lengthAdjust="spacingAndGlyphs"</code> sized to its box, so it still fits if a fallback font (Arial Narrow, Impact) gets substituted. Keep that attribute when you edit copy, and re-size the box if the copy gets longer.</p>
+  </div>
+</section>
+
+<!-- ================= 03 LABEL SYSTEM ================= -->
+<section id="label">
+  <div class="sec-head">
+    <span class="num">03</span>
+    <h2>The shipping-label system</h2>
+    <p class="lede">Every piece is a shipping label: stacked fields separated by thick ink rules, a mono label over each field, one yellow band, a barcode, and a strip of kraft tape. It reads as "packages" before anyone reads a word.</p>
+  </div>
+
+  <div class="anat">
+    <div>
+      <div class="label spec-label">
+        <div class="tape" aria-hidden="true" style="width:120px;height:32px;top:-18px"></div>
+        <div class="row" style="display:grid;grid-template-columns:1fr 150px;gap:14px;align-items:center">
+          <div><p class="field">FROM</p><p style="font:600 1.05rem/1.3 var(--sans);margin:4px 0 0">Goin' Postal · Forsythe</p><p style="font:400 .88rem/1.3 var(--sans);margin:0">Forsythe Ave &amp; N 18th St · Monroe</p></div>
+          <div class="slot">OFFICIAL LOGO</div>
+          <span class="pin">1</span>
+        </div>
+        <div class="row"><p class="field">SHIP TO</p><p class="d6" style="font-size:1.7rem;margin:6px 0 0;border-bottom:2px solid rgba(29,78,216,.5);padding-bottom:4px">Moccasins vs. Opponent</p><span class="pin">2</span></div>
+        <div class="row" style="background:#f2b705;padding-top:10px;padding-bottom:6px"><p class="d8" style="font-size:4.6rem;margin:0;color:#3b2c00">Game Day</p><span class="pin">3</span></div>
+        <div class="row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:end">
+          <div><div class="barcode"></div><p style="font:500 .62rem/1 var(--mono);letter-spacing:.14em;margin:6px 0 0">TRK 0318 1801 MOCS10</p></div>
+          <div><p class="field">PROMO CODE</p><p class="d8" style="font-size:2.6rem;margin:4px 0 0;color:#0f1d3a">MOCS10</p></div>
+          <span class="pin">4</span>
+        </div>
+        <div class="row"><p class="field">SERVICES</p><p class="d8" style="font-size:1.6rem;margin:6px 0 10px;line-height:1;color:#0f1d3a">Shipping · Packing · Mailboxes</p><p style="font:500 .78rem/1.2 var(--mono);letter-spacing:.14em;margin:0">UPS · FEDEX · DHL · USPS</p><span class="pin">5</span></div>
+      </div>
+    </div>
+    <ol class="legend">
+      <li><span>1</span><div><b>FROM + logo slot</b><p>Store name in Plex Sans 600, address underneath. Dashed OFFICIAL LOGO box top-right. A strip of kraft tape crosses the top edge or a corner.</p></div></li>
+      <li><span>2</span><div><b>SHIP TO / edit fields</b><p>The variable line: opponent, venue, date. Barlow 600 on a thin postal-blue underline at 50% opacity. Mark it "EDIT ·" in small mono at the right.</p></div></li>
+      <li><span>3</span><div><b>Yellow band</b><p>Full label width, edge to edge between two rules. One per piece. One or two words of Barlow 800 in yellow ink, fitted to about 92% of the width.</p></div></li>
+      <li><span>4</span><div><b>Tracking barcode + code</b><p>Ink bars of 4/8/12 units on a 4-unit grid, with a mono tracking line under it. Decorative only, not scannable. The promo code sits beside it in navy.</p></div></li>
+      <li><span>5</span><div><b>Services</b><p>The fixed footer: three services in Barlow 800, carriers in mono. Same words on every piece.</p></div></li>
+      <li><span>—</span><div><b>Rules &amp; margins</b><p>Rules are solid ink, about 0.5% of artboard width (6px on 1080). The label sits at least 4% in from every edge of the navy ground, and no element crosses a rule.</p></div></li>
+    </ol>
+  </div>
+
+  <div class="grid g3" style="margin-top:36px">
+    <figure class="figure" style="margin:0"><img src="designs/game-day-social.svg" alt="Game Day social post: white label on navy with a yellow GAME DAY band" loading="lazy"><figcaption class="cap"><b>game-day-social.svg</b><span>1080×1350</span></figcaption></figure>
+    <figure class="figure" style="margin:0"><img src="designs/counter-flyer.svg" alt="Counter flyer: PACKED. SHIPPED. DONE. with services row" loading="lazy"><figcaption class="cap"><b>counter-flyer.svg</b><span>8.5×11 in</span></figcaption></figure>
+    <figure class="figure" style="margin:0"><img src="designs/sponsor-badge.svg" alt="Proud Local Sponsor seal" loading="lazy"><figcaption class="cap"><b>sponsor-badge.svg</b><span>1000×1000</span></figcaption></figure>
+  </div>
+</section>
+
+<!-- ================= 04 LOGO SLOT ================= -->
+<section id="logo">
+  <div class="sec-head">
+    <span class="num">04</span>
+    <h2>The OFFICIAL LOGO slot</h2>
+    <p class="lede">These files never draw a logo. Every ad carries a dashed box marked OFFICIAL LOGO. The real Goin' Postal corporate logo goes in that box, and only there.</p>
+  </div>
+  <div class="grid g2">
+    <div>
+      <div class="slotdemo">
+        <div class="slot">OFFICIAL LOGO</div>
+        <div class="slot" style="aspect-ratio:1/1;min-height:0">OFFICIAL<br>LOGO</div>
+        <div class="slot" style="background:#0f1d3a;color:#fff;border-color:#fff">OFFICIAL LOGO</div>
+      </div>
+      <p class="cap"><span>Wide · square · reversed on navy</span><span>2–3px dash, ink or white</span></p>
+    </div>
+    <div class="card rule">
+      <h3>How to fill it</h3>
+      <ul class="tight">
+        <li>Use the corporate logo file supplied by Goin' Postal franchise support. Do not redraw, recolor, stretch or retype it.</li>
+        <li><b>Get brand approval</b> from the franchisor before anything prints or goes on a board.</li>
+        <li>Fit the logo inside the dashed box with clear space on all sides, then delete the dashed outline and the placeholder text.</li>
+        <li>Team, school and venue names stay <b>plain text</b>. Never place a team, school or league logo or mascot unless that organization supplies and approves it.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 05 COPY ================= -->
+<section id="copy">
+  <div class="sec-head">
+    <span class="num">05</span>
+    <h2>Copy rules</h2>
+    <p class="lede">Short, plain, and the same every time. The ads sell three services at one corner of Monroe.</p>
+  </div>
+  <div class="grid g2">
+    <div class="svc">
+      <p class="field">Services · say exactly this</p>
+      <p class="d8">Shipping · Packing · Mailboxes</p>
+      <p class="carriers">UPS · FEDEX · DHL · USPS</p>
+      <p class="field" style="margin-top:18px">Location</p>
+      <p style="margin:6px 0 0;font:600 1.1rem/1.3 var(--sans);color:#fff">Forsythe Ave &amp; N 18th St · Monroe</p>
+    </div>
+    <div class="card rule">
+      <h3>Never on an ad</h3>
+      <ul class="tight">
+        <li><b>No phone numbers.</b> The counter flyer has a blank PHONE line to write in by hand.</li>
+        <li><b>No prices</b> and no "starting at" amounts.</li>
+        <li><b>No hours.</b> They change; leave a blank HOURS line instead.</li>
+        <li>No services beyond the three above, and no carriers beyond the four.</li>
+        <li>Store name as text: <i>Goin' Postal · Forsythe</i>. The logo lives only in the slot.</li>
+        <li>In SVG source, write the ampersand as <code>&amp;amp;</code>.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="coupon" style="margin-top:22px">
+    <span class="d8">MOCS10</span>
+    <div>
+      <p class="field">Coupon terms · always all three</p>
+      <p>Wherever the Moccasins code appears it is <b>MOCS10</b>, followed by <b>"One per customer"</b> and <b>"Name + phone required"</b>. If there is no room for the terms, there is no room for the code.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 06 LEGIBILITY ================= -->
+<section id="legibility">
+  <div class="sec-head">
+    <span class="num">06</span>
+    <h2>Legibility by medium</h2>
+    <p class="lede">Distance and seconds decide the word count. The further away the viewer, the fewer words and the bigger the yellow.</p>
+  </div>
+  <div class="grid g3">
+    <div class="medium">
+      <figure class="figure" style="margin:0"><img src="designs/billboard-poster.svg" alt="Poster billboard: PACKED. SHIPPED. DONE." loading="lazy"><figcaption class="cap"><b>billboard-poster.svg</b><span>2400×1103</span></figcaption></figure>
+      <div class="stat"><span class="d8">≤ 7</span><small>words of headline<br>on a billboard</small></div>
+      <ul class="tight">
+        <li>Read at 55 mph in about 5 seconds. Headline plus location, nothing else large.</li>
+        <li>Smallest text at least 1/30 of board height.</li>
+        <li>No code, no terms, no fine print.</li>
+      </ul>
+    </div>
+    <div class="medium">
+      <figure class="figure" style="margin:0"><img src="designs/moccasins-dasher-board.svg" alt="Moccasins dasher board, long and thin" loading="lazy"><figcaption class="cap"><b>moccasins-dasher-board.svg</b><span>2400×300</span></figcaption></figure>
+      <div class="stat"><span class="d8">1 line</span><small>arena boards,<br>fence banners</small></div>
+      <ul class="tight">
+        <li>Seen across a rink or field and on TV. One message, read left to right.</li>
+        <li>Text at least 40% of board height. Nothing in the bottom 10% (kick plates, grass).</li>
+        <li>Fence banners: keep copy out of the grommet margin.</li>
+      </ul>
+    </div>
+    <div class="medium">
+      <figure class="figure" style="margin:0"><img src="designs/digital-billboard.svg" alt="Digital bulletin: HOLIDAY BOXES? WE'VE GOT TAPE." loading="lazy"><figcaption class="cap"><b>digital-billboard.svg</b><span>1400×400</span></figcaption></figure>
+      <div class="stat"><span class="d8">8 sec</span><small>LED &amp; scoreboard<br>spots, static</small></div>
+      <ul class="tight">
+        <li>LED glows: avoid thin mono lines on navy at small size; go one weight heavier.</li>
+        <li>No hairlines under 4px at final pixel size; they shimmer.</li>
+        <li>Deliver at the exact pixel size the operator gives you.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 07 FILES ================= -->
+<section id="files">
+  <div class="sec-head">
+    <span class="num">07</span>
+    <h2>File formats</h2>
+    <p class="lede">The SVGs are the masters. Everything else is exported from them, never edited separately.</p>
+  </div>
+  <div class="fmt">
+    <div><p class="field">Source</p><p class="ext">SVG</p><p>Edit these. Open in Illustrator, Inkscape, Affinity or any browser. Text stays live and editable.</p></div>
+    <div><p class="field">Sharing</p><p class="ext">PNG</p><p>For WhatsApp, texts, email, social and LED operators. Exported to <code>designs/png/</code>.</p></div>
+    <div><p class="field">Print</p><p class="ext">PDF</p><p>For the print shop. The counter flyer exports at 8.5×11 in to <code>designs/pdf/</code>.</p></div>
+  </div>
+  <div class="cmd"><span class="c"># from the repo root, online so Google Fonts load (needs Chrome or Edge)</span>
+<span class="y">python</span> scripts/export_designs.py
+<span class="c"># options</span>
+<span class="y">python</span> scripts/export_designs.py --out DIR --browser PATH</div>
+  <div class="grid g2" style="margin-top:22px">
+    <div class="callout" style="margin:0">
+      <h3>Before anything prints</h3>
+      <ul class="tight">
+        <li>Either <b>install the three fonts</b> (free from Google Fonts) on the machine that opens the SVG, or <b>outline the text</b> (convert to paths) in the PDF you send.</li>
+        <li>Without them the file falls back to Arial Narrow or Impact and line lengths change.</li>
+        <li>Ask for a proof. Check the yellow and the navy on the actual material.</li>
+      </ul>
+    </div>
+    <div class="callout" style="margin:0;border-left-color:var(--blue)">
+      <h3>Sizing for vinyl and boards</h3>
+      <ul class="tight">
+        <li>SVG is vector, so scale it to any size; keep the aspect ratio of the artboard.</li>
+        <li>Add bleed in your layout app. The 4% margin inside the art is the safe zone.</li>
+        <li>Keep the original SVG next to every export so the next edit starts from source.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 08 DO / DON'T ================= -->
+<section id="dodont">
+  <div class="sec-head">
+    <span class="num">08</span>
+    <h2>Do / Don't</h2>
+    <p class="lede">Quick checks before a file leaves the shop.</p>
+  </div>
+  <div class="dd">
+    <div class="ex do">
+      <div class="stage"><div class="mini">
+        <div class="r" style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><div class="f">FROM</div><div style="font:600 .9rem var(--sans)">Goin' Postal · Forsythe</div></div><div class="slot" style="min-height:40px;border-color:#17202d;color:#17202d;font-size:.55rem;padding:6px 10px">OFFICIAL LOGO</div></div>
+        <div class="r yb"><span class="d8" style="font-size:2.6rem">Done.</span></div>
+        <div class="r"><span class="d8" style="font-size:1.1rem;color:#0f1d3a">Shipping · Packing · Mailboxes</span></div>
+      </div></div>
+      <div class="verdict"><span class="tag">Do</span><p>One yellow band. Logo in the slot. Services in the fixed words.</p></div>
+    </div>
+    <div class="ex dont">
+      <div class="stage"><div class="mini">
+        <div class="r yb" style="display:flex;justify-content:space-between;align-items:center"><span class="d8" style="font-size:1.4rem">Goin' Postal!!</span><span style="width:42px;height:42px;border-radius:50%;background:#1d4ed8;display:block"></span></div>
+        <div class="r yb" style="border-top-color:#3b2c00"><span class="d8" style="font-size:2rem">Huge Sale</span></div>
+        <div class="r"><span style="font:400 .8rem var(--sans)">Call 318-XXX-XXXX · from $X.XX · Open 9–6</span></div>
+      </div></div>
+      <div class="verdict"><span class="tag">Don't</span><p>Two yellow bands, a drawn "logo", phone, prices and hours.</p></div>
+    </div>
+    <div class="ex do">
+      <div class="stage"><div class="mini nv" style="border-color:#0f1d3a">
+        <div class="r" style="border-color:#fff"><div class="f" style="color:#f2b705">PROUD LOCAL SPONSOR</div><span class="d8" style="font-size:1.6rem;color:#fff">Monroe Moccasins</span></div>
+        <div class="r" style="border-top-color:#fff"><span class="d8" style="font-size:1.8rem;color:#f2b705">MOCS10</span><div style="font:400 .78rem var(--sans);color:#fff">One per customer · Name + phone required</div></div>
+      </div></div>
+      <div class="verdict"><span class="tag">Do</span><p>Team name as plain text. Code always with both terms.</p></div>
+    </div>
+    <div class="ex dont">
+      <div class="stage"><div class="mini nv" style="border-color:#0f1d3a">
+        <div class="r" style="display:flex;gap:12px;align-items:center"><span style="width:44px;height:44px;background:#f2b705;clip-path:polygon(50% 0,100% 40%,80% 100%,20% 100%,0 40%);display:block"></span><span style="font:italic 700 1.4rem Georgia,serif;color:#fff">Go Mocs!</span></div>
+        <div class="r" style="border-top:3px solid #fff"><span class="d8" style="font-size:1.8rem;color:#f2b705">MOCS10</span></div>
+      </div></div>
+      <div class="verdict"><span class="tag">Don't</span><p>A mascot or team mark, an off-system font, and a code with no terms.</p></div>
+    </div>
+    <div class="ex do">
+      <div class="stage"><div class="mini" style="max-width:420px"><div class="r yb" style="padding:10px 14px"><span class="d8" style="font-size:2.4rem;display:block">Ship it here.</span></div><div class="r"><span class="f">FORSYTHE AVE &amp; N 18TH ST · MONROE</span></div></div></div>
+      <div class="verdict"><span class="tag">Do</span><p>Billboard: a few words, huge, with the corner they can find.</p></div>
+    </div>
+    <div class="ex dont">
+      <div class="stage"><div class="mini" style="max-width:420px"><div class="r"><span style="font:400 .78rem/1.35 var(--sans);display:block">Whether you're sending gifts to family this holiday season, returning online orders, or need a secure mailbox for your small business, our friendly team handles it all with care…</span></div></div></div>
+      <div class="verdict"><span class="tag">Don't</span><p>A paragraph on a board. No one reads it at 55 mph.</p></div>
+    </div>
+  </div>
+
+  <p class="field" style="margin-top:34px">Before you send · checklist</p>
+  <div class="grid g4" style="margin-top:12px">
+    <div class="card rule"><p><b>Colors</b> are only the nine values in section 01.</p></div>
+    <div class="card rule"><p><b>Logo slot</b> filled with the approved corporate logo, or left dashed for review.</p></div>
+    <div class="card rule"><p><b>No</b> phone, prices or hours. MOCS10 has both terms.</p></div>
+    <div class="card rule"><p><b>Fonts</b> installed or outlined. Proof requested.</p></div>
+  </div>
+</section>
+
+<footer>
+  <span>Goin' Postal · Forsythe · Forsythe Ave &amp; N 18th St · Monroe</span>
+  <span>Masters: designs/*.svg · Gallery: designs/index.html</span>
+</footer>
+
+</div>
+</body>
+</html>
