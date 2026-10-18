@@ -2,3 +2,4 @@ build/
 __pycache__/
 puppeteer.json
 node_modules/
+.owner-key

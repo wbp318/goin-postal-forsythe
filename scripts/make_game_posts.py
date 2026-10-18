@@ -10,6 +10,7 @@ reads "MOCCASINS HOME GAME" and the file is named YYYY-MM-DD-home-game.svg.
 Stdlib only.
 """
 
+import owner_guard  # noqa: F401  stops on a clone that is not set up by an owner
 import datetime
 import os
 import re

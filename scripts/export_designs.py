@@ -4,6 +4,7 @@ Run from the repo root:  python scripts/export_designs.py [--out DIR] [--browser
 The SVGs are the source files and are never changed. Needs Chrome or Edge.
 Fonts load from Google Fonts, so run it online for the real typefaces.
 """
+import owner_guard  # noqa: F401  stops on a clone that is not set up by an owner
 import argparse
 import os
 import re

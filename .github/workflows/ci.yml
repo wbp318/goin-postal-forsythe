@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+# The scripts stop unless an owner key is present. Forks do not get this secret.
+env:
+  GOIN_POSTAL_OWNER: ${{ secrets.GOIN_POSTAL_OWNER }}
+
 jobs:
   designs:
     name: Check designs

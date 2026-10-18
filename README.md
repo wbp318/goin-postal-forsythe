@@ -4,6 +4,8 @@
 
 This is a public repo. Everything here is a marketing kit and site research for a Goin' Postal store, with no customer data; the store's live pages stay private. Goin' Postal's name and logo belong to GP Brands, and nothing here is endorsed by them. Copyright Peter Ho, Rin Ho and William Parker. The scripts and pages are under the Apache License 2.0; the designs, documents and research are under Creative Commons BY-NC-ND 4.0, which means they can be shared with credit but not sold, altered, or used to promote another business. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
 
+> **If you cloned this repo:** the scripts and pages stop with a message unless the clone has been set up by one of the owners. That is deliberate. To ask about using any of it, contact Rin Ho, William Parker or Peter Ho at [wbp93623@gmail.com](mailto:wbp93623@gmail.com).
+
 ## Start here: set up Claude Code
 
 Claude Code is an AI helper that runs in your terminal. You type what you want in plain English, and it reads files, runs commands and makes changes for you. Install it once (Part 1), then let it set up Python and R for you (Part 2). TypeScript and F# are optional (Part 3). A copy of this guide also lives in [`docs/claude-code-setup.md`](docs/claude-code-setup.md).

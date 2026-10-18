@@ -4,6 +4,27 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Forsythe Ad Designs</title>
+<script>
+/* Owner check (see LICENSE and NOTICE). Pages opened from a clone stop here. */
+(function () {
+  var local = location.protocol === "file:" || /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+  var owner = false;
+  try { owner = localStorage.getItem("gp-owner") === "1"; } catch (e) {}
+  if (!local || owner) return;
+  document.addEventListener("DOMContentLoaded", function () {
+    document.documentElement.innerHTML =
+      '<head><meta charset="utf-8"><title>Not set up for use</title></head>' +
+      '<body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#0f1d3a;color:#fff;font:16px/1.5 system-ui,sans-serif">' +
+      '<div style="max-width:34rem;padding:2rem;border-top:8px solid #f2b705">' +
+      '<h1 style="margin:0 0 1rem;font-size:1.5rem">This copy is not set up for use</h1>' +
+      '<p>The pages, scripts, designs and research in goin-postal-forsythe are licensed to the store\u2019s owners only. ' +
+      'Cloning the repository does not grant a right to use them.</p>' +
+      '<p>To ask for permission, contact <strong>Rin Ho, William Parker or Peter Ho</strong> at ' +
+      '<a href="mailto:wbp93623@gmail.com" style="color:#f2b705">wbp93623@gmail.com</a>.</p>' +
+      '</div></body>';
+  });
+})();
+</script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@500&display=swap">
 <style>
 /* Gallery: each design at its true proportions on a neutral wall, captioned like a print spec. */

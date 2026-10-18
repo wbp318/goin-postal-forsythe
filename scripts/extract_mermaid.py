@@ -3,6 +3,7 @@
 Run from the repo root:  python scripts/extract_mermaid.py OUT_DIR
 CI renders each file with mermaid-cli, so a broken chart fails the build.
 """
+import owner_guard  # noqa: F401  stops on a clone that is not set up by an owner
 import html
 import re
 import sys

@@ -3,6 +3,7 @@
 Run from the repo root:  python scripts/check_designs.py
 Exits non-zero and lists every problem found.
 """
+import owner_guard  # noqa: F401  stops on a clone that is not set up by an owner
 import re
 import struct
 import sys
