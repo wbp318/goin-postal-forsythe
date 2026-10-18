@@ -2,7 +2,7 @@
 
 Working list for the Forsythe store's marketing kit. Updated as each item is finished.
 
-_Last updated: Oct 12, 2026_
+_Last updated: Oct 18, 2026_
 
 ## Status
 
@@ -36,6 +36,7 @@ _Last updated: Oct 12, 2026_
 | 20 | Holiday Hub display | Counter display pairing the deadline sign with box sizes | ⏳ Not started |
 | 21 | Automatic game-day posts | Next game's post made a few days ahead and sent to whoever posts | ⏳ Not started |
 | 22 | Calendar deadline reminders | Reminder 2 weeks before any book-by date | ⏳ Not started |
+| 23 | Next-store site research | Florida focus (Osceola, Polk, Seminole, Monroe) plus 1-2 rural picks in every other state, in `research/` | ✅ Done |
 
 ## Progress
 
@@ -169,3 +170,4 @@ flowchart LR
 - **Oct 12:** #9 done. `brand-kit.html`: colors, type, label layout, logo slot, copy rules, legibility by medium, file formats.
 - **Oct 12:** Everything added to the gallery, README and CI checks.
 - **Oct 12:** Round 2 added (#10–#22). #10 and #11 done: the README now opens with a rink diagram showing where the board sits and a chart of getting the logo onto the board. #12, repointing the QR codes to the store's Google listing, is waiting on the listing link.
+- **Oct 18:** #23 done. `research/florida/` ranks Haines City south side and Poinciana west end (Cypress Pkwy and Marigold Ave) as the two Florida sites to pursue, with Harmony, Lake Alfred and Mascotte on a watch list; Seminole County and the Keys ruled out. `research/other-states/` lists 80 rural candidates across the other 49 states, Natchitoches LA among the top ten. Franchise terms verified from the Aug 2025 FDD. Released as v1.0.0.

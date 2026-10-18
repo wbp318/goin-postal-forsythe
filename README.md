@@ -402,6 +402,134 @@ The store is open. This repo covers getting its name in front of local families:
 
 > **Brand note:** Goin' Postal owns its name and logo. Every design here has a dashed **OFFICIAL LOGO** slot. Drop in the logo file from corporate and get each ad through corporate's brand review before printing. Team and school names appear as text only. No team or school logos or mascots are used.
 
+## Where the next store should go
+
+Research done October 18, 2026 on where a second Goin' Postal could open. Florida was the focus (Osceola, western Polk, Seminole and Monroe counties, with Palm Beach, Broward and Miami-Dade excluded), and every other state got one or two rural candidates. The full write-ups, with tables, sources and charts, live in **[`research/`](research/README.md)**: [`research/florida/`](research/florida/README.md) and [`research/other-states/`](research/other-states/README.md).
+
+### The answer
+
+Every town on the Florida wish list already has at least one UPS Store, so there is no empty town. The opening is an underserved ratio: tens of thousands of new residents, one or two stores clustered at one end, and a franchise rule that protects a 1-mile circle in town and a 5-mile circle in the country.
+
+```mermaid
+flowchart LR
+  subgraph GO["Go now"]
+    direction TB
+    HC["1 · Haines City, south side (Polk)<br/>45,973 people, up 67% since 2020<br/>50% Hispanic<br/>One UPS Store, parked at the far north edge<br/>SuperTarget center opening at US-27 and US-17-92"]
+    PO["2 · Poinciana, west end (Polk side)<br/>About 75,000 people, 28 to 36% Puerto Rican<br/>All 3 shippers sit 2 miles east at Doverplum Ave<br/>One post office, reviewed as always packed<br/>Space listed at Cypress Pkwy and Marigold Ave"]
+  end
+  subgraph WATCH["Watch, 2028 and later"]
+    direction TB
+    HA["3 · Harmony, east US-192 (Osceola)<br/>No store at all, 7,200 homes entitled<br/>5-mile rural radius would own the town"]
+    LA["4 · Lake Alfred (Polk)<br/>10,107 people, up 55%, no store<br/>Publix center filed"]
+    MA["5 · Mascotte and west Groveland (Lake)<br/>36,000 combined, up 40 to 54%, one UPS Store"]
+  end
+  subgraph NO["Not viable"]
+    direction TB
+    SE["Seminole County<br/>Up 4% since 2020, 1 to 3 UPS Stores per town"]
+    KE["Monroe County, the Keys<br/>Population down 2.4%, rents $25 to $125 a sq ft"]
+    SAT["Kissimmee, St. Cloud, Davenport, Four Corners,<br/>Lake Wales, Frostproof<br/>Goin' Postal or several UPS Stores already"]
+  end
+  classDef store fill:#f2b705,stroke:#3b2c00,color:#3b2c00
+  classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
+  classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
+  class HC,PO store
+  class HA,LA,MA you
+  class SE,KE,SAT cloud
+```
+
+### Why Poinciana and Haines City
+
+Osceola County holds about 125,000 Puerto Rican residents, at least 30% of the county and the largest share per capita on the mainland outside Holyoke and Springfield, Massachusetts. Poinciana was marketed to islanders in the 1980s and still carries the highest Puerto Rican share of any place studied. USPS treats Puerto Rico as domestic, so a Priority Mail flat-rate box to the island costs the mainland price with no customs form, while UPS and FedEx add remote-area surcharges. That makes the USPS counter, a street-address mailbox and a bilingual "Envíos a Puerto Rico" sign the products to lead with. None of the three Poinciana shippers advertises Puerto Rico service by name.
+
+Haines City is the fastest-growing large city in Polk after Davenport, and Polk ranks first in Florida for net migration. Its one UPS Store sits on US-27 at the Davenport line. The downtown independent shipper is listed as temporarily closed. A 320,000 sq ft SuperTarget-anchored center broke ground in April 2025 at the southwest corner of US-27 and US-17-92, on the side of town with no full-service store.
+
+```mermaid
+flowchart LR
+  F["Family in Poinciana<br/>or Haines City"] --> A["Care package,<br/>documents, medicine"]
+  A --> B{"Which counter?"}
+  B -- "USPS Priority flat rate<br/>domestic price, no customs" --> C["Goin' Postal sells<br/>the same box, no line"]
+  B -- "UPS or FedEx<br/>remote-area surcharge" --> D["Costs more.<br/>Offer it only if speed matters"]
+  C --> E["Island family"]
+  D --> E
+  E --> G["Reply mail, PO box,<br/>street-address mailbox<br/>rented at the store"]
+  G --> F
+  classDef store fill:#f2b705,stroke:#3b2c00,color:#3b2c00
+  classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
+  classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
+  class C,G store
+  class D cloud
+  class F,A,B,E you
+```
+
+### What the franchise costs
+
+Verified from the GP Brands franchise disclosure document issued August 15, 2025. Listing sites quote stale numbers.
+
+| Item | Figure |
+|---|---|
+| Initial franchise fee | $15,000 |
+| Paid to franchisor at signing (fee plus required equipment) | $25,000 |
+| Total initial investment | $46,750 to $117,500 |
+| Royalty | Flat $550 a month for 2025 to 2027 signings, $575 for 2028 to 2030, $600 in 2031 |
+| Store size | 1,000 to 2,000 sq ft with parking |
+| Protected territory | 1-mile radius in urban areas, 5-mile radius in rural areas |
+| Term | 15 years |
+| System trend | 128 franchised stores at end of 2022, 122 at end of 2023, 116 at end of 2024. Florida: 24 plus the Zephyrhills company store. |
+
+The system is shrinking by about six stores a year, and franchising.com says Goin' Postal is "not currently accepting new applicants" on that portal, undated. Two Florida stores in the December 2024 franchisee list, Oviedo and St. Cloud at 1372 S Narcoossee Rd, are missing from the October 2026 locator. Ask GP Brands at 800-504-6040 why before signing.
+
+### Florida competitors, county by county
+
+| County | Growth 2020 to 2025 | Goin' Postal today | UPS Stores and others | Gap |
+|---|---|---|---|---|
+| Osceola | 388,647 to 481,718, up 24% | Kissimmee (Simpson Rd), St. Cloud South (Belladonna Pl), Lake Nona (Narcoossee Rd) | 9 UPS Stores in Kissimmee, 3 in St. Cloud, 1 in Poinciana, Pak Mail, Mail Post of Poinciana | Poinciana west, Harmony |
+| Polk (west and south) | 725,042 to 852,878, up 18% | Lakeland, Lake Wales | UPS Stores in Haines City (1), Davenport (3), ChampionsGate, Lake Wales (2), Frostproof, Mulberry, Bartow; none in Lake Alfred, Dundee, Fort Meade | Haines City south, Lake Alfred, Dundee |
+| Seminole | 470,856 to 491,900, up 4% | None on the locator (Oviedo store in FDD list, status unknown) | UPS Stores in Oviedo (2), Sanford (3), Lake Mary (2), Longwood, Winter Springs (2); Pak Mail Casselberry | None worth a store |
+| Monroe | 82,871 to 80,908, down 2.4% | None | UPS Stores Key Largo (2), Marathon, Big Pine Key, Key West; PostNet Islamorada; Pak Mail Key Largo and Key West | Tavernier only, and it is small |
+
+### Nationwide
+
+The other 49 states got one or two rural candidates each, 80 towns in all, checked against the UPS locator. The ten strongest: Fernley NV, Driggs ID, Houghton MI, Safford AZ, Moab UT, Natchitoches LA, Farmville VA, Decorah IA, Wellsboro PA, Elkins WV. Natchitoches is about 100 miles from the Forsythe store and Louisiana already has six Goin' Postal franchisees, so it is the natural second-state pick for this ownership group.
+
+```mermaid
+flowchart TB
+  subgraph COL["College towns"]
+    direction TB
+    H["3 · Houghton / Hancock, MI<br/>Michigan Tech · nearest UPS Store 66 mi"]
+    N["6 · Natchitoches, LA<br/>Northwestern State · 48 mi<br/>about 100 mi from the Forsythe store"]
+    FV["7 · Farmville, VA<br/>Longwood + Hampden-Sydney · about 60 mi"]
+    DC["8 · Decorah, IA<br/>Luther College · 44 mi"]
+    EK["10 · Elkins, WV<br/>Davis & Elkins · 40 mi"]
+  end
+  subgraph GROW["Fast-growth exurbs"]
+    direction TB
+    FN["1 · Fernley, NV<br/>Reno / Tesla spillover · about 30 mi"]
+    DR["2 · Driggs / Victor, ID<br/>Jackson Hole overflow · 30 to 70 mi"]
+  end
+  subgraph PAY["Payroll and tourism"]
+    direction TB
+    SF["4 · Safford / Thatcher, AZ<br/>mine + college · 74 mi"]
+    MB["5 · Moab, UT<br/>3M visitors a year · 63 mi"]
+    WB["9 · Wellsboro, PA<br/>PA Grand Canyon · 30 mi"]
+  end
+  classDef store fill:#f2b705,stroke:#3b2c00,color:#3b2c00
+  classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
+  classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
+  class FN,DR store
+  class H,N,FV,DC,EK you
+  class SF,MB,WB cloud
+```
+
+### Next steps
+
+1. Drive both Florida sites and photograph the counters and traffic.
+2. Phone GP Brands at 800-504-6040. Confirm the Poinciana west and Haines City south territories are open, and ask about the missing Oviedo and St. Cloud stores.
+3. Ask the Poinciana (4774 San Remo Rd) and Haines City post offices about PO box waits.
+4. Tour Solivita Marketplace (1,268 sq ft) and Poinciana Lakes Plaza (1,600 sq ft) at Cypress Parkway and Marigold Avenue, and the downtown and US-17-92 spaces in Haines City.
+5. Get asking rent in writing. Expect $20 to $25 a sq ft in Poinciana and the $20s in Haines City.
+
+What could not be verified is listed at the bottom of [`research/florida/README.md`](research/florida/README.md#what-could-not-be-verified).
+
 ## Live pages
 
 | Page | What it's for | Link |
@@ -469,6 +597,9 @@ flowchart LR
   R --> BK["brand-kit.html<br/>colors, fonts, layout rules"]
   R --> AG["AGENDA.md<br/>what's done and what's next"]
   R --> DOC["docs/promo-night-kit.md<br/>PA scripts and checklist"]
+  R --> RS["research/<br/>where the next store goes"]
+  RS --> RS1["florida/README.md"]
+  RS --> RS2["other-states/README.md"]
   R --> D["designs/"]
   R --> G[".gitattributes<br/>shows every language on GitHub"]
   D --> D0["index.html<br/>gallery of all designs"]

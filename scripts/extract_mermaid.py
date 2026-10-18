@@ -1,4 +1,4 @@
-"""Pull every Mermaid diagram out of the README, agenda, docs and plan page into .mmd files.
+"""Pull every Mermaid diagram out of the README, agenda, docs, research folder and plan page into .mmd files.
 
 Run from the repo root:  python scripts/extract_mermaid.py OUT_DIR
 CI renders each file with mermaid-cli, so a broken chart fails the build.
@@ -17,6 +17,9 @@ SOURCES = {
     "docs/claude-code-setup.md": MD,
     "launch-book.html": re.compile(r'<pre class="mermaid">(.*?)</pre>', re.S),
 }
+# Every Markdown file under research/ is scanned too (research/README.md, research/florida/README.md, ...).
+for md in sorted((ROOT / "research").rglob("*.md")):
+    SOURCES[md.relative_to(ROOT).as_posix()] = MD
 
 
 def main():
@@ -27,7 +30,8 @@ def main():
         text = (ROOT / name).read_text(encoding="utf-8")
         for i, body in enumerate(pattern.findall(text), 1):
             body = html.unescape(body).strip() + "\n"
-            (out / f"{Path(name).stem}-{i}.mmd").write_text(body, encoding="utf-8")
+            stem = Path(name).with_suffix("").as_posix().replace("/", "-")
+            (out / f"{stem}-{i}.mmd").write_text(body, encoding="utf-8")
             total += 1
     print(f"Extracted {total} diagrams to {out}")
     if total == 0:
