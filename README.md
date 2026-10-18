@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/wbp318/goin-postal-forsythe/actions/workflows/ci.yml/badge.svg)](https://github.com/wbp318/goin-postal-forsythe/actions/workflows/ci.yml)
 
-This is a public repo. Everything here is a marketing kit and site research for a Goin' Postal store, with no customer data; the store's live pages stay private. Goin' Postal's name and logo belong to GP Brands, and nothing here is endorsed by them.
+This is a public repo. Everything here is a marketing kit and site research for a Goin' Postal store, with no customer data; the store's live pages stay private. Goin' Postal's name and logo belong to GP Brands, and nothing here is endorsed by them. The code, designs and research are released under the [MIT License](LICENSE), copyright Peter Ho, Rin Ho and William Parker; the trademark carve-outs are in the LICENSE file.
 
 ## Start here: set up Claude Code
 
