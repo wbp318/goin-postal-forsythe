@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/wbp318/goin-postal-forsythe/actions/workflows/ci.yml/badge.svg)](https://github.com/wbp318/goin-postal-forsythe/actions/workflows/ci.yml)
 
+This is a public repo. Everything here is a marketing kit and site research for a Goin' Postal store, with no customer data; the store's live pages stay private. Goin' Postal's name and logo belong to GP Brands, and nothing here is endorsed by them.
+
 ## Start here: set up Claude Code
 
 Claude Code is an AI helper that runs in your terminal. You type what you want in plain English, and it reads files, runs commands and makes changes for you. Install it once (Part 1), then let it set up Python and R for you (Part 2). TypeScript and F# are optional (Part 3). A copy of this guide also lives in [`docs/claude-code-setup.md`](docs/claude-code-setup.md).
@@ -79,7 +81,7 @@ flowchart TB
 
 ### Before you start
 
-- **Accept the GitHub invite.** Check your email for the invite to `wbp318/goin-postal-forsythe` and click **Accept invitation**. You need a free GitHub account.
+- **No invite needed.** This repo is public, so anyone can read it and clone it at [github.com/wbp318/goin-postal-forsythe](https://github.com/wbp318/goin-postal-forsythe). You only need a free GitHub account if you want to push changes back, and the owner has to add you as a collaborator for that.
 - **A Claude account with Claude Code access.** A Claude Pro or Max plan works (sign up at [claude.ai](https://claude.ai)). A Claude Console account with API billing also works.
 - **Admin rights on your computer**, an internet connection and about 30 minutes.
 - **Copying commands:** type or paste each command exactly as shown, then press **Enter**. Wait for it to finish before running the next one.
@@ -150,7 +152,7 @@ flowchart TB
    ```
 2. **Sign in.** Pick a color theme, then choose to log in with your Claude account. A browser window opens; approve it, then go back to the terminal.
 3. **Get this repo.** Paste this into Claude Code as a normal message:
-   > Install the GitHub CLI, log me in to GitHub with `gh auth login` (walk me through each question), then clone wbp318/goin-postal-forsythe into my Documents folder.
+   > Clone the public repo https://github.com/wbp318/goin-postal-forsythe into my Documents folder. If I will be pushing changes, also install the GitHub CLI and log me in with `gh auth login` (walk me through each question).
 4. **Restart Claude Code inside the repo.** Type `/exit`, then:
    ```
    cd ~/Documents/goin-postal-forsythe
@@ -280,7 +282,7 @@ Once Claude Code is running, the easiest fix for almost anything is to paste the
 - **"Usage limit reached":** Pro and Max plans have limits that reset every few hours. Wait for the reset time it shows, or upgrade the plan.
 - **Two copies of Claude Code fight each other** (`/doctor` warns about multiple installs): keep the one from Part 1. If you once installed it with npm, remove that copy with `npm uninstall -g @anthropic-ai/claude-code`.
 - **Updating Claude Code:** it updates itself. To force it, run `claude update`.
-- **Cloning the repo fails with "Repository not found" or "permission denied":** the GitHub invite hasn't been accepted yet, or `gh` is logged in to a different GitHub account. Accept the invite, then run `gh auth status` to see which account is logged in, and `gh auth login` to switch.
+- **Cloning the repo fails:** the repo is public, so a plain `git clone https://github.com/wbp318/goin-postal-forsythe` needs no login. If a push fails with "permission denied", `gh` is logged in to an account that isn't a collaborator. Run `gh auth status` to see which account is logged in, `gh auth login` to switch, and ask the owner to add you.
 - **Antivirus or a work laptop blocks the install:** these steps need admin rights. Use a personal computer or ask whoever manages the laptop.
 - **`dotnet` works but says "No .NET SDKs were found":** only the .NET *Runtime* is installed. Install the **SDK** (Part 3, F#).
 - **`dotnet fsi` seems stuck:** F# Interactive waits for `;;` at the end of each line. Type `;;` and press **Enter**, or `#quit;;` to leave.
@@ -539,7 +541,7 @@ What could not be verified is listed at the bottom of [`research/florida/README.
 
 What's being worked on, and what's done, is in **[AGENDA.md](AGENDA.md)**.
 
-Both pages are private. They open only for people the owner has shared them with, signed in to claude.ai. Share the Coupon Counter as **Contributor** with everyone who works the counter.
+The repo is public, but both pages are private. They open only for people the owner has shared them with, signed in to claude.ai. Share the Coupon Counter as **Contributor** with everyone who works the counter. Customer phone numbers live only in the Coupon Counter, never in this repo.
 
 ## Marketing at a glance
 

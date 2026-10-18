@@ -38,14 +38,104 @@ _Last updated: Oct 18, 2026_
 | 22 | Calendar deadline reminders | Reminder 2 weeks before any book-by date | ⏳ Not started |
 | 23 | Next-store site research | Florida focus (Osceola, Polk, Seminole, Monroe) plus 1-2 rural picks in every other state, in `research/` | ✅ Done |
 
+### Round 3: store improvements
+
+New ideas for the Forsythe store itself, not just its ads. Each one is something the store can start this season with what is already in the repo.
+
+| # | Item | What you get | Status |
+|---|---|---|---|
+| 24 | ULM student mailbox and move-out program | A flyer and campus-board card for University of Louisiana Monroe students: street-address mailbox for the school year, and a "ship your dorm home" week in May with a code ULM10 in the Coupon Counter | ⏳ Not started |
+| 25 | Google review card | Counter card and receipt slip with a QR straight to the store's review form, a staff line to ask for it, and a goal of 50 reviews by spring | ⏸ Waiting on the listing link |
+| 26 | Services menu board | One board by the door listing everything the store does (USPS, UPS, FedEx, mailboxes, notary, packing, printing, shredding, passport photos) with prices, so nobody asks "do you do that?" | ⏳ Not started |
+| 27 | Returns-dropped-here sign | Window and sidewalk sign for online-order returns, which bring in people who have never shipped anything, plus a "while you're here" offer on the receipt | ⏳ Not started |
+| 28 | Small-business accounts | A one-page offer for local shops, Etsy sellers and contractors: monthly invoice, discounted rates, scheduled pickup. Tracked as code BIZ10 | ⏳ Not started |
+| 29 | Mailbox promo | Three months free on a 12-month mailbox, matching what the UPS Stores in town advertise, with a sign and a social post | ⏳ Not started |
+| 30 | Referral code | FRIEND10: the referred customer and the referrer each get a discount, tracked in the Coupon Counter so the store can see who sends people | ⏳ Not started |
+| 31 | Neighborhood postcard | One Every Door Direct Mail postcard to the carrier routes around Forsythe Ave and N 18th St with a code MAIL10, costed in the ad calendar | ⏳ Not started |
+| 32 | Church bulletin ads | Quarter-page ad in the bulletins of the four or five churches closest to the store, code CHURCH10 | ⏳ Not started |
+| 33 | Counter script card | A palm-sized card for staff: the greeting, the three questions that find the upsell (mailbox, insurance, packing), and the review ask | ⏳ Not started |
+| 34 | Gift-wrap and ship station | December-only station with paper, tags and a flat price for wrap plus pack, promoted on the Holiday Hub display | ⏳ Not started |
+| 35 | Home-turf competitor map | The 1-mile and 5-mile radius method from `research/` applied to Monroe and West Monroe: every UPS Store, Goin' Postal and independent shipper on one chart, so the store knows which neighborhoods are its alone | ⏳ Not started |
+| 36 | Monthly review template | A one-page sheet filled from the Coupon Counter results tab: codes redeemed, cost per customer, returning share, what to renew or drop | ⏳ Not started |
+| 37 | Senior morning | Tuesday 9 to 11 discount for seniors, with a sign and a line in the church bulletin ad, because weekday mornings are the slowest hours | ⏳ Not started |
+
+## Round 3: where to start
+
+```mermaid
+quadrantChart
+  title Round 3 effort vs payoff
+  x-axis Less effort --> More effort
+  y-axis Smaller payoff --> Bigger payoff
+  quadrant-1 Plan it
+  quadrant-2 Do first
+  quadrant-3 Fill-ins
+  quadrant-4 Skip for now
+  Google review card: [0.12, 0.88]
+  Services menu board: [0.22, 0.8]
+  Returns sign: [0.15, 0.74]
+  Counter script card: [0.1, 0.62]
+  Mailbox promo: [0.2, 0.66]
+  Referral code: [0.25, 0.58]
+  ULM student program: [0.45, 0.82]
+  Small-business accounts: [0.55, 0.78]
+  Neighborhood postcard: [0.5, 0.6]
+  Church bulletin ads: [0.35, 0.5]
+  Gift-wrap station: [0.4, 0.46]
+  Competitor map: [0.6, 0.52]
+  Monthly review template: [0.3, 0.56]
+  Senior morning: [0.18, 0.34]
+```
+
+```mermaid
+flowchart LR
+  L["You send the store's<br/>Google Maps link"] --> RV["#25 Review card"]
+  RV --> SC["#33 Counter script card"]
+  MB["#26 Services menu board"] --> SC
+  CC["Coupon Counter codes"] --> UL["#24 ULM10"]
+  CC --> BZ["#28 BIZ10"]
+  CC --> FR["#30 FRIEND10"]
+  CC --> PC["#31 MAIL10"]
+  CC --> CH["#32 CHURCH10"]
+  CAL["Ad calendar"] --> PC
+  CAL --> CH
+  RES["Results tab"] --> MR["#36 Monthly review"]
+  HH["#20 Holiday Hub"] --> GW["#34 Gift-wrap station"]
+  RS["research/ radius method"] --> CM["#35 Competitor map"]
+  CM --> PC
+  classDef store fill:#f2b705,stroke:#3b2c00,color:#3b2c00
+  classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
+  classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
+  class RV,MB,SC,UL,BZ,FR,PC,CH,MR,GW,CM store
+  class CC,CAL,RES,HH,RS cloud
+  class L you
+```
+
+## Round 3: a customer's week
+
+```mermaid
+journey
+  title How the Round 3 pieces reach one customer
+  section Finds the store
+    Sees the returns sign on the window: 4: Customer
+    Drops an online return: 5: Customer
+  section At the counter
+    Reads the services menu board: 4: Customer
+    Staff asks the three script questions: 4: Staff
+    Takes a mailbox on the 3-months-free promo: 5: Customer
+  section Comes back
+    Gets the review card with the receipt: 3: Customer
+    Leaves a Google review: 4: Customer
+    Gives FRIEND10 to a neighbor: 5: Customer
+```
+
 ## Progress
 
 ```mermaid
 pie showData
   title Items by status
-  "Done" : 12
-  "Waiting on you" : 1
-  "Not started" : 10
+  "Done" : 13
+  "Waiting on you" : 2
+  "Not started" : 23
 ```
 
 ## How the pieces connect
@@ -171,3 +261,4 @@ flowchart LR
 - **Oct 12:** Everything added to the gallery, README and CI checks.
 - **Oct 12:** Round 2 added (#10–#22). #10 and #11 done: the README now opens with a rink diagram showing where the board sits and a chart of getting the logo onto the board. #12, repointing the QR codes to the store's Google listing, is waiting on the listing link.
 - **Oct 18:** #23 done. `research/florida/` ranks Haines City south side and Poinciana west end (Cypress Pkwy and Marigold Ave) as the two Florida sites to pursue, with Harmony, Lake Alfred and Mascotte on a watch list; Seminole County and the Keys ruled out. `research/other-states/` lists 80 rural candidates across the other 49 states, Natchitoches LA among the top ten. Franchise terms verified from the Aug 2025 FDD. Released as v1.0.0.
+- **Oct 18:** Round 3 added (#24 to #37): fourteen store improvements, from a Google review card and services menu board to a ULM student mailbox program, small-business accounts, a referral code and a home-turf competitor map. Released as v1.1.0.
