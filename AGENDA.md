@@ -2,7 +2,7 @@
 
 Working list for the Forsythe store's marketing kit. Updated as each item is finished.
 
-_Last updated: Oct 18, 2026_
+_Last updated: Oct 19, 2026_
 
 ## Status
 
@@ -237,6 +237,34 @@ timeline
     Feb 1 : St. Frederick 2027 football program ads go on sale
 ```
 
+## To do: things only the owners can supply
+
+Nothing in the repo is blocked except these. Each one unlocks the item in the right-hand column.
+
+| # | To do | Who | Unlocks |
+|---|---|---|---|
+| T1 | Send the store's Google Maps listing link (Google Business Profile) | Rin, Peter or William | #12 QR codes to the listing; #25 Google review card |
+| T2 | Confirm the Moccasins opponents for Oct 30 and 31 | whoever has the schedule | the two unnamed game-day posts |
+| T3 | Watch for UPS to publish its 2026 holiday cutoff dates | store staff | the write-in rows on the holiday sign |
+| T4 | Get the official logo file from GP Brands | Rin or Peter | every OFFICIAL LOGO box in the designs |
+| T5 | Enter the real cost of each booked placement in the Coupon Counter ad calendar | whoever books it | cost per customer on the Results tab |
+| T6 | Phone GP Brands (800-504-6040) and ask whether Haines City and Poinciana territories are open | Rin or Peter | the Florida site visits in `research/florida/` |
+
+```mermaid
+flowchart LR
+  T1["T1 Listing link"] --> A12["#12 QR codes"]
+  T1 --> A25["#25 Review card"]
+  T2["T2 Oct 30 and 31 opponents"] --> G["Two game-day posts"]
+  T3["T3 UPS 2026 dates"] --> H["Holiday sign rows"]
+  T4["T4 Official logo"] --> L["Logo boxes filled"]
+  T5["T5 Placement costs"] --> C["Cost per customer"]
+  T6["T6 GP Brands territory call"] --> F["Florida site visits"]
+  classDef store fill:#f2b705,stroke:#3b2c00,color:#3b2c00
+  classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
+  class T1,T2,T3,T4,T5,T6 store
+  class A12,A25,G,H,L,C,F cloud
+```
+
 ## Follow-ups
 
 ```mermaid
@@ -264,3 +292,4 @@ flowchart LR
 - **Oct 18:** #23 done. `research/florida/` ranks Haines City south side and Poinciana west end (Cypress Pkwy and Marigold Ave) as the two Florida sites to pursue, with Harmony, Lake Alfred and Mascotte on a watch list; Seminole County and the Keys ruled out. `research/other-states/` lists 80 rural candidates across the other 49 states, Natchitoches LA among the top ten. Franchise terms verified from the Aug 2025 FDD. Released as v1.0.0.
 - **Oct 18:** Round 3 added (#24 to #37): fourteen store improvements, from a Google review card and services menu board to a ULM student mailbox program, small-business accounts, a referral code and a home-turf competitor map. Released as v1.1.0.
 - **Oct 18:** #23b done. `research/` now has 23 state folders (alaska through wyoming), each with a ranked candidate table, two charts, a dropped list and sources. Top picks re-checked by search. Released as v1.4.0.
+- **Oct 19:** Owner guard fixed so the scripts also run under `python -I` (v1.4.1). To-do table T1 to T6 added for the things only the owners can supply; the listing link (T1) is what holds up #12 and #25. Released as v1.5.0.
