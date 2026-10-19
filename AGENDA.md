@@ -37,6 +37,7 @@ _Last updated: Oct 18, 2026_
 | 21 | Automatic game-day posts | Next game's post made a few days ahead and sent to whoever posts | ⏳ Not started |
 | 22 | Calendar deadline reminders | Reminder 2 weeks before any book-by date | ⏳ Not started |
 | 23 | Next-store site research | Florida focus (Osceola, Polk, Seminole, Monroe) plus 1-2 rural picks in every other state, in `research/` | ✅ Done |
+| 23b | State-by-state deep files | One README per state for the 23 states with no Goin' Postal, 6 to 8 verified towns each | ✅ Done |
 
 ### Round 3: store improvements
 
@@ -262,3 +263,4 @@ flowchart LR
 - **Oct 12:** Round 2 added (#10–#22). #10 and #11 done: the README now opens with a rink diagram showing where the board sits and a chart of getting the logo onto the board. #12, repointing the QR codes to the store's Google listing, is waiting on the listing link.
 - **Oct 18:** #23 done. `research/florida/` ranks Haines City south side and Poinciana west end (Cypress Pkwy and Marigold Ave) as the two Florida sites to pursue, with Harmony, Lake Alfred and Mascotte on a watch list; Seminole County and the Keys ruled out. `research/other-states/` lists 80 rural candidates across the other 49 states, Natchitoches LA among the top ten. Franchise terms verified from the Aug 2025 FDD. Released as v1.0.0.
 - **Oct 18:** Round 3 added (#24 to #37): fourteen store improvements, from a Google review card and services menu board to a ULM student mailbox program, small-business accounts, a referral code and a home-turf competitor map. Released as v1.1.0.
+- **Oct 18:** #23b done. `research/` now has 23 state folders (alaska through wyoming), each with a ranked candidate table, two charts, a dropped list and sources. Top picks re-checked by search. Released as v1.4.0.

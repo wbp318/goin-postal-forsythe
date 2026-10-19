@@ -524,6 +524,82 @@ flowchart TB
   class SF,MB,WB cloud
 ```
 
+### The 23 states with no Goin' Postal, one folder each
+
+Every state with no Goin' Postal got its own deep file: 6 to 8 candidate towns each, verified against the UPS locator, with a ranked chart, a dropped list, state notes and sources. Top pick per state:
+
+| State | Top pick | Pop | Why | File |
+|---|---|---|---|---|
+| Alaska | **Kodiak** | 5,581 city, 12,430 borough | Coast Guard base and fishing port; no store of any kind; nearest UPS Store Anchorage by air | [`research/alaska/`](research/alaska/README.md) |
+| Arkansas | **Harrison** | 13,802 (2025) | FedEx Freight HQ, regional hub; Ace counter only; nearest UPS Store Mountain Home about 65 mi | [`research/arkansas/`](research/arkansas/README.md) |
+| Colorado | **Canon City** | 17,141 | Prison economy, Royal Gorge tourism; one print-shop outlet; nearest UPS Store Pueblo about 40 mi | [`research/colorado/`](research/colorado/README.md) |
+| Connecticut | **Norwich** | 40,125 | No branded store anywhere in Norwich, New London, Groton or Waterford; last one closed 2018; nearest Storrs about 20 mi | [`research/connecticut/`](research/connecticut/README.md) |
+| Delaware | **Harrington** | 3,774 | Only Delaware town with no UPS outlet at all; nearest UPS Store Dover about 17 mi | [`research/delaware/`](research/delaware/README.md) |
+| Hawaii | **Hilo** | 44,186 | UH Hilo, hospital, county seat; two independent mail centers; nearest UPS Store Pahoa about 17 mi | [`research/hawaii/`](research/hawaii/README.md) |
+| Idaho | **Rexburg** | 39,409 | BYU-Idaho; one business-services outlet; nearest UPS Store Idaho Falls about 26 mi | [`research/idaho/`](research/idaho/README.md) |
+| Illinois | **Jacksonville** | 17,237 | College and hospital hub; farm-store counter only; nearest UPS Store Springfield about 31 mi | [`research/illinois/`](research/illinois/README.md) |
+| Iowa | **Fairfield** | 9,416 | Maharishi International University, start-ups; grocery counter only; nearest UPS Store Iowa City 49 mi | [`research/iowa/`](research/iowa/README.md) |
+| Kansas | **Dodge City** | 27,514 (2023) | Meatpacking, casino; True Value counter only; nearest UPS Store Great Bend about 85 mi | [`research/kansas/`](research/kansas/README.md) |
+| Maryland | **Cambridge** | 13,096 | Hospital and Hyatt resort; hardware counter only; nearest UPS Store Salisbury about 32 mi | [`research/maryland/`](research/maryland/README.md) |
+| Massachusetts | **Athol** | 12,105 | Starrett plant and hospital; one independent outlet; nearest UPS Store Greenfield 21 mi | [`research/massachusetts/`](research/massachusetts/README.md) |
+| Montana | **Butte** | 34,494 | Montana Tech, hospital, I-15 and I-90; the branded UPS Store there closed; nearest Helena about 65 mi | [`research/montana/`](research/montana/README.md) |
+| Nebraska | **Scottsbluff and Gering** | 14,436 plus about 8,000 | Panhandle hub; Staples drop point and one outlet; nearest UPS Store Cheyenne WY about 100 mi | [`research/nebraska/`](research/nebraska/README.md) |
+| New Hampshire | **Laconia** | 17,246 | Lakes Region hub; Ace counter only; nearest UPS Store Plymouth 18 mi | [`research/new-hampshire/`](research/new-hampshire/README.md) |
+| New Mexico | **Alamogordo** | 30,898 | Holloman Air Force Base; one independent outlet; nearest UPS Store Las Cruces about 70 mi | [`research/new-mexico/`](research/new-mexico/README.md) |
+| New York | **Olean** | 13,937 | St. Bonaventure, Cutco, hospital; Staples counter only; nearest UPS Store Jamestown 39 mi | [`research/new-york/`](research/new-york/README.md) |
+| Oklahoma | **Ponca City** | 24,424 | Refinery payroll; Staples counter only; nearest UPS Store Stillwater about 45 mi | [`research/oklahoma/`](research/oklahoma/README.md) |
+| Rhode Island | **Westerly** | 23,359 | Summer homes; one independent; nearest UPS Store Narragansett about 18 mi | [`research/rhode-island/`](research/rhode-island/README.md) |
+| South Dakota | **Vermillion** | 11,695 | University of South Dakota; the branded UPS Store there closed; nearest Yankton 25 mi | [`research/south-dakota/`](research/south-dakota/README.md) |
+| Vermont | **Bennington** | 15,333 | Hospital with about 1,300 staff, college; Staples only; nearest UPS Store Williamstown MA 13 mi | [`research/vermont/`](research/vermont/README.md) |
+| Virginia | **South Boston** | 7,966 | Hardware counter only; nearest UPS Store Danville about 30 mi | [`research/virginia/`](research/virginia/README.md) |
+| Wyoming | **Riverton** | 10,682 | Central Wyoming College, hospital; Ace counter only; nearest UPS Store Casper about 120 mi | [`research/wyoming/`](research/wyoming/README.md) |
+
+Yellow in the chart below means the top pick has no mail center at all, or a branded UPS Store already closed there (Butte, Vermillion), which cuts both ways.
+
+```mermaid
+flowchart TB
+  subgraph W["Mountain and Pacific"]
+    direction TB
+    AK["Alaska: Kodiak"]
+    HI["Hawaii: Hilo"]
+    ID["Idaho: Rexburg"]
+    MT["Montana: Butte"]
+    WY["Wyoming: Riverton"]
+    CO["Colorado: Canon City"]
+    NM["New Mexico: Alamogordo"]
+  end
+  subgraph P["Plains"]
+    direction TB
+    SD["South Dakota: Vermillion"]
+    NE["Nebraska: Scottsbluff and Gering"]
+    KS["Kansas: Dodge City"]
+    OK["Oklahoma: Ponca City"]
+    AR["Arkansas: Harrison"]
+    IA["Iowa: Fairfield"]
+    IL["Illinois: Jacksonville"]
+  end
+  subgraph NE1["Northeast"]
+    direction TB
+    NY["New York: Olean"]
+    VT["Vermont: Bennington"]
+    NH["New Hampshire: Laconia"]
+    MA["Massachusetts: Athol"]
+    CT["Connecticut: Norwich"]
+    RI["Rhode Island: Westerly"]
+  end
+  subgraph MA1["Mid-Atlantic"]
+    direction TB
+    DE["Delaware: Harrington"]
+    MD["Maryland: Cambridge"]
+    VA["Virginia: South Boston"]
+  end
+  classDef store fill:#f2b705,stroke:#3b2c00,color:#3b2c00
+  classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
+  classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
+  class CT,MT,SD,KS,NE,WY store
+  class AK,HI,ID,CO,NM,OK,AR,IA,IL,NY,VT,NH,MA,RI,DE,MD,VA you
+```
+
 ### Next steps
 
 1. Drive both Florida sites and photograph the counters and traffic.
@@ -604,6 +680,7 @@ flowchart LR
   R --> RS["research/<br/>where the next store goes"]
   RS --> RS1["florida/README.md"]
   RS --> RS2["other-states/README.md"]
+  RS --> RS3["23 state folders<br/>alaska/ ... wyoming/"]
   R --> D["designs/"]
   R --> G[".gitattributes<br/>shows every language on GitHub"]
   D --> D0["index.html<br/>gallery of all designs"]

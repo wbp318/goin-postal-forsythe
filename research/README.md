@@ -6,12 +6,13 @@ Research date: October 18, 2026. This folder answers one question: which rural o
 flowchart LR
   R["research/"] --> F["florida/README.md<br/>Osceola, Polk, Seminole, Monroe<br/>plus backups statewide<br/>Verdict: Haines City south side,<br/>Poinciana west end"]
   R --> O["other-states/README.md<br/>1-2 towns in each of the other 49 states<br/>Top 10 nationwide"]
+  R --> S["23 state folders, one README each<br/>alaska/ ... wyoming/<br/>6-8 verified towns per state"]
   R --> T["this file<br/>method, franchise terms,<br/>how the two folders fit"]
   classDef store fill:#f2b705,stroke:#3b2c00,color:#3b2c00
   classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
   classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
   class F store
-  class O cloud
+  class O,S cloud
   class R,T you
 ```
 
@@ -22,6 +23,82 @@ flowchart LR
 - **Watch list in Florida:** Harmony (no store at all, but still filling in), Lake Alfred (no store, up 55%), Mascotte.
 - **Not viable:** Seminole County (slow growth, one to three UPS Stores per town) and the Keys (population falling, rents $25 to $125 a sq ft). Monroe County was checked as asked and does not pencil.
 - **Nationwide:** Fernley NV, Driggs ID, Houghton MI, Safford AZ and Moab UT lead the list of 80 candidates in [`other-states/`](other-states/README.md).
+
+## State by state: the 23 states with no Goin' Postal
+
+Each of these states has its own folder with 6 to 8 verified candidate towns, a ranked chart, a checked-and-dropped list, state notes and sources. The yellow states in the chart are the ones where the top pick has no mail center at all, or where a branded UPS Store has already closed (Butte, Vermillion), which is a warning as well as an opening.
+
+```mermaid
+flowchart TB
+  subgraph W["Mountain and Pacific"]
+    direction TB
+    AK["Alaska: Kodiak"]
+    HI["Hawaii: Hilo"]
+    ID["Idaho: Rexburg"]
+    MT["Montana: Butte"]
+    WY["Wyoming: Riverton"]
+    CO["Colorado: Canon City"]
+    NM["New Mexico: Alamogordo"]
+  end
+  subgraph P["Plains"]
+    direction TB
+    SD["South Dakota: Vermillion"]
+    NE["Nebraska: Scottsbluff and Gering"]
+    KS["Kansas: Dodge City"]
+    OK["Oklahoma: Ponca City"]
+    AR["Arkansas: Harrison"]
+    IA["Iowa: Fairfield"]
+    IL["Illinois: Jacksonville"]
+  end
+  subgraph NE1["Northeast"]
+    direction TB
+    NY["New York: Olean"]
+    VT["Vermont: Bennington"]
+    NH["New Hampshire: Laconia"]
+    MA["Massachusetts: Athol"]
+    CT["Connecticut: Norwich"]
+    RI["Rhode Island: Westerly"]
+  end
+  subgraph MA1["Mid-Atlantic"]
+    direction TB
+    DE["Delaware: Harrington"]
+    MD["Maryland: Cambridge"]
+    VA["Virginia: South Boston"]
+  end
+  classDef store fill:#f2b705,stroke:#3b2c00,color:#3b2c00
+  classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
+  classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
+  class CT,MT,SD,KS,NE,WY store
+  class AK,HI,ID,CO,NM,OK,AR,IA,IL,NY,VT,NH,MA,RI,DE,MD,VA you
+```
+
+| State | Top pick | Pop | Why | Folder |
+|---|---|---|---|---|
+| Alaska | **Kodiak** | 5,581 city, 12,430 borough | Coast Guard base and fishing port; no store of any kind; nearest UPS Store Anchorage by air | [`alaska/`](alaska/README.md) |
+| Arkansas | **Harrison** | 13,802 (2025) | FedEx Freight HQ, regional hub; Ace counter only; nearest UPS Store Mountain Home about 65 mi | [`arkansas/`](arkansas/README.md) |
+| Colorado | **Canon City** | 17,141 | Prison economy, Royal Gorge tourism; one print-shop outlet; nearest UPS Store Pueblo about 40 mi | [`colorado/`](colorado/README.md) |
+| Connecticut | **Norwich** | 40,125 | No branded store anywhere in Norwich, New London, Groton or Waterford; last one closed 2018; nearest Storrs about 20 mi | [`connecticut/`](connecticut/README.md) |
+| Delaware | **Harrington** | 3,774 | Only Delaware town with no UPS outlet at all; nearest UPS Store Dover about 17 mi | [`delaware/`](delaware/README.md) |
+| Hawaii | **Hilo** | 44,186 | UH Hilo, hospital, county seat; two independent mail centers; nearest UPS Store Pahoa about 17 mi | [`hawaii/`](hawaii/README.md) |
+| Idaho | **Rexburg** | 39,409 | BYU-Idaho; one business-services outlet; nearest UPS Store Idaho Falls about 26 mi | [`idaho/`](idaho/README.md) |
+| Illinois | **Jacksonville** | 17,237 | College and hospital hub; farm-store counter only; nearest UPS Store Springfield about 31 mi | [`illinois/`](illinois/README.md) |
+| Iowa | **Fairfield** | 9,416 | Maharishi International University, start-ups; grocery counter only; nearest UPS Store Iowa City 49 mi | [`iowa/`](iowa/README.md) |
+| Kansas | **Dodge City** | 27,514 (2023) | Meatpacking, casino; True Value counter only; nearest UPS Store Great Bend about 85 mi | [`kansas/`](kansas/README.md) |
+| Maryland | **Cambridge** | 13,096 | Hospital and Hyatt resort; hardware counter only; nearest UPS Store Salisbury about 32 mi | [`maryland/`](maryland/README.md) |
+| Massachusetts | **Athol** | 12,105 | Starrett plant and hospital; one independent outlet; nearest UPS Store Greenfield 21 mi | [`massachusetts/`](massachusetts/README.md) |
+| Montana | **Butte** | 34,494 | Montana Tech, hospital, I-15 and I-90; the branded UPS Store there closed; nearest Helena about 65 mi | [`montana/`](montana/README.md) |
+| Nebraska | **Scottsbluff and Gering** | 14,436 plus about 8,000 | Panhandle hub; Staples drop point and one outlet; nearest UPS Store Cheyenne WY about 100 mi | [`nebraska/`](nebraska/README.md) |
+| New Hampshire | **Laconia** | 17,246 | Lakes Region hub; Ace counter only; nearest UPS Store Plymouth 18 mi | [`new-hampshire/`](new-hampshire/README.md) |
+| New Mexico | **Alamogordo** | 30,898 | Holloman Air Force Base; one independent outlet; nearest UPS Store Las Cruces about 70 mi | [`new-mexico/`](new-mexico/README.md) |
+| New York | **Olean** | 13,937 | St. Bonaventure, Cutco, hospital; Staples counter only; nearest UPS Store Jamestown 39 mi | [`new-york/`](new-york/README.md) |
+| Oklahoma | **Ponca City** | 24,424 | Refinery payroll; Staples counter only; nearest UPS Store Stillwater about 45 mi | [`oklahoma/`](oklahoma/README.md) |
+| Rhode Island | **Westerly** | 23,359 | Summer homes; one independent; nearest UPS Store Narragansett about 18 mi | [`rhode-island/`](rhode-island/README.md) |
+| South Dakota | **Vermillion** | 11,695 | University of South Dakota; the branded UPS Store there closed; nearest Yankton 25 mi | [`south-dakota/`](south-dakota/README.md) |
+| Vermont | **Bennington** | 15,333 | Hospital with about 1,300 staff, college; Staples only; nearest UPS Store Williamstown MA 13 mi | [`vermont/`](vermont/README.md) |
+| Virginia | **South Boston** | 7,966 | Hardware counter only; nearest UPS Store Danville about 30 mi | [`virginia/`](virginia/README.md) |
+| Wyoming | **Riverton** | 10,682 | Central Wyoming College, hospital; Ace counter only; nearest UPS Store Casper about 120 mi | [`wyoming/`](wyoming/README.md) |
+
+**How these were checked.** Every town was screened against The UPS Store state list and the UPS city locator. A pharmacy, hardware, grocery or Staples counter does not count as a competitor; an independent shop with mailboxes does. Twenty-three top picks were re-checked by web search on October 18, 2026, and all held. The research agents ran out of web-search budget part way through, so most states were finished from locator pages and Wikipedia only: post office checks say "nothing found" almost everywhere, rents are missing, and whether a named independent rents mailboxes is unconfirmed. Each file says exactly what was not verified.
 
 ## How the search worked
 

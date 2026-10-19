@@ -2,6 +2,8 @@
 
 Research date: October 18, 2026. Florida is in its own folder, [`../florida/`](../florida/README.md). This folder covers everything else: one or two rural or small-town candidates per state where a pack-and-ship and mailbox store would plausibly fill a gap.
 
+> **Deeper files now exist** for the 23 states with no Goin' Postal: see [`../README.md`](../README.md#state-by-state-the-23-states-with-no-goin-postal) for the index, or open `research/<state>/README.md` directly. This file remains the one-pass view of all 49 states.
+
 ## How to read this
 
 Goin' Postal is a low-cost franchise (about $47k to $110k all-in, $525 a month royalty, 15-year term with a protected territory; see [the research overview](../README.md#what-the-franchise-costs)). That changes what counts as a good town. A UPS Store needs a bigger trade area to pay back its build-out. A Goin' Postal can work in a town of 5,000 to 15,000 people if the nearest branded store is 20 or more miles away and the town has a reason people ship: a college, a base, a lake full of second homes, a mine payroll, or a tourism flow.
