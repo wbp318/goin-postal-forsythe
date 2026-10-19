@@ -4,7 +4,10 @@ Run from the repo root:  pip install segno  then  python scripts/add_qr.py
 It replaces each design's decorative barcode with a real QR code that opens
 the store's location in Google Maps. Running it again just refreshes the QR.
 """
-import owner_guard  # noqa: F401  stops on a clone that is not set up by an owner
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parent))  # works under python -I too
+import owner_guard  # noqa: E402,F401  stops on a clone that is not set up by an owner
 import re
 import sys
 from pathlib import Path

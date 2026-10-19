@@ -4,7 +4,10 @@ Run from the repo root:  python scripts/export_designs.py [--out DIR] [--browser
 The SVGs are the source files and are never changed. Needs Chrome or Edge.
 Fonts load from Google Fonts, so run it online for the real typefaces.
 """
-import owner_guard  # noqa: F401  stops on a clone that is not set up by an owner
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parent))  # works under python -I too
+import owner_guard  # noqa: E402,F401  stops on a clone that is not set up by an owner
 import argparse
 import os
 import re
