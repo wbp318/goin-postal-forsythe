@@ -30,13 +30,40 @@ flowchart LR
 | `/` | customers | Hero, services, hours, map |
 | `/ship` | customers | Quote form, rate list, pay or reserve |
 | `/ship/done?order=CODE` | customers | Label download, QR code, pickup code |
+| `/cards` | customers | Business card designer: three layouts, palettes, logo upload, live preview, PNG download, pay by card on Stripe and pick up in the shop |
+| `/cards/done?order=CODE` | customers | Order confirmation with a QR code and pickup code |
 | `/contact` | customers | Formspree contact form |
+| `/counter/card/CODE` | staff | Card order, already paid online: preview both sides, print sheet, mark printed, mark picked up. Unpaid orders are flagged do not print |
+| `/counter/card/CODE/sheet` | staff | Print-ready 10-up US letter sheet, fronts then mirrored backs |
 | `/counter/CODE` | staff | Order details. For international: ring up on the POS, then press the button to buy the label. Mark printed. Needs the PIN |
 | `POST /api/rates` | site | Re-quotes through Easyship, filtered to the four carriers |
 | `POST /api/orders` | site | Re-quotes server side so prices cannot be edited, then Stripe or reserve |
-| `POST /api/stripe-webhook` | Stripe | `checkout.session.completed` buys the label |
+| `POST /api/stripe-webhook` | Stripe | `checkout.session.completed` buys the label for a `GP-` order or marks a `CD-` card order paid |
 | `POST /api/counter` | staff page | `paid` and `printed` actions |
 | `GET /api/mock-paid` | dev only | Stands in for Stripe when no key is set |
+| `POST /api/cards` | site | Saves a card order (design sanitized server side, logo must be a PNG, JPG or SVG data URL under 400 KB) and starts Stripe Checkout |
+| `PUT /api/cards` | staff page | `printed` and `picked_up` actions, PIN |
+
+## Business card designer
+
+Everything runs in the browser. `src/lib/cards.ts` draws the card as SVG from a plain design object, and the same function renders the live preview, the saved order, and the counter's print sheet, so what the customer sees is exactly what prints. Cards are 3.5 by 2 inches at 300 dpi with a dashed safe-area guide. No outside design service is involved and the logo never leaves the site.
+
+```mermaid
+flowchart LR
+  F["Form: layout, palette,<br/>details, logo"] --> D["design object"]
+  D --> P["renderCard()<br/>SVG, 1050 x 600"]
+  P --> V["Live preview"]
+  P --> PNG["Download PNG<br/>canvas in the browser"]
+  D -->|POST /api/cards| KV[("KV card:CODE<br/>180 days")]
+  KV --> ST["Stripe Checkout<br/>pay now"]
+  ST -->|webhook paid| KV
+  KV --> DONE["/cards/done<br/>QR + pickup code"]
+  KV --> K["/counter/card/CODE"]
+  K --> SH["/sheet: 10 up letter,<br/>fronts then mirrored backs"]
+  K --> PU["Picked up"]
+```
+
+Prices per quantity are in `PRICES` in `src/lib/cards.ts` and are placeholders until the owners confirm them.
 
 ## Run it
 

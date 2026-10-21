@@ -1,6 +1,7 @@
 // Stripe Checkout for domestic labels. Card data never touches this site.
 import Stripe from 'stripe';
 import type { Order } from './orders';
+import type { CardOrder } from './cardOrders';
 
 export function stripeClient(env: Env) {
   if (!env.STRIPE_SECRET_KEY) return null; // mock mode
@@ -31,6 +32,28 @@ export async function createCheckout(env: Env, order: Order): Promise<string> {
     }],
     success_url: `${site}/ship/done?order=${order.id}`,
     cancel_url: `${site}/ship?cancelled=${order.id}`,
+  });
+  return session.url!;
+}
+
+export async function createCardCheckout(env: Env, order: CardOrder): Promise<string> {
+  const stripe = stripeClient(env);
+  const site = env.SITE_URL;
+  if (!stripe) return `${site}/api/mock-paid?order=${order.id}`;
+  const session = await stripe.checkout.sessions.create({
+    mode: 'payment',
+    customer_email: order.customer.email,
+    client_reference_id: order.id,
+    line_items: [{
+      quantity: 1,
+      price_data: {
+        currency: 'usd',
+        unit_amount: Math.round(order.price * 100),
+        product_data: { name: `${order.quantity} business cards`, description: `Pickup code ${order.id}. Printed at Goin' Postal Forsythe.` },
+      },
+    }],
+    success_url: `${site}/cards/done?order=${order.id}`,
+    cancel_url: `${site}/cards?cancelled=${order.id}`,
   });
   return session.url!;
 }

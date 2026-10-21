@@ -1,0 +1,37 @@
+---
+export const prerender = false;
+import { env } from '../../../../lib/env';
+import { getCardOrder } from '../../../../lib/cardOrders';
+import { renderCard } from '../../../../lib/cards';
+
+// Print-ready sheet: 10 cards per US letter page (2 across, 5 down), front page then back page.
+// Backs are mirrored left-to-right so they line up when the sheet is flipped on the long edge.
+const o = await getCardOrder(env, Astro.params.code ?? '');
+if (!o) return new Response('No such order', { status: 404 });
+const front = renderCard(o.design, 'front');
+const back = renderCard(o.design, 'back');
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Print sheet {o.id}</title>
+  <style>
+    @page { size: letter; margin: 0.5in; }
+    html, body { margin: 0; background: #fff; }
+    .page { width: 7.5in; height: 10in; display: grid; grid-template-columns: 3.5in 3.5in; grid-auto-rows: 2in; gap: 0 0.5in; align-content: center; page-break-after: always; }
+    .page.back { direction: rtl; }
+    .c { width: 3.5in; height: 2in; outline: 0.5pt dashed #bbb; }
+    .c svg { width: 100%; height: 100%; display: block; }
+    .bar { font: 12px sans-serif; padding: 8px; }
+    @media print { .bar { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="bar">{o.id} · {o.quantity} cards · print this page, then flip on the long edge for the backs. <button onclick="print()">Print</button></div>
+  <div class="page">
+    {Array.from({ length: 10 }).map(() => <div class="c" set:html={front} />)}
+  </div>
+  {back && <div class="page back">{Array.from({ length: 10 }).map(() => <div class="c" set:html={back} />)}</div>}
+</body>
+</html>

@@ -26,7 +26,7 @@ export const store = {
     { name: "Shipping", blurb: "UPS, FedEx, USPS and DHL under one roof. We compare rates so you pay the least." },
     { name: "Packing", blurb: "Bring it in loose. We box, cushion and label it so it arrives in one piece." },
     { name: "Mailbox rental", blurb: "A real street address, package acceptance from every carrier, and text alerts." },
-    { name: "Printing and copies", blurb: "Flyers, business cards, banners and everyday copies, often same day." },
+    { name: "Printing and copies", blurb: "Flyers, banners and everyday copies, often same day. Design your own business cards online." },
     { name: "Notary", blurb: "Walk-in notary service during store hours." },
     { name: "Shredding", blurb: "Drop off a bag or a box. Secure, by the pound." },
   ],

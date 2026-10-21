@@ -62,3 +62,31 @@ select { width: 100%; padding: 10px; border: 1px solid var(--hair); border-radiu
 .code { font-family: ui-monospace, Menlo, Consolas, monospace; letter-spacing: .08em; }
 .qr svg { width: 220px; height: 220px; background: #fff; border-radius: 8px; padding: 8px; }
 @media (max-width: 600px) { .rate { grid-template-columns: auto 1fr auto; } .rate .service, .rate .days { grid-column: 2 / -1; } }
+
+/* card designer */
+.designer { display: grid; gap: 24px; grid-template-columns: minmax(280px, 1fr) minmax(300px, 1.3fr); align-items: start; }
+@media (max-width: 800px) { .designer { grid-template-columns: 1fr; } }
+.controls { max-width: none; }
+.choices { display: grid; gap: 8px; }
+.choice { display: flex; gap: 10px; align-items: center; padding: 10px; border: 1px solid var(--hair); border-radius: 8px; font-weight: 400; cursor: pointer; }
+.choice:has(input:checked) { outline: 2px solid var(--blue); }
+.choice input { width: auto; }
+.swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+.swatch input { position: absolute; opacity: 0; width: 0; }
+.swatch span { display: block; width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--hair); cursor: pointer; }
+.swatch:has(input:checked) span { outline: 3px solid var(--blue); outline-offset: 2px; }
+.preview { position: sticky; top: 16px; }
+.preview h3 { margin: 8px 0 4px; }
+.card-wrap { background: #fff; border-radius: 6px; box-shadow: 0 2px 12px rgba(0,0,0,.25); aspect-ratio: 1050 / 600; overflow: hidden; margin-bottom: 12px; }
+.card-wrap svg { width: 100%; height: 100%; display: block; }
+.card-wrap .muted { padding: 40px; text-align: center; }
+.muted { color: var(--muted); font-size: .9rem; }
+.order { display: grid; gap: 10px; max-width: none; }
+.btn.small { padding: 6px 12px; font-size: .9rem; }
+input[type=color] { height: 44px; padding: 2px; }
+input[type=file] { padding: 6px; }
+fieldset label { display: block; }
+[hidden] { display: none !important; }
+input[type=radio], input[type=checkbox] { width: auto; margin-right: 6px; vertical-align: middle; }
+.card-wrap.example { transform: scale(.9); transform-origin: left top; margin-bottom: -4%; }
+.preview h3 .muted { font-weight: 400; }

@@ -1,0 +1,42 @@
+---
+export const prerender = false;
+import { env } from '../../../lib/env';
+import Base from '../../../layouts/Base.astro';
+import { getCardOrder } from '../../../lib/cardOrders';
+import { renderCard } from '../../../lib/cards';
+
+// Staff page for a card order. Already paid online through Stripe. The print sheet is at /sheet.
+const o = await getCardOrder(env, Astro.params.code ?? '');
+if (!o) return new Response('No such order', { status: 404 });
+---
+<Base title={`Counter · ${o.id}`}>
+  <section class="hero">
+    <h1>{o.id}</h1>
+    <p class="lead">Status: <strong>{o.status.replace('_', ' ')}</strong> · {o.quantity} cards · ${o.price.toFixed(2)} {o.status === 'awaiting_payment' ? 'NOT PAID, do not print' : 'paid online'}</p>
+  </section>
+  <div class="grid">
+    <div>
+      <div class="card-wrap" set:html={renderCard(o.design, 'front')} />
+      <div class="card-wrap" set:html={renderCard(o.design, 'back') || '<p class="muted">Blank back</p>'} />
+    </div>
+    <div class="card">
+      <p><strong>Customer:</strong> {o.customer.name} · {o.customer.email} {o.customer.phone}</p>
+      {o.notes && <p><strong>Notes:</strong> {o.notes}</p>}
+      <p><a class="btn" href={`/counter/card/${o.id}/sheet`} target="_blank">Open print sheet (10 up, letter)</a></p>
+      <label>Staff PIN <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
+      {o.status === 'paid' && <p><button class="btn kraft" data-action="printed">Mark printed</button></p>}
+      {(o.status === 'paid' || o.status === 'printed') && <p><button class="btn" data-action="picked_up">Picked up</button></p>}
+      <p id="msg"></p>
+    </div>
+  </div>
+  <script define:vars={{ id: o.id }}>
+    const msg = document.getElementById('msg');
+    document.querySelectorAll('[data-action]').forEach((b) => b.addEventListener('click', async () => {
+      b.disabled = true;
+      const res = await fetch('/api/cards', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order: id, pin: document.getElementById('pin').value, action: b.dataset.action }) });
+      const j = await res.json();
+      if (!res.ok) { msg.textContent = j.error; b.disabled = false; return; }
+      location.reload();
+    }));
+  </script>
+</Base>

@@ -1,0 +1,27 @@
+---
+export const prerender = false;
+import QRCode from 'qrcode';
+import { env } from '../../lib/env';
+import Base from '../../layouts/Base.astro';
+import { getCardOrder } from '../../lib/cardOrders';
+import { renderCard } from '../../lib/cards';
+import { store } from '../../data/store';
+
+const order = await getCardOrder(env, Astro.url.searchParams.get('order') ?? '');
+if (!order) return new Response('No such order', { status: 404 });
+const qr = await QRCode.toString(`${env.SITE_URL}/counter/card/${order.id}`, { type: 'svg', margin: 1, width: 200 });
+---
+<Base title={`Cards ${order.id} · Goin' Postal Forsythe`}>
+  <section class="hero">
+    <h1>{order.status === 'awaiting_payment' ? 'Waiting for payment.' : 'Paid. We are printing your cards.'}</h1>
+    <p class="lead">Pickup code <strong class="code">{order.id}</strong>. {order.quantity} cards, ${order.price.toFixed(2)} {order.status === 'awaiting_payment' ? 'not yet paid.' : 'paid.'} Pick up at {store.address}. We'll contact {order.customer.email}{order.customer.phone ? ` or ${order.customer.phone}` : ''} when they're ready.</p>
+  </section>
+  <div class="grid">
+    <div class="card-wrap" set:html={renderCard(order.design, 'front')} />
+    <div class="card qr">
+      <h3>Show this at the counter</h3>
+      <div set:html={qr} />
+      <p>Or tell us the code <strong>{order.id}</strong>.</p>
+    </div>
+  </div>
+</Base>

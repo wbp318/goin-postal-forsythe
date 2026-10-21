@@ -652,9 +652,28 @@ flowchart LR
 | Ship | Address and parcel form, rates from all four carriers side by side, pay online or reserve |
 | Done | Label PDF to print at home, a QR code and a pickup code for printing at the counter |
 | Counter | Staff-only view of an order, opened by scanning the QR. For international orders: ring up on the POS, press the button to buy the label. Then mark printed |
+| Business cards | Design-your-own tool: three layouts, six palettes plus a custom accent, logo upload, live front and back preview, PNG download, pay by card online and pick up in the shop |
 | Contact | Quote request form that posts to Formspree |
 
 **How a customer ships:** they type the address and parcel size, see every carrier's price, pick one. Domestic orders pay by card on Stripe's hosted page, and the label is bought the moment Stripe confirms. International orders are reserved online and rung up on the Goin' Postal POS at the counter. Staff then press one button to buy the label with the customer present, so customs forms get done together. Either way the customer gets a pickup code like GP-7K3M9Q and a QR code. If they cannot print, they show the QR at the counter and the shop prints it.
+
+**Business cards, designed on the site.** Instead of sending people to Vistaprint, the site has its own designer. The customer picks Classic, Band or Minimal, chooses colors and a typeface, types their details and drops in a logo. The preview redraws on every keystroke and is the exact artwork that prints, because one function draws the preview, the saved order and the counter's print sheet. They can download a PNG for free or order 100 to 1000 cards, paid by card on Stripe at the moment they order. Nothing is printed until Stripe confirms. The order gets a code like CD-3DBY5A and a QR. At the counter, staff open the print sheet, which lays ten cards on a letter page with the backs mirrored for flipping, print, and mark it picked up.
+
+```mermaid
+flowchart LR
+  F["Customer designs<br/>on /cards"]:::you --> P["renderCard()<br/>one SVG drawing function"]:::local
+  P --> V["Live preview"]:::you
+  P --> PNG["Free PNG download"]:::you
+  F -->|order| ST["Stripe Checkout<br/>pay now"]:::cloud
+  ST -->|paid| KV[("Cloudflare KV<br/>order + design")]:::cloud
+  KV --> DONE["Pickup code + QR"]:::you
+  KV --> K["Counter page"]:::local
+  K --> SH["10-up print sheet"]:::local
+  K --> PU["Picked up"]:::local
+  classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
+  classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
+  classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
+```
 
 **Run it locally**
 
@@ -727,7 +746,7 @@ flowchart LR
   R --> BK["brand-kit.html<br/>colors, fonts, layout rules"]
   R --> AG["AGENDA.md<br/>what's done and what's next"]
   R --> DOC["docs/promo-night-kit.md<br/>PA scripts and checklist"]
-  R --> ST["site/<br/>Astro website, no PHP:<br/>ship, pay, print or QR"]
+  R --> ST["site/<br/>Astro website, no PHP:<br/>ship, business cards,<br/>counter pages"]
   R --> RS["research/<br/>where the next store goes"]
   RS --> RS1["florida/README.md"]
   RS --> RS2["other-states/README.md"]
