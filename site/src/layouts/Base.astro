@@ -1,0 +1,36 @@
+---
+import '../styles/global.css';
+interface Props { title: string; description?: string }
+const { title, description = "Shipping, packing, mailboxes and printing at Forsythe Ave & N 18th St, Monroe, Louisiana." } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" href="/favicon.svg" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="wrap">
+        <a class="brand" href="/">Goin' Postal <span>Forsythe</span></a>
+        <nav>
+          <a href="/#services">Services</a>
+          <a href="/#hours">Hours</a>
+          <a href="/contact">Contact</a>
+        </nav>
+      </div>
+    </header>
+    <main class="wrap">
+      <slot />
+    </main>
+    <footer>
+      <div class="wrap">
+        Goin' Postal Forsythe · Forsythe Ave &amp; N 18th St · Monroe, Louisiana.
+        Goin' Postal's name and logo belong to GP Brands. Independently owned and operated.
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,34 @@
+---
+import Base from '../layouts/Base.astro';
+import StoreInfo from '../components/StoreInfo.astro';
+import { store } from '../data/store';
+---
+<Base title="Goin' Postal Forsythe">
+  <section class="hero">
+    <h1>Ship it, pack it, print it. One stop on Forsythe.</h1>
+    <p class="lead">Your neighborhood shipping store at Forsythe Ave and N 18th St in Monroe. Every major carrier, honest rates, and people who pack it right.</p>
+    <a class="btn" href="/contact">Get a quote</a>
+    <a class="btn kraft" href="#hours" style="margin-left:8px">Hours and directions</a>
+  </section>
+
+  <section id="services">
+    <h2>Services</h2>
+    <div class="grid">
+      {store.services.map(s => (
+        <div class="card"><h3>{s.name}</h3><p>{s.blurb}</p></div>
+      ))}
+    </div>
+  </section>
+
+  <section>
+    <h2>Find us</h2>
+    <div class="grid">
+      <StoreInfo />
+      <div class="card">
+        <!-- TODO: replace with the Google Maps embed URL for the exact storefront -->
+        <iframe title="Map to Goin' Postal Forsythe" width="100%" height="280" style="border:0;border-radius:8px" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+          src="https://www.google.com/maps?q=Forsythe+Ave+%26+N+18th+St,+Monroe,+LA&output=embed"></iframe>
+      </div>
+    </div>
+  </section>
+</Base>

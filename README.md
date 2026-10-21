@@ -621,6 +621,44 @@ What's being worked on, and what's done, is in **[AGENDA.md](AGENDA.md)**.
 
 The repo is public, but both pages are private. They open only for people the owner has shared them with, signed in to claude.ai. Share the Coupon Counter as **Contributor** with everyone who works the counter. Customer phone numbers live only in the Coupon Counter, never in this repo.
 
+## The store website
+
+The public website lives in [`site/`](site/README.md) and is built with [Astro](https://astro.build). It was started on October 21, 2026, the day a serious PHP exploit was disclosed, and PHP is deliberately not used anywhere. Astro compiles to plain HTML, CSS and a little JavaScript, so there is no server-side code and nothing to patch. The contact form posts to Formspree, and the map is a Google Maps embed, so no backend is needed for either.
+
+```mermaid
+flowchart LR
+  D["site/src/data/store.ts<br/>name, address, phone,<br/>hours, services, form ID"]:::local --> P["site/src/pages/<br/>index.astro, contact.astro"]:::local
+  L["site/src/layouts/Base.astro<br/>header, nav, footer<br/>+ styles/global.css"]:::local --> P
+  B["brand-kit.html<br/>navy, blue, kraft colors"]:::local -.-> L
+  P -->|npm run build| O["site/dist/<br/>static files"]:::local
+  O --> H["Cloudflare Pages<br/>or Netlify or GitHub Pages"]:::cloud
+  H --> V["Customer's browser"]:::you
+  V -->|quote request| FS["Formspree"]:::cloud
+  FS -->|email| OW["Store inbox"]:::you
+  classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
+  classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
+  classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
+```
+
+| Page | What's on it |
+|---|---|
+| Home (`/`) | Hero, six service cards (shipping, packing, mailbox rental, printing, notary, shredding), a shipping-label style hours block, and a map |
+| Contact (`/contact`) | Quote request form (name, email, phone, what and where) that posts to Formspree, plus the hours block |
+
+Every store fact lives in one file, `site/src/data/store.ts`, so hours or a phone number change in one place. The colors come from the brand kit and there is a dark mode.
+
+**Run it locally**
+
+```
+cd site
+npm install
+npm run dev
+```
+
+**Before launch, the owners need to fill in** the items marked `TODO` in `site/src/data/store.ts`: street number and ZIP, the store phone number, real hours, and the Formspree form ID. The map embed in `site/src/pages/index.astro` should point at the exact storefront. The phone number in the launch book was not reused because it belongs to a competitor on Millhaven Rd.
+
+**Deploy** by connecting the GitHub repo to Cloudflare Pages with root directory `site`, build command `npm run build`, and output directory `dist`. Netlify and Vercel take the same three settings. Hosting is free on all three.
+
 ## Marketing at a glance
 
 ```mermaid
@@ -677,6 +715,7 @@ flowchart LR
   R --> BK["brand-kit.html<br/>colors, fonts, layout rules"]
   R --> AG["AGENDA.md<br/>what's done and what's next"]
   R --> DOC["docs/promo-night-kit.md<br/>PA scripts and checklist"]
+  R --> ST["site/<br/>Astro website, no PHP"]
   R --> RS["research/<br/>where the next store goes"]
   RS --> RS1["florida/README.md"]
   RS --> RS2["other-states/README.md"]
