@@ -1,176 +1,299 @@
 ---
 import Base from '../../layouts/Base.astro';
-import { TEMPLATES, PALETTES, QUANTITIES, PRICES } from '../../lib/cards';
+import { TEMPLATES, PALETTES, QUANTITIES, PRICES, FONT_NAMES } from '../../lib/cards';
 const cancelled = Astro.url.searchParams.get('cancelled');
 ---
-<Base title="Design business cards · Goin' Postal Forsythe" description="Design your own business cards in the browser, see them live, and pick them up printed at Goin' Postal Forsythe.">
+<Base title="Design business cards · Goin' Postal Forsythe" description="Design your own business cards in the browser like Vistaprint, pay online, and pick them up at Goin' Postal Forsythe.">
   <section class="hero">
     <h1>Design your business cards</h1>
-    <p class="lead">Pick a layout, type your details, drop in a logo. What you see is what we print. Pay online, pick up in the shop.</p>
-    {cancelled && <p class="card">Payment was cancelled, so no order was placed. Finish the design and pay to order.</p>}
+    <p class="lead">Pick a design, then click any text on the card to change it. Drag things where you want them. Pay online, pick up in the shop.</p>
+    {cancelled && <p class="card">Payment was cancelled, so no order was placed. Your design is still here.</p>}
   </section>
 
-  <div class="designer">
-    <form id="d" class="controls">
-      <fieldset>
-        <legend>Layout</legend>
-        <div class="choices" id="templates">
-          {TEMPLATES.map((t, i) => (
-            <label class="choice"><input type="radio" name="template" value={t.id} checked={i === 0} /><span><strong>{t.name}</strong><br/><small>{t.blurb}</small></span></label>
-          ))}
-        </div>
-        <label>Type
-          <select name="font">
-            <option value="sans">Clean sans-serif</option>
-            <option value="serif">Classic serif</option>
-            <option value="mono">Typewriter</option>
-          </select>
-        </label>
-        <div class="swatches" id="palettes">
-          {PALETTES.map((p, i) => (
-            <label class="swatch" title={p.name}><input type="radio" name="palette" value={i} checked={i === 0} /><span style={`background:${p.accent}`}></span></label>
-          ))}
-        </div>
-        <label>Accent color <input type="color" name="accent" value={PALETTES[0].accent} /></label>
-      </fieldset>
-
-      <fieldset>
-        <legend>Your details</legend>
-        <label>Name <input name="name" maxlength="40" value="" placeholder="Rin Ho" /></label>
-        <label>Title <input name="title" maxlength="40" placeholder="Owner" /></label>
-        <label>Company <input name="company" maxlength="50" placeholder="Goin' Postal Forsythe" /></label>
-        <label>Phone <input name="phone" maxlength="30" placeholder="(318) 000-0000" /></label>
-        <label>Email <input name="email" maxlength="60" placeholder="you@example.com" /></label>
-        <label>Website <input name="website" maxlength="60" placeholder="example.com" /></label>
-        <label>Address <input name="address" maxlength="80" placeholder="Forsythe Ave & N 18th St, Monroe, LA" /></label>
-        <label id="bandTextRow">Band text, shown when there is no logo (initials or a short word) <input name="bandText" maxlength="12" placeholder="GP" /></label>
-        <label>Logo (PNG, JPG or SVG, under 400 KB) <input name="logoFile" type="file" accept="image/png,image/jpeg,image/svg+xml" /></label>
-        <button type="button" class="btn kraft small" id="clearLogo" hidden>Remove logo</button>
-      </fieldset>
-
-      <fieldset>
-        <legend>Back of card</legend>
-        <label><input type="radio" name="back" value="logo" checked /> Logo or company name on the accent color</label>
-        <label><input type="radio" name="back" value="tagline" /> A tagline</label>
-        <label><input type="radio" name="back" value="none" /> Blank</label>
-        <label>Tagline <input name="tagline" maxlength="60" placeholder="Ship it. Pack it. Print it." /></label>
-      </fieldset>
-    </form>
-
-    <div class="preview">
-      <h3>Example <span class="muted">(this layout and colors, sample details)</span></h3>
-      <div class="card-wrap example" id="example"></div>
-      <h3>Your card, front <span class="muted">(fills in as you type)</span></h3>
-      <div class="card-wrap" id="front"></div>
-      <h3>Your card, back</h3>
-      <div class="card-wrap" id="back"></div>
-      <p class="muted">Dashed line is the safe area. Keep text inside it. 3.5 × 2 in, 300 dpi.</p>
-      <p><button class="btn kraft" type="button" id="png">Download PNG</button></p>
-
-      <form id="order" class="order card">
-        <h3>Order and pay</h3>
-        <p class="muted">Pay by card now. We print them and you pick them up in the shop.</p>
-        <label>Quantity
-          <select name="quantity">
-            {QUANTITIES.map((q) => <option value={q}>{q} cards · ${PRICES[q].toFixed(2)}</option>)}
-          </select>
-        </label>
-        <label>Your name <input name="cname" required /></label>
-        <label>Email <input name="cemail" type="email" required /></label>
-        <label>Phone (we text when ready) <input name="cphone" type="tel" /></label>
-        <label>Notes <input name="notes" maxlength="300" placeholder="Matte or glossy, rounded corners..." /></label>
-        <button class="btn" type="submit" id="orderBtn">Pay and order</button>
-        <p class="err" id="err" hidden></p>
-      </form>
+  <!-- Step 1: gallery -->
+  <section id="step1">
+    <h2>1. Pick a design</h2>
+    <p class="muted">{TEMPLATES.length} layouts in {PALETTES.length} color schemes, shown with sample details. Pick a color, then a layout. Everything can be changed in the next step.</p>
+    <div class="swatches" id="palettes">
+      {PALETTES.map((p, i) => (
+        <label class="swatch" title={p.name}><input type="radio" name="palette" value={i} checked={i === 0} /><span style={`background:${p.accent}`}></span></label>
+      ))}
+      <span class="muted" id="palName">{PALETTES[0].name}</span>
     </div>
-  </div>
+    <div class="gallery" id="gallery"></div>
+  </section>
+
+  <!-- Step 2: editor -->
+  <section id="step2" hidden>
+    <h2>2. Make it yours</h2>
+    <div class="editor">
+      <div class="stage">
+        <div class="toolbar">
+          <div class="tabs">
+            <button type="button" class="tab active" data-side="front">Front</button>
+            <button type="button" class="tab" data-side="back">Back</button>
+          </div>
+          <button type="button" class="tool" id="addText">+ Text</button>
+          <label class="tool">+ Logo or photo <input type="file" id="addImage" accept="image/png,image/jpeg,image/svg+xml" hidden /></label>
+          <label class="tool">Background <input type="color" id="bg" /></label>
+          <label class="tool">Type
+            <select id="font">{Object.entries(FONT_NAMES).map(([k, v]) => <option value={k}>{v}</option>)}</select>
+          </label>
+          <button type="button" class="tool" id="undo" title="Undo (Ctrl+Z)">Undo</button>
+          <button type="button" class="tool" id="redo" title="Redo (Ctrl+Y)">Redo</button>
+          <button type="button" class="tool" id="changeDesign">Change design</button>
+        </div>
+        <div class="canvas card-wrap" id="canvas"></div>
+        <p class="muted">Dashed line is the safe area. Keep text inside it. Grey text is sample copy, click it and type yours. Delete key removes the selected item, arrow keys nudge it.</p>
+        <p><button class="btn kraft" type="button" id="png">Download PNG (free)</button></p>
+      </div>
+
+      <aside class="props card" id="props">
+        <p class="muted" id="noSel">Click something on the card to edit it.</p>
+        <div id="textProps" hidden>
+          <label>Text <textarea id="pText" rows="3"></textarea></label>
+          <label>Size <input id="pSize" type="range" min="12" max="160" /> <span id="pSizeVal"></span></label>
+          <div class="btnrow">
+            <button type="button" class="tool" id="pBold"><b>B</b></button>
+            <button type="button" class="tool" id="pItalic"><i>I</i></button>
+            <button type="button" class="tool" data-align="start">Left</button>
+            <button type="button" class="tool" data-align="middle">Center</button>
+            <button type="button" class="tool" data-align="end">Right</button>
+          </div>
+          <label>Color <input id="pColor" type="color" /></label>
+          <label>Width <input id="pWidth" type="range" min="60" max="1050" /></label>
+        </div>
+        <div id="imageProps" hidden>
+          <label>Width <input id="iWidth" type="range" min="20" max="1050" /></label>
+          <label>Height <input id="iHeight" type="range" min="4" max="600" /></label>
+          <label><input id="iLock" type="checkbox" checked /> Keep proportions</label>
+        </div>
+        <div class="btnrow" id="selActions" hidden>
+          <button type="button" class="tool" id="pFront">Bring to front</button>
+          <button type="button" class="tool" id="pBack">Send to back</button>
+          <button type="button" class="tool" id="pDup">Duplicate</button>
+          <button type="button" class="tool danger" id="pDel">Delete</button>
+        </div>
+      </aside>
+    </div>
+
+    <form id="order" class="order card">
+      <h3>3. Order and pay</h3>
+      <p class="muted">Pay by card now. We print them and you pick them up in the shop.</p>
+      <label>Quantity
+        <select name="quantity">
+          {QUANTITIES.map((q) => <option value={q}>{q} cards · ${PRICES[q].toFixed(2)}</option>)}
+        </select>
+      </label>
+      <label>Your name <input name="cname" required /></label>
+      <label>Email <input name="cemail" type="email" required /></label>
+      <label>Phone (we text when ready) <input name="cphone" type="tel" /></label>
+      <label>Notes <input name="notes" maxlength="300" placeholder="Matte or glossy, rounded corners..." /></label>
+      <button class="btn" type="submit" id="orderBtn">Pay and order</button>
+      <p class="err" id="err" hidden></p>
+    </form>
+  </section>
 
   <script>
-    import { renderCard, PALETTES, DEFAULT_DESIGN, CARD_W, CARD_H, type Design } from '../../lib/cards';
+    import { renderCard, makeTemplate, PALETTES, TEMPLATES, SAMPLE, uid, CARD_W, CARD_H, type Design, type TextEl, type ImageEl, type TemplateId } from '../../lib/cards';
 
-    const f = document.getElementById('d') as HTMLFormElement;
-    const exampleEl = document.getElementById('example')!;
-    const frontEl = document.getElementById('front')!;
-    const backEl = document.getElementById('back')!;
-    const clearLogo = document.getElementById('clearLogo')!;
-    let logo: string | null = null;
+    const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+    const step1 = $('step1'), step2 = $('step2'), canvas = $('canvas');
 
-    const initials = (n: string) => n.split(/\s+/).map((w) => w[0] ?? '').join('').slice(0, 3).toUpperCase();
-    function design(): Design {
-      const d = Object.fromEntries(new FormData(f).entries()) as Record<string, string>;
-      const pal = PALETTES[Number(d.palette)] ?? PALETTES[0];
-      const v = (k: string) => (d[k] ?? '').trim();
-      return {
-        template: d.template as Design['template'],
-        font: d.font as Design['font'],
-        accent: d.accent || pal.accent, ink: pal.ink, paper: pal.paper,
-        name: v('name'), title: v('title'), company: v('company'),
-        phone: v('phone'), email: v('email'), website: v('website'),
-        address: v('address'), tagline: v('tagline'),
-        bandText: v('bandText') || initials(v('name')),
-        logo, back: d.back as Design['back'],
-      };
-    }
-    // Same layout, type and colors as the customer picked, but with the sample details.
-    function example(d: Design): Design {
-      return { ...DEFAULT_DESIGN, template: d.template, font: d.font, accent: d.accent, ink: d.ink, paper: d.paper, back: d.back, logo: null };
+    // Placeholder copy the customer replaces. Same layout as the sample, generic words.
+    const BLANK = { name: 'Your Name', title: 'Your Title', company: 'Company Name', phone: '(000) 000-0000', email: 'you@example.com', website: 'yourwebsite.com', address: 'Street, City, State', tagline: 'Your tagline here' };
+
+    let design: Design;
+    let side: 'front' | 'back' = 'front';
+    let selected: string | null = null;
+    const undoStack: string[] = [], redoStack: string[] = [];
+
+    function snapshot() { undoStack.push(JSON.stringify(design)); if (undoStack.length > 60) undoStack.shift(); redoStack.length = 0; }
+    function restore(s: string) { design = JSON.parse(s); selected = null; render(); }
+
+    const cur = () => design[side];
+    const sel = () => cur().elements.find((e) => e.id === selected) ?? null;
+
+    function render() {
+      canvas.innerHTML = renderCard(design, side, { guides: true, editing: true, selected });
+      ($('bg') as HTMLInputElement).value = cur().bg;
+      ($('font') as HTMLSelectElement).value = design.font;
+      document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', (t as HTMLElement).dataset.side === side));
+      renderProps();
+      try { localStorage.setItem('gp-card-design', JSON.stringify(design)); } catch {}
     }
 
-    function draw() {
-      const d = design();
-      (document.getElementById('bandTextRow') as HTMLElement).hidden = d.template !== 'band' || !!logo;
-      exampleEl.innerHTML = renderCard(example(d), 'front');
-      frontEl.innerHTML = renderCard(d, 'front', { guides: true });
-      const b = renderCard(d, 'back', { guides: true });
-      backEl.innerHTML = b || '<p class="muted">Blank</p>';
+    function renderProps() {
+      const e = sel();
+      $('noSel').hidden = !!e;
+      $('selActions').hidden = !e;
+      $('textProps').hidden = !(e && e.type === 'text');
+      $('imageProps').hidden = !(e && e.type === 'image');
+      if (!e) return;
+      if (e.type === 'text') {
+        const ta = $('pText') as HTMLTextAreaElement;
+        if (document.activeElement !== ta) { ta.value = e.placeholder ? '' : e.text; ta.placeholder = e.placeholder ? e.text : ''; }
+        ($('pSize') as HTMLInputElement).value = String(e.size); $('pSizeVal').textContent = `${e.size}`;
+        ($('pColor') as HTMLInputElement).value = e.color;
+        ($('pWidth') as HTMLInputElement).value = String(e.w);
+        $('pBold').classList.toggle('active', e.weight === 700);
+        $('pItalic').classList.toggle('active', e.italic);
+        document.querySelectorAll('[data-align]').forEach((b) => b.classList.toggle('active', (b as HTMLElement).dataset.align === e.align));
+      } else {
+        ($('iWidth') as HTMLInputElement).value = String(e.w);
+        ($('iHeight') as HTMLInputElement).value = String(e.h);
+      }
     }
 
-    f.addEventListener('input', draw);
-    f.addEventListener('change', draw);
-    (f.querySelector('[name=palette]') as HTMLElement).closest('.swatches')!.addEventListener('change', () => {
-      const pal = PALETTES[Number((new FormData(f)).get('palette'))];
-      (f.querySelector('[name=accent]') as HTMLInputElement).value = pal.accent;
-      draw();
+    function start(t: TemplateId, pi: number) {
+      design = makeTemplate(t, PALETTES[pi], BLANK, true);
+      undoStack.length = 0; redoStack.length = 0; selected = null; side = 'front';
+      step1.hidden = true; step2.hidden = false; render();
+      step2.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // ---- gallery: one thumbnail per layout in the chosen palette, drawn with Rin Ho's sample details
+    const gallery = $('gallery');
+    function drawGallery() {
+      const pi = Number((document.querySelector('[name=palette]:checked') as HTMLInputElement).value);
+      $('palName').textContent = PALETTES[pi].name;
+      gallery.innerHTML = TEMPLATES.map((tp) => `<button type="button" class="thumb" data-t="${tp.id}" data-p="${pi}" title="${tp.name}"><div class="card-wrap">${renderCard(makeTemplate(tp.id, PALETTES[pi], SAMPLE, false), 'front')}</div><span>${tp.name}</span></button>`).join('');
+      gallery.querySelectorAll<HTMLElement>('.thumb').forEach((b) => b.addEventListener('click', () => start(b.dataset.t as TemplateId, Number(b.dataset.p))));
+    }
+    $('palettes').addEventListener('change', drawGallery);
+    drawGallery();
+    $('changeDesign').addEventListener('click', () => { if (confirm('Start over with a different design? Your edits will be lost.')) { step2.hidden = true; step1.hidden = false; step1.scrollIntoView(); } });
+
+    // resume a design from this browser
+    try { const saved = localStorage.getItem('gp-card-design'); if (saved) { design = JSON.parse(saved); step1.hidden = true; step2.hidden = false; render(); } } catch {}
+
+    // ---- tabs, background, font, undo
+    document.querySelectorAll<HTMLElement>('.tab').forEach((t) => t.addEventListener('click', () => { side = t.dataset.side as 'front' | 'back'; selected = null; render(); }));
+    $('bg').addEventListener('input', (e) => { cur().bg = (e.target as HTMLInputElement).value; render(); });
+    $('bg').addEventListener('change', snapshot);
+    $('font').addEventListener('change', (e) => { snapshot(); design.font = (e.target as HTMLSelectElement).value as Design['font']; render(); });
+    $('undo').addEventListener('click', () => { const s = undoStack.pop(); if (s) { redoStack.push(JSON.stringify(design)); restore(s); } });
+    $('redo').addEventListener('click', () => { const s = redoStack.pop(); if (s) { undoStack.push(JSON.stringify(design)); restore(s); } });
+
+    // ---- add elements
+    $('addText').addEventListener('click', () => {
+      snapshot();
+      const el: TextEl = { id: uid(), type: 'text', x: 200, y: 260, w: 650, text: 'New text', size: 32, weight: 400, italic: false, color: side === 'back' ? '#ffffff' : '#17202d', align: 'middle' };
+      cur().elements.push(el); selected = el.id; render(); ($('pText') as HTMLTextAreaElement).focus();
     });
-
-    (f.querySelector('[name=logoFile]') as HTMLInputElement).addEventListener('change', (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
-      if (file.size > 400_000) { alert('Logo must be under 400 KB. Try a smaller PNG.'); return; }
+    $('addImage').addEventListener('change', (e) => {
+      const input = e.target as HTMLInputElement;
+      const file = input.files?.[0]; if (!file) return;
+      if (file.size > 400_000) { alert('Image must be under 400 KB. Try a smaller PNG.'); input.value = ''; return; }
       const r = new FileReader();
-      r.onload = () => { logo = String(r.result); clearLogo.hidden = false; draw(); };
-      r.readAsDataURL(file);
-    });
-    clearLogo.addEventListener('click', () => { logo = null; clearLogo.hidden = true; (f.querySelector('[name=logoFile]') as HTMLInputElement).value = ''; draw(); });
-
-    document.getElementById('png')!.addEventListener('click', async () => {
-      const d = design();
-      for (const side of ['front', 'back'] as const) {
-        const svg = renderCard(d, side);
-        if (!svg) continue;
+      r.onload = () => {
         const img = new Image();
-        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
-        await img.decode();
-        const c = document.createElement('canvas'); c.width = CARD_W; c.height = CARD_H;
-        c.getContext('2d')!.drawImage(img, 0, 0);
-        const a = document.createElement('a'); a.download = `business-card-${side}.png`; a.href = c.toDataURL('image/png'); a.click();
+        img.onload = () => {
+          snapshot();
+          const w = 300, h = Math.round(w * img.height / img.width) || 150;
+          const el: ImageEl = { id: uid(), type: 'image', x: (CARD_W - w) / 2, y: (CARD_H - h) / 2, w, h, href: String(r.result) };
+          cur().elements.push(el); selected = el.id; render();
+        };
+        img.src = String(r.result);
+      };
+      r.readAsDataURL(file);
+      input.value = '';
+    });
+
+    // ---- properties
+    const upd = (fn: (e: any) => void, snap = false) => () => { const e = sel(); if (!e) return; if (snap) snapshot(); fn(e); render(); };
+    $('pText').addEventListener('input', upd((e: TextEl) => { e.text = ($('pText') as HTMLTextAreaElement).value; e.placeholder = false; }));
+    $('pText').addEventListener('focus', () => { if (sel()?.type === 'text') snapshot(); });
+    $('pSize').addEventListener('input', upd((e: TextEl) => { e.size = Number(($('pSize') as HTMLInputElement).value); }));
+    $('pWidth').addEventListener('input', upd((e: TextEl) => { e.w = Number(($('pWidth') as HTMLInputElement).value); }));
+    $('pColor').addEventListener('input', upd((e: TextEl) => { e.color = ($('pColor') as HTMLInputElement).value; }));
+    for (const id of ['pSize', 'pWidth', 'pColor', 'iWidth', 'iHeight']) $(id).addEventListener('change', snapshot);
+    $('pBold').addEventListener('click', upd((e: TextEl) => { e.weight = e.weight === 700 ? 400 : 700; }, true));
+    $('pItalic').addEventListener('click', upd((e: TextEl) => { e.italic = !e.italic; }, true));
+    document.querySelectorAll<HTMLElement>('[data-align]').forEach((b) => b.addEventListener('click', upd((e: TextEl) => { e.align = b.dataset.align as TextEl['align']; }, true)));
+    $('iWidth').addEventListener('input', upd((e: ImageEl) => { const w = Number(($('iWidth') as HTMLInputElement).value); if (($('iLock') as HTMLInputElement).checked) e.h = Math.max(4, Math.round(e.h * w / e.w)); e.w = w; }));
+    $('iHeight').addEventListener('input', upd((e: ImageEl) => { const h = Number(($('iHeight') as HTMLInputElement).value); if (($('iLock') as HTMLInputElement).checked) e.w = Math.max(20, Math.round(e.w * h / e.h)); e.h = h; }));
+    $('pDel').addEventListener('click', () => { if (!sel()) return; snapshot(); cur().elements = cur().elements.filter((e) => e.id !== selected); selected = null; render(); });
+    $('pDup').addEventListener('click', () => { const e = sel(); if (!e) return; snapshot(); const c = { ...e, id: uid(), x: e.x + 30, y: e.y + 30 }; cur().elements.push(c); selected = c.id; render(); });
+    $('pFront').addEventListener('click', () => { const e = sel(); if (!e) return; snapshot(); cur().elements = [...cur().elements.filter((x) => x !== e), e]; render(); });
+    $('pBack').addEventListener('click', () => { const e = sel(); if (!e) return; snapshot(); cur().elements = [e, ...cur().elements.filter((x) => x !== e)]; render(); });
+
+    // ---- select and drag on the canvas
+    let drag: { id: string; dx: number; dy: number; moved: boolean } | null = null;
+    function toCard(ev: PointerEvent) {
+      const svg = canvas.querySelector('svg')!;
+      const r = svg.getBoundingClientRect();
+      return { x: (ev.clientX - r.left) * CARD_W / r.width, y: (ev.clientY - r.top) * CARD_H / r.height };
+    }
+    canvas.addEventListener('pointerdown', (ev) => {
+      const id = (ev.target as Element).closest('[data-id]')?.getAttribute('data-id') ?? null;
+      selected = id;
+      if (id) {
+        const e = sel()!; const p = toCard(ev);
+        drag = { id, dx: p.x - e.x, dy: p.y - e.y, moved: false };
+        canvas.setPointerCapture(ev.pointerId);
+      }
+      render();
+    });
+    canvas.addEventListener('pointermove', (ev) => {
+      if (!drag) return;
+      const e = sel(); if (!e) return;
+      if (!drag.moved) { snapshot(); drag.moved = true; }
+      const p = toCard(ev);
+      e.x = Math.round(p.x - drag.dx); e.y = Math.round(p.y - drag.dy);
+      render();
+    });
+    canvas.addEventListener('pointerup', () => { drag = null; });
+    canvas.addEventListener('dblclick', () => { if (sel()?.type === 'text') ($('pText') as HTMLTextAreaElement).focus(); });
+
+    document.addEventListener('keydown', (ev) => {
+      const inField = ['INPUT', 'TEXTAREA', 'SELECT'].includes((ev.target as HTMLElement).tagName);
+      if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'z') { ev.preventDefault(); $('undo').click(); return; }
+      if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'y') { ev.preventDefault(); $('redo').click(); return; }
+      if (inField) return;
+      const e = sel(); if (!e) return;
+      const step = ev.shiftKey ? 20 : 4;
+      if (ev.key === 'Delete' || ev.key === 'Backspace') { ev.preventDefault(); $('pDel').click(); }
+      else if (ev.key.startsWith('Arrow')) {
+        ev.preventDefault(); snapshot();
+        if (ev.key === 'ArrowLeft') e.x -= step; if (ev.key === 'ArrowRight') e.x += step; if (ev.key === 'ArrowUp') e.y -= step; if (ev.key === 'ArrowDown') e.y += step;
+        render();
       }
     });
 
-    const order = document.getElementById('order') as HTMLFormElement;
-    const err = document.getElementById('err')!;
-    order.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const o = Object.fromEntries(new FormData(order).entries()) as Record<string, string>;
-      if (!design().name) { err.textContent = 'Type at least a name on the card first.'; err.hidden = false; return; }
-      const btn = document.getElementById('orderBtn')!; btn.setAttribute('disabled', '');
-      const res = await fetch('/api/cards', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ design: design(), quantity: Number(o.quantity), customer: { name: o.cname, email: o.cemail, phone: o.cphone }, notes: o.notes }) });
-      const j = await res.json();
-      if (!res.ok) { err.textContent = j.error; err.hidden = false; btn.removeAttribute('disabled'); return; }
-      location.href = j.next;
+    // ---- export
+    function printable(): Design {
+      // Placeholder text the customer never edited is dropped, not printed.
+      const strip = (s: Design['front']) => ({ ...s, elements: s.elements.filter((e) => !(e.type === 'text' && e.placeholder)) });
+      return { ...design, front: strip(design.front), back: strip(design.back) };
+    }
+    $('png').addEventListener('click', async () => {
+      const d = printable();
+      for (const s of ['front', 'back'] as const) {
+        const img = new Image();
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(renderCard(d, s));
+        await img.decode();
+        const c = document.createElement('canvas'); c.width = CARD_W; c.height = CARD_H;
+        c.getContext('2d')!.drawImage(img, 0, 0);
+        const a = document.createElement('a'); a.download = `business-card-${s}.png`; a.href = c.toDataURL('image/png'); a.click();
+      }
     });
 
-    draw();
+    const order = $('order') as HTMLFormElement, err = $('err');
+    order.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const d = printable();
+      const left = [...design.front.elements, ...design.back.elements].filter((e) => e.type === 'text' && e.placeholder).length;
+      if (left && !confirm(`${left} sample text item(s) were never changed and will be left off the card. Order anyway?`)) return;
+      if (!d.front.elements.some((e) => e.type === 'text')) { err.textContent = 'The front of the card has no text yet.'; err.hidden = false; return; }
+      const o = Object.fromEntries(new FormData(order).entries()) as Record<string, string>;
+      const btn = $('orderBtn'); btn.setAttribute('disabled', '');
+      const res = await fetch('/api/cards', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ design: d, quantity: Number(o.quantity), customer: { name: o.cname, email: o.cemail, phone: o.cphone }, notes: o.notes }) });
+      const j = await res.json();
+      if (!res.ok) { err.textContent = j.error; err.hidden = false; btn.removeAttribute('disabled'); return; }
+      try { localStorage.removeItem('gp-card-design'); } catch {}
+      location.href = j.next;
+    });
   </script>
 </Base>

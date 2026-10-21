@@ -30,7 +30,7 @@ flowchart LR
 | `/` | customers | Hero, services, hours, map |
 | `/ship` | customers | Quote form, rate list, pay or reserve |
 | `/ship/done?order=CODE` | customers | Label download, QR code, pickup code |
-| `/cards` | customers | Business card designer: three layouts, palettes, logo upload, live preview, PNG download, pay by card on Stripe and pick up in the shop |
+| `/cards` | customers | Vistaprint-style card designer: 12 layouts, 12 color schemes, 6 typefaces, click-to-edit text on the card, drag, resize, add text and images, front and back, undo and redo, PNG download, pay by card on Stripe and pick up in the shop |
 | `/cards/done?order=CODE` | customers | Order confirmation with a QR code and pickup code |
 | `/contact` | customers | Formspree contact form |
 | `/counter/card/CODE` | staff | Card order, already paid online: preview both sides, print sheet, mark printed, mark picked up. Unpaid orders are flagged do not print |
@@ -46,13 +46,15 @@ flowchart LR
 
 ## Business card designer
 
-Everything runs in the browser. `src/lib/cards.ts` draws the card as SVG from a plain design object, and the same function renders the live preview, the saved order, and the counter's print sheet, so what the customer sees is exactly what prints. Cards are 3.5 by 2 inches at 300 dpi with a dashed safe-area guide. No outside design service is involved and the logo never leaves the site.
+Everything runs in the browser. A design is a plain object: a template id, a typeface, and a front and back side, each with a background color and a list of elements. An element is either text (position, width, size, bold, italic, color, alignment) or an image (position, size, data URL). Colored bars, bands, circles and triangles are just images made from tiny SVG data URLs, so the customer can move or delete them like anything else. `renderCard()` in `src/lib/cards.ts` turns a design into SVG, and the same function draws the editor canvas, the gallery thumbnails, the saved order and the counter's print sheet, so what the customer sees is exactly what prints. `makeTemplate()` builds a starting design from a layout, a palette and a set of details. The gallery shows every layout with Rin Ho's sample details in the chosen color; the editor starts from the same layout with grey placeholder text that is dropped from the print if never edited. Cards are 3.5 by 2 inches at 300 dpi with a dashed safe-area guide. The design is kept in the browser's local storage so a refresh does not lose it. Server-side sanitizing caps element counts and text lengths, requires hex colors, and only accepts PNG, JPG or SVG data URLs under 400 KB for images.
 
 ```mermaid
 flowchart LR
-  F["Form: layout, palette,<br/>details, logo"] --> D["design object"]
+  G["Gallery: 12 layouts x 12 palettes,<br/>Rin Ho sample"] -->|pick| D["design object<br/>front + back, elements"]
+  E["Editor: click text, drag,<br/>size, color, add, undo"] --> D
   D --> P["renderCard()<br/>SVG, 1050 x 600"]
-  P --> V["Live preview"]
+  P --> G
+  P --> V["Editor canvas"]
   P --> PNG["Download PNG<br/>canvas in the browser"]
   D -->|POST /api/cards| KV[("KV card:CODE<br/>180 days")]
   KV --> ST["Stripe Checkout<br/>pay now"]

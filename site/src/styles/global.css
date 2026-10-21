@@ -64,29 +64,38 @@ select { width: 100%; padding: 10px; border: 1px solid var(--hair); border-radiu
 @media (max-width: 600px) { .rate { grid-template-columns: auto 1fr auto; } .rate .service, .rate .days { grid-column: 2 / -1; } }
 
 /* card designer */
-.designer { display: grid; gap: 24px; grid-template-columns: minmax(280px, 1fr) minmax(300px, 1.3fr); align-items: start; }
-@media (max-width: 800px) { .designer { grid-template-columns: 1fr; } }
-.controls { max-width: none; }
-.choices { display: grid; gap: 8px; }
-.choice { display: flex; gap: 10px; align-items: center; padding: 10px; border: 1px solid var(--hair); border-radius: 8px; font-weight: 400; cursor: pointer; }
-.choice:has(input:checked) { outline: 2px solid var(--blue); }
-.choice input { width: auto; }
-.swatches { display: flex; gap: 8px; flex-wrap: wrap; }
-.swatch input { position: absolute; opacity: 0; width: 0; }
-.swatch span { display: block; width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--hair); cursor: pointer; }
-.swatch:has(input:checked) span { outline: 3px solid var(--blue); outline-offset: 2px; }
-.preview { position: sticky; top: 16px; }
-.preview h3 { margin: 8px 0 4px; }
+.gallery { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); margin: 16px 0 32px; }
+.thumb { background: none; border: 2px solid var(--hair); border-radius: 10px; padding: 8px; cursor: pointer; color: var(--ink); font: inherit; text-align: left; }
+.thumb:hover, .thumb:focus-visible { border-color: var(--blue); }
+.thumb span { display: block; margin-top: 6px; font-size: .85rem; color: var(--muted); }
+.thumb .card-wrap { margin: 0; box-shadow: none; }
+.editor { display: grid; gap: 20px; grid-template-columns: minmax(300px, 2fr) minmax(240px, 1fr); align-items: start; }
+@media (max-width: 820px) { .editor { grid-template-columns: 1fr; } }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+.tabs { display: inline-flex; border: 1px solid var(--hair); border-radius: 8px; overflow: hidden; }
+.tab { background: var(--paper); color: var(--ink); border: 0; padding: 8px 16px; font: inherit; font-weight: 600; cursor: pointer; }
+.tab.active { background: var(--blue); color: #fff; }
+.tool { background: var(--paper); color: var(--ink); border: 1px solid var(--hair); border-radius: 8px; padding: 7px 12px; font: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+.tool.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+.tool.danger { color: #b91c1c; }
+.tool input[type=color] { width: 34px; height: 26px; padding: 0; border: 0; background: none; }
+.tool select { font: inherit; padding: 2px 4px; }
+.canvas { cursor: default; user-select: none; touch-action: none; }
+.canvas [data-id] { cursor: move; }
 .card-wrap { background: #fff; border-radius: 6px; box-shadow: 0 2px 12px rgba(0,0,0,.25); aspect-ratio: 1050 / 600; overflow: hidden; margin-bottom: 12px; }
 .card-wrap svg { width: 100%; height: 100%; display: block; }
-.card-wrap .muted { padding: 40px; text-align: center; }
+.props { position: sticky; top: 16px; display: grid; gap: 10px; }
+.props label { display: block; }
+.btnrow { display: flex; flex-wrap: wrap; gap: 6px; }
 .muted { color: var(--muted); font-size: .9rem; }
-.order { display: grid; gap: 10px; max-width: none; }
+.order { display: grid; gap: 10px; max-width: 32rem; margin-top: 24px; }
 .btn.small { padding: 6px 12px; font-size: .9rem; }
 input[type=color] { height: 44px; padding: 2px; }
 input[type=file] { padding: 6px; }
-fieldset label { display: block; }
+input[type=range] { width: 100%; }
 [hidden] { display: none !important; }
 input[type=radio], input[type=checkbox] { width: auto; margin-right: 6px; vertical-align: middle; }
-.card-wrap.example { transform: scale(.9); transform-origin: left top; margin-bottom: -4%; }
-.preview h3 .muted { font-weight: 400; }
+.swatches { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 12px 0; }
+.swatch input { position: absolute; opacity: 0; width: 0; }
+.swatch span { display: block; width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--hair); cursor: pointer; }
+.swatch:has(input:checked) span { outline: 3px solid var(--blue); outline-offset: 2px; }
