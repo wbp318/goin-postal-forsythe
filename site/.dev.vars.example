@@ -1,0 +1,9 @@
+# Copy to .dev.vars for local development. Leave a value blank to run that piece in mock mode.
+# Easyship: dashboard > APIs & Webhooks > Create API Connection. Sandbox tokens start with sand_, production with prod_.
+# Scopes needed: public.rate:read, public.shipment:write, public.label:write.
+EASYSHIP_TOKEN=
+# Stripe: dashboard > Developers > API keys (sk_test_ for testing). Webhook secret from Developers > Webhooks.
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+# Short PIN staff type on the counter page to buy a reserved label.
+COUNTER_PIN=1234

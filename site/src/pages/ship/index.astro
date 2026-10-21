@@ -1,0 +1,128 @@
+---
+import Base from '../../layouts/Base.astro';
+const cancelled = Astro.url.searchParams.get('cancelled');
+---
+<Base title="Ship a package · Goin' Postal Forsythe" description="Compare USPS, UPS, FedEx and DHL rates and buy a label online. Print at home or show a QR code at the counter.">
+  <section class="hero">
+    <h1>Ship a package</h1>
+    <p class="lead">Compare USPS, UPS, FedEx and DHL in one place. Pay online and print at home, or show us the QR code and we print it at the counter.</p>
+    {cancelled && <p class="card">Payment was cancelled. Your quote is below if you want to try again.</p>}
+  </section>
+
+  <form id="quote" class="ship-form">
+    <fieldset>
+      <legend>Where is it going?</legend>
+      <label>Recipient name <input name="contact_name" required /></label>
+      <label>Street address <input name="line_1" required maxlength="35" /></label>
+      <label>Apt, suite (optional) <input name="line_2" maxlength="35" /></label>
+      <div class="row">
+        <label>City <input name="city" required /></label>
+        <label>State <input name="state" placeholder="LA" maxlength="2" /></label>
+        <label>ZIP / postal code <input name="postal_code" required /></label>
+      </div>
+      <label>Country
+        <select name="country_alpha2">
+          <option value="US" selected>United States</option>
+          <option value="CA">Canada</option>
+          <option value="MX">Mexico</option>
+          <option value="GB">United Kingdom</option>
+          <option value="AU">Australia</option>
+          <option value="DE">Germany</option>
+          <option value="FR">France</option>
+          <option value="JP">Japan</option>
+          <option value="OTHER">Other country</option>
+        </select>
+      </label>
+      <label class="hidden" id="otherCountry">Two-letter country code <input name="country_other" maxlength="2" placeholder="e.g. IT" /></label>
+    </fieldset>
+
+    <fieldset>
+      <legend>What is it?</legend>
+      <div class="row">
+        <label>Weight (lb) <input name="weight_lb" type="number" step="0.1" min="0.1" max="150" required /></label>
+        <label>Length (in) <input name="length_in" type="number" min="1" required /></label>
+        <label>Width (in) <input name="width_in" type="number" min="1" required /></label>
+        <label>Height (in) <input name="height_in" type="number" min="1" required /></label>
+      </div>
+      <label>What's inside (needed for international) <input name="description" maxlength="80" placeholder="Clothing" /></label>
+      <label>Value in USD <input name="value_usd" type="number" min="1" placeholder="25" /></label>
+    </fieldset>
+
+    <button class="btn" type="submit">Get rates</button>
+    <p id="err" class="err" hidden></p>
+  </form>
+
+  <section id="results" hidden>
+    <h2>Rates</h2>
+    <p id="intlNote" class="card" hidden>International shipments are paid in the shop. Reserve the rate here, bring the package and the pickup code in, and we handle customs forms and payment with you at the counter.</p>
+    <p id="mockNote" class="card" hidden>Demo rates. The store's Easyship token is not set yet, so these numbers are placeholders.</p>
+    <div id="rates" class="rates"></div>
+    <form id="buy" class="buy" hidden>
+      <label>Your email (for the receipt and label) <input name="email" type="email" required /></label>
+      <button class="btn" type="submit" id="buyBtn">Continue</button>
+    </form>
+  </section>
+
+  <script>
+    const f = document.getElementById('quote') as HTMLFormElement;
+    const err = document.getElementById('err')!;
+    const results = document.getElementById('results')!;
+    const ratesEl = document.getElementById('rates')!;
+    const buy = document.getElementById('buy') as HTMLFormElement;
+    const buyBtn = document.getElementById('buyBtn')!;
+    const countrySel = f.querySelector('[name=country_alpha2]') as HTMLSelectElement;
+    const other = document.getElementById('otherCountry')!;
+    countrySel.addEventListener('change', () => other.classList.toggle('hidden', countrySel.value !== 'OTHER'));
+
+    let payload: any = null;
+    let picked: string | null = null;
+    let international = false;
+
+    function read() {
+      const d = Object.fromEntries(new FormData(f).entries()) as Record<string, string>;
+      const country = d.country_alpha2 === 'OTHER' ? d.country_other.toUpperCase() : d.country_alpha2;
+      return {
+        destination: { contact_name: d.contact_name, line_1: d.line_1, line_2: d.line_2, city: d.city, state: d.state, postal_code: d.postal_code, country_alpha2: country },
+        parcel: { weight_lb: d.weight_lb, length_in: d.length_in, width_in: d.width_in, height_in: d.height_in, description: d.description, value_usd: d.value_usd },
+      };
+    }
+
+    f.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      err.hidden = true; results.hidden = true; buy.hidden = true; picked = null;
+      payload = read();
+      const res = await fetch('/api/rates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const j = await res.json();
+      if (!res.ok) { err.textContent = j.error; err.hidden = false; return; }
+      international = j.international;
+      document.getElementById('intlNote')!.hidden = !international;
+      document.getElementById('mockNote')!.hidden = !j.mock;
+      buyBtn.textContent = international ? 'Reserve and pay at the counter' : 'Pay and get label';
+      ratesEl.innerHTML = '';
+      for (const r of j.rates) {
+        const el = document.createElement('label');
+        el.className = 'rate card';
+        el.innerHTML = `<input type="radio" name="rate" value="${r.courier_service_id}">
+          <span class="carrier">${r.carrier}</span>
+          <span class="service">${r.service}</span>
+          <span class="days">${r.min_days ?? '?'}–${r.max_days ?? '?'} days</span>
+          <span class="price">$${r.total_charge.toFixed(2)}</span>`;
+        el.querySelector('input')!.addEventListener('change', () => { picked = r.courier_service_id; buy.hidden = false; });
+        ratesEl.appendChild(el);
+      }
+      results.hidden = false;
+      results.scrollIntoView({ behavior: 'smooth' });
+    });
+
+    buy.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!picked) return;
+      buyBtn.setAttribute('disabled', '');
+      const email = (buy.querySelector('[name=email]') as HTMLInputElement).value;
+      const res = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, email, courier_service_id: picked }) });
+      const j = await res.json();
+      if (!res.ok) { err.textContent = j.error; err.hidden = false; buyBtn.removeAttribute('disabled'); return; }
+      location.href = j.next;
+    });
+  </script>
+</Base>

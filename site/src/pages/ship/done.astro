@@ -1,0 +1,41 @@
+---
+export const prerender = false;
+import QRCode from 'qrcode';
+import { env } from '../../lib/env';
+import Base from '../../layouts/Base.astro';
+import { getOrder } from '../../lib/orders';
+import { store } from '../../data/store';
+
+const order = await getOrder(env, Astro.url.searchParams.get('order') ?? '');
+if (!order) return new Response('No such order', { status: 404 });
+
+// The QR encodes the counter page, so staff can scan it with any phone or the counter tablet.
+const counterUrl = `${env.SITE_URL}/counter/${order.id}`;
+const qr = await QRCode.toString(counterUrl, { type: 'svg', margin: 1, width: 220 });
+const paid = order.status === 'labeled' || order.status === 'printed';
+---
+<Base title={`Order ${order.id} · Goin' Postal Forsythe`}>
+  <section class="hero">
+    <h1>{order.status === 'reserved' ? 'Reserved. See you at the counter.' : paid ? 'Paid. Your label is ready.' : 'Waiting for payment.'}</h1>
+    <p class="lead">Pickup code <strong class="code">{order.id}</strong>. Save this page or write the code down. Stripe emails the receipt to {order.email}.</p>
+  </section>
+
+  <div class="grid">
+    <div class="card">
+      <h3>{order.rate.service}</h3>
+      <p>To {order.destination.contact_name}, {order.destination.city}, {order.destination.state} {order.destination.postal_code}, {order.destination.country_alpha2}</p>
+      <p>{order.parcel.weight_lb} lb · {order.parcel.length_in}×{order.parcel.width_in}×{order.parcel.height_in} in</p>
+      <p><strong>${order.rate.total_charge.toFixed(2)}</strong> {order.status === 'reserved' ? '(pay at the counter)' : '(paid)'}</p>
+      {paid && order.label?.label_url && <p><a class="btn" href={order.label.label_url} target="_blank" rel="noopener">Download label (PDF)</a></p>}
+      {paid && order.label?.tracking_number && <p>Tracking: {order.label.tracking_number}</p>}
+      {order.status === 'awaiting_payment' && <p>If you closed the payment page, <a href="/ship">start again</a>.</p>}
+    </div>
+
+    <div class="card qr">
+      <h3>Can't print? Show this at the counter.</h3>
+      <div set:html={qr} />
+      <p>Or just tell us the code <strong>{order.id}</strong>. We print it at the shop for you.</p>
+      <p>{store.address}</p>
+    </div>
+  </div>
+</Base>

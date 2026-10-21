@@ -1,0 +1,47 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+import { env } from '../../lib/env';
+import { getOrder } from '../../lib/orders';
+
+// Staff page. Opened by scanning the customer's QR code. Buying or marking printed needs the PIN.
+const order = await getOrder(env, Astro.params.code ?? '');
+if (!order) return new Response('No such order', { status: 404 });
+---
+<Base title={`Counter · ${order.id}`}>
+  <section class="hero">
+    <h1>{order.id}</h1>
+    <p class="lead">Status: <strong>{order.status.replace('_', ' ')}</strong> · {order.international ? 'International, ring up on the POS' : 'Domestic, paid online'}</p>
+  </section>
+
+  <div class="grid">
+    <div class="card">
+      <h3>{order.rate.service} · ${order.rate.total_charge.toFixed(2)}</h3>
+      <p><strong>To:</strong> {order.destination.contact_name}<br/>{order.destination.line_1}{order.destination.line_2 ? `, ${order.destination.line_2}` : ''}<br/>{order.destination.city}, {order.destination.state} {order.destination.postal_code} {order.destination.country_alpha2}</p>
+      <p><strong>Parcel:</strong> {order.parcel.weight_lb} lb · {order.parcel.length_in}×{order.parcel.width_in}×{order.parcel.height_in} in · {order.parcel.description || 'no description'} · ${order.parcel.value_usd}</p>
+      <p><strong>Customer:</strong> {order.email}</p>
+    </div>
+
+    <div class="card">
+      <label>Staff PIN <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
+      {order.status === 'reserved' && <p><button class="btn" data-action="paid">Rung up on the POS. Buy label</button></p>}
+      {order.label?.label_url && <p><a class="btn" href={order.label.label_url} target="_blank" rel="noopener">Open label to print</a></p>}
+      {order.status === 'labeled' && <p><button class="btn kraft" data-action="printed">Mark printed</button></p>}
+      {order.status === 'printed' && <p>Printed {order.printed_at}.</p>}
+      {order.status === 'awaiting_payment' && <p>Not paid online yet. Ask the customer to finish payment, or quote it again here and ring it up on the POS.</p>}
+      <p id="msg"></p>
+    </div>
+  </div>
+
+  <script define:vars={{ id: order.id }}>
+    const msg = document.getElementById('msg');
+    document.querySelectorAll('[data-action]').forEach((b) => b.addEventListener('click', async () => {
+      const pin = document.getElementById('pin').value;
+      b.disabled = true;
+      const res = await fetch('/api/counter', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order: id, pin, action: b.dataset.action }) });
+      const j = await res.json();
+      if (!res.ok) { msg.textContent = j.error; b.disabled = false; return; }
+      location.reload();
+    }));
+  </script>
+</Base>

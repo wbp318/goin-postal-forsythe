@@ -59,6 +59,9 @@ New ideas for the Forsythe store itself, not just its ads. Each one is something
 | 35 | Home-turf competitor map | The 1-mile and 5-mile radius method from `research/` applied to Monroe and West Monroe: every UPS Store, Goin' Postal and independent shipper on one chart, so the store knows which neighborhoods are its alone | ⏳ Not started |
 | 36 | Monthly review template | A one-page sheet filled from the Coupon Counter results tab: codes redeemed, cost per customer, returning share, what to renew or drop | ⏳ Not started |
 | 37 | Senior morning | Tuesday 9 to 11 discount for seniors, with a sign and a line in the church bulletin ad, because weekday mornings are the slowest hours | ⏳ Not started |
+| 38 | Store website | Astro site in `site/`: home, services, hours, map, quote form. No PHP | ✅ Done |
+| 39 | Ship from the website | Quotes from USPS, UPS, FedEx and DHL through the store's Easyship account. Domestic labels paid by Stripe Checkout and printed at home, or a QR code to print at the counter. International reserved online and paid at the counter | 🔨 In progress |
+| 40 | Business card designer | A Vistaprint or Canva style tool inside the website: pick a template, type name and details, upload a logo, see a live preview, order for pickup. Built in the browser with no outside design service | ⏳ Not started |
 
 ## Round 3: where to start
 

@@ -43,3 +43,22 @@ form { display: grid; gap: 12px; max-width: 32rem; }
 label { font-weight: 600; }
 input, textarea { width: 100%; padding: 10px; border: 1px solid var(--hair); border-radius: 6px; background: var(--paper); color: var(--ink); font: inherit; }
 footer { border-top: 1px solid var(--hair); margin-top: 56px; padding: 24px 0; color: var(--muted); font-size: .9rem; }
+
+/* shipping flow */
+.ship-form { max-width: 48rem; display: grid; gap: 20px; }
+fieldset { border: 1px solid var(--hair); border-radius: 10px; padding: 16px; display: grid; gap: 12px; background: var(--paper); }
+legend { font-weight: 700; padding: 0 6px; }
+select { width: 100%; padding: 10px; border: 1px solid var(--hair); border-radius: 6px; background: var(--paper); color: var(--ink); font: inherit; }
+.row { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+.hidden { display: none; }
+.err { color: #b91c1c; font-weight: 600; }
+.rates { display: grid; gap: 10px; margin: 16px 0; }
+.rate { display: grid; grid-template-columns: auto 80px 1fr auto auto; gap: 12px; align-items: center; cursor: pointer; font-weight: 400; }
+.rate:has(input:checked) { outline: 2px solid var(--blue); }
+.rate .carrier { font-weight: 700; }
+.rate .days { color: var(--muted); }
+.rate .price { font-weight: 800; font-size: 1.1rem; }
+.buy { margin-top: 16px; }
+.code { font-family: ui-monospace, Menlo, Consolas, monospace; letter-spacing: .08em; }
+.qr svg { width: 220px; height: 220px; background: #fff; border-radius: 8px; padding: 8px; }
+@media (max-width: 600px) { .rate { grid-template-columns: auto 1fr auto; } .rate .service, .rate .days { grid-column: 2 / -1; } }

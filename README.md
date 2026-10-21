@@ -623,18 +623,24 @@ The repo is public, but both pages are private. They open only for people the ow
 
 ## The store website
 
-The public website lives in [`site/`](site/README.md) and is built with [Astro](https://astro.build). It was started on October 21, 2026, the day a serious PHP exploit was disclosed, and PHP is deliberately not used anywhere. Astro compiles to plain HTML, CSS and a little JavaScript, so there is no server-side code and nothing to patch. The contact form posts to Formspree, and the map is a Google Maps embed, so no backend is needed for either.
+The public website lives in [`site/`](site/README.md) and is built with [Astro](https://astro.build) on Cloudflare. It was started on October 21, 2026, the day a serious PHP exploit was disclosed, and PHP is deliberately not used anywhere. The marketing pages are plain static HTML. The shipping flow runs as a few Cloudflare functions.
+
+Rates and payments are kept separate on purpose, and there are two ways to pay. Easyship, which the store already uses, quotes USPS, UPS, FedEx and DHL and buys the label. Online, Stripe takes the card. In the shop, the Goin' Postal POS takes the card or cash, because the franchise requires it, and staff press one button to tell the site the order is rung up. None of the three knows about the others, so any one can be replaced on its own.
 
 ```mermaid
 flowchart LR
-  D["site/src/data/store.ts<br/>name, address, phone,<br/>hours, services, form ID"]:::local --> P["site/src/pages/<br/>index.astro, contact.astro"]:::local
-  L["site/src/layouts/Base.astro<br/>header, nav, footer<br/>+ styles/global.css"]:::local --> P
-  B["brand-kit.html<br/>navy, blue, kraft colors"]:::local -.-> L
-  P -->|npm run build| O["site/dist/<br/>static files"]:::local
-  O --> H["Cloudflare Pages<br/>or Netlify or GitHub Pages"]:::cloud
-  H --> V["Customer's browser"]:::you
-  V -->|quote request| FS["Formspree"]:::cloud
-  FS -->|email| OW["Store inbox"]:::you
+  C["Customer on /ship"]:::you -->|address, weight, size| R["Easyship rates<br/>USPS · UPS · FedEx · DHL"]:::cloud
+  R --> C
+  C -->|picks a rate| O{"Domestic?"}:::local
+  O -->|yes| P["Stripe Checkout<br/>online card"]:::cloud
+  P -->|paid| L["Easyship buys label"]:::cloud
+  O -->|no, international| RES["Reserved"]:::local
+  L --> D["Done page<br/>PDF label + QR code<br/>+ pickup code"]:::you
+  RES --> D
+  D -->|scan QR| K["Counter page<br/>staff PIN"]:::local
+  K -->|international| POS["Goin' Postal POS<br/>in-person card or cash"]:::local
+  POS -->|staff press Rung up| L
+  K --> PR["Shop printer"]:::local
   classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
   classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
   classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
@@ -642,22 +648,28 @@ flowchart LR
 
 | Page | What's on it |
 |---|---|
-| Home (`/`) | Hero, six service cards (shipping, packing, mailbox rental, printing, notary, shredding), a shipping-label style hours block, and a map |
-| Contact (`/contact`) | Quote request form (name, email, phone, what and where) that posts to Formspree, plus the hours block |
+| Home | Hero, six service cards, a shipping-label style hours block, and a map |
+| Ship | Address and parcel form, rates from all four carriers side by side, pay online or reserve |
+| Done | Label PDF to print at home, a QR code and a pickup code for printing at the counter |
+| Counter | Staff-only view of an order, opened by scanning the QR. For international orders: ring up on the POS, press the button to buy the label. Then mark printed |
+| Contact | Quote request form that posts to Formspree |
 
-Every store fact lives in one file, `site/src/data/store.ts`, so hours or a phone number change in one place. The colors come from the brand kit and there is a dark mode.
+**How a customer ships:** they type the address and parcel size, see every carrier's price, pick one. Domestic orders pay by card on Stripe's hosted page, and the label is bought the moment Stripe confirms. International orders are reserved online and rung up on the Goin' Postal POS at the counter. Staff then press one button to buy the label with the customer present, so customs forms get done together. Either way the customer gets a pickup code like GP-7K3M9Q and a QR code. If they cannot print, they show the QR at the counter and the shop prints it.
 
 **Run it locally**
 
 ```
 cd site
 npm install
+cp .dev.vars.example .dev.vars
 npm run dev
 ```
 
-**Before launch, the owners need to fill in** the items marked `TODO` in `site/src/data/store.ts`: street number and ZIP, the store phone number, real hours, and the Formspree form ID. The map embed in `site/src/pages/index.astro` should point at the exact storefront. The phone number in the launch book was not reused because it belongs to a competitor on Millhaven Rd.
+With no keys in `.dev.vars` everything runs in mock mode: placeholder rates, a fake label, and Stripe skipped, so the whole flow can be clicked through on day one.
 
-**Deploy** by connecting the GitHub repo to Cloudflare Pages with root directory `site`, build command `npm run build`, and output directory `dist`. Netlify and Vercel take the same three settings. Hosting is free on all three.
+**Before launch, the owners need to fill in** the items marked `TODO` in `site/src/data/store.ts`: street number and ZIP, the store phone, real hours, the Formspree form ID, and the ship-from address. Then an Easyship API connection from the store's dashboard, a Stripe live key and webhook secret, a Cloudflare KV namespace for orders, and a counter PIN. The full checklist is in [`site/README.md`](site/README.md#before-launch). The phone number in the launch book was not reused because it belongs to a competitor on Millhaven Rd.
+
+**Deploy** by connecting the GitHub repo to Cloudflare Workers with root directory `site` and build command `npm run build`.
 
 ## Marketing at a glance
 
@@ -715,7 +727,7 @@ flowchart LR
   R --> BK["brand-kit.html<br/>colors, fonts, layout rules"]
   R --> AG["AGENDA.md<br/>what's done and what's next"]
   R --> DOC["docs/promo-night-kit.md<br/>PA scripts and checklist"]
-  R --> ST["site/<br/>Astro website, no PHP"]
+  R --> ST["site/<br/>Astro website, no PHP:<br/>ship, pay, print or QR"]
   R --> RS["research/<br/>where the next store goes"]
   RS --> RS1["florida/README.md"]
   RS --> RS2["other-states/README.md"]

@@ -4,6 +4,18 @@ export const store = {
   address: "Forsythe Ave & N 18th St, Monroe, LA 71201", // TODO: street number and ZIP
   phone: "(318) 000-0000", // TODO: real store number
   email: "wbp93623@gmail.com",
+  // Ship-from address sent to Easyship. TODO: street number, ZIP, phone.
+  origin: {
+    contact_name: "Goin' Postal Forsythe",
+    company_name: "Goin' Postal Forsythe",
+    contact_phone: "+13180000000",
+    contact_email: "wbp93623@gmail.com",
+    line_1: "Forsythe Ave & N 18th St",
+    city: "Monroe",
+    state: "LA",
+    postal_code: "71201",
+    country_alpha2: "US",
+  },
   formEndpoint: "https://formspree.io/f/REPLACE_ME", // TODO: create a Formspree form and paste its ID
   hours: [
     { days: "Monday to Friday", open: "9:00 am to 6:00 pm" }, // TODO: confirm
