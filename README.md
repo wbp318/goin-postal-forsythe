@@ -752,6 +752,25 @@ With no keys in `.dev.vars` everything runs in mock mode: placeholder rates, a f
 
 **Deploy** by connecting the GitHub repo to Cloudflare Workers with root directory `site` and build command `npm run build`.
 
+## Our own shipping client
+
+The plan to replace Easyship with software the store owns, doing what ShippingEasy, Easyship and GP Rate Pro do: rating, labels, tracking, drop-off capture, a counter app and reports for USPS, UPS, FedEx and DHL, on the same Cloudflare stack as the website. The full agenda, with the carrier requirements, phases, timeline, costs, risks and the decisions Rin needs to make first, is in [`shipping-client/README.md`](shipping-client/README.md). Agenda item 44.
+
+```mermaid
+flowchart LR
+  P0["Already built<br/>website, Stripe,<br/>orders, QR, counter"]:::local --> P1["Owners open<br/>carrier developer<br/>accounts"]:::you
+  P1 --> P2["Rating engine<br/>four adapters,<br/>markup rules"]:::local
+  P2 --> P3["Labels<br/>PDF, ZPL, QR,<br/>customs, printer"]:::local
+  P3 --> P4["Tracking<br/>webhooks, page,<br/>texts"]:::local
+  P4 --> P5["Counter app<br/>queue, drop-offs,<br/>customers, reports"]:::local
+  P5 --> P6["Run beside Easyship<br/>a month, then<br/>turn it off"]:::you
+  classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
+  classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
+  classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
+```
+
+About four months from carrier access to switch-over. Carrier APIs cost nothing beyond postage. The one question to settle before building the counter app is whether GP Brands lets a franchisee quote and ship outside Rate Pro.
+
 ## Marketing at a glance
 
 ```mermaid
@@ -810,6 +829,7 @@ flowchart LR
   R --> DOC["docs/promo-night-kit.md<br/>PA scripts and checklist"]
   R --> ST["site/<br/>Astro website, no PHP:<br/>ship, business cards,<br/>counter pages"]
   ST --> STC["costs/README.md<br/>every service and its price"]
+  R --> SC["shipping-client/README.md<br/>plan for our own<br/>shipping software"]
   R --> RS["research/<br/>where the next store goes"]
   RS --> RS1["florida/README.md"]
   RS --> RS2["other-states/README.md"]
