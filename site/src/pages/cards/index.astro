@@ -13,6 +13,7 @@ const cancelled = Astro.url.searchParams.get('cancelled');
   <!-- Step 1: gallery -->
   <section id="step1">
     <h2>1. Pick a design</h2>
+    <p class="card" id="resume" hidden>You have a design in progress on this device. <button type="button" class="btn small" id="resumeBtn">Continue it</button> <button type="button" class="tool" id="discardBtn">Discard it</button></p>
     <p class="muted">{TEMPLATES.length} layouts in {PALETTES.length} color schemes, shown with sample details. Pick a color, then a layout. Everything can be changed in the next step.</p>
     <div class="swatches" id="palettes">
       {PALETTES.map((p, i) => (
@@ -164,8 +165,15 @@ const cancelled = Astro.url.searchParams.get('cancelled');
     drawGallery();
     $('changeDesign').addEventListener('click', () => { if (confirm('Start over with a different design? Your edits will be lost.')) { step2.hidden = true; step1.hidden = false; step1.scrollIntoView(); } });
 
-    // resume a design from this browser
-    try { const saved = localStorage.getItem('gp-card-design'); if (saved) { design = JSON.parse(saved); step1.hidden = true; step2.hidden = false; render(); } } catch {}
+    // A saved design is offered, never forced: the gallery always shows first.
+    try {
+      const saved = localStorage.getItem('gp-card-design');
+      if (saved) {
+        $('resume').hidden = false;
+        $('resumeBtn').addEventListener('click', () => { design = JSON.parse(saved); side = 'front'; selected = null; step1.hidden = true; step2.hidden = false; render(); step2.scrollIntoView({ behavior: 'smooth' }); });
+        $('discardBtn').addEventListener('click', () => { localStorage.removeItem('gp-card-design'); $('resume').hidden = true; });
+      }
+    } catch {}
 
     // ---- tabs, background, font, undo
     document.querySelectorAll<HTMLElement>('.tab').forEach((t) => t.addEventListener('click', () => { side = t.dataset.side as 'front' | 'back'; selected = null; render(); }));
