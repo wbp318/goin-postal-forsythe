@@ -1,0 +1,11 @@
+{
+  "_comment": "Retail pricing rules mirrored from GP Rate Pro. Set enabled to true once the numbers are copied in (issue 11). percent and flat are added to carrier cost; price is a fixed retail price that ignores cost. A service entry beats a carrier entry, which beats default. Only add a carrier or service entry when it should differ from default. Example carriers: {\"UPS\": {\"percent\": 25, \"flat\": 1.5}}. Example services: {\"USPS Priority Mail\": {\"price\": 12.99}}.",
+  "enabled": false,
+  "round_to_99": true,
+  "default": {
+    "percent": 0,
+    "flat": 0
+  },
+  "carriers": {},
+  "services": {}
+}

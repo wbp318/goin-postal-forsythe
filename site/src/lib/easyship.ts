@@ -145,7 +145,7 @@ function mockLabel(): Label {
   return {
     easyship_shipment_id: 'ESMOCK' + Math.random().toString(36).slice(2, 8).toUpperCase(),
     label_state: 'generated',
-    label_url: 'https://developers.easyship.com/mock-label.pdf',
+    label_url: '/demo-label.html',
     qr_url: null,
     tracking_number: '9400 1000 0000 0000 0000 00',
     tracking_page_url: null,

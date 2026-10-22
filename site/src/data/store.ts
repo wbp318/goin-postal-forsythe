@@ -4,7 +4,7 @@ export const store = {
   address: "1800 Forsythe Ave Ste 2, Monroe, LA 71201",
   phone: "(318) 000-0000", // TODO: real store number
   email: "wbp93623@gmail.com",
-  // Ship-from address sent to Easyship. TODO: phone.
+  // Ship-from address printed on labels. TODO: phone.
   origin: {
     contact_name: "Goin' Postal Forsythe",
     company_name: "Goin' Postal Forsythe",

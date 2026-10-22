@@ -1,7 +1,7 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
 import { env } from '../../lib/env';
-import { getRates } from '../../lib/easyship';
+import { quote } from '../../lib/quote';
 import { newOrderId, saveOrder, type Order } from '../../lib/orders';
 import { createCheckout } from '../../lib/stripe';
 import { parseAddress, parseParcel, json } from '../../lib/validate';
@@ -18,7 +18,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error('A valid email is needed for the receipt and label');
 
     // Re-quote server side so the price cannot be edited in the browser.
-    const rates = await getRates(env.EASYSHIP_TOKEN, origin, destination, parcel);
+    const { rates } = await quote(env, origin, destination, parcel);
     const rate = rates.find((r) => r.courier_service_id === b.courier_service_id);
     if (!rate) throw new Error('That rate is no longer available. Please quote again.');
 

@@ -45,6 +45,22 @@ flowchart LR
 | `POST /api/cards` | site | Saves a card order (design sanitized server side, logo must be a PNG, JPG or SVG data URL under 400 KB) and starts Stripe Checkout |
 | `PUT /api/cards` | staff page | `printed` and `picked_up` actions, PIN |
 
+## Where prices come from
+
+Customers see one retail price per service and never a vendor name. Behind that:
+
+```mermaid
+flowchart LR
+  A["Address + parcel"] --> Q["quote() in src/lib/quote.ts"]
+  Q --> C["Carrier cost<br/>one rates call covers<br/>USPS, UPS, FedEx, DHL<br/>(Easyship, store's account)"]
+  C --> P["Retail rules<br/>src/data/ratepro.json<br/>mirrored from GP Rate Pro"]
+  P --> R["Price the customer sees<br/>same as the counter"]
+```
+
+- **Cost** comes from one rates call through the store's existing Easyship account. The decision on October 21, 2026 was to keep that single integration rather than hold four separate carrier keys. The provider name appears nowhere a customer can see: not in page text, the demo note, the demo label, or the API response.
+- **Price** is cost plus the store's retail rules in `src/data/ratepro.json`, which mirror GP Rate Pro, the system the shop quotes with at the counter. Rules are percent over cost plus a flat fee, per carrier or per service, or a fixed price per service, with optional rounding to .99. A service rule beats a carrier rule, which beats the default. With `enabled: false` cost passes through unchanged.
+- **Wiring Rate Pro itself:** if GP Brands or the vendor provides an export or an API (issue 11), it plugs in at `src/lib/pricing.ts`, the one place that turns cost into price. Nothing else changes.
+
 ## Easy to read for older customers
 
 Many of the store's customers are older, so the whole site is set up for them without taking anything away.
