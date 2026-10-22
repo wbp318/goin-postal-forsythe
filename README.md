@@ -694,9 +694,11 @@ flowchart LR
 | Counter | Staff-only view of an order, opened by scanning the QR. For international orders: ring up on the POS, press the button to buy the label. Then mark printed |
 | Business cards | Vistaprint-style designer: 12 layouts in 12 color schemes, 6 typefaces, click any text on the card to edit it, drag it, resize it, add text and logos, front and back, undo and redo, free PNG download, pay by card online and pick up in the shop |
 | Contact | Quote request form that posts to Formspree |
-| Any page | Language picker in the header: 13 languages, remembered per device |
+| Any page | Language picker, text size (5 steps) and high contrast switches in the header, remembered per device |
 
 **How a customer ships:** they type the address and parcel size, see every carrier's price, pick one. Domestic orders pay by card on Stripe's hosted page, and the label is bought the moment Stripe confirms. International orders are reserved online and rung up on the Goin' Postal POS at the counter. Staff then press one button to buy the label with the customer present, so customs forms get done together. Either way the customer gets a pickup code like GP-7K3M9Q and a QR code. If they cannot print, they show the QR at the counter and the shop prints it.
+
+**Easy to read for older customers.** Base text is larger, every button and box is big enough to tap, links are underlined, the focus ring is thick and yellow, and labels sit above their boxes in bold. Two switches in the header are remembered on the device: a text size switch with five steps from A− to A+++, and a high contrast switch that turns the site black on white with strong borders. Nothing was removed to do this.
 
 **What it costs.** Hosting is free, the domain is about $11 a year, and the only per-use charge that matters is Stripe's 2.9% plus 30 cents on each online payment, with a few cents per label to Easyship. A quiet month runs about $24, a steady one about $113, a busy one about $360. Every service, its price, the math and the sources are in [`site/costs/README.md`](site/costs/README.md).
 

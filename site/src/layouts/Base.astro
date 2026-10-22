@@ -14,6 +14,7 @@ const { title, description = "Shipping, packing, mailboxes and printing at 1800 
     <link rel="icon" href="/favicon.svg" />
   </head>
   <body>
+    <a class="skip" href="#main" data-i18n="a11y.skip">Skip to content</a>
     <header class="top">
       <div class="wrap">
         <a class="brand" href="/">Goin' Postal <span>Forsythe</span></a>
@@ -26,10 +27,19 @@ const { title, description = "Shipping, packing, mailboxes and printing at 1800 
           <select id="lang" aria-label="Language" title="Language">
             {LANGS.map((l) => <option value={l.code}>{l.name}</option>)}
           </select>
+          <span class="a11y" role="group" aria-label="Text size">
+            <span class="a11y-label" data-i18n="a11y.text">Text size</span>
+            <button type="button" class="size" data-size="0" aria-label="Smaller text">A&minus;</button>
+            <button type="button" class="size" data-size="1" aria-label="Normal text">A</button>
+            <button type="button" class="size" data-size="2" aria-label="Larger text">A+</button>
+            <button type="button" class="size" data-size="3" aria-label="Even larger text">A++</button>
+            <button type="button" class="size" data-size="4" aria-label="Largest text">A+++</button>
+            <button type="button" class="size contrast" id="contrast" aria-pressed="false"><span data-i18n="a11y.contrast">High contrast</span></button>
+          </span>
         </nav>
       </div>
     </header>
-    <main class="wrap">
+    <main class="wrap" id="main">
       <slot />
     </main>
     <footer>
@@ -41,6 +51,16 @@ const { title, description = "Shipping, packing, mailboxes and printing at 1800 
     <script>
       import { apply, setLang, type Lang } from '../i18n';
       apply();
+      // Text size and contrast, remembered on this device.
+      const root = document.documentElement;
+      const get = (k: string) => { try { return localStorage.getItem(k); } catch { return null; } };
+      const set = (k: string, v: string) => { try { localStorage.setItem(k, v); } catch {} };
+      function size(n: string) { root.dataset.size = n; set('gp-size', n); document.querySelectorAll<HTMLElement>('.size[data-size]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.size === n))); }
+      function contrast(on: boolean) { root.dataset.contrast = on ? 'high' : ''; set('gp-contrast', on ? '1' : '0'); document.getElementById('contrast')!.setAttribute('aria-pressed', String(on)); }
+      size(get('gp-size') ?? '2');
+      contrast(get('gp-contrast') === '1');
+      document.querySelectorAll<HTMLElement>('.size[data-size]').forEach((b) => b.addEventListener('click', () => size(b.dataset.size!)));
+      document.getElementById('contrast')!.addEventListener('click', () => contrast(root.dataset.contrast !== 'high'));
       document.getElementById('lang')!.addEventListener('change', (e) => setLang((e.target as HTMLSelectElement).value as Lang));
     </script>
   </body>

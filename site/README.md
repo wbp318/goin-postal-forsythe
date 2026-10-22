@@ -30,7 +30,7 @@ flowchart LR
 | `/` | customers | Hero, services, hours, map |
 | `/ship` | customers | Quote form, rate list, pay or reserve |
 | `/ship/done?order=CODE` | customers | Label download, QR code, pickup code |
-| any page | customers | Language picker in the header, 13 languages, remembered per device |
+| any page | customers | Language picker, text size (5 steps) and high contrast switches in the header, all remembered per device |
 | `/cards` | customers | Vistaprint-style card designer: 12 layouts, 12 color schemes, 6 typefaces, click-to-edit text on the card, drag, resize, add text and images, front and back, undo and redo, PNG download, pay by card on Stripe and pick up in the shop |
 | `/cards/done?order=CODE` | customers | Order confirmation with a QR code and pickup code |
 | `/contact` | customers | Formspree contact form |
@@ -44,6 +44,21 @@ flowchart LR
 | `GET /api/mock-paid` | dev only | Stands in for Stripe when no key is set |
 | `POST /api/cards` | site | Saves a card order (design sanitized server side, logo must be a PNG, JPG or SVG data URL under 400 KB) and starts Stripe Checkout |
 | `PUT /api/cards` | staff page | `printed` and `picked_up` actions, PIN |
+
+## Easy to read for older customers
+
+Many of the store's customers are older, so the whole site is set up for them without taking anything away.
+
+- **Text size switch** in the header: five steps, A− to A+++ (16 to 28 px base). The default is one step up from normal. Remembered on the device.
+- **High contrast switch** in the header: black on white, strong borders, no greys, blue links. Remembered on the device.
+- Base type is 18 px with 1.6 line height. Buttons, inputs, menus and tabs are at least 44 to 52 px tall so they are easy to tap.
+- Links are underlined, not just colored. The keyboard focus ring is a thick yellow outline. A "Skip to content" link appears on the first Tab press.
+- Form labels sit above their boxes in bold. Error messages are boxed in red with dark text, not just colored text.
+- Chosen rates and chosen layouts get a thick outline plus a tinted background, so the selection does not rely on color alone.
+- Lines are capped at about 70 characters. Motion is turned off for people who have asked their system to reduce it.
+- On phones the big buttons stack full width.
+
+The staff counter pages get the same styles. Nothing was removed; every feature is where it was.
 
 ## What it costs
 
