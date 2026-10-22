@@ -698,6 +698,8 @@ flowchart LR
 
 **How a customer ships:** they type the address and parcel size, see every carrier's price, pick one. Domestic orders pay by card on Stripe's hosted page, and the label is bought the moment Stripe confirms. International orders are reserved online and rung up on the Goin' Postal POS at the counter. Staff then press one button to buy the label with the customer present, so customs forms get done together. Either way the customer gets a pickup code like GP-7K3M9Q and a QR code. If they cannot print, they show the QR at the counter and the shop prints it.
 
+**What it costs.** Hosting is free, the domain is about $11 a year, and the only per-use charge that matters is Stripe's 2.9% plus 30 cents on each online payment, with a few cents per label to Easyship. A quiet month runs about $24, a steady one about $113, a busy one about $360. Every service, its price, the math and the sources are in [`site/costs/README.md`](site/costs/README.md).
+
 **Thirteen languages.** A picker in the header switches every customer page between English, Dominican Spanish, Vietnamese, Lao, Khmer, Korean, Mandarin (Simplified Chinese), Cantonese (Traditional Chinese), Japanese, Thai, Brazilian Portuguese, Dutch and Afrikaans. The first visit follows the browser's language and the choice is remembered on the device. All strings live in one file, `site/src/i18n/strings.ts`, one row per string with thirteen columns, so a new language is one more column. The translations were written by the AI assistant and need a native speaker's check before launch (issue 10).
 
 ```mermaid
@@ -803,6 +805,7 @@ flowchart LR
   R --> AG["AGENDA.md<br/>what's done and what's next"]
   R --> DOC["docs/promo-night-kit.md<br/>PA scripts and checklist"]
   R --> ST["site/<br/>Astro website, no PHP:<br/>ship, business cards,<br/>counter pages"]
+  ST --> STC["costs/README.md<br/>every service and its price"]
   R --> RS["research/<br/>where the next store goes"]
   RS --> RS1["florida/README.md"]
   RS --> RS2["other-states/README.md"]

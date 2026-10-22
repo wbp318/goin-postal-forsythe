@@ -45,6 +45,10 @@ flowchart LR
 | `POST /api/cards` | site | Saves a card order (design sanitized server side, logo must be a PNG, JPG or SVG data URL under 400 KB) and starts Stripe Checkout |
 | `PUT /api/cards` | staff page | `printed` and `picked_up` actions, PIN |
 
+## What it costs
+
+Every service, its price, and monthly estimates at three volumes are in [`costs/README.md`](costs/README.md). Short version: $0 a month plus about $11 a year for the domain, and Stripe's 2.9% plus 30 cents on each online payment.
+
 ## Languages
 
 Every customer page can be read in 13 languages from the picker in the header: English, Spanish as spoken in the Dominican Republic, Vietnamese, Lao, Khmer (Cambodian), Korean, Mandarin (Simplified Chinese), Cantonese (Traditional Chinese), Japanese, Thai, Brazilian Portuguese, Dutch and Afrikaans. The choice is remembered on the device and the first visit follows the browser's language.
