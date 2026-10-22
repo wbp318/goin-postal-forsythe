@@ -50,7 +50,7 @@ flowchart LR
 Many of the store's customers are older, so the whole site is set up for them without taking anything away.
 
 - **Text size switch** in the header: five steps, A− to A+++ (16 to 28 px base). The default is one step up from normal. Remembered on the device.
-- **High contrast switch** in the header: black on white, strong borders, no greys, blue links. Remembered on the device.
+- **High contrast switch** in the header, on by default: black on white, strong borders, no greys, blue links. Turning it off is remembered on the device.
 - Base type is 18 px with 1.6 line height. Buttons, inputs, menus and tabs are at least 44 to 52 px tall so they are easy to tap.
 - Links are underlined, not just colored. The keyboard focus ring is a thick yellow outline. A "Skip to content" link appears on the first Tab press.
 - Form labels sit above their boxes in bold. Error messages are boxed in red with dark text, not just colored text.
