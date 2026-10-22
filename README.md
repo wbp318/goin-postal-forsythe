@@ -6,6 +6,46 @@ This is a public repo. Everything here is a marketing kit and site research for 
 
 > **If you cloned this repo:** the scripts and pages stop with a message unless the clone has been set up by one of the owners. That is deliberate. To ask about using any of it, contact Rin Ho, William Parker or Peter Ho at [wbp93623@gmail.com](mailto:wbp93623@gmail.com).
 
+## Run the website on your computer to test it
+
+Nothing goes live. This starts the site on your own machine so you can click through every page. It takes about a minute the first time.
+
+```mermaid
+flowchart LR
+  A["1 · Open a terminal<br/>in this folder"]:::you --> B["2 · cd site<br/>npm install (first time only)"]:::local
+  B --> C["3 · npm run dev"]:::local
+  C --> D["4 · Open<br/>http://localhost:4321"]:::you
+  D --> E["Test: home, Ship,<br/>Business cards, Contact,<br/>counter pages"]:::you
+  classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
+  classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
+  classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
+```
+
+**Windows (PowerShell) or Mac (Terminal):**
+
+```
+cd site
+npm install
+npm run dev
+```
+
+Then open **http://localhost:4321** in any browser. Leave the terminal window open; closing it stops the site. Press `q` then Enter in that window to stop it on purpose.
+
+Inside Claude Code you can type the same commands with a `!` in front, for example `! npm run dev`, and ask Claude to open the site in Chrome or Opera.
+
+**What runs in test mode.** With no keys set, shipping rates are sample numbers, labels are fake, Stripe is skipped (the Pay button goes straight to the paid page), and orders are kept in memory until you stop the server. To test against real sandboxes, copy `site/.dev.vars.example` to `site/.dev.vars`, paste the Easyship `sand_` token and Stripe `sk_test_` key, and restart.
+
+| Try this | Where |
+|---|---|
+| Home, services, hours, map | http://localhost:4321 |
+| Quote a package, pick a rate, pay | http://localhost:4321/ship |
+| Design a business card, order it | http://localhost:4321/cards |
+| Contact form | http://localhost:4321/contact |
+| Staff view of a shipping order | http://localhost:4321/counter/CODE (the code from the done page), PIN `1234` |
+| Staff view and print sheet of a card order | http://localhost:4321/counter/card/CODE |
+
+**Going live later** is a separate step, explained under "Deploy" in [`site/README.md`](site/README.md#deploy). It needs a Cloudflare login and the keys in GitHub issues 1 to 9.
+
 ## Start here: set up Claude Code
 
 Claude Code is an AI helper that runs in your terminal. You type what you want in plain English, and it reads files, runs commands and makes changes for you. Install it once (Part 1), then let it set up Python and R for you (Part 2). TypeScript and F# are optional (Part 3). A copy of this guide also lives in [`docs/claude-code-setup.md`](docs/claude-code-setup.md).
