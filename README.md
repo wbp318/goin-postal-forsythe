@@ -24,19 +24,40 @@ flowchart LR
 
 ### Step 1: install two programs (once per computer)
 
-| Program | What it is | Windows | Mac |
-|---|---|---|---|
-| **Node.js 22 or newer** | Runs the website on your computer | Download the LTS installer from [nodejs.org](https://nodejs.org) and click through it | Same, or `brew install node` if you have Homebrew |
-| **Git** | Downloads the repo and keeps it up to date | Download from [git-scm.com](https://git-scm.com/download/win), accept the defaults | Already on most Macs. If not, Terminal will offer to install it the first time you type `git` |
+Open a terminal first. Windows: press the Start key, type **PowerShell**, press Enter. Mac: open **Terminal** from Applications, Utilities. Then paste the two lines for your computer.
 
-To check they worked, open a terminal (Windows: press the Start key, type **PowerShell**, press Enter. Mac: open **Terminal** from Applications, Utilities) and type:
+**Windows (PowerShell).** `winget` is built into Windows 10 and 11:
+
+```
+winget install --id Git.Git -e --source winget
+winget install --id OpenJS.NodeJS.LTS -e --source winget
+```
+
+Each one asks you to accept the terms once; type `Y`. If `winget` itself is "not recognized", install **App Installer** from the Microsoft Store and reopen PowerShell.
+
+**Mac (Terminal).** Git comes with Apple's command line tools; Node.js comes from Homebrew:
+
+```
+xcode-select --install
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+brew install node
+```
+
+The first line opens a dialog; click Install and wait for it to finish before running the next. If Homebrew is already installed, skip the second line.
+
+| Program | What it is | Fallback if the command above fails |
+|---|---|---|
+| **Node.js 22 or newer** | Runs the website on your computer | LTS installer from [nodejs.org](https://nodejs.org) |
+| **Git** | Downloads the repo and keeps it up to date | Windows: [git-scm.com](https://git-scm.com/download/win). Mac: Terminal offers to install it the first time you type `git` |
+
+**Close the terminal and open it again** so it sees the new programs, then check they worked:
 
 ```
 node -v
 git --version
 ```
 
-You should see version numbers, like `v22.12.0` and `git version 2.47.0`. If either says "not recognized" or "command not found", close the terminal, open it again, and retry. If it still fails, the installer did not finish; run it again.
+You should see version numbers, like `v22.12.0` and `git version 2.47.0`. If either says "not recognized" or "command not found", the terminal is still the old one; close it, open a fresh one, and retry. If it still fails, run the install command again and watch for an error.
 
 ### Step 2: get the repo
 
