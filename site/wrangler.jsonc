@@ -10,6 +10,12 @@
     // `npx wrangler kv namespace create ORDERS` and paste its id here.
     { "binding": "ORDERS", "id": "REPLACE_WITH_KV_ID" }
   ],
+  "d1_databases": [
+    // Shipping client records: shipments, customers, drop-offs, tracking, rules, staff, print queue.
+    // Create with `npx wrangler d1 create goin-postal`, paste the id, then
+    // `npx wrangler d1 execute goin-postal --file db/schema.sql`.
+    { "binding": "DB", "database_name": "goin-postal", "database_id": "REPLACE_WITH_D1_ID" }
+  ],
   "vars": {
     "SITE_URL": "http://localhost:4321"
   }

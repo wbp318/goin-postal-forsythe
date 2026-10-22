@@ -3,7 +3,7 @@
 // src/data/ratepro.json holds the same retail rules copied from its screens.
 // Customers never see where the cost came from; they see one retail price per service.
 import rules from '../data/ratepro.json';
-import type { Rate } from './easyship';
+import type { Rate } from '../shipping/types';
 
 interface Rule { percent?: number; flat?: number; price?: number }
 interface Rules {
@@ -30,10 +30,10 @@ function round(n: number) {
 
 /** Turns carrier cost into the store's retail price. With `enabled: false` the cost passes through unchanged. */
 export function retail(rates: Rate[]): Rate[] {
-  if (!R.enabled) return rates;
+  if (!R.enabled) return rates.map((r) => ({ ...r, total_charge: r.cost }));
   return rates.map((r) => {
     const rule = ruleFor(r);
-    const price = rule.price != null ? rule.price : r.total_charge * (1 + (rule.percent ?? 0) / 100) + (rule.flat ?? 0);
+    const price = rule.price != null ? rule.price : r.cost * (1 + (rule.percent ?? 0) / 100) + (rule.flat ?? 0);
     return { ...r, total_charge: round(price) };
   });
 }

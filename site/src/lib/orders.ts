@@ -1,5 +1,5 @@
 // Orders live in Cloudflare KV. One record per quote the customer accepted.
-import type { Address, Parcel, Rate, Label } from './easyship';
+import type { Address, Parcel, Rate, Label } from '../shipping/types';
 
 export type OrderStatus =
   | 'awaiting_payment'   // domestic: Stripe Checkout started, not paid

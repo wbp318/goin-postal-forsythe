@@ -2,7 +2,51 @@
 
 A plan for replacing Easyship with software the store owns: rating, labels, tracking, drop-offs and reports for USPS, UPS, FedEx and DHL, built on the same Cloudflare stack as the website. The same thing ShippingEasy, Easyship and GP Rate Pro do, but ours.
 
-Nothing here is built yet. This page is the agenda. Item 44 in [`AGENDA.md`](../AGENDA.md) tracks it.
+Item 44 in [`AGENDA.md`](../AGENDA.md) tracks it. Phase 2's foundation is built and running in mock mode; see [What is built so far](#what-is-built-so-far).
+
+## What is built so far
+
+Started October 21, 2026. The website now runs on the shipping client's rating engine, with Easyship as one adapter among five, so nothing changes for customers until the direct carriers are switched on.
+
+```mermaid
+flowchart LR
+  P["/ship page and /api/rates"]:::you --> Q["quote()"]:::local
+  Q --> E["engine.getQuotes()<br/>parallel, cache 5 min,<br/>retail rules, sort"]:::local
+  E --> U["usps adapter"]:::local
+  E --> UP["ups adapter"]:::local
+  E --> F["fedex adapter"]:::local
+  E --> D["dhl adapter"]:::local
+  E --> ES["easyship adapter<br/>fills any carrier<br/>with no keys"]:::local
+  U -.->|when keys set| UA["USPS APIs v3"]:::cloud
+  UP -.->|when keys set| UPA["UPS REST"]:::cloud
+  F -.->|when keys set| FA["FedEx REST"]:::cloud
+  D -.->|when keys set| DA["MyDHL API"]:::cloud
+  ES --> ESA["Easyship"]:::cloud
+  C["/api/compare<br/>PIN, parity test"]:::local --> E
+  classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
+  classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
+  classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
+```
+
+| Piece | Where | State |
+|---|---|---|
+| Shared shapes: Address, Parcel, Rate, Label, TrackingEvent, Provider | `site/src/shipping/types.ts` | Done |
+| Billable weight: dimensional divisors per carrier, USPS one-cubic-foot rule, ounce and pound rounding, length-plus-girth oversize check | `site/src/shipping/dim.ts` | Done |
+| OAuth client-credentials tokens cached in KV, JSON calls with carrier-tagged errors | `site/src/shipping/http.ts` | Done |
+| USPS adapter: OAuth, total-rates search (domestic and international), label with payment authorization, void, tracking | `site/src/shipping/providers/usps.ts` | Written to the published reference, not yet sent to USPS |
+| UPS adapter: OAuth, Shop rating with negotiated rates and transit times, ship, void, track | `site/src/shipping/providers/ups.ts` | Same |
+| FedEx adapter: OAuth, rate quotes with account rates, ship, cancel, track | `site/src/shipping/providers/fedex.ts` | Same |
+| DHL Express adapter: rates, shipments with export declaration, tracking | `site/src/shipping/providers/dhl.ts` | Same |
+| Easyship adapter wrapping the existing client | `site/src/shipping/providers/easyship.ts` | Done, carries the site today |
+| Rating engine: every configured carrier in parallel, Easyship fills gaps, retail rules, five-minute cache, sorted, errors logged not shown | `site/src/shipping/engine.ts` | Done |
+| Label routing by rate id prefix, so Stripe and the counter never know which adapter bought the label | `site/src/shipping/engine.ts`, `site/src/lib/fulfil.ts` | Done |
+| Parity endpoint: every provider's rates side by side for one shipment | `POST /api/compare`, staff PIN | Done |
+| D1 schema: customers, shipments, tracking events, drop-offs, retail rules, staff, print queue | `site/db/schema.sql` | Written, not yet applied; the site still keeps orders in KV |
+| Carrier keys and sandbox switches | `site/.dev.vars.example`, `site/wrangler.jsonc` | Done, all blank until issue 12 |
+
+Customers see service, price and days only. Cost and the provider that answered stay on the server.
+
+**Next:** the owners open the four developer accounts (issue 12). The first sandbox call to each carrier will need field adjustments; that is expected and is why the adapters are isolated. Then the parity test, then labels at the counter.
 
 ## Why build it
 

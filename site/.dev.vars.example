@@ -1,9 +1,39 @@
 # Copy to .dev.vars for local development. Leave a value blank to run that piece in mock mode.
-# Easyship: dashboard > APIs & Webhooks > Create API Connection. Sandbox tokens start with sand_, production with prod_.
-# Scopes needed: public.rate:read, public.shipment:write, public.label:write.
-EASYSHIP_TOKEN=
+# Nothing in this file is ever committed.
+
+# Staff PIN for the counter pages and the parity endpoint.
+COUNTER_PIN=1234
+
 # Stripe: dashboard > Developers > API keys (sk_test_ for testing). Webhook secret from Developers > Webhooks.
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
-# Short PIN staff type on the counter page to buy a reserved label.
-COUNTER_PIN=1234
+
+# Rates and labels. Easyship is the single-call fallback covering all four carriers.
+# Dashboard > APIs & Webhooks > Create API Connection. sand_ for testing, prod_ live.
+EASYSHIP_TOKEN=
+
+# Direct carriers (shipping client, agenda item 44). Each switches on when its keys are present
+# and takes over its own carrier; Easyship fills in the rest. Leave blank until the owners
+# finish each developer-portal sign-up (issue 12).
+USPS_CLIENT_ID=
+USPS_CLIENT_SECRET=
+USPS_CRID=
+USPS_MID=
+USPS_MANIFEST_MID=
+USPS_ACCOUNT_NUMBER=
+USPS_SANDBOX=1
+
+UPS_CLIENT_ID=
+UPS_CLIENT_SECRET=
+UPS_ACCOUNT_NUMBER=
+UPS_SANDBOX=1
+
+FEDEX_CLIENT_ID=
+FEDEX_CLIENT_SECRET=
+FEDEX_ACCOUNT_NUMBER=
+FEDEX_SANDBOX=1
+
+DHL_API_KEY=
+DHL_API_SECRET=
+DHL_ACCOUNT_NUMBER=
+DHL_SANDBOX=1

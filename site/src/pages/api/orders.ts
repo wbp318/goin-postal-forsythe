@@ -19,7 +19,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Re-quote server side so the price cannot be edited in the browser.
     const { rates } = await quote(env, origin, destination, parcel);
-    const rate = rates.find((r) => r.courier_service_id === b.courier_service_id);
+    const rate = rates.find((r) => r.id === b.rate_id);
     if (!rate) throw new Error('That rate is no longer available. Please quote again.');
 
     const international = destination.country_alpha2 !== 'US';

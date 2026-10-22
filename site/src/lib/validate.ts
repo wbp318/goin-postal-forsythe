@@ -1,4 +1,4 @@
-import type { Address, Parcel } from './easyship';
+import type { Address, Parcel } from '../shipping/types';
 
 const US_STATES = /^[A-Z]{2}$/;
 

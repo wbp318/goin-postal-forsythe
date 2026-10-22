@@ -104,12 +104,12 @@ const cancelled = Astro.url.searchParams.get('cancelled');
       for (const r of j.rates) {
         const el = document.createElement('label');
         el.className = 'rate card';
-        el.innerHTML = `<input type="radio" name="rate" value="${r.courier_service_id}">
+        el.innerHTML = `<input type="radio" name="rate" value="${r.id}">
           <span class="carrier">${r.carrier}</span>
           <span class="service">${r.service}</span>
           <span class="days">${r.min_days ?? '?'}–${r.max_days ?? '?'} ${t('ship.days')}</span>
           <span class="price">$${r.total_charge.toFixed(2)}</span>`;
-        el.querySelector('input')!.addEventListener('change', () => { picked = r.courier_service_id; buy.hidden = false; });
+        el.querySelector('input')!.addEventListener('change', () => { picked = r.id; buy.hidden = false; });
         ratesEl.appendChild(el);
       }
       results.hidden = false;
@@ -121,7 +121,7 @@ const cancelled = Astro.url.searchParams.get('cancelled');
       if (!picked) return;
       buyBtn.setAttribute('disabled', '');
       const email = (buy.querySelector('[name=email]') as HTMLInputElement).value;
-      const res = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, email, courier_service_id: picked }) });
+      const res = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, email, rate_id: picked }) });
       const j = await res.json();
       if (!res.ok) { err.textContent = j.error; err.hidden = false; buyBtn.removeAttribute('disabled'); return; }
       location.href = j.next;

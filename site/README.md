@@ -37,7 +37,8 @@ flowchart LR
 | `/counter/card/CODE` | staff | Card order, already paid online: preview both sides, print sheet, mark printed, mark picked up. Unpaid orders are flagged do not print |
 | `/counter/card/CODE/sheet` | staff | Print-ready 10-up US letter sheet, fronts then mirrored backs |
 | `/counter/CODE` | staff | Order details. For international: ring up on the POS, then press the button to buy the label. Mark printed. Needs the PIN |
-| `POST /api/rates` | site | Re-quotes through Easyship, filtered to the four carriers |
+| `POST /api/rates` | site | Rating engine: every configured carrier in parallel, Easyship fills gaps, retail rules, cached five minutes. Returns service, price and days only |
+| `POST /api/compare` | staff | Every provider's rates side by side for the parity test. PIN |
 | `POST /api/orders` | site | Re-quotes server side so prices cannot be edited, then Stripe or reserve |
 | `POST /api/stripe-webhook` | Stripe | `checkout.session.completed` buys the label for a `GP-` order or marks a `CD-` card order paid |
 | `POST /api/counter` | staff page | `paid` and `printed` actions |
@@ -57,7 +58,7 @@ flowchart LR
   P --> R["Price the customer sees<br/>same as the counter"]
 ```
 
-- **Cost** comes from one rates call through the store's existing Easyship account. The decision on October 21, 2026 was to keep that single integration rather than hold four separate carrier keys. The provider name appears nowhere a customer can see: not in page text, the demo note, the demo label, or the API response.
+- **Cost** comes from the shipping client's rating engine in `src/shipping/`: direct USPS, UPS, FedEx and DHL adapters that each switch on when their keys are present, with the store's Easyship account filling in any carrier that has no keys yet. Today no direct keys are set, so Easyship answers for all four in one call. See [`shipping-client/README.md`](../shipping-client/README.md). The provider name appears nowhere a customer can see: not in page text, the demo note, the demo label, or the API response.
 - **Price** is cost plus the store's retail rules in `src/data/ratepro.json`, which mirror GP Rate Pro, the system the shop quotes with at the counter. Rules are percent over cost plus a flat fee, per carrier or per service, or a fixed price per service, with optional rounding to .99. A service rule beats a carrier rule, which beats the default. With `enabled: false` cost passes through unchanged.
 - **Wiring Rate Pro itself:** if GP Brands or the vendor provides an export or an API (issue 11), it plugs in at `src/lib/pricing.ts`, the one place that turns cost into price. Nothing else changes.
 

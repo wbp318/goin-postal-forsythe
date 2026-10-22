@@ -11,8 +11,10 @@ export const POST: APIRoute = async ({ request }) => {
     const origin = b.origin ? parseAddress(b.origin) : store.origin;
     const destination = parseAddress(b.destination);
     const parcel = parseParcel(b.parcel);
-    const { rates, demo } = await quote(env, origin, destination, parcel);
-    return json({ rates, international: destination.country_alpha2 !== 'US', demo });
+    const { rates, demo, oversize } = await quote(env, origin, destination, parcel);
+    // Customers see service, price and days. Cost and provider stay server side.
+    const visible = rates.map(({ id, carrier, service, total_charge, currency, min_days, max_days }) => ({ id, carrier, service, total_charge, currency, min_days, max_days }));
+    return json({ rates: visible, international: destination.country_alpha2 !== 'US', demo, oversize });
   } catch (e: any) {
     return json({ error: e.message }, 400);
   }

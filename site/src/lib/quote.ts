@@ -1,10 +1,11 @@
 // One place that turns an address and parcel into the rates a customer sees.
-// Carrier cost comes from the rates provider (Easyship, one API call for all four carriers);
-// the retail price comes from the Rate Pro rules. Pages and APIs only ever call this.
-import { getRates, type Address, type Parcel, type Rate } from './easyship';
-import { retail } from './pricing';
+// The shipping client's rating engine asks every configured carrier, fills gaps from the
+// single-call fallback, applies the Rate Pro retail rules and caches the answer.
+import { getQuotes } from '../shipping/engine';
+import type { Address, Parcel, Rate } from '../shipping/types';
 
-export async function quote(env: Env, origin: Address, destination: Address, parcel: Parcel): Promise<{ rates: Rate[]; demo: boolean }> {
-  const cost = await getRates(env.EASYSHIP_TOKEN, origin, destination, parcel);
-  return { rates: retail(cost), demo: !env.EASYSHIP_TOKEN };
+export async function quote(env: Env, origin: Address, destination: Address, parcel: Parcel): Promise<{ rates: Rate[]; demo: boolean; oversize: boolean }> {
+  const q = await getQuotes(env, origin, destination, parcel);
+  if (q.errors.length) console.warn('rate errors', JSON.stringify(q.errors));
+  return { rates: q.rates, demo: q.demo, oversize: q.oversize };
 }
