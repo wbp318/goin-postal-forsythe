@@ -1,4 +1,4 @@
--- Shipping client database (Cloudflare D1). Apply with:
+-- PeterShip database (Cloudflare D1). Apply with:
 --   npx wrangler d1 create goin-postal
 --   npx wrangler d1 execute goin-postal --file db/schema.sql
 -- Orders stay in KV for now; these tables are the shipping client's own records.

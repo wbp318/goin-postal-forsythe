@@ -854,9 +854,9 @@ With no keys in `.dev.vars` everything runs in mock mode: placeholder rates, a f
 
 **Deploy** by connecting the GitHub repo to Cloudflare Workers with root directory `site` and build command `npm run build`.
 
-## Our own shipping client
+## PeterShip, our own shipping client
 
-The plan to replace Easyship with software the store owns, doing what ShippingEasy, Easyship and GP Rate Pro do: rating, labels, tracking, drop-off capture, a counter app and reports for USPS, UPS, FedEx and DHL, on the same Cloudflare stack as the website. The full agenda, with the carrier requirements, phases, timeline, costs, risks and the decisions Rin needs to make first, is in [`shipping-client/README.md`](shipping-client/README.md). Agenda item 44.
+PeterShip is the plan to replace Easyship with software the store owns, doing what ShippingEasy, Easyship and GP Rate Pro do: rating, labels, tracking, drop-off capture, a counter app and reports for USPS, UPS, FedEx and DHL, on the same Cloudflare stack as the website. The full agenda, with the carrier requirements, phases, timeline, costs, risks and the decisions Rin needs to make first, is in [`shipping-client/README.md`](shipping-client/README.md). Agenda item 44.
 
 ```mermaid
 flowchart LR
@@ -935,7 +935,7 @@ flowchart LR
   R --> DOC["docs/promo-night-kit.md<br/>PA scripts and checklist"]
   R --> ST["site/<br/>Astro website, no PHP:<br/>ship, business cards,<br/>counter pages"]
   ST --> STC["costs/README.md<br/>every service and its price"]
-  R --> SC["shipping-client/README.md<br/>plan for our own<br/>shipping software"]
+  R --> SC["shipping-client/README.md<br/>PeterShip, our own<br/>shipping software"]
   R --> MO["monetization/README.md<br/>every way to earn<br/>from the site"]
   R --> RS["research/<br/>where the next store goes"]
   RS --> RS1["florida/README.md"]

@@ -1,4 +1,4 @@
-// Shared shapes for the shipping client. Every carrier adapter maps to and from these,
+// PeterShip, the store's own shipping client. Shared shapes. Every carrier adapter maps to and from these,
 // so the rating engine, the pages and the counter never see a carrier's own format.
 
 export type CarrierId = 'usps' | 'ups' | 'fedex' | 'dhl' | 'easyship';

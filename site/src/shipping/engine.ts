@@ -1,4 +1,4 @@
-// The rating engine. Asks every configured carrier in parallel, normalizes, applies the
+// PeterShip's rating engine. Asks every configured carrier in parallel, normalizes, applies the
 // store's retail rules, caches for five minutes, and returns one list sorted by price.
 // If a carrier is down the others still answer; the failure is logged, never shown.
 import type { Address, Parcel, Rate, Label } from './types';

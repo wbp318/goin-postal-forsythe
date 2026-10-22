@@ -1,12 +1,12 @@
-# Our own shipping client
+# PeterShip
 
-A plan for replacing Easyship with software the store owns: rating, labels, tracking, drop-offs and reports for USPS, UPS, FedEx and DHL, built on the same Cloudflare stack as the website. The same thing ShippingEasy, Easyship and GP Rate Pro do, but ours.
+PeterShip is the store's own shipping client. A plan for replacing Easyship with software the store owns: rating, labels, tracking, drop-offs and reports for USPS, UPS, FedEx and DHL, built on the same Cloudflare stack as the website. The same thing ShippingEasy, Easyship and GP Rate Pro do, but ours.
 
 Item 44 in [`AGENDA.md`](../AGENDA.md) tracks it. Phase 2's foundation is built and running in mock mode; see [What is built so far](#what-is-built-so-far).
 
 ## What is built so far
 
-Started October 21, 2026. The website now runs on the shipping client's rating engine, with Easyship as one adapter among five, so nothing changes for customers until the direct carriers are switched on.
+Started October 21, 2026. The website now runs on PeterShip's rating engine, with Easyship as one adapter among five, so nothing changes for customers until the direct carriers are switched on.
 
 ```mermaid
 flowchart LR
@@ -64,7 +64,7 @@ What it does not replace: the Goin' Postal POS. In-person money still runs there
 
 ```mermaid
 mindmap
-  root((Shipping client))
+  root((PeterShip))
     Rating
       Four carriers in one call
       Dimensional weight
@@ -108,7 +108,7 @@ flowchart LR
     W["Website /ship<br/>customers"]:::you
     K["Counter app<br/>staff, tablet"]:::you
   end
-  subgraph CORE["Shipping client on Cloudflare Workers"]
+  subgraph CORE["PeterShip on Cloudflare Workers"]
     Q["Rating engine<br/>normalize, dim weight,<br/>surcharges, markup"]:::local
     L["Label service<br/>buy, void, PDF/ZPL,<br/>customs, manifests"]:::local
     T["Tracking service<br/>webhooks, polling,<br/>notifications"]:::local
@@ -236,7 +236,7 @@ Nothing can be tested until each one lands. They can be requested in parallel on
 
 ```mermaid
 gantt
-  title Shipping client build
+  title PeterShip build
   dateFormat YYYY-MM-DD
   axisFormat %b %d
   section Owners

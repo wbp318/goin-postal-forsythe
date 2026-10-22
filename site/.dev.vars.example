@@ -12,7 +12,7 @@ STRIPE_WEBHOOK_SECRET=
 # Dashboard > APIs & Webhooks > Create API Connection. sand_ for testing, prod_ live.
 EASYSHIP_TOKEN=
 
-# Direct carriers (shipping client, agenda item 44). Each switches on when its keys are present
+# Direct carriers (PeterShip, agenda item 44). Each switches on when its keys are present
 # and takes over its own carrier; Easyship fills in the rest. Leave blank until the owners
 # finish each developer-portal sign-up (issue 12).
 USPS_CLIENT_ID=
