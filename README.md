@@ -8,43 +8,124 @@ This is a public repo. Everything here is a marketing kit and site research for 
 
 ## Run the website on your computer to test it
 
-Nothing goes live. This starts the site on your own machine so you can click through every page. It takes about a minute the first time.
+Nothing goes live. This starts the website on your own computer only, so you can click through every page, place test orders and try the card designer. No real money moves and no real labels are bought. The first time takes about five minutes because two programs need installing. After that it is one command.
 
 ```mermaid
 flowchart LR
-  A["1 · Open a terminal<br/>in this folder"]:::you --> B["2 · cd site<br/>npm install (first time only)"]:::local
-  B --> C["3 · npm run dev"]:::local
-  C --> D["4 · Open<br/>http://localhost:4321"]:::you
-  D --> E["Test: home, Ship,<br/>Business cards, Contact,<br/>counter pages"]:::you
+  A["1 · Install Node.js<br/>and Git (once)"]:::you --> B["2 · Get the repo<br/>git clone or Download ZIP"]:::you
+  B --> C["3 · cd site<br/>npm install (once)"]:::local
+  C --> D["4 · npm run dev<br/>leave the window open"]:::local
+  D --> E["5 · Open<br/>http://localhost:4321"]:::you
+  E --> F["6 · Test every page:<br/>home, Ship, Business cards,<br/>Contact, counter pages"]:::you
   classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
   classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
   classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
 ```
 
-**Windows (PowerShell) or Mac (Terminal):**
+### Step 1: install two programs (once per computer)
+
+| Program | What it is | Windows | Mac |
+|---|---|---|---|
+| **Node.js 22 or newer** | Runs the website on your computer | Download the LTS installer from [nodejs.org](https://nodejs.org) and click through it | Same, or `brew install node` if you have Homebrew |
+| **Git** | Downloads the repo and keeps it up to date | Download from [git-scm.com](https://git-scm.com/download/win), accept the defaults | Already on most Macs. If not, Terminal will offer to install it the first time you type `git` |
+
+To check they worked, open a terminal (Windows: press the Start key, type **PowerShell**, press Enter. Mac: open **Terminal** from Applications, Utilities) and type:
+
+```
+node -v
+git --version
+```
+
+You should see version numbers, like `v22.12.0` and `git version 2.47.0`. If either says "not recognized" or "command not found", close the terminal, open it again, and retry. If it still fails, the installer did not finish; run it again.
+
+### Step 2: get the repo
+
+In that same terminal:
+
+```
+cd Desktop
+git clone https://github.com/wbp318/goin-postal-forsythe.git
+cd goin-postal-forsythe
+```
+
+That puts a `goin-postal-forsythe` folder on your Desktop. No GitHub account is needed; the repo is public. If you would rather not use Git, the green **Code** button on the GitHub page has **Download ZIP**; unzip it to the Desktop and `cd` into the folder instead.
+
+Already have the folder? Get the latest version with `git pull` from inside it.
+
+### Step 3: install the website's parts (once, and after big updates)
 
 ```
 cd site
 npm install
+```
+
+This downloads the pieces the site is built from into a `node_modules` folder. It takes a minute or two and prints a lot. The last lines should say something like `added 400 packages` and `found 0 vulnerabilities`. Warnings in yellow are fine. Red `ERR!` lines are not; the usual cause is being in the wrong folder, so check that `cd site` worked.
+
+### Step 4: start it
+
+```
 npm run dev
 ```
 
-Then open **http://localhost:4321** in any browser. Leave the terminal window open; closing it stops the site. Press `q` then Enter in that window to stop it on purpose.
+Within a few seconds it prints:
 
-Inside Claude Code you can type the same commands with a `!` in front, for example `! npm run dev`, and ask Claude to open the site in Chrome or Opera.
+```
+  astro  v7.x.x  ready in 500 ms
+  ┃ Local    http://localhost:4321/
+```
 
-**What runs in test mode.** With no keys set, shipping rates are sample numbers, labels are fake, Stripe is skipped (the Pay button goes straight to the paid page), and orders are kept in memory until you stop the server. To test against real sandboxes, copy `site/.dev.vars.example` to `site/.dev.vars`, paste the Easyship `sand_` token and Stripe `sk_test_` key, and restart.
+Leave this window open. It is the website. Closing it, or pressing `q` then Enter, stops the site. To start again later: open a terminal, `cd Desktop/goin-postal-forsythe/site`, `npm run dev`. Steps 1 to 3 are not repeated.
 
-| Try this | Where |
-|---|---|
-| Home, services, hours, map | http://localhost:4321 |
-| Quote a package, pick a rate, pay | http://localhost:4321/ship |
-| Design a business card, order it | http://localhost:4321/cards |
-| Contact form | http://localhost:4321/contact |
-| Staff view of a shipping order | http://localhost:4321/counter/CODE (the code from the done page), PIN `1234` |
-| Staff view and print sheet of a card order | http://localhost:4321/counter/card/CODE |
+Inside Claude Code the same commands work with a `!` in front, for example `! npm run dev`, and you can ask Claude to open the site in Chrome or Opera for you.
 
-**Going live later** is a separate step, explained under "Deploy" in [`site/README.md`](site/README.md#deploy). It needs a Cloudflare login and the keys in GitHub issues 1 to 9.
+### Step 5: open it
+
+Go to **http://localhost:4321** in any browser. Chrome, Opera, Edge, Safari and Firefox all work. The home page should appear in high contrast with the text size switch set to A+. Every edit you make to a file under `site/src` shows in the browser within a second, no restart needed.
+
+### Step 6: what to test, and what should happen
+
+The site runs in **test mode** because no keys are set: shipping rates are sample numbers with a note saying so, labels are fake, the Pay button skips the card screen and goes straight to the paid page, and orders live in memory until you stop the server. That is enough to try everything.
+
+| Try this | Where | What should happen |
+|---|---|---|
+| Home, services, hours, map | http://localhost:4321 | Six service cards, the hours block, the map pinned on 1800 Forsythe Ave Ste 2 |
+| Language picker | header of any page | Pick Español (RD) or any of the 13. Every page stays in that language until you change it |
+| Text size and contrast | header of any page | A− to A+++ changes the whole site. High contrast is on by default; turn it off and it stays off on that device |
+| Quote a package | http://localhost:4321/ship | Fill the address and parcel, press Get rates. Five sample rates appear with a yellow test-mode note |
+| Buy a domestic label | same page | Pick a rate, enter any email, press Pay and get label. You land on a done page with a pickup code like GP-7K3M9Q, a Download label link and a QR code |
+| Reserve an international label | same page, country Canada | The button reads Reserve and pay at the counter. The done page says Reserved |
+| Staff counter page | scan the QR, or open http://localhost:4321/counter/GP-XXXXXX with your code | Shows the order. PIN is **1234**. For a reserved order, press Rung up on the POS, buy label. For a paid one, Mark printed |
+| Design business cards | http://localhost:4321/cards | Pick a color, then a layout. Click text on the card and type. Drag it. Try the Back tab, Undo, Download PNG |
+| Order cards | bottom of the designer | Quantity, name, email, Pay and order. Done page with a code like CD-3DBY5A and a QR |
+| Card counter page and print sheet | http://localhost:4321/counter/card/CD-XXXXXX | Both sides, Open print sheet shows ten cards on a letter page. PIN 1234 |
+| Contact form | http://localhost:4321/contact | Fills in, but sending fails until the Formspree ID is set (issue 6). That is expected |
+
+### Testing against real sandboxes (optional)
+
+To see real carrier rates and a real Stripe test card screen without any real charges:
+
+1. Copy `site/.dev.vars.example` to `site/.dev.vars`.
+2. Paste the Easyship sandbox token (starts with `sand_`, issue 2) as `EASYSHIP_TOKEN`, and the Stripe test key (starts with `sk_test_`, issue 3) as `STRIPE_SECRET_KEY`.
+3. Stop the site with `q` and run `npm run dev` again.
+
+The test-mode note disappears, rates come from the carriers, and the Pay button opens Stripe's test page, where card number `4242 4242 4242 4242` with any future date and any three digits pays successfully. `.dev.vars` is ignored by Git, so keys never end up in the repo.
+
+### If something goes wrong
+
+| You see | What it means | Fix |
+|---|---|---|
+| `'npm' is not recognized` or `command not found` | Node.js is not installed or the terminal was open before you installed it | Install Node.js, then close and reopen the terminal |
+| `Missing script: "dev"` | You are not in the `site` folder | `cd site` and retry |
+| `Port 4321 is in use` | The site is already running in another window | Use that window, or close it and retry |
+| `ENOENT ... package.json` | Wrong folder | `cd` into `goin-postal-forsythe/site` |
+| The page says it cannot connect | The terminal window was closed | Run `npm run dev` again |
+| Red `ERR!` during `npm install` | Usually a network blip | Run `npm install` again |
+| Rates say test mode when you set a token | `.dev.vars` is in the wrong folder or the site was not restarted | It belongs in `site/`, then stop and start the site |
+| Something looks wrong on the page | | Tell Claude Code what you saw and which page, or open an issue |
+
+### Going live later
+
+Putting the site on the internet is a separate step, explained under "Deploy" in [`site/README.md`](site/README.md#deploy). It needs a Cloudflare login and the keys in GitHub issues 1 to 11. Nothing in this section affects that.
 
 ## Start here: set up Claude Code
 
