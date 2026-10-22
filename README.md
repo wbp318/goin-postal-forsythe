@@ -435,7 +435,7 @@ flowchart TB
 
 The design is ready in `designs/moccasins-dasher-board.svg` (preview: `designs/png/moccasins-dasher-board.png`). The official logo replaces its dashed **OFFICIAL LOGO** box. Ask the team for the exact panel size early, because the design is drawn at an 8:1 ratio and may need resizing to fit their boards.
 
-Marketing kit for the Goin' Postal store at **Forsythe Ave & N 18th St, Monroe, Louisiana** (Ouachita Parish), owned by Rin Ho and Peter Ho.
+Marketing kit for the Goin' Postal store at **1800 Forsythe Ave Ste 2, Monroe, Louisiana 71201** (Ouachita Parish), owned by Rin Ho and Peter Ho.
 
 The store is open. This repo covers getting its name in front of local families:
 
@@ -742,7 +742,7 @@ npm run dev
 
 With no keys in `.dev.vars` everything runs in mock mode: placeholder rates, a fake label, and Stripe skipped, so the whole flow can be clicked through on day one.
 
-**Before launch, the owners need to fill in** the items marked `TODO` in `site/src/data/store.ts`: street number and ZIP, the store phone, real hours, the Formspree form ID, and the ship-from address. Then an Easyship API connection from the store's dashboard, a Stripe live key and webhook secret, a Cloudflare KV namespace for orders, and a counter PIN. The full checklist is in [`site/README.md`](site/README.md#before-launch). The phone number in the launch book was not reused because it belongs to a competitor on Millhaven Rd.
+**Before launch, the owners need to fill in** the items marked `TODO` in `site/src/data/store.ts`: the store phone, real hours, the Formspree form ID, and the ship-from address. Then an Easyship API connection from the store's dashboard, a Stripe live key and webhook secret, a Cloudflare KV namespace for orders, and a counter PIN. The full checklist is in [`site/README.md`](site/README.md#before-launch). The phone number in the launch book was not reused because it belongs to a competitor on Millhaven Rd.
 
 **Deploy** by connecting the GitHub repo to Cloudflare Workers with root directory `site` and build command `npm run build`.
 

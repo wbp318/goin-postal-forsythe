@@ -70,7 +70,7 @@ export const TEMPLATES: { id: TemplateId; name: string }[] = [
 export const SAMPLE = {
   name: 'Rin Ho', title: 'Owner', company: "Goin' Postal Forsythe",
   phone: '(318) 000-0000', email: 'hello@example.com', website: 'goinpostalforsythe.com',
-  address: 'Forsythe Ave & N 18th St, Monroe, LA', tagline: 'Ship it. Pack it. Print it.',
+  address: '1800 Forsythe Ave Ste 2, Monroe, LA', tagline: 'Ship it. Pack it. Print it.',
 };
 export type Details = typeof SAMPLE;
 

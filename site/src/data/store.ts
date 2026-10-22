@@ -1,16 +1,16 @@
 // Single place for store facts. Items marked TODO are for the owners to confirm.
 export const store = {
   name: "Goin' Postal Forsythe",
-  address: "Forsythe Ave & N 18th St, Monroe, LA 71201", // TODO: street number and ZIP
+  address: "1800 Forsythe Ave Ste 2, Monroe, LA 71201",
   phone: "(318) 000-0000", // TODO: real store number
   email: "wbp93623@gmail.com",
-  // Ship-from address sent to Easyship. TODO: street number, ZIP, phone.
+  // Ship-from address sent to Easyship. TODO: phone.
   origin: {
     contact_name: "Goin' Postal Forsythe",
     company_name: "Goin' Postal Forsythe",
     contact_phone: "+13180000000",
     contact_email: "wbp93623@gmail.com",
-    line_1: "Forsythe Ave & N 18th St",
+    line_1: "1800 Forsythe Ave Ste 2",
     city: "Monroe",
     state: "LA",
     postal_code: "71201",
