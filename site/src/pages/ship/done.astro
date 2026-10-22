@@ -16,8 +16,8 @@ const paid = order.status === 'labeled' || order.status === 'printed';
 ---
 <Base title={`Order ${order.id} · Goin' Postal Forsythe`}>
   <section class="hero">
-    <h1>{order.status === 'reserved' ? 'Reserved. See you at the counter.' : paid ? 'Paid. Your label is ready.' : 'Waiting for payment.'}</h1>
-    <p class="lead">Pickup code <strong class="code">{order.id}</strong>. Save this page or write the code down. Stripe emails the receipt to {order.email}.</p>
+    <h1 data-i18n={order.status === 'reserved' ? 'done.reserved' : paid ? 'done.paid' : 'done.waiting'}>{order.status === 'reserved' ? 'Reserved. See you at the counter.' : paid ? 'Paid. Your label is ready.' : 'Waiting for payment.'}</h1>
+    <p class="lead"><span data-i18n="done.code">Pickup code</span> <strong class="code">{order.id}</strong>. <span data-i18n="done.save">Save this page or write the code down. Stripe emails the receipt to</span> {order.email}.</p>
   </section>
 
   <div class="grid">
@@ -26,15 +26,15 @@ const paid = order.status === 'labeled' || order.status === 'printed';
       <p>To {order.destination.contact_name}, {order.destination.city}, {order.destination.state} {order.destination.postal_code}, {order.destination.country_alpha2}</p>
       <p>{order.parcel.weight_lb} lb · {order.parcel.length_in}×{order.parcel.width_in}×{order.parcel.height_in} in</p>
       <p><strong>${order.rate.total_charge.toFixed(2)}</strong> {order.status === 'reserved' ? '(pay at the counter)' : '(paid)'}</p>
-      {paid && order.label?.label_url && <p><a class="btn" href={order.label.label_url} target="_blank" rel="noopener">Download label (PDF)</a></p>}
-      {paid && order.label?.tracking_number && <p>Tracking: {order.label.tracking_number}</p>}
-      {order.status === 'awaiting_payment' && <p>If you closed the payment page, <a href="/ship">start again</a>.</p>}
+      {paid && order.label?.label_url && <p><a class="btn" href={order.label.label_url} target="_blank" rel="noopener" data-i18n="done.download">Download label (PDF)</a></p>}
+      {paid && order.label?.tracking_number && <p><span data-i18n="done.tracking">Tracking</span>: {order.label.tracking_number}</p>}
+      {order.status === 'awaiting_payment' && <p><span data-i18n="done.startagain">If you closed the payment page,</span> <a href="/ship" data-i18n="done.again">start again</a>.</p>}
     </div>
 
     <div class="card qr">
-      <h3>Can't print? Show this at the counter.</h3>
+      <h3 data-i18n="done.cant">Can't print? Show this at the counter.</h3>
       <div set:html={qr} />
-      <p>Or just tell us the code <strong>{order.id}</strong>. We print it at the shop for you.</p>
+      <p><span data-i18n="done.tell">Or just tell us the code</span> <strong>{order.id}</strong>. <span data-i18n="done.print">We print it at the shop for you.</span></p>
       <p>{store.address}</p>
     </div>
   </div>

@@ -3,9 +3,9 @@ import { store } from '../data/store';
 const tel = store.phone.replace(/\D/g, '');
 ---
 <dl class="label" id="hours">
-  <dt>Ship to</dt><dd>{store.name}</dd>
-  <dt>Address</dt><dd>{store.address}</dd>
-  <dt>Phone</dt><dd><a href={`tel:${tel}`}>{store.phone}</a></dd>
-  <dt>Hours</dt>
-  {store.hours.map(h => <dd>{h.days}: {h.open}</dd>)}
+  <dt data-i18n="info.shipto">Ship to</dt><dd>{store.name}</dd>
+  <dt data-i18n="info.address">Address</dt><dd>{store.address}</dd>
+  <dt data-i18n="info.phone">Phone</dt><dd><a href={`tel:${tel}`}>{store.phone}</a></dd>
+  <dt data-i18n="info.hours">Hours</dt>
+  {store.hours.map(h => <dd><span data-i18n={h.key}>{h.days}</span>: {h.openKey ? <span data-i18n={h.openKey}>{h.open}</span> : h.open}</dd>)}
 </dl>

@@ -4,23 +4,23 @@ const cancelled = Astro.url.searchParams.get('cancelled');
 ---
 <Base title="Ship a package · Goin' Postal Forsythe" description="Compare USPS, UPS, FedEx and DHL rates and buy a label online. Print at home or show a QR code at the counter.">
   <section class="hero">
-    <h1>Ship a package</h1>
-    <p class="lead">Compare USPS, UPS, FedEx and DHL in one place. Pay online and print at home, or show us the QR code and we print it at the counter.</p>
-    {cancelled && <p class="card">Payment was cancelled. Your quote is below if you want to try again.</p>}
+    <h1 data-i18n="ship.h1">Ship a package</h1>
+    <p class="lead" data-i18n="ship.lead">Compare USPS, UPS, FedEx and DHL in one place. Pay online and print at home, or show us the QR code and we print it at the counter.</p>
+    {cancelled && <p class="card" data-i18n="ship.cancelled">Payment was cancelled. Your quote is below if you want to try again.</p>}
   </section>
 
   <form id="quote" class="ship-form">
     <fieldset>
-      <legend>Where is it going?</legend>
-      <label>Recipient name <input name="contact_name" required /></label>
-      <label>Street address <input name="line_1" required maxlength="35" /></label>
-      <label>Apt, suite (optional) <input name="line_2" maxlength="35" /></label>
+      <legend data-i18n="ship.where">Where is it going?</legend>
+      <label><span data-i18n="ship.recipient">Recipient name</span> <input name="contact_name" required /></label>
+      <label><span data-i18n="ship.street">Street address</span> <input name="line_1" required maxlength="35" /></label>
+      <label><span data-i18n="ship.apt">Apt, suite (optional)</span> <input name="line_2" maxlength="35" /></label>
       <div class="row">
-        <label>City <input name="city" required /></label>
-        <label>State <input name="state" placeholder="LA" maxlength="2" /></label>
-        <label>ZIP / postal code <input name="postal_code" required /></label>
+        <label><span data-i18n="ship.city">City</span> <input name="city" required /></label>
+        <label><span data-i18n="ship.state">State</span> <input name="state" placeholder="LA" maxlength="2" /></label>
+        <label><span data-i18n="ship.zip">ZIP / postal code</span> <input name="postal_code" required /></label>
       </div>
-      <label>Country
+      <label><span data-i18n="ship.country">Country</span>
         <select name="country_alpha2">
           <option value="US" selected>United States</option>
           <option value="CA">Canada</option>
@@ -33,37 +33,38 @@ const cancelled = Astro.url.searchParams.get('cancelled');
           <option value="OTHER">Other country</option>
         </select>
       </label>
-      <label class="hidden" id="otherCountry">Two-letter country code <input name="country_other" maxlength="2" placeholder="e.g. IT" /></label>
+      <label class="hidden" id="otherCountry"><span data-i18n="ship.other">Two-letter country code</span> <input name="country_other" maxlength="2" placeholder="e.g. IT" /></label>
     </fieldset>
 
     <fieldset>
-      <legend>What is it?</legend>
+      <legend data-i18n="ship.what">What is it?</legend>
       <div class="row">
-        <label>Weight (lb) <input name="weight_lb" type="number" step="0.1" min="0.1" max="150" required /></label>
-        <label>Length (in) <input name="length_in" type="number" min="1" required /></label>
-        <label>Width (in) <input name="width_in" type="number" min="1" required /></label>
-        <label>Height (in) <input name="height_in" type="number" min="1" required /></label>
+        <label><span data-i18n="ship.weight">Weight (lb)</span> <input name="weight_lb" type="number" step="0.1" min="0.1" max="150" required /></label>
+        <label><span data-i18n="ship.length">Length (in)</span> <input name="length_in" type="number" min="1" required /></label>
+        <label><span data-i18n="ship.width">Width (in)</span> <input name="width_in" type="number" min="1" required /></label>
+        <label><span data-i18n="ship.height">Height (in)</span> <input name="height_in" type="number" min="1" required /></label>
       </div>
-      <label>What's inside (needed for international) <input name="description" maxlength="80" placeholder="Clothing" /></label>
-      <label>Value in USD <input name="value_usd" type="number" min="1" placeholder="25" /></label>
+      <label><span data-i18n="ship.desc">What's inside (needed for international)</span> <input name="description" maxlength="80" placeholder="Clothing" /></label>
+      <label><span data-i18n="ship.value">Value in USD</span> <input name="value_usd" type="number" min="1" placeholder="25" /></label>
     </fieldset>
 
-    <button class="btn" type="submit">Get rates</button>
+    <button class="btn" type="submit" data-i18n="ship.getrates">Get rates</button>
     <p id="err" class="err" hidden></p>
   </form>
 
   <section id="results" hidden>
-    <h2>Rates</h2>
-    <p id="intlNote" class="card" hidden>International shipments are paid in the shop. Reserve the rate here, bring the package and the pickup code in, and we handle customs forms and payment with you at the counter.</p>
-    <p id="mockNote" class="card" hidden>Demo rates. The store's Easyship token is not set yet, so these numbers are placeholders.</p>
+    <h2 data-i18n="ship.rates">Rates</h2>
+    <p id="intlNote" class="card" hidden data-i18n="ship.intl">International shipments are paid in the shop. Reserve the rate here, bring the package and the pickup code in, and we handle customs forms and payment with you at the counter.</p>
+    <p id="mockNote" class="card" hidden data-i18n="ship.mock">Demo rates. The store's Easyship token is not set yet, so these numbers are placeholders.</p>
     <div id="rates" class="rates"></div>
     <form id="buy" class="buy" hidden>
-      <label>Your email (for the receipt and label) <input name="email" type="email" required /></label>
-      <button class="btn" type="submit" id="buyBtn">Continue</button>
+      <label><span data-i18n="ship.email">Your email (for the receipt and label)</span> <input name="email" type="email" required /></label>
+      <button class="btn" type="submit" id="buyBtn" data-i18n="ship.continue">Continue</button>
     </form>
   </section>
 
   <script>
+    import { t } from '../../i18n';
     const f = document.getElementById('quote') as HTMLFormElement;
     const err = document.getElementById('err')!;
     const results = document.getElementById('results')!;
@@ -97,7 +98,8 @@ const cancelled = Astro.url.searchParams.get('cancelled');
       international = j.international;
       document.getElementById('intlNote')!.hidden = !international;
       document.getElementById('mockNote')!.hidden = !j.mock;
-      buyBtn.textContent = international ? 'Reserve and pay at the counter' : 'Pay and get label';
+      buyBtn.dataset.i18n = international ? 'ship.reserve' : 'ship.pay';
+      buyBtn.textContent = t(buyBtn.dataset.i18n);
       ratesEl.innerHTML = '';
       for (const r of j.rates) {
         const el = document.createElement('label');
@@ -105,7 +107,7 @@ const cancelled = Astro.url.searchParams.get('cancelled');
         el.innerHTML = `<input type="radio" name="rate" value="${r.courier_service_id}">
           <span class="carrier">${r.carrier}</span>
           <span class="service">${r.service}</span>
-          <span class="days">${r.min_days ?? '?'}–${r.max_days ?? '?'} days</span>
+          <span class="days">${r.min_days ?? '?'}–${r.max_days ?? '?'} ${t('ship.days')}</span>
           <span class="price">$${r.total_charge.toFixed(2)}</span>`;
         el.querySelector('input')!.addEventListener('change', () => { picked = r.courier_service_id; buy.hidden = false; });
         ratesEl.appendChild(el);

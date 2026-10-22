@@ -5,23 +5,23 @@ import { store } from '../data/store';
 ---
 <Base title="Goin' Postal Forsythe">
   <section class="hero">
-    <h1>Ship it, pack it, print it. One stop on Forsythe.</h1>
-    <p class="lead">Your neighborhood shipping store at Forsythe Ave and N 18th St in Monroe. Every major carrier, honest rates, and people who pack it right.</p>
-    <a class="btn" href="/ship">Ship a package</a>
-    <a class="btn kraft" href="#hours" style="margin-left:8px">Hours and directions</a>
+    <h1 data-i18n="home.h1">Ship it, pack it, print it. One stop on Forsythe.</h1>
+    <p class="lead" data-i18n="home.lead">Your neighborhood shipping store at Forsythe Ave and N 18th St in Monroe. Every major carrier, honest rates, and people who pack it right.</p>
+    <a class="btn" href="/ship" data-i18n="home.cta">Ship a package</a>
+    <a class="btn kraft" href="#hours" style="margin-left:8px" data-i18n="home.hours">Hours and directions</a>
   </section>
 
   <section id="services">
-    <h2>Services</h2>
+    <h2 data-i18n="home.services">Services</h2>
     <div class="grid">
       {store.services.map(s => (
-        <div class="card"><h3>{s.name}</h3><p>{s.blurb}</p></div>
+        <div class="card"><h3 data-i18n={`svc.${s.key}.n`}>{s.name}</h3><p data-i18n={`svc.${s.key}.b`}>{s.blurb}</p></div>
       ))}
     </div>
   </section>
 
   <section>
-    <h2>Find us</h2>
+    <h2 data-i18n="home.findus">Find us</h2>
     <div class="grid">
       <StoreInfo />
       <div class="card">

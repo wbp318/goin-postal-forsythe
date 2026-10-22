@@ -30,6 +30,7 @@ flowchart LR
 | `/` | customers | Hero, services, hours, map |
 | `/ship` | customers | Quote form, rate list, pay or reserve |
 | `/ship/done?order=CODE` | customers | Label download, QR code, pickup code |
+| any page | customers | Language picker in the header, 13 languages, remembered per device |
 | `/cards` | customers | Vistaprint-style card designer: 12 layouts, 12 color schemes, 6 typefaces, click-to-edit text on the card, drag, resize, add text and images, front and back, undo and redo, PNG download, pay by card on Stripe and pick up in the shop |
 | `/cards/done?order=CODE` | customers | Order confirmation with a QR code and pickup code |
 | `/contact` | customers | Formspree contact form |
@@ -43,6 +44,21 @@ flowchart LR
 | `GET /api/mock-paid` | dev only | Stands in for Stripe when no key is set |
 | `POST /api/cards` | site | Saves a card order (design sanitized server side, logo must be a PNG, JPG or SVG data URL under 400 KB) and starts Stripe Checkout |
 | `PUT /api/cards` | staff page | `printed` and `picked_up` actions, PIN |
+
+## Languages
+
+Every customer page can be read in 13 languages from the picker in the header: English, Spanish as spoken in the Dominican Republic, Vietnamese, Lao, Khmer (Cambodian), Korean, Mandarin (Simplified Chinese), Cantonese (Traditional Chinese), Japanese, Thai, Brazilian Portuguese, Dutch and Afrikaans. The choice is remembered on the device and the first visit follows the browser's language.
+
+```mermaid
+flowchart LR
+  S["src/i18n/strings.ts<br/>one row per string,<br/>13 columns"] --> A["src/i18n/index.ts<br/>apply(): swaps every<br/>[data-i18n] element"]
+  P["Pages: static English HTML<br/>with data-i18n keys"] --> A
+  L["Header picker<br/>saved in localStorage"] --> A
+  A --> B["Browser shows<br/>the chosen language"]
+  J["Page scripts call t('key')<br/>for strings they build"] --> B
+```
+
+Pages are built once in English. In the browser, every element tagged `data-i18n="key"` gets its text swapped from `src/i18n/strings.ts`, and page scripts call `t('key')` for the strings they build themselves, such as the Pay button and the rate list. Adding a language is one new column in that file plus one entry in `LANGS`. Adding a string is one new row. The translations were written by the AI assistant and should be checked by native speakers (issue 10). Staff counter pages stay in English.
 
 ## Business card designer
 

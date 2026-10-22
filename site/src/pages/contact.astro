@@ -5,18 +5,18 @@ import { store } from '../data/store';
 ---
 <Base title="Contact · Goin' Postal Forsythe">
   <section class="hero">
-    <h1>Ask for a quote</h1>
-    <p class="lead">Tell us what you're shipping and where. We'll reply with carrier options and a price.</p>
+    <h1 data-i18n="contact.h1">Ask for a quote</h1>
+    <p class="lead" data-i18n="contact.lead">Tell us what you're shipping and where. We'll reply with carrier options and a price.</p>
   </section>
   <div class="grid">
     <!-- Static site: the form posts to Formspree, so there is no server code here to patch. -->
     <form action={store.formEndpoint} method="POST">
-      <label>Name <input name="name" required /></label>
-      <label>Email <input name="email" type="email" required /></label>
-      <label>Phone <input name="phone" type="tel" /></label>
-      <label>What are you shipping, and where to? <textarea name="message" rows="5" required></textarea></label>
+      <label><span data-i18n="f.name">Name</span> <input name="name" required /></label>
+      <label><span data-i18n="f.email">Email</span> <input name="email" type="email" required /></label>
+      <label><span data-i18n="f.phone">Phone</span> <input name="phone" type="tel" /></label>
+      <label><span data-i18n="contact.msg">What are you shipping, and where to?</span> <textarea name="message" rows="5" required></textarea></label>
       <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off" />
-      <button class="btn" type="submit">Send</button>
+      <button class="btn" type="submit" data-i18n="f.send">Send</button>
     </form>
     <StoreInfo />
   </div>

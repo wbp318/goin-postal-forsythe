@@ -99,3 +99,7 @@ input[type=radio], input[type=checkbox] { width: auto; margin-right: 6px; vertic
 .swatch input { position: absolute; opacity: 0; width: 0; }
 .swatch span { display: block; width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--hair); cursor: pointer; }
 .swatch:has(input:checked) span { outline: 3px solid var(--blue); outline-offset: 2px; }
+
+/* language picker */
+nav #lang { margin-left: 20px; background: var(--navy); color: #fff; border: 1px solid #ffffff55; border-radius: 6px; padding: 4px 6px; font: inherit; font-size: .9rem; width: auto; max-width: 11rem; }
+@media (max-width: 700px) { nav a { margin-left: 12px; } nav #lang { margin: 8px 0 0 0; } }

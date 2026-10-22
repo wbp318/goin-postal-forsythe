@@ -61,6 +61,7 @@ New ideas for the Forsythe store itself, not just its ads. Each one is something
 | 37 | Senior morning | Tuesday 9 to 11 discount for seniors, with a sign and a line in the church bulletin ad, because weekday mornings are the slowest hours | ⏳ Not started |
 | 38 | Store website | Astro site in `site/`: home, services, hours, map, quote form. No PHP | ✅ Done |
 | 39 | Ship from the website | Quotes from USPS, UPS, FedEx and DHL through the store's Easyship account. Domestic labels paid by Stripe Checkout and printed at home, or a QR code to print at the counter. International reserved online and paid at the counter | 🔨 Built, waiting on keys. Owner tasks are [issues 1 to 8](https://github.com/wbp318/goin-postal-forsythe/issues?q=is%3Aissue+label%3Aowners) |
+| 41 | Site in 13 languages | Header picker: English, Dominican Spanish, Vietnamese, Lao, Khmer, Korean, Mandarin, Cantonese, Japanese, Thai, Brazilian Portuguese, Dutch, Afrikaans. Remembered per device | ✅ Built. Needs native-speaker review ([issue 10](https://github.com/wbp318/goin-postal-forsythe/issues/10)) |
 | 40 | Business card designer | A Vistaprint-style editor inside the website: gallery of 12 layouts in 12 colors, click text on the card to edit, drag, resize, add text and logos, front and back, undo, pay by card on Stripe when ordering, pick up in the shop. Built in the browser with no outside design service | ✅ Built. Card prices are placeholders ([issue 9](https://github.com/wbp318/goin-postal-forsythe/issues/9)) |
 
 ## Round 3: where to start

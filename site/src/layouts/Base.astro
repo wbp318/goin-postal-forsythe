@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import { LANGS } from '../i18n/strings';
 interface Props { title: string; description?: string }
 const { title, description = "Shipping, packing, mailboxes and printing at Forsythe Ave & N 18th St, Monroe, Louisiana." } = Astro.props;
 ---
@@ -17,11 +18,14 @@ const { title, description = "Shipping, packing, mailboxes and printing at Forsy
       <div class="wrap">
         <a class="brand" href="/">Goin' Postal <span>Forsythe</span></a>
         <nav>
-          <a href="/ship">Ship</a>
-          <a href="/cards">Business cards</a>
-          <a href="/#services">Services</a>
-          <a href="/#hours">Hours</a>
-          <a href="/contact">Contact</a>
+          <a href="/ship" data-i18n="nav.ship">Ship</a>
+          <a href="/cards" data-i18n="nav.cards">Business cards</a>
+          <a href="/#services" data-i18n="nav.services">Services</a>
+          <a href="/#hours" data-i18n="nav.hours">Hours</a>
+          <a href="/contact" data-i18n="nav.contact">Contact</a>
+          <select id="lang" aria-label="Language" title="Language">
+            {LANGS.map((l) => <option value={l.code}>{l.name}</option>)}
+          </select>
         </nav>
       </div>
     </header>
@@ -31,8 +35,13 @@ const { title, description = "Shipping, packing, mailboxes and printing at Forsy
     <footer>
       <div class="wrap">
         Goin' Postal Forsythe · Forsythe Ave &amp; N 18th St · Monroe, Louisiana.
-        Goin' Postal's name and logo belong to GP Brands. Independently owned and operated.
+        <span data-i18n="footer">Goin' Postal's name and logo belong to GP Brands. Independently owned and operated.</span>
       </div>
     </footer>
+    <script>
+      import { apply, setLang, type Lang } from '../i18n';
+      apply();
+      document.getElementById('lang')!.addEventListener('change', (e) => setLang((e.target as HTMLSelectElement).value as Lang));
+    </script>
   </body>
 </html>

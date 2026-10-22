@@ -694,8 +694,22 @@ flowchart LR
 | Counter | Staff-only view of an order, opened by scanning the QR. For international orders: ring up on the POS, press the button to buy the label. Then mark printed |
 | Business cards | Vistaprint-style designer: 12 layouts in 12 color schemes, 6 typefaces, click any text on the card to edit it, drag it, resize it, add text and logos, front and back, undo and redo, free PNG download, pay by card online and pick up in the shop |
 | Contact | Quote request form that posts to Formspree |
+| Any page | Language picker in the header: 13 languages, remembered per device |
 
 **How a customer ships:** they type the address and parcel size, see every carrier's price, pick one. Domestic orders pay by card on Stripe's hosted page, and the label is bought the moment Stripe confirms. International orders are reserved online and rung up on the Goin' Postal POS at the counter. Staff then press one button to buy the label with the customer present, so customs forms get done together. Either way the customer gets a pickup code like GP-7K3M9Q and a QR code. If they cannot print, they show the QR at the counter and the shop prints it.
+
+**Thirteen languages.** A picker in the header switches every customer page between English, Dominican Spanish, Vietnamese, Lao, Khmer, Korean, Mandarin (Simplified Chinese), Cantonese (Traditional Chinese), Japanese, Thai, Brazilian Portuguese, Dutch and Afrikaans. The first visit follows the browser's language and the choice is remembered on the device. All strings live in one file, `site/src/i18n/strings.ts`, one row per string with thirteen columns, so a new language is one more column. The translations were written by the AI assistant and need a native speaker's check before launch (issue 10).
+
+```mermaid
+flowchart LR
+  P["Pages built once<br/>in English"]:::local --> A["In the browser:<br/>swap every tagged string"]:::local
+  S["strings.ts<br/>13 columns"]:::local --> A
+  L["Header picker"]:::you --> A
+  A --> V["Customer reads it<br/>in their language"]:::you
+  classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
+  classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
+  classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
+```
 
 **Business cards, designed on the site.** Instead of sending people to Vistaprint, the site has its own designer that works the same way. Step one is a gallery: twelve layouts (Classic, Band, Minimal, Top bar, Bottom bar, Frame, Corners, Right band, Monogram, Split, Circle, Diagonal) shown with Rin Ho's sample details, filtered by twelve color schemes. Step two is the editor: the chosen layout opens on a canvas with grey placeholder text. The customer clicks any text to change it, drags anything anywhere, sets size, bold, italic, color and alignment, adds text boxes and a logo or photo, picks one of six typefaces, changes the background, and flips between Front and Back. Undo and redo work, the design survives a page refresh, and placeholder text that was never edited is left off the print. One function draws the gallery, the canvas, the saved order and the counter's print sheet, so what the customer sees is exactly what prints. They can download a PNG for free or order 100 to 1000 cards, paid by card on Stripe at the moment they order. Nothing is printed until Stripe confirms. The order gets a code like CD-3DBY5A and a QR. At the counter, staff open the print sheet, which lays ten cards on a letter page with the backs mirrored for flipping, print, and mark it picked up.
 
