@@ -24,7 +24,7 @@ SOURCES = {
 # Every Markdown file under research/ is scanned too (research/README.md, research/florida/README.md, ...).
 for md in sorted((ROOT / "research").rglob("*.md")):
     SOURCES[md.relative_to(ROOT).as_posix()] = MD
-for md in sorted((ROOT / "shipping-client").rglob("*.md")):
+for md in sorted(list((ROOT / "shipping-client").rglob("*.md")) + list((ROOT / "monetization").rglob("*.md"))):
     SOURCES[md.relative_to(ROOT).as_posix()] = MD
 # And every Markdown file under site/ except node_modules (site/README.md, site/costs/README.md, ...).
 for md in sorted((ROOT / "site").rglob("*.md")):

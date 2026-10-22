@@ -771,6 +771,10 @@ flowchart LR
 
 About four months from carrier access to switch-over. Carrier APIs cost nothing beyond postage. The one question to settle before building the counter app is whether GP Brands lets a franchisee quote and ship outside Rate Pro.
 
+## Monetization plan
+
+Every way the store can earn from what it runs on Cloudflare, ranked by effort against money, in [`monetization/README.md`](monetization/README.md). The quick ones need only prices from Rin: an online convenience fee, paper and finish upsells on business cards, insurance and packaging add-ons on labels. Next come mailbox subscriptions billed monthly through Stripe, a returns drop-off service and a text-me-when-delivered fee. Then print products beyond cards, business accounts for local sellers, and a seller API. The big ones, selling the shipping client and a white-label card designer to other Goin' Postal stores, run multi-store on the same single Cloudflare install and need GP Brands' blessing first. Cloudflare's own bill stays between $0 and about $50 a month even at fifty stores. Agenda item 45.
+
 ## Marketing at a glance
 
 ```mermaid
@@ -830,6 +834,7 @@ flowchart LR
   R --> ST["site/<br/>Astro website, no PHP:<br/>ship, business cards,<br/>counter pages"]
   ST --> STC["costs/README.md<br/>every service and its price"]
   R --> SC["shipping-client/README.md<br/>plan for our own<br/>shipping software"]
+  R --> MO["monetization/README.md<br/>every way to earn<br/>from the site"]
   R --> RS["research/<br/>where the next store goes"]
   RS --> RS1["florida/README.md"]
   RS --> RS2["other-states/README.md"]
