@@ -1,6 +1,6 @@
 # PeterShip
 
-PeterShip is the store's own shipping client. A plan for replacing Easyship with software the store owns: rating, labels, tracking, drop-offs and reports for USPS, UPS, FedEx and DHL, built on the same Cloudflare stack as the website. The same thing ShippingEasy, Easyship and GP Rate Pro do, but ours, and open source: Apache 2.0 like the rest of the repository, so any other store can run it too. If it saves you a subscription, see [Donations](#donations).
+PeterShip is the store's own shipping client. A plan for replacing Easyship with software the store owns: rating, labels, tracking, drop-offs and reports for USPS, UPS, FedEx and DHL, built on the same Cloudflare stack as the website. The same thing ShippingEasy, Easyship and GP Rate Pro do, but ours. PeterShip is proprietary, see [LICENSE](LICENSE); it is not under the repository's Apache license.
 
 Item 44 in [`AGENDA.md`](../AGENDA.md) tracks it. Phase 2's foundation is built and running in mock mode; see [What is built so far](#what-is-built-so-far).
 
@@ -280,10 +280,6 @@ Full site costs are in [`site/costs/README.md`](../site/costs/README.md).
 - **Hazmat and restricted goods.** The customer form needs the carrier's hazmat questions before labels go live. Lithium batteries are the common case.
 - **Printer plumbing.** Printing from a browser to a thermal printer is the fiddliest part of any shipping client. The printer agent in Phase 3 is the fix and should be prototyped early.
 - **Support burden.** Easyship answers "why did my label fail" today. After switch-over, we do.
-
-## Donations
-
-PeterShip is free, Apache 2.0, and built by one store for itself. If you run it at your own counter and it replaces a paid shipping tool, a donation keeps the carrier adapters maintained as USPS, UPS, FedEx and DHL change their APIs. GitHub Sponsors is the button at the top of the repository; it goes to the three copyright holders named in [LICENSE](../LICENSE). Donations are gifts, not payment for support or warranty, and no feature is withheld from anyone who does not give.
 
 ## Decisions for Rin before Phase 2
 

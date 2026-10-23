@@ -1,0 +1,151 @@
+PETERSHIP PROPRIETARY LICENSE
+Version 1.0, October 23, 2026
+
+Copyright (c) 2026
+  Peter Ho, domiciled in Ouachita Parish, Louisiana
+  Rin Ho, domiciled in Ouachita Parish, Louisiana
+  William Parker, domiciled in East Carroll Parish, Louisiana
+(together, the "Owners")
+
+All rights reserved.
+
+==========================================================================
+1. WHAT THIS LICENSE COVERS
+==========================================================================
+
+"PeterShip" means the shipping client described in this folder and its
+source code, wherever it lives in this repository, including:
+
+   - everything under shipping-client/
+   - everything under site/src/shipping/ (the rating engine, billable
+     weight rules, HTTP and OAuth helpers, the carrier adapters for USPS,
+     UPS, FedEx, DHL Express and Easyship, and their types)
+   - the shipping, label, tracking and reconciliation tables in
+     site/db/schema.sql
+   - the carrier configuration keys in site/.dev.vars.example and
+     site/wrangler.jsonc
+   - any later file that the Owners mark as part of PeterShip, and any
+     documentation, design or test written for the above
+
+PeterShip is NOT covered by the Apache License, Version 2.0 or the
+Creative Commons license in the repository root LICENSE file. Where that
+file and this one conflict about a PeterShip file, this file controls.
+
+The rest of the repository keeps its root LICENSE and NOTICE.
+
+==========================================================================
+2. WHAT YOU MAY DO
+==========================================================================
+
+You may:
+
+   a. Read the PeterShip source code, and study how it works.
+   b. Run it on your own machine for the purpose of evaluating it or
+      proposing changes to the Owners.
+   c. Copy short excerpts (under fifty lines) into a bug report, question
+      or review about PeterShip.
+
+You do not need permission for the uses above, and you may not charge
+anyone for them.
+
+==========================================================================
+3. WHAT YOU MAY NOT DO
+==========================================================================
+
+Unless you have a signed, written license from all of the Owners, you
+may not:
+
+   a. Use PeterShip, or any part of it, to run a shipping, mailbox,
+      printing, packing, fulfillment or logistics business, or to quote,
+      sell or print shipping labels for anyone, other than the Owners'
+      own store.
+   b. Deploy PeterShip to any server, Cloudflare account or other hosting
+      that the Owners do not control.
+   c. Sell, rent, lease, sublicense, lend or otherwise distribute
+      PeterShip or any part of it, whether as source, object code or a
+      hosted service.
+   d. Create, distribute or run a derivative work of PeterShip, including
+      a port to another language, platform or carrier.
+   e. Use PeterShip to build or train a competing product, or offer it,
+      or a product based on it, to another Goin' Postal franchisee or to
+      any other shipping store.
+   f. Remove or change any copyright, license or attribution notice in
+      PeterShip.
+   g. Use the name "PeterShip" for any product or service.
+
+==========================================================================
+4. CONTRIBUTIONS
+==========================================================================
+
+If you send the Owners a change to PeterShip (by pull request, patch,
+issue or any other means), you assign to the Owners, jointly, all
+copyright in that change, and you warrant that you have the right to do
+so. The Owners may use your change under any terms. You keep the right
+to be named as the author of the change in commit history.
+
+==========================================================================
+5. CARRIER TERMS AND THIRD-PARTY CODE
+==========================================================================
+
+PeterShip calls the USPS, UPS, FedEx, DHL Express and Easyship APIs.
+Each carrier's API is used under that carrier's own developer agreement,
+which binds the account holder. The Owners' carrier accounts, keys and
+negotiated rates are not part of PeterShip and are never licensed. No
+carrier endorses PeterShip.
+
+Open-source packages that PeterShip depends on remain under their own
+licenses, listed in site/package.json and the lockfile. This license does
+not change them.
+
+==========================================================================
+6. NO WARRANTY
+==========================================================================
+
+PETERSHIP IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT. RATES,
+LABELS AND TRACKING COME FROM THE CARRIERS AND MAY BE WRONG, LATE OR
+UNAVAILABLE. THE OWNERS DO NOT WARRANT THAT A LABEL PRODUCED BY PETERSHIP
+WILL BE ACCEPTED BY ANY CARRIER OR BILLED AT ANY PARTICULAR RATE.
+
+==========================================================================
+7. LIMITATION OF LIABILITY
+==========================================================================
+
+TO THE FULLEST EXTENT PERMITTED BY LAW, THE OWNERS SHALL NOT BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL OR
+EXEMPLARY DAMAGES ARISING OUT OF OR RELATED TO PETERSHIP OR THIS
+LICENSE, INCLUDING LOST PACKAGES, LOST PROFITS, POSTAGE OVERCHARGES,
+CARRIER PENALTIES OR CUSTOMS LIABILITY, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGES.
+
+==========================================================================
+8. TERMINATION
+==========================================================================
+
+This license ends automatically if you break any term in Section 3.
+When it ends you must stop using PeterShip and delete every copy you
+hold. Sections 4 through 10 survive termination.
+
+==========================================================================
+9. GOVERNING LAW AND VENUE
+==========================================================================
+
+This license is governed by the laws of the State of Louisiana, without
+regard to its conflict-of-laws rules. Any dispute about PeterShip or
+this license shall be brought in the Fourth Judicial District Court for
+Ouachita Parish, Louisiana, or in the United States District Court for
+the Western District of Louisiana, Monroe Division, and you consent to
+the personal jurisdiction of those courts.
+
+==========================================================================
+10. ASKING FOR MORE
+==========================================================================
+
+The Owners may license PeterShip to other stores on separate written
+terms. To ask, open an issue on the repository or contact the Owners
+through the store at Forsythe Avenue and North 18th Street, Monroe,
+Louisiana. Nothing is granted until all three Owners sign.
+
+This license is not legal advice. The Owners should have a Louisiana
+attorney review it before relying on it against a third party.
