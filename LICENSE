@@ -16,7 +16,8 @@ PART A. CODE AND PAGES: Apache License, Version 2.0
    Applies to: everything under scripts/, the .github/ workflows, and the
    HTML pages at the repository root (launch-book.html, ad-concepts.html,
    coupon-counter.html, brand-kit.html, designs/index.html), together with
-   any other source code or configuration file. Full text is below.
+   any other source code or configuration file, EXCEPT PeterShip (see
+   Part C). Full text is below.
 
 PART B. DESIGNS, DOCUMENTS AND RESEARCH:
    Creative Commons Attribution-NonCommercial-NoDerivatives 4.0
@@ -32,6 +33,15 @@ PART B. DESIGNS, DOCUMENTS AND RESEARCH:
    without written permission.
    Legal code: https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode
    Summary:    https://creativecommons.org/licenses/by-nc-nd/4.0/
+
+PART C. PETERSHIP: PROPRIETARY
+   Applies to: everything under shipping-client/ and site/src/shipping/,
+   the shipping tables in site/db/schema.sql, and the carrier
+   configuration in site/.dev.vars.example and site/wrangler.jsonc.
+   PeterShip is the store's own shipping client. It may be read and run
+   locally for evaluation only; it may not be deployed, distributed,
+   modified or used by any other business. Full terms are in
+   shipping-client/LICENSE, which controls over this file for those files.
 
 NOT LICENSED AT ALL (see NOTICE):
    The Goin' Postal name and logo (trademarks of GP Brands, Inc.); the
