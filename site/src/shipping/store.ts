@@ -296,3 +296,81 @@ export async function getShipment(env: Env, id: string): Promise<ShipmentRow | n
   if (env.DB) return (await env.DB.prepare('SELECT * FROM shipments WHERE id = ?1').bind(id).first<ShipmentRow>()) ?? null;
   return mem.shipments.get(id) ?? null;
 }
+
+// ---- reports -----------------------------------------------------------------------------------
+// Daily shipments and margin, by carrier, busiest hours, returning customers, drop-offs, and the
+// rows needed to reconcile against each carrier's invoice. Dates are ISO day strings, inclusive.
+export interface ReportLine { shipments: number; revenue: number; cost: number; margin: number }
+export interface Report {
+  from: string; to: string;
+  total: ReportLine;
+  by_day: (ReportLine & { day: string })[];
+  by_carrier: (ReportLine & { carrier: string })[];
+  by_service: (ReportLine & { carrier: string; service: string })[];
+  by_hour: { hour: number; shipments: number }[];       // 0..23, shop local time is applied in the browser
+  by_weekday: { weekday: number; shipments: number }[]; // 0 Sunday .. 6 Saturday
+  status: { status: string; shipments: number }[];
+  returning: { customers: number; returning: number; share: number };
+  dropoffs: { carrier: string; count: number }[];
+  rows: { id: string; created_at: string; carrier: string; service: string; tracking_number: string | null; provider: string; cost: number; price: number; paid_via: string | null; status: string; email: string | null }[];
+}
+
+export async function report(env: Env, from: string, to: string): Promise<Report> {
+  const start = `${from}T00:00:00.000Z`, end = `${to}T23:59:59.999Z`;
+  let rows: Report['rows'];
+  let dropRows: { carrier: string | null }[];
+  let emails: { email: string | null; n: number }[];
+  if (env.DB) {
+    rows = (await env.DB.prepare(
+      `SELECT s.id, s.created_at, s.carrier, s.service, s.tracking_number, s.provider, s.cost, s.price, s.paid_via, s.status, c.email
+       FROM shipments s LEFT JOIN shipment_contacts c ON c.shipment_id = s.id
+       WHERE s.created_at BETWEEN ?1 AND ?2 AND s.status != 'voided' ORDER BY s.created_at`).bind(start, end).all<Report['rows'][number]>()).results;
+    dropRows = (await env.DB.prepare('SELECT carrier FROM dropoffs WHERE accepted_at BETWEEN ?1 AND ?2').bind(start, end).all<{ carrier: string | null }>()).results;
+    emails = (await env.DB.prepare(`SELECT c.email, COUNT(*) AS n FROM shipment_contacts c JOIN shipments s ON s.id = c.shipment_id WHERE c.email IS NOT NULL AND s.status != 'voided' GROUP BY c.email`).all<{ email: string; n: number }>()).results;
+  } else {
+    rows = [...mem.shipments.values()].filter((s) => s.created_at >= start && s.created_at <= end && s.status !== 'voided').sort((a, b) => a.created_at.localeCompare(b.created_at))
+      .map((s) => ({ id: s.id, created_at: s.created_at, carrier: s.carrier, service: s.service, tracking_number: s.tracking_number, provider: s.provider, cost: s.cost, price: s.price, paid_via: s.paid_via, status: s.status, email: mem.contacts.get(s.id)?.email ?? null }));
+    dropRows = mem.dropoffs.filter((d) => d.accepted_at >= start && d.accepted_at <= end);
+    const count = new Map<string, number>();
+    for (const [id, c] of mem.contacts) if (c.email && mem.shipments.get(id)?.status !== 'voided') count.set(c.email, (count.get(c.email) ?? 0) + 1);
+    emails = [...count].map(([email, n]) => ({ email, n }));
+  }
+
+  const line = (): ReportLine => ({ shipments: 0, revenue: 0, cost: 0, margin: 0 });
+  const add = (l: ReportLine, r: Report['rows'][number]) => { l.shipments++; l.revenue += r.price; l.cost += r.cost; l.margin += r.price - r.cost; };
+  const round = (l: ReportLine) => { l.revenue = +l.revenue.toFixed(2); l.cost = +l.cost.toFixed(2); l.margin = +l.margin.toFixed(2); return l; };
+  const total = line();
+  const byDay = new Map<string, ReportLine>(), byCarrier = new Map<string, ReportLine>(), byService = new Map<string, ReportLine>();
+  const byHour = Array.from({ length: 24 }, (_, hour) => ({ hour, shipments: 0 }));
+  const byWeekday = Array.from({ length: 7 }, (_, weekday) => ({ weekday, shipments: 0 }));
+  const status = new Map<string, number>();
+  for (const r of rows) {
+    add(total, r);
+    const day = r.created_at.slice(0, 10);
+    add(byDay.get(day) ?? byDay.set(day, line()).get(day)!, r);
+    add(byCarrier.get(r.carrier) ?? byCarrier.set(r.carrier, line()).get(r.carrier)!, r);
+    const sk = `${r.carrier}|${r.service}`;
+    add(byService.get(sk) ?? byService.set(sk, line()).get(sk)!, r);
+    const d = new Date(r.created_at);
+    byHour[d.getUTCHours()].shipments++;
+    byWeekday[d.getUTCDay()].shipments++;
+    status.set(r.status, (status.get(r.status) ?? 0) + 1);
+  }
+  const drops = new Map<string, number>();
+  for (const d of dropRows) drops.set(d.carrier ?? 'Unknown', (drops.get(d.carrier ?? 'Unknown') ?? 0) + 1);
+  const inRange = new Set(rows.map((r) => r.email).filter(Boolean));
+  const returning = emails.filter((e) => inRange.has(e.email) && e.n > 1).length;
+
+  return {
+    from, to,
+    total: round(total),
+    by_day: [...byDay].map(([day, l]) => ({ day, ...round(l) })),
+    by_carrier: [...byCarrier].map(([carrier, l]) => ({ carrier, ...round(l) })).sort((a, b) => b.revenue - a.revenue),
+    by_service: [...byService].map(([k, l]) => ({ carrier: k.split('|')[0], service: k.split('|')[1], ...round(l) })).sort((a, b) => b.shipments - a.shipments),
+    by_hour: byHour, by_weekday: byWeekday,
+    status: [...status].map(([status, shipments]) => ({ status, shipments })),
+    returning: { customers: inRange.size, returning, share: inRange.size ? +(returning / inRange.size).toFixed(3) : 0 },
+    dropoffs: [...drops].map(([carrier, count]) => ({ carrier, count })).sort((a, b) => b.count - a.count),
+    rows,
+  };
+}

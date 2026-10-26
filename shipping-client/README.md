@@ -49,6 +49,7 @@ flowchart LR
 | Drop-off capture: scan a prepaid or return package's barcode, carrier guessed from the number, "carrier picked up" marks the day's hand-over | `/counter/dropoff`, `POST /api/dropoff` | Done |
 | Tracking poll: refreshes every open shipment older than fifteen minutes from its carrier adapter. Run by the printer agent every ten minutes while the shop PC is on, by a scheduled GitHub Action every thirty minutes, or by staff on demand | `site/src/shipping/poll.ts`, `POST /api/track-poll`, `.github/workflows/track-poll.yml` | Done in mock mode |
 | Exceptions list for staff: carrier exceptions, returns to sender, labels not scanned after three days, no movement for seven days, with Check carriers now | `/counter/exceptions`, `POST /api/exceptions` | Done |
+| Reports for staff: shipments, what customers paid, what carriers charged and the margin, by day, carrier and service; busiest hours and weekdays; returning customers; drop-offs by carrier; CSV of every shipment for reconciling the carrier invoice | `/counter/reports`, `POST /api/reports`, `store.report()` | Done. Margin reads zero in mock mode because the fallback adapter reports its price as the cost |
 | Customer updates: email through Resend and text through Twilio when a shipment is first scanned, out for delivery, delivered, in trouble or returned. One message per status. Opt-in box and mobile number on the ship form. Staff email on exceptions | `site/src/shipping/notify.ts`, `shipment_contacts` and `notifications` tables | Done, logs instead of sending until the Resend and Twilio keys are set |
 
 Customers see service, price and days only. Cost and the provider that answered stay on the server.
@@ -64,6 +65,7 @@ flowchart LR
   PL --> NO["notify.ts<br/>Resend email, Twilio text,<br/>once per status"]:::local
   NO --> CU["Customer"]:::you
   EX["Staff tablet<br/>/counter/exceptions"]:::you --> D1
+  RP["Staff tablet<br/>/counter/reports<br/>margin, hours, CSV"]:::you --> D1
   K["Staff tablet<br/>/counter/GP-XXXXXX<br/>Print at the counter"]:::you --> PQ["/api/print"]:::local --> D1
   AG["printer-agent/agent.mjs<br/>counter PC, polls"]:::local --> PQ
   AG --> Z["Zebra, ZPL over TCP 9100<br/>or PDF via the OS"]:::local

@@ -1,0 +1,138 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+
+// Staff reports: daily shipments and margin, by carrier and service, busiest hours and days,
+// returning customers, drop-offs, and a CSV of every shipment for reconciling the carrier invoice.
+// Everything is computed from PeterShip's own records, so it covers only labels bought through the site.
+const today = new Date().toISOString().slice(0, 10);
+const monthStart = today.slice(0, 8) + '01';
+---
+<Base title="Counter · Reports">
+  <section class="hero">
+    <h1>Reports</h1>
+    <p class="staff-nav">Staff: <a href="/counter/dropoff">Drop-offs</a> · <a href="/counter/exceptions">Exceptions</a> · <a href="/counter/reports">Reports</a></p>
+    <p class="lead">What shipped, what it cost, what we kept. From PeterShip's records: labels bought through the website and the counter. In-store POS sales are not here.</p>
+  </section>
+
+  <form id="range" class="card">
+    <div class="row">
+      <label>Staff PIN <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
+      <label>From <input name="from" type="date" value={monthStart} max={today} /></label>
+      <label>To <input name="to" type="date" value={today} max={today} /></label>
+    </div>
+    <p class="btnrow">
+      <button class="btn" type="submit">Run report</button>
+      <button class="btn kraft" type="button" data-preset="today">Today</button>
+      <button class="btn kraft" type="button" data-preset="week">Last 7 days</button>
+      <button class="btn kraft" type="button" data-preset="month">This month</button>
+      <button class="btn kraft" type="button" id="csv">Download CSV</button>
+    </p>
+    <p id="msg" role="alert"></p>
+  </form>
+
+  <div id="out" class="hidden">
+    <div class="grid">
+      <div class="card"><h3>Shipments</h3><p class="big" id="t-ship"></p></div>
+      <div class="card"><h3>Customers paid</h3><p class="big" id="t-rev"></p></div>
+      <div class="card"><h3>Carriers charged</h3><p class="big" id="t-cost"></p></div>
+      <div class="card"><h3>Margin</h3><p class="big" id="t-margin"></p><p class="muted" id="t-pct"></p></div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>By day</h3>
+        <table class="list"><thead><tr><th>Day</th><th>Ships</th><th>Paid</th><th>Cost</th><th>Margin</th></tr></thead><tbody id="by-day"></tbody></table>
+      </div>
+      <div class="card">
+        <h3>By carrier</h3>
+        <table class="list"><thead><tr><th>Carrier</th><th>Ships</th><th>Paid</th><th>Cost</th><th>Margin</th></tr></thead><tbody id="by-carrier"></tbody></table>
+        <h3>By service</h3>
+        <table class="list"><thead><tr><th>Service</th><th>Ships</th><th>Paid</th><th>Margin</th></tr></thead><tbody id="by-service"></tbody></table>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>Busiest hours</h3>
+        <p class="muted">When labels were bought, shop local time.</p>
+        <div class="bars" id="by-hour"></div>
+        <h3>Busiest days</h3>
+        <div class="bars" id="by-weekday"></div>
+      </div>
+      <div class="card">
+        <h3>Customers</h3>
+        <p id="returning"></p>
+        <h3>Drop-offs accepted</h3>
+        <table class="list"><thead><tr><th>Carrier</th><th>Packages</th></tr></thead><tbody id="dropoffs"></tbody></table>
+        <h3>Where shipments stand</h3>
+        <table class="list"><thead><tr><th>Status</th><th>Shipments</th></tr></thead><tbody id="status"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('range') as HTMLFormElement;
+    const msg = document.getElementById('msg')!;
+    const out = document.getElementById('out')!;
+    const $ = (id: string) => document.getElementById(id)!;
+    const pin = () => (document.getElementById('pin') as HTMLInputElement).value;
+    const field = (n: string) => form.elements.namedItem(n) as HTMLInputElement;
+    const usd = (n: number) => n.toLocaleString(undefined, { style: 'currency', currency: 'USD' });
+    const iso = (d: Date) => d.toISOString().slice(0, 10);
+
+    function rows(tbody: HTMLElement, data: unknown[][]) {
+      tbody.innerHTML = '';
+      for (const r of data) { const tr = document.createElement('tr'); for (const c of r) { const td = document.createElement('td'); td.textContent = String(c); tr.appendChild(td); } tbody.appendChild(tr); }
+      if (!data.length) { const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = 5; td.className = 'muted'; td.textContent = 'Nothing in this range'; tr.appendChild(td); tbody.appendChild(tr); }
+    }
+    function bars(el: HTMLElement, data: { label: string; n: number }[]) {
+      const max = Math.max(1, ...data.map((d) => d.n));
+      el.innerHTML = '';
+      for (const d of data) {
+        const b = document.createElement('div'); b.className = 'bar';
+        b.innerHTML = `<span class="bar-label"></span><span class="bar-track"><span class="bar-fill" style="width:${(d.n / max) * 100}%"></span></span><span class="bar-n"></span>`;
+        b.querySelector('.bar-label')!.textContent = d.label; b.querySelector('.bar-n')!.textContent = String(d.n);
+        el.appendChild(b);
+      }
+    }
+
+    async function run() {
+      msg.textContent = '';
+      const res = await fetch('/api/reports', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin(), from: field('from').value, to: field('to').value }) });
+      const r = await res.json();
+      if (!res.ok) { msg.className = 'err'; msg.textContent = r.error; return; }
+      $('t-ship').textContent = String(r.total.shipments);
+      $('t-rev').textContent = usd(r.total.revenue);
+      $('t-cost').textContent = usd(r.total.cost);
+      $('t-margin').textContent = usd(r.total.margin);
+      $('t-pct').textContent = r.total.revenue ? `${Math.round((r.total.margin / r.total.revenue) * 100)}% of what customers paid` : '';
+      rows($('by-day'), r.by_day.map((d: any) => [d.day, d.shipments, usd(d.revenue), usd(d.cost), usd(d.margin)]));
+      rows($('by-carrier'), r.by_carrier.map((d: any) => [d.carrier, d.shipments, usd(d.revenue), usd(d.cost), usd(d.margin)]));
+      rows($('by-service'), r.by_service.map((d: any) => [d.service, d.shipments, usd(d.revenue), usd(d.margin)]));
+      // Hours come in UTC; shift to this device's zone (the shop tablet is on Central time).
+      const offset = Math.round(new Date().getTimezoneOffset() / 60);
+      const local = Array.from({ length: 24 }, (_, h) => ({ label: `${h % 12 || 12}${h < 12 ? 'am' : 'pm'}`, n: r.by_hour[(h + offset + 24) % 24].shipments }));
+      bars($('by-hour'), local.filter((_, h) => h >= 7 && h <= 20));
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      bars($('by-weekday'), r.by_weekday.map((d: any) => ({ label: days[d.weekday], n: d.shipments })));
+      $('returning').textContent = `${r.returning.customers} customers shipped in this range; ${r.returning.returning} had shipped with us before (${Math.round(r.returning.share * 100)}%).`;
+      rows($('dropoffs'), r.dropoffs.map((d: any) => [d.carrier, d.count]));
+      rows($('status'), r.status.map((d: any) => [d.status.replace(/_/g, ' '), d.shipments]));
+      out.classList.remove('hidden');
+    }
+
+    form.addEventListener('submit', (e) => { e.preventDefault(); run(); });
+    document.querySelectorAll<HTMLButtonElement>('[data-preset]').forEach((b) => b.addEventListener('click', () => {
+      const now = new Date(); const to = iso(now); let from = to;
+      if (b.dataset.preset === 'week') from = iso(new Date(now.getTime() - 6 * 86_400_000));
+      if (b.dataset.preset === 'month') from = to.slice(0, 8) + '01';
+      field('from').value = from; field('to').value = to; run();
+    }));
+    document.getElementById('csv')!.addEventListener('click', async () => {
+      const res = await fetch('/api/reports', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin(), from: field('from').value, to: field('to').value, format: 'csv' }) });
+      if (!res.ok) { msg.className = 'err'; msg.textContent = (await res.json()).error; return; }
+      const a = document.createElement('a'); a.href = URL.createObjectURL(await res.blob()); a.download = `shipments-${field('from').value}-to-${field('to').value}.csv`; a.click();
+    });
+  </script>
+</Base>

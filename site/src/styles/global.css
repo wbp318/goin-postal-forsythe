@@ -179,3 +179,12 @@ html[data-contrast="high"] .rate:has(input:checked) { background: #fff8d6; }
 
 .check { display: flex; align-items: center; gap: 10px; font-weight: 500; }
 .check input { width: 24px; height: 24px; min-height: 0; margin: 0; }
+
+/* Reports */
+.big { font-size: 2rem; font-weight: 800; margin: 4px 0; }
+.bars { display: grid; gap: 6px; margin-bottom: 16px; }
+.bar { display: grid; grid-template-columns: 3.5rem 1fr 2.5rem; align-items: center; gap: 8px; font-size: .95rem; }
+.bar-track { display: block; height: 18px; background: var(--paper); border: 1px solid var(--hair); border-radius: 4px; overflow: hidden; }
+.bar-fill { display: block; height: 100%; background: var(--blue); }
+.bar-n { text-align: right; color: var(--muted); }
+.staff-nav { font-size: .95rem; margin-top: -8px; }

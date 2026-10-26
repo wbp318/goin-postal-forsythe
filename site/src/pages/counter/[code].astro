@@ -28,7 +28,7 @@ if (!order) return new Response('No such order', { status: 404 });
       {order.label?.label_url && <p><a class="btn" href={order.label.label_url} target="_blank" rel="noopener">Open label to print</a></p>}
       {order.label && <p><button class="btn" data-print="counter">Print at the counter</button> <span class="muted">sends it to the label printer</span></p>}
       {order.status === 'labeled' && <p><button class="btn kraft" data-action="printed">Mark printed</button></p>}
-      {order.label?.tracking_number && <p><a href={`/track?q=${order.id}`}>Tracking</a> · <a href="/counter/dropoff">Drop-offs</a></p>}
+      <p class="staff-nav">{order.label?.tracking_number && <><a href={`/track?q=${order.id}`}>Tracking</a> · </>}<a href="/counter/dropoff">Drop-offs</a> · <a href="/counter/exceptions">Exceptions</a> · <a href="/counter/reports">Reports</a></p>
       {order.status === 'printed' && <p>Printed {order.printed_at}.</p>}
       {order.status === 'awaiting_payment' && <p>Not paid online yet. Ask the customer to finish payment, or quote it again here and ring it up on the POS.</p>}
       <p id="msg"></p>

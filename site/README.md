@@ -39,6 +39,7 @@ flowchart LR
 | `/counter/card/CODE/sheet` | staff | Print-ready 10-up US letter sheet, fronts then mirrored backs |
 | `/counter/CODE` | staff | Order details. For international: ring up on the POS, then press the button to buy the label. Print at the counter (queues for the printer agent), mark printed. Needs the PIN |
 | `/counter/dropoff` | staff | Drop-off capture: scan a prepaid or return package's barcode, record it with the time, mark a carrier's pickup. PIN |
+| `/counter/reports` | staff | Shipments, paid, cost and margin by day, carrier and service; busiest hours and days; returning customers; drop-offs; CSV download for reconciling the carrier invoice. PIN |
 | `/counter/exceptions` | staff | Shipments needing a human: carrier exceptions, returns, never scanned after three days, not moving for a week. Check carriers now runs the poll. PIN |
 | `POST /api/rates` | site | Rating engine: every configured carrier in parallel, Easyship fills gaps, retail rules, cached five minutes. Returns service, price and days only |
 | `POST /api/compare` | staff | Every provider's rates side by side for the parity test. PIN |
@@ -50,6 +51,7 @@ flowchart LR
 | `POST /api/dropoff` | staff page | `accept`, `lookup`, `recent`, `handed` actions, PIN |
 | `POST /api/track-poll` | printer agent, GitHub Action, staff page | Refreshes tracking for open shipments older than fifteen minutes and sends customer updates for anything new. `X-Printer-Key` header or PIN |
 | `POST /api/exceptions` | staff page | The exceptions list, PIN |
+| `POST /api/reports` | staff page | `from` and `to` days, up to a year; `format: "csv"` for the shipment rows. PIN |
 | `GET /api/mock-paid` | dev only | Stands in for Stripe when no key is set |
 | `POST /api/cards` | site | Saves a card order (design sanitized server side, logo must be a PNG, JPG or SVG data URL under 400 KB) and starts Stripe Checkout |
 | `PUT /api/cards` | staff page | `printed` and `picked_up` actions, PIN |
