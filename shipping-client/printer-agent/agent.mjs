@@ -95,8 +95,27 @@ if (args.has('--test')) {
 if (!cfg.key) { console.error('No printer key. Put it in printer-agent.json or the PRINTER_KEY environment variable.'); process.exit(1); }
 
 log(`watching ${cfg.site} for printer "${cfg.printer}" every ${cfg.poll_seconds}s`);
+
+// Side job: while the shop PC is on, ask the site to refresh tracking for open shipments every few
+// minutes (POST /api/track-poll). The scheduled GitHub Action covers the hours the PC is off.
+const trackEvery = (cfg.track_poll_minutes ?? 10) * 60_000;
+let lastTrackPoll = 0;
+async function trackPoll() {
+  if (!trackEvery || Date.now() - lastTrackPoll < trackEvery) return;
+  lastTrackPoll = Date.now();
+  try {
+    const res = await fetch(`${cfg.site}/api/track-poll`, { method: 'POST', headers, body: JSON.stringify({ limit: 50 }) });
+    const r = await res.json();
+    if (!res.ok) throw new Error(r.error);
+    if (r.checked) log(`tracking: checked ${r.checked}, ${r.updated} updated${r.errors.length ? `, ${r.errors.length} errors` : ''}`);
+  } catch (e) {
+    log(`tracking poll failed: ${e.message}`);
+  }
+}
+
 const failed = new Map(); // job id -> attempts, so a bad job does not block the queue forever
 for (;;) {
+  await trackPoll();
   try {
     const job = await next();
     if (job) {

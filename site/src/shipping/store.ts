@@ -216,3 +216,48 @@ export async function markDropoffsHanded(env: Env, carrier: string): Promise<num
   for (const d of mem.dropoffs) if (d.carrier === carrier && !d.handed_to_carrier_at) { d.handed_to_carrier_at = t; n++; }
   return n;
 }
+
+/** Bump updated_at without changing status, so a poll that found nothing new is not repeated right away. */
+export async function touchShipment(env: Env, id: string) {
+  if (env.DB) { await env.DB.prepare('UPDATE shipments SET updated_at = ?2 WHERE id = ?1').bind(id, now()).run(); return; }
+  const s = mem.shipments.get(id);
+  if (s) s.updated_at = now();
+}
+
+export interface ExceptionRow {
+  id: string;
+  carrier: string;
+  service: string;
+  tracking_number: string | null;
+  status: string;
+  to: string;
+  created_at: string;
+  last_event_at: string | null;
+  last_description: string | null;
+  reason: 'exception' | 'returned' | 'stuck' | 'not_scanned';
+  days: number;
+}
+
+const DAY = 86_400_000;
+/** Staff list of anything that needs a human: carrier exceptions, returns, no scan after a label, or no movement for a week. */
+export async function listExceptions(env: Env): Promise<ExceptionRow[]> {
+  const open = await openShipments(env, 500);
+  const rows: ExceptionRow[] = [];
+  for (const s of open) {
+    const events = await listTrackingEvents(env, s.id);
+    const moving = events.filter((e) => e.status !== 'label_created');
+    const last = moving[0] ?? events[0] ?? null;
+    const since = new Date(last?.at ?? s.created_at).getTime();
+    const days = Math.floor((Date.now() - since) / DAY);
+    let reason: ExceptionRow['reason'] | null = null;
+    if (s.status === 'exception') reason = 'exception';
+    else if (s.status === 'returned') reason = 'returned';
+    else if (!moving.length && days >= 3) reason = 'not_scanned';
+    else if (moving.length && days >= 7) reason = 'stuck';
+    if (!reason) continue;
+    const d = JSON.parse(s.destination_json);
+    rows.push({ id: s.id, carrier: s.carrier, service: s.service, tracking_number: s.tracking_number, status: s.status, to: `${d.contact_name}, ${d.city}, ${d.state} ${d.postal_code}`.trim(), created_at: s.created_at, last_event_at: last?.at ?? null, last_description: last?.description ?? null, reason, days });
+  }
+  const order = { exception: 0, returned: 1, stuck: 2, not_scanned: 3 };
+  return rows.sort((a, b) => order[a.reason] - order[b.reason] || b.days - a.days);
+}

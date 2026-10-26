@@ -32,6 +32,7 @@ Only outbound requests from the shop. No port forwarding, no printer drivers in 
 | `zebra.share` | Or, for a USB Zebra plugged into this PC: share the printer in Windows Settings and put `\\\\THIS-PC\\Zebra` here |
 | `pdf.spool` | Folder for downloaded PDF labels. Defaults to `spool` next to the agent |
 | `pdf.app` | Leave blank to print PDFs with Windows' default PDF app. Or a path to SumatraPDF for silent printing |
+| `track_poll_minutes` | How often the agent asks the site to refresh tracking for open shipments. 10 by default, 0 to turn it off |
 
 4. Test the printer without the website:
 
@@ -55,6 +56,10 @@ Leave the window open. To start it with Windows, create a shortcut to `node C:\P
 2. The website puts a job in the `print_queue` table: ZPL if the carrier returned it, otherwise the PDF URL.
 3. The agent picks the job up within three seconds, prints it, and marks it done.
 4. If a job fails five times (printer off, out of labels) it is skipped with a message in the agent window, and the label can still be opened and printed from the counter page by hand.
+
+## Tracking refresh
+
+While it runs, the agent also calls `POST /api/track-poll` every ten minutes, which makes the site ask each carrier about every open shipment not checked in the last fifteen minutes. That is what keeps the `/track` page and the staff exceptions list current during the day. A scheduled GitHub Action does the same every thirty minutes for the hours the PC is off.
 
 ## Troubleshooting
 

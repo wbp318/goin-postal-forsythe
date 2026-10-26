@@ -1,0 +1,23 @@
+# PeterShip tracking poll. Every thirty minutes, asks the live site to refresh tracking for open
+# shipments (POST /api/track-poll). The printer agent on the counter PC does the same while the shop
+# is open; this covers nights, weekends and the PC being off. Needs two repository secrets:
+#   TRACK_POLL_URL  https://<the site>/api/track-poll
+#   PRINTER_KEY     the same value set with `npx wrangler secret put PRINTER_KEY`
+# Does nothing until both secrets exist.
+name: Tracking poll
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    if: ${{ vars.TRACK_POLL_ENABLED == 'true' }}
+    steps:
+      - name: Ask the site to refresh tracking
+        env:
+          URL: ${{ secrets.TRACK_POLL_URL }}
+          KEY: ${{ secrets.PRINTER_KEY }}
+        run: |
+          test -n "$URL" && test -n "$KEY" || { echo "secrets not set"; exit 0; }
+          curl -sS -X POST "$URL" -H "X-Printer-Key: $KEY" -H 'Content-Type: application/json' -d '{"limit":100}'

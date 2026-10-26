@@ -36,8 +36,7 @@ export const easyship: Provider = {
   async track(env, trackingNumber) {
     if (env.EASYSHIP_TOKEN) return [];
     const h = (n: number) => new Date(Date.now() - n * 3600_000).toISOString();
-    const seed = trackingNumber.replace(/\D/g, '').slice(-2);
-    const step = Number(seed) % 4; // 0..3, so repeated lookups of the same number are stable
+    const step = Math.floor(Date.now() / 3600_000) % 4; // 0..3, advances once an hour so the demo moves
     const all: TrackingEvent[] = [
       { at: h(30), status: 'label_created', description: 'Shipping label created', location: 'Monroe, LA 71201' },
       { at: h(26), status: 'in_transit', description: 'Accepted at USPS origin facility', location: 'Monroe, LA 71201' },

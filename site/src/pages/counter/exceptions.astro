@@ -1,0 +1,77 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+
+// Staff page: everything that needs a human. Carrier exceptions, returns to sender, labels bought
+// three days ago and never scanned, parcels with no movement for a week. "Check carriers now" runs
+// the tracking poll on demand; otherwise the printer agent and a scheduled job run it.
+---
+<Base title="Counter · Exceptions">
+  <section class="hero">
+    <h1>Exceptions</h1>
+    <p class="lead">Shipments that are stuck, returned, flagged by the carrier, or never scanned after the label was bought. Call the customer before they call us.</p>
+  </section>
+
+  <div class="card">
+    <p class="btnrow">
+      <label>Staff PIN <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
+      <button class="btn" id="load">Show list</button>
+      <button class="btn kraft" id="poll">Check carriers now</button>
+    </p>
+    <p id="msg" role="alert"></p>
+    <table class="list hidden" id="table">
+      <thead><tr><th>Why</th><th>Order</th><th>Carrier</th><th>To</th><th>Last seen</th><th></th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <p id="empty" class="muted hidden">Nothing needs attention.</p>
+  </div>
+
+  <script>
+    const pin = () => (document.getElementById('pin') as HTMLInputElement).value;
+    const msg = document.getElementById('msg')!;
+    const table = document.getElementById('table')!;
+    const body = table.querySelector('tbody')!;
+    const empty = document.getElementById('empty')!;
+    const REASON: Record<string, string> = { exception: 'Carrier problem', returned: 'Returned to sender', stuck: 'Not moving', not_scanned: 'Never scanned' };
+    const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—');
+
+    async function api(path: string, extra: Record<string, unknown> = {}) {
+      const res = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin(), ...extra }) });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error);
+      return j;
+    }
+
+    async function load() {
+      msg.textContent = '';
+      try {
+        const { exceptions } = await api('/api/exceptions');
+        body.innerHTML = '';
+        for (const x of exceptions) {
+          const tr = document.createElement('tr');
+          tr.className = x.reason;
+          const cells = [`${REASON[x.reason]} · ${x.days}d`, x.id, `${x.carrier} ${x.service}`, x.to, `${fmt(x.last_event_at)} ${x.last_description ?? ''}`.trim()];
+          for (const c of cells) { const td = document.createElement('td'); td.textContent = c; tr.appendChild(td); }
+          const td = document.createElement('td');
+          td.innerHTML = `<a href="/counter/${x.id}">Order</a> · <a href="/track?q=${x.id}">Track</a>`;
+          tr.appendChild(td);
+          body.appendChild(tr);
+        }
+        table.classList.toggle('hidden', !exceptions.length);
+        empty.classList.toggle('hidden', !!exceptions.length);
+      } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    }
+
+    document.getElementById('load')!.addEventListener('click', load);
+    document.getElementById('poll')!.addEventListener('click', async (ev) => {
+      const b = ev.currentTarget as HTMLButtonElement;
+      b.disabled = true; msg.className = ''; msg.textContent = 'Asking the carriers…';
+      try {
+        const r = await api('/api/track-poll');
+        msg.textContent = `Checked ${r.checked}, ${r.updated} with news, ${r.skipped} without a tracking number${r.errors.length ? `, ${r.errors.length} carrier errors` : ''}.`;
+        await load();
+      } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+      b.disabled = false;
+    });
+  </script>
+</Base>

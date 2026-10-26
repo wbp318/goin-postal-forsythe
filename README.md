@@ -873,7 +873,7 @@ flowchart LR
 
 About four months from carrier access to switch-over. Carrier APIs cost nothing beyond postage. The one question to settle before building the counter app is whether GP Brands lets a franchisee quote and ship outside Rate Pro.
 
-Built so far, all running in mock mode until the carrier keys arrive: the rating engine with five adapters, a D1 store for shipments, a public tracking page at `/track` in 13 languages, a print queue with a [printer agent](shipping-client/printer-agent/README.md) for the counter PC, and drop-off capture at `/counter/dropoff`.
+Built so far, all running in mock mode until the carrier keys arrive: the rating engine with five adapters, a D1 store for shipments, a public tracking page at `/track` in 13 languages, a print queue with a [printer agent](shipping-client/printer-agent/README.md) for the counter PC, drop-off capture at `/counter/dropoff`, a tracking poll that runs from the agent and from a scheduled GitHub Action, and a staff exceptions list at `/counter/exceptions`.
 
 ## Monetization plan
 

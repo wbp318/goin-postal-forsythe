@@ -47,6 +47,8 @@ flowchart LR
 | Tracking: `track()` and `voidLabel()` routed by label id prefix, public page at `/track`, `GET /api/track` refreshes from the carrier when events are older than fifteen minutes | `site/src/pages/track/`, `site/src/pages/api/track.ts` | Done in mock mode. Linked from the done page, in all 13 languages |
 | Print queue and printer agent: staff tap Print at the counter, a small Node program on the counter PC prints ZPL to a Zebra or a PDF through the OS | `POST /api/print`, [`printer-agent/`](printer-agent/README.md) | Done, untested against a real Zebra ([issue 5](https://github.com/wbp318/goin-postal-forsythe/issues/5)) |
 | Drop-off capture: scan a prepaid or return package's barcode, carrier guessed from the number, "carrier picked up" marks the day's hand-over | `/counter/dropoff`, `POST /api/dropoff` | Done |
+| Tracking poll: refreshes every open shipment older than fifteen minutes from its carrier adapter. Run by the printer agent every ten minutes while the shop PC is on, by a scheduled GitHub Action every thirty minutes, or by staff on demand | `site/src/shipping/poll.ts`, `POST /api/track-poll`, `.github/workflows/track-poll.yml` | Done in mock mode |
+| Exceptions list for staff: carrier exceptions, returns to sender, labels not scanned after three days, no movement for seven days, with Check carriers now | `/counter/exceptions`, `POST /api/exceptions` | Done |
 
 Customers see service, price and days only. Cost and the provider that answered stay on the server.
 
@@ -56,6 +58,9 @@ flowchart LR
   F --> ST["store.recordShipment()"]:::local --> D1[("D1<br/>shipments, tracking_events,<br/>print_queue, dropoffs")]:::cloud
   C["Customer<br/>/track?q=GP-XXXXXX"]:::you --> TA["/api/track"]:::local --> D1
   TA -.->|stale, 15 min| TR["engine.track()<br/>carrier adapter"]:::local
+  PL["/api/track-poll<br/>agent every 10 min,<br/>GitHub Action every 30"]:::local --> TR
+  PL --> D1
+  EX["Staff tablet<br/>/counter/exceptions"]:::you --> D1
   K["Staff tablet<br/>/counter/GP-XXXXXX<br/>Print at the counter"]:::you --> PQ["/api/print"]:::local --> D1
   AG["printer-agent/agent.mjs<br/>counter PC, polls"]:::local --> PQ
   AG --> Z["Zebra, ZPL over TCP 9100<br/>or PDF via the OS"]:::local
@@ -65,7 +70,7 @@ flowchart LR
   classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
 ```
 
-**Next:** the owners open the four developer accounts (issue 12). The first sandbox call to each carrier will need field adjustments; that is expected and is why the adapters are isolated. Then the parity test. Meanwhile the printer agent can be tried against the shop's thermal printer with `node agent.mjs --test` (issue 5), and a scheduled tracking poll, customer notifications and the staff exceptions list are the next pieces that need no carrier keys.
+**Next:** the owners open the four developer accounts (issue 12). The first sandbox call to each carrier will need field adjustments; that is expected and is why the adapters are isolated. Then the parity test. Meanwhile the printer agent can be tried against the shop's thermal printer with `node agent.mjs --test` (issue 5). Customer email and text updates are the next piece that needs no carrier keys; carrier webhooks, customs forms and manifests wait on the keys.
 
 ## Why build it
 
