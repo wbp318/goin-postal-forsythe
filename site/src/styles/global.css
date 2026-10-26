@@ -176,3 +176,6 @@ html[data-contrast="high"] .rate:has(input:checked) { background: #fff8d6; }
 .list th, .list td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--hair); vertical-align: top; }
 .list tr.exception td:first-child, .list tr.returned td:first-child { color: #b91c1c; font-weight: 700; }
 .list tr.stuck td:first-child, .list tr.not_scanned td:first-child { color: #92400e; font-weight: 700; }
+
+.check { display: flex; align-items: center; gap: 10px; font-weight: 500; }
+.check input { width: 24px; height: 24px; min-height: 0; margin: 0; }

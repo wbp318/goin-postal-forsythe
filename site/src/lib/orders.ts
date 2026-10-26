@@ -12,6 +12,8 @@ export interface Order {
   status: OrderStatus;
   created_at: string;
   email: string;
+  phone?: string;         // customer's own number, only when they asked for text updates
+  sms?: boolean;
   origin: Address;
   destination: Address;
   parcel: Parcel;

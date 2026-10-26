@@ -7,6 +7,16 @@ COUNTER_PIN=1234
 # Shared secret for the counter printer agent (shipping-client/printer-agent). Any long random string.
 PRINTER_KEY=change-me
 
+# Customer updates (PeterShip Phase 4). Blank = messages are logged in the terminal, nothing sent.
+# Resend: resend.com, API Keys. MAIL_FROM must be on a domain verified there. STAFF_EMAIL gets exception alerts.
+RESEND_API_KEY=
+MAIL_FROM=
+STAFF_EMAIL=
+# Twilio: console.twilio.com. TWILIO_FROM is the shop's texting number in +1 form.
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_FROM=
+
 # Stripe: dashboard > Developers > API keys (sk_test_ for testing). Webhook secret from Developers > Webhooks.
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=

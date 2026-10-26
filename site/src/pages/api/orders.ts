@@ -16,6 +16,9 @@ export const POST: APIRoute = async ({ request }) => {
     const parcel = parseParcel(b.parcel);
     const email = String(b.email ?? '').trim();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error('A valid email is needed for the receipt and label');
+    const sms = b.sms === true || b.sms === 'on';
+    const phone = String(b.phone ?? '').replace(/[^\d+]/g, '').slice(0, 16);
+    if (sms && phone.replace(/\D/g, '').length < 10) throw new Error('Enter a phone number for text updates, or untick the box');
 
     // Re-quote server side so the price cannot be edited in the browser.
     const { rates } = await quote(env, origin, destination, parcel);
@@ -27,7 +30,7 @@ export const POST: APIRoute = async ({ request }) => {
       id: newOrderId(),
       status: international ? 'reserved' : 'awaiting_payment',
       created_at: new Date().toISOString(),
-      email, origin, destination, parcel, rate, international,
+      email, phone: sms ? phone : undefined, sms, origin, destination, parcel, rate, international,
     };
     await saveOrder(env, order);
 

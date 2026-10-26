@@ -9,6 +9,9 @@ interface Env {
   SITE_URL: string;
   COUNTER_PIN?: string;
   PRINTER_KEY?: string;       // shared secret the counter printer agent sends to /api/print
+  // Customer updates. Blank means log instead of send.
+  RESEND_API_KEY?: string; MAIL_FROM?: string; STAFF_EMAIL?: string;
+  TWILIO_ACCOUNT_SID?: string; TWILIO_AUTH_TOKEN?: string; TWILIO_FROM?: string;
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
   // Rates and labels. Easyship is the single-call fallback; each direct carrier switches on when its keys are present.

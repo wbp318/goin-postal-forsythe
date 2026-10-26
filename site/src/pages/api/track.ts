@@ -4,6 +4,7 @@ import { env } from '../../lib/env';
 import { json } from '../../lib/validate';
 import { findShipment, listTrackingEvents, addTrackingEvents } from '../../shipping/store';
 import { track } from '../../shipping/engine';
+import { notifyEvents } from '../../shipping/notify';
 
 const REFRESH_AFTER_MS = 15 * 60_000;
 
@@ -23,7 +24,11 @@ export const GET: APIRoute = async ({ url }) => {
   if (stale && !done && s.label_id && s.tracking_number) {
     try {
       const fresh = await track(env, s.label_id, s.tracking_number);
-      if (await addTrackingEvents(env, s.id, fresh)) events = await listTrackingEvents(env, s.id);
+      const added = await addTrackingEvents(env, s.id, fresh);
+      if (added.length) {
+        events = await listTrackingEvents(env, s.id);
+        await notifyEvents(env, s, added).catch((e) => console.warn('notify failed', s.id, e.message));
+      }
     } catch (e: any) {
       console.warn('track refresh failed', s.id, e.message);
     }

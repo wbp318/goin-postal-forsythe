@@ -28,7 +28,7 @@ flowchart LR
 | Route | Who | What |
 |---|---|---|
 | `/` | customers | Hero, services, hours, map |
-| `/ship` | customers | Quote form, rate list, pay or reserve |
+| `/ship` | customers | Quote form, rate list, pay or reserve. Optional text updates: tick the box and give a mobile number |
 | `/ship/done?order=CODE` | customers | Label download, QR code, pickup code, link to tracking |
 | `/track?q=CODE` | customers | Tracking page: pickup code or carrier tracking number, status and history, no login |
 | any page | customers | Language picker, text size (5 steps) and high contrast switches in the header, all remembered per device |
@@ -48,7 +48,7 @@ flowchart LR
 | `GET /api/track?q=` | site | Public: shipment status and events by pickup code or tracking number, refreshed from the carrier when older than fifteen minutes |
 | `POST /api/print` | staff page, printer agent | `queue` (PIN) puts a label in the print queue; `GET` and `done` (header `X-Printer-Key`) are what the counter PC's [printer agent](../shipping-client/printer-agent/README.md) calls |
 | `POST /api/dropoff` | staff page | `accept`, `lookup`, `recent`, `handed` actions, PIN |
-| `POST /api/track-poll` | printer agent, GitHub Action, staff page | Refreshes tracking for open shipments older than fifteen minutes. `X-Printer-Key` header or PIN |
+| `POST /api/track-poll` | printer agent, GitHub Action, staff page | Refreshes tracking for open shipments older than fifteen minutes and sends customer updates for anything new. `X-Printer-Key` header or PIN |
 | `POST /api/exceptions` | staff page | The exceptions list, PIN |
 | `GET /api/mock-paid` | dev only | Stands in for Stripe when no key is set |
 | `POST /api/cards` | site | Saves a card order (design sanitized server side, logo must be a PNG, JPG or SVG data URL under 400 KB) and starts Stripe Checkout |
@@ -143,7 +143,7 @@ Run `npm run db:local` once to create PeterShip's tables in the local D1 databas
 1. `src/data/store.ts`: phone, hours, Formspree ID, and the phone in the `origin` ship-from address. The address 1800 Forsythe Ave Ste 2, Monroe, LA 71201 is already in.
 2. Easyship: dashboard, APIs & Webhooks, Create API Connection, API version 2024-09, scopes `public.rate:read`, `public.shipment:write`, `public.label:write`. Use the `prod_` token in production.
 3. Stripe: live secret key, and a webhook for `checkout.session.completed` pointed at `/api/stripe-webhook`. Paste its signing secret.
-4. Cloudflare: `npx wrangler kv namespace create ORDERS` and `npx wrangler d1 create goin-postal`, paste both ids into `wrangler.jsonc`, run `npm run db:remote`, set `SITE_URL` to the real domain, then `npx wrangler secret put` for `EASYSHIP_TOKEN`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `COUNTER_PIN`, `PRINTER_KEY`.
+4. Cloudflare: `npx wrangler kv namespace create ORDERS` and `npx wrangler d1 create goin-postal`, paste both ids into `wrangler.jsonc`, run `npm run db:remote`, set `SITE_URL` to the real domain, then `npx wrangler secret put` for `EASYSHIP_TOKEN`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `COUNTER_PIN`, `PRINTER_KEY`, and for customer updates `RESEND_API_KEY`, `MAIL_FROM` (on a domain verified at Resend), `STAFF_EMAIL`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM`. Leave the update keys out and messages are logged, not sent.
 6. Counter PC: set up the [printer agent](../shipping-client/printer-agent/README.md) with the same `PRINTER_KEY`, so Print at the counter reaches the label printer. It also refreshes tracking every ten minutes while it runs.
 7. GitHub: repository secrets `TRACK_POLL_URL` (the site's `/api/track-poll`) and `PRINTER_KEY`, and the repository variable `TRACK_POLL_ENABLED=true`, so tracking refreshes every thirty minutes when the shop PC is off.
 5. Set the counter tablet or phone to open `/counter/` links from the camera, so scanning a customer's QR opens the order.

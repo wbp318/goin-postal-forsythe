@@ -62,6 +62,8 @@ const now = () => new Date().toISOString();
 
 // ---- memory fallback -------------------------------------------------------------------------
 const mem = {
+  contacts: new Map<string, Contacts>(),
+  notified: new Set<string>(),
   shipments: new Map<string, ShipmentRow>(),
   events: new Map<string, (TrackingEvent & { id: number })[]>(),
   jobs: [] as PrintJob[],
@@ -88,7 +90,8 @@ export async function recordShipment(env: Env, order: Order, label: Label, paidV
   } else {
     mem.shipments.set(row.id, row);
   }
-  await addTrackingEvents(env, row.id, [{ at: t, status: 'label_created', description: `Label created, ${row.carrier} ${row.service}` }]);
+  await addTrackingEvents(env, row.id, [{ at: t, status: 'label_created', description: `Label created, ${row.service.toLowerCase().startsWith(row.carrier.toLowerCase()) ? row.service : `${row.carrier} ${row.service}`}` }]);
+  await saveContacts(env, row.id, { email: order.email, phone: order.phone ?? null, sms_opt_in: !!order.sms && !!order.phone });
   return row;
 }
 
@@ -120,12 +123,13 @@ export async function openShipments(env: Env, limit = 200): Promise<ShipmentRow[
 }
 
 // ---- tracking events --------------------------------------------------------------------------
-export async function addTrackingEvents(env: Env, shipmentId: string, events: TrackingEvent[]) {
-  if (!events.length) return 0;
+/** Stores events not seen before and returns them (empty when nothing was new). */
+export async function addTrackingEvents(env: Env, shipmentId: string, events: TrackingEvent[]): Promise<TrackingEvent[]> {
+  if (!events.length) return [];
   const existing = await listTrackingEvents(env, shipmentId);
   const seen = new Set(existing.map((e) => `${e.at}|${e.status}|${e.description}`));
   const fresh = events.filter((e) => !seen.has(`${e.at}|${e.status}|${e.description}`));
-  if (!fresh.length) return 0;
+  if (!fresh.length) return [];
   if (env.DB) {
     const stmt = env.DB.prepare('INSERT INTO tracking_events (shipment_id, at, status, description, location) VALUES (?1, ?2, ?3, ?4, ?5)');
     await env.DB.batch(fresh.map((e) => stmt.bind(shipmentId, e.at, e.status, e.description, e.location ?? null)));
@@ -137,7 +141,7 @@ export async function addTrackingEvents(env: Env, shipmentId: string, events: Tr
   // The newest event drives the shipment's status, except that a label event never moves it backwards.
   const latest = [...fresh].sort((a, b) => b.at.localeCompare(a.at))[0];
   if (latest.status !== 'label_created' && latest.status !== 'unknown') await setShipmentStatus(env, shipmentId, latest.status);
-  return fresh.length;
+  return fresh;
 }
 
 export async function listTrackingEvents(env: Env, shipmentId: string): Promise<TrackingEvent[]> {
@@ -260,4 +264,35 @@ export async function listExceptions(env: Env): Promise<ExceptionRow[]> {
   }
   const order = { exception: 0, returned: 1, stuck: 2, not_scanned: 3 };
   return rows.sort((a, b) => order[a.reason] - order[b.reason] || b.days - a.days);
+}
+
+// ---- contacts and notifications --------------------------------------------------------------
+export interface Contacts { email: string | null; phone: string | null; sms_opt_in: boolean }
+
+export async function saveContacts(env: Env, shipmentId: string, c: Contacts) {
+  if (env.DB) { await env.DB.prepare('INSERT OR REPLACE INTO shipment_contacts (shipment_id, email, phone, sms_opt_in) VALUES (?1, ?2, ?3, ?4)').bind(shipmentId, c.email, c.phone, c.sms_opt_in ? 1 : 0).run(); return; }
+  mem.contacts.set(shipmentId, c);
+}
+
+export async function getContacts(env: Env, shipmentId: string): Promise<Contacts | null> {
+  if (env.DB) {
+    const r = await env.DB.prepare('SELECT email, phone, sms_opt_in FROM shipment_contacts WHERE shipment_id = ?1').bind(shipmentId).first<{ email: string | null; phone: string | null; sms_opt_in: number }>();
+    return r ? { email: r.email, phone: r.phone, sms_opt_in: !!r.sms_opt_in } : null;
+  }
+  return mem.contacts.get(shipmentId) ?? null;
+}
+
+export async function notificationSent(env: Env, shipmentId: string, status: string): Promise<boolean> {
+  if (env.DB) return !!(await env.DB.prepare('SELECT 1 FROM notifications WHERE shipment_id = ?1 AND status = ?2').bind(shipmentId, status).first());
+  return mem.notified.has(`${shipmentId}|${status}`);
+}
+
+export async function recordNotification(env: Env, shipmentId: string, status: string, channels: string) {
+  if (env.DB) { await env.DB.prepare('INSERT OR IGNORE INTO notifications (shipment_id, status, channels, sent_at) VALUES (?1, ?2, ?3, ?4)').bind(shipmentId, status, channels, now()).run(); return; }
+  mem.notified.add(`${shipmentId}|${status}`);
+}
+
+export async function getShipment(env: Env, id: string): Promise<ShipmentRow | null> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM shipments WHERE id = ?1').bind(id).first<ShipmentRow>()) ?? null;
+  return mem.shipments.get(id) ?? null;
 }

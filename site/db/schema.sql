@@ -94,3 +94,20 @@ CREATE TABLE IF NOT EXISTS print_queue (
   queued_at TEXT NOT NULL,
   printed_at TEXT
 );
+
+-- Who to tell about a shipment, and what they have been told. Kept apart from shipments so the
+-- schema stays re-runnable (CREATE IF NOT EXISTS) with no column migrations.
+CREATE TABLE IF NOT EXISTS shipment_contacts (
+  shipment_id TEXT PRIMARY KEY REFERENCES shipments(id),
+  email TEXT,
+  phone TEXT,
+  sms_opt_in INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS notifications (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  shipment_id TEXT NOT NULL REFERENCES shipments(id),
+  status TEXT NOT NULL,                -- in_transit, out_for_delivery, delivered, exception, returned
+  channels TEXT NOT NULL,              -- email, sms, "email,sms", none
+  sent_at TEXT NOT NULL,
+  UNIQUE (shipment_id, status)
+);

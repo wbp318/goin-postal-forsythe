@@ -59,6 +59,8 @@ const cancelled = Astro.url.searchParams.get('cancelled');
     <div id="rates" class="rates"></div>
     <form id="buy" class="buy" hidden>
       <label><span data-i18n="ship.email">Your email (for the receipt and label)</span> <input name="email" type="email" required /></label>
+      <label class="check"><input name="sms" type="checkbox" /> <span data-i18n="ship.sms">Text me when it ships and when it is delivered</span></label>
+      <label id="phoneRow" hidden><span data-i18n="ship.phone">Your mobile number</span> <input name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="318 555 0100" /></label>
       <button class="btn" type="submit" id="buyBtn" data-i18n="ship.continue">Continue</button>
     </form>
   </section>
@@ -116,12 +118,17 @@ const cancelled = Astro.url.searchParams.get('cancelled');
       results.scrollIntoView({ behavior: 'smooth' });
     });
 
+    const smsBox = buy.querySelector('[name=sms]') as HTMLInputElement;
+    const phoneRow = document.getElementById('phoneRow') as HTMLElement;
+    smsBox.addEventListener('change', () => { phoneRow.hidden = !smsBox.checked; if (smsBox.checked) (buy.querySelector('[name=phone]') as HTMLInputElement).focus(); });
     buy.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!picked) return;
       buyBtn.setAttribute('disabled', '');
       const email = (buy.querySelector('[name=email]') as HTMLInputElement).value;
-      const res = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, email, rate_id: picked }) });
+      const sms = (buy.querySelector('[name=sms]') as HTMLInputElement).checked;
+      const phone = (buy.querySelector('[name=phone]') as HTMLInputElement).value;
+      const res = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, email, sms, phone, rate_id: picked }) });
       const j = await res.json();
       if (!res.ok) { err.textContent = j.error; err.hidden = false; buyBtn.removeAttribute('disabled'); return; }
       location.href = j.next;

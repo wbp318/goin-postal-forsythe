@@ -49,6 +49,7 @@ flowchart LR
 | Drop-off capture: scan a prepaid or return package's barcode, carrier guessed from the number, "carrier picked up" marks the day's hand-over | `/counter/dropoff`, `POST /api/dropoff` | Done |
 | Tracking poll: refreshes every open shipment older than fifteen minutes from its carrier adapter. Run by the printer agent every ten minutes while the shop PC is on, by a scheduled GitHub Action every thirty minutes, or by staff on demand | `site/src/shipping/poll.ts`, `POST /api/track-poll`, `.github/workflows/track-poll.yml` | Done in mock mode |
 | Exceptions list for staff: carrier exceptions, returns to sender, labels not scanned after three days, no movement for seven days, with Check carriers now | `/counter/exceptions`, `POST /api/exceptions` | Done |
+| Customer updates: email through Resend and text through Twilio when a shipment is first scanned, out for delivery, delivered, in trouble or returned. One message per status. Opt-in box and mobile number on the ship form. Staff email on exceptions | `site/src/shipping/notify.ts`, `shipment_contacts` and `notifications` tables | Done, logs instead of sending until the Resend and Twilio keys are set |
 
 Customers see service, price and days only. Cost and the provider that answered stay on the server.
 
@@ -60,6 +61,8 @@ flowchart LR
   TA -.->|stale, 15 min| TR["engine.track()<br/>carrier adapter"]:::local
   PL["/api/track-poll<br/>agent every 10 min,<br/>GitHub Action every 30"]:::local --> TR
   PL --> D1
+  PL --> NO["notify.ts<br/>Resend email, Twilio text,<br/>once per status"]:::local
+  NO --> CU["Customer"]:::you
   EX["Staff tablet<br/>/counter/exceptions"]:::you --> D1
   K["Staff tablet<br/>/counter/GP-XXXXXX<br/>Print at the counter"]:::you --> PQ["/api/print"]:::local --> D1
   AG["printer-agent/agent.mjs<br/>counter PC, polls"]:::local --> PQ
@@ -70,7 +73,7 @@ flowchart LR
   classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
 ```
 
-**Next:** the owners open the four developer accounts (issue 12). The first sandbox call to each carrier will need field adjustments; that is expected and is why the adapters are isolated. Then the parity test. Meanwhile the printer agent can be tried against the shop's thermal printer with `node agent.mjs --test` (issue 5). Customer email and text updates are the next piece that needs no carrier keys; carrier webhooks, customs forms and manifests wait on the keys.
+**Next:** the owners open the four developer accounts (issue 12). The first sandbox call to each carrier will need field adjustments; that is expected and is why the adapters are isolated. Then the parity test. Meanwhile the printer agent can be tried against the shop's thermal printer with `node agent.mjs --test` (issue 5). Customer updates need a Resend account (free) and, for texts, a Twilio number (decision 4 for Rin). Carrier webhooks, customs forms and manifests wait on the keys.
 
 ## Why build it
 
