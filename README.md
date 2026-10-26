@@ -856,22 +856,22 @@ With no keys in `.dev.vars` everything runs in mock mode: placeholder rates, a f
 
 ## PeterShip, our own shipping client
 
-PeterShip is the plan to replace Easyship with software the store owns, doing what ShippingEasy, Easyship and GP Rate Pro do: rating, labels, tracking, drop-off capture, a counter app and reports for USPS, UPS, FedEx and DHL, on the same Cloudflare stack as the website. The full agenda, with the carrier requirements, phases, timeline, costs, risks and the decisions Rin needs to make first, is in [`shipping-client/README.md`](shipping-client/README.md). Agenda item 44.
+PeterShip replaces Easyship with software the store owns, doing what ShippingEasy, Easyship and GP Rate Pro do: rating, labels, tracking, drop-off capture, a counter app and reports for USPS, UPS, FedEx and DHL, on the same Cloudflare stack as the website. The full plan, with the carrier requirements, phases, timeline, costs, risks and the decisions Rin needs to make first, is in [`shipping-client/README.md`](shipping-client/README.md). The printer agent for the counter PC has its own page at [`shipping-client/printer-agent/README.md`](shipping-client/printer-agent/README.md). Agenda item 44. PeterShip is proprietary under [`shipping-client/LICENSE`](shipping-client/LICENSE).
 
 ```mermaid
 flowchart LR
-  P0["Already built<br/>website, Stripe,<br/>orders, QR, counter"]:::local --> P1["Owners open<br/>carrier developer<br/>accounts"]:::you
-  P1 --> P2["Rating engine<br/>four adapters,<br/>markup rules"]:::local
-  P2 --> P3["Labels<br/>PDF, ZPL, QR,<br/>customs, printer"]:::local
-  P3 --> P4["Tracking<br/>webhooks, page,<br/>texts"]:::local
-  P4 --> P5["Counter app<br/>queue, drop-offs,<br/>customers, reports"]:::local
+  P0["Website, Stripe,<br/>orders, QR, counter<br/>✅"]:::local --> P1["Owners open<br/>carrier developer<br/>accounts ⏸ issue 12"]:::you
+  P1 --> P2["Rating engine<br/>five adapters, cache,<br/>parity endpoint ✅"]:::local
+  P2 --> P3["Labels<br/>print queue, printer agent ✅<br/>customs, manifests ⏸"]:::local
+  P3 --> P4["Tracking<br/>page, poll, exceptions,<br/>email and text ✅<br/>webhooks ⏸"]:::local
+  P4 --> P5["Counter app<br/>drop-offs, reports ✅<br/>queue, customers ⏳"]:::local
   P5 --> P6["Run beside Easyship<br/>a month, then<br/>turn it off"]:::you
   classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
   classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
   classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
 ```
 
-About four months from carrier access to switch-over. Carrier APIs cost nothing beyond postage. The one question to settle before building the counter app is whether GP Brands lets a franchisee quote and ship outside Rate Pro.
+About three months from carrier access to switch-over. Carrier APIs cost nothing beyond postage. The one question to settle before building the counter app is whether GP Brands lets a franchisee quote and ship outside Rate Pro.
 
 Built so far, all running in mock mode until the carrier keys arrive: the rating engine with five adapters, a D1 store for shipments, a public tracking page at `/track` in 13 languages, a print queue with a [printer agent](shipping-client/printer-agent/README.md) for the counter PC, drop-off capture at `/counter/dropoff`, a tracking poll that runs from the agent and from a scheduled GitHub Action, a staff exceptions list at `/counter/exceptions`, staff reports at `/counter/reports` (daily shipments and margin, busiest hours, returning customers, CSV for the carrier invoice), and customer email and text updates (Resend and Twilio, opt-in on the ship form) that log instead of send until their keys exist.
 

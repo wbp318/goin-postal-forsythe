@@ -8,7 +8,8 @@ This product includes a marketing kit and site research created for the
 Goin' Postal store at Forsythe Avenue and North 18th Street, Monroe,
 Louisiana. Code and pages are licensed under the Apache License, Version
 2.0. Designs, documents and research are licensed under Creative Commons
-BY-NC-ND 4.0. PeterShip, the store's shipping client, is proprietary and
+BY-NC-ND 4.0. PeterShip, the store's shipping client (shipping-client/, site/src/shipping/
+and the pages, routes, tables and workflow it lists), is proprietary and
 licensed only under shipping-client/LICENSE. See the LICENSE file for
 which files fall under which part.
 

@@ -1,5 +1,5 @@
 PETERSHIP PROPRIETARY LICENSE
-Version 1.0, October 23, 2026
+Version 1.1, October 26, 2026
 
 Copyright (c) 2026
   Peter Ho, domiciled in Ouachita Parish, Louisiana
@@ -16,14 +16,21 @@ All rights reserved.
 "PeterShip" means the shipping client described in this folder and its
 source code, wherever it lives in this repository, including:
 
-   - everything under shipping-client/
+   - everything under shipping-client/, including the printer agent
    - everything under site/src/shipping/ (the rating engine, billable
      weight rules, HTTP and OAuth helpers, the carrier adapters for USPS,
-     UPS, FedEx, DHL Express and Easyship, and their types)
-   - the shipping, label, tracking and reconciliation tables in
-     site/db/schema.sql
-   - the carrier configuration keys in site/.dev.vars.example and
-     site/wrangler.jsonc
+     UPS, FedEx, DHL Express and Easyship, their types, the shipment
+     store, the tracking poll and the customer notifier)
+   - the PeterShip pages and routes under site/src/pages/: track/,
+     counter/dropoff.astro, counter/exceptions.astro,
+     counter/reports.astro, and api/track.ts, api/track-poll.ts,
+     api/print.ts, api/dropoff.ts, api/exceptions.ts, api/reports.ts,
+     api/compare.ts
+   - the shipping, label, tracking, print queue, drop-off, contact,
+     notification and reconciliation tables in site/db/schema.sql
+   - the scheduled tracking poll in .github/workflows/track-poll.yml
+   - the carrier, printer and messaging configuration keys in
+     site/.dev.vars.example and site/wrangler.jsonc
    - any later file that the Owners mark as part of PeterShip, and any
      documentation, design or test written for the above
 
@@ -87,9 +94,10 @@ to be named as the author of the change in commit history.
 5. CARRIER TERMS AND THIRD-PARTY CODE
 ==========================================================================
 
-PeterShip calls the USPS, UPS, FedEx, DHL Express and Easyship APIs.
-Each carrier's API is used under that carrier's own developer agreement,
-which binds the account holder. The Owners' carrier accounts, keys and
+PeterShip calls the USPS, UPS, FedEx, DHL Express and Easyship APIs,
+and sends customer updates through Resend (email) and Twilio (text).
+Each carrier's or provider's API is used under its own developer
+agreement, which binds the account holder. The Owners' carrier accounts, keys and
 negotiated rates are not part of PeterShip and are never licensed. No
 carrier endorses PeterShip.
 

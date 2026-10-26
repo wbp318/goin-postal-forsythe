@@ -2,25 +2,30 @@
 
 The public website for Goin' Postal Forsythe, built with [Astro](https://astro.build) and deployed to Cloudflare. The marketing pages are plain static HTML. The shipping flow runs as a handful of Cloudflare functions. PHP is deliberately not used anywhere.
 
-Rates and payments are separate systems that never talk to each other. Easyship quotes and buys labels through the store's existing account. Online, Stripe takes the card. In the shop, the Goin' Postal POS takes the card or cash, as it must, and staff press one button on the counter page to say so. The site is the only thing in between, so any side can be swapped without touching the others.
+Rates and payments are separate systems that never talk to each other. PeterShip, the store's own shipping client in `src/shipping/`, quotes and buys labels: direct USPS, UPS, FedEx and DHL adapters when their keys are set, the store's Easyship account filling in until then. Online, Stripe takes the card. In the shop, the Goin' Postal POS takes the card or cash, as it must, and staff press one button on the counter page to say so. The site is the only thing in between, so any side can be swapped without touching the others.
 
 ```mermaid
 flowchart LR
   C["Customer"] -->|address, weight, size| S["/ship page"]
-  S -->|POST /api/rates| R["Easyship rates<br/>USPS · UPS · FedEx · DHL"]
+  S -->|POST /api/rates| R["PeterShip rating engine<br/>USPS · UPS · FedEx · DHL<br/>Easyship fills gaps"]
   R --> S
   S -->|pick a rate, POST /api/orders| O{"Domestic?"}
   O -->|yes| P["Stripe Checkout<br/>online card"]
-  P -->|webhook paid| L["Easyship buys label"]
+  P -->|webhook paid| L["PeterShip buys label<br/>records shipment in D1"]
   O -->|no, international| RES["Reserved"]
   L --> D["/ship/done<br/>PDF label + QR code + pickup code"]
   RES --> D
   D -->|scan QR or type code| K["/counter/CODE<br/>staff page, PIN"]
   K -->|international| POS["Goin' Postal POS<br/>in-person card or cash"]
   POS -->|staff press Rung up| L
-  K -->|print| PR["Shop printer"]
+  K -->|Print at the counter| PQ["print queue → printer agent<br/>→ Zebra at the counter"]
+  D -->|/track| T["Tracking page<br/>poll, email and text updates"]
+  K --> ST["Staff: drop-offs,<br/>exceptions, reports"]
   KV[("Cloudflare KV<br/>orders, 90 days")] --- O
   KV --- K
+  D1[("Cloudflare D1<br/>shipments, tracking,<br/>print queue, drop-offs")] --- L
+  D1 --- T
+  D1 --- ST
 ```
 
 ## Pages and routes
@@ -63,7 +68,7 @@ Customers see one retail price per service and never a vendor name. Behind that:
 ```mermaid
 flowchart LR
   A["Address + parcel"] --> Q["quote() in src/lib/quote.ts"]
-  Q --> C["Carrier cost<br/>one rates call covers<br/>USPS, UPS, FedEx, DHL<br/>(Easyship, store's account)"]
+  Q --> C["Carrier cost<br/>PeterShip engine: direct adapters<br/>when keyed, Easyship fills<br/>USPS, UPS, FedEx, DHL"]
   C --> P["Retail rules<br/>src/data/ratepro.json<br/>mirrored from GP Rate Pro"]
   P --> R["Price the customer sees<br/>same as the counter"]
 ```

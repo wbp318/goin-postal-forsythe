@@ -2,7 +2,7 @@
 
 PeterShip is the store's own shipping client. A plan for replacing Easyship with software the store owns: rating, labels, tracking, drop-offs and reports for USPS, UPS, FedEx and DHL, built on the same Cloudflare stack as the website. The same thing ShippingEasy, Easyship and GP Rate Pro do, but ours. PeterShip is proprietary, see [LICENSE](LICENSE); it is not under the repository's Apache license.
 
-Item 44 in [`AGENDA.md`](../AGENDA.md) tracks it. Phase 2's foundation is built and running in mock mode, and the first pieces of Phases 3, 4 and 5 (print queue and printer agent, tracking page, drop-off capture) landed October 26; see [What is built so far](#what-is-built-so-far).
+Item 44 in [`AGENDA.md`](../AGENDA.md) tracks it. Everything that can be built without carrier keys is built and running in mock mode: the rating engine (Phase 2), the print queue and printer agent (Phase 3), tracking, poll, exceptions and customer updates (Phase 4), and drop-off capture and reports (Phase 5). Releases v1.16.0 through v1.20.0, October 21 to 26, 2026. See [What is built so far](#what-is-built-so-far). What remains waits on the owners' carrier accounts (Phase 1).
 
 ## What is built so far
 
@@ -189,11 +189,11 @@ All four are free to call. Costs are postage only.
 ```mermaid
 flowchart TB
   P0["0 · Already built<br/>website, Stripe, orders,<br/>QR, counter pages"]:::local --> P1
-  P1["1 · Carrier access<br/>owners open four developer<br/>accounts, sandbox keys"]:::you --> P2
-  P2["2 · Rating engine<br/>USPS first, then UPS,<br/>FedEx, DHL. Markup rules."]:::local --> P3
-  P3["3 · Labels<br/>buy, void, PDF and ZPL,<br/>QR, customs, printer agent"]:::local --> P4
-  P4["4 · Tracking<br/>webhooks, tracking page,<br/>email and text updates"]:::local --> P5
-  P5["5 · Counter app<br/>queue, drop-off scan,<br/>customers, returns, reports"]:::local --> P6
+  P1["1 · Carrier access<br/>owners open four developer<br/>accounts, sandbox keys<br/>⏸ waiting, issue 12"]:::you --> P2
+  P2["2 · Rating engine<br/>engine, five adapters, dim weight,<br/>cache, parity endpoint<br/>✅ built, untested live"]:::local --> P3
+  P3["3 · Labels<br/>print queue, printer agent, void ✅<br/>customs, manifests ⏸ keys"]:::local --> P4
+  P4["4 · Tracking<br/>page, poll, exceptions,<br/>email and text ✅<br/>webhooks ⏸ keys"]:::local --> P5
+  P5["5 · Counter app<br/>drop-offs, reports ✅<br/>queue, customers, returns ⏳"]:::local --> P6
   P6["6 · Switch over<br/>run beside Easyship for<br/>a month, then turn it off"]:::you --> P7
   P7["7 · Later<br/>business accounts, CSV batch,<br/>Shopify and Etsy, multi-store"]:::cloud
   classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
@@ -217,37 +217,38 @@ Nothing can be tested until each one lands. They can be requested in parallel on
 
 ### Phase 2: rating engine (2 to 3 weeks)
 
-- One `Rate` model for all carriers, already defined in the site.
-- Adapter per carrier that maps our address and parcel to the carrier's request and back.
-- Dimensional weight per carrier rule, residential and delivery-area surcharges, fuel surcharge pass-through, zone lookup.
-- Retail markup from `ratepro.json`, moved into the database with an editor screen.
-- Rate cache keyed on origin, destination ZIP, weight band and dimensions, five-minute TTL, so one customer re-quoting does not hit four carriers four times.
-- Parity test: 50 real quotes compared against Easyship and against Rate Pro's screen. Must match Rate Pro to the cent before Phase 6.
+- [x] One `Rate` model for all carriers, already defined in the site.
+- [x] Adapter per carrier that maps our address and parcel to the carrier's request and back. Written to each carrier's published reference; the first sandbox call will need field fixes.
+- [x] Dimensional weight per carrier rule and the length-plus-girth oversize check. Surcharges and zones come back inside each carrier's rate response.
+- [ ] Retail markup from `ratepro.json`, moved into the database (`retail_rules` table exists) with an editor screen.
+- [x] Rate cache keyed on origin, destination ZIP, weight band and dimensions, five-minute TTL.
+- [ ] Parity test: 50 real quotes compared against Easyship and against Rate Pro's screen (`POST /api/compare` is ready). Must match Rate Pro to the cent before Phase 6.
 
 ### Phase 3: labels (2 to 3 weeks)
 
-- Buy and void per carrier, with the carrier's own QR drop-off code where it exists (USPS Label Broker, UPS and FedEx QR return codes).
-- PDF for home printing, ZPL for the counter's thermal printer.
-- Customs forms for international: CN22, CN23, commercial invoice, built from the item list the customer already types.
-- End-of-day: USPS SCAN form, UPS and FedEx manifests, pickup requests.
-- Printer agent: a tiny program on the counter PC or a networked Zebra that watches a print queue in the database, so a staff tap on the tablet prints at the counter.
+- [x] Buy and void per carrier, routed by the label id prefix, with the carrier's own QR drop-off code where it exists (USPS Label Broker, UPS and FedEx QR return codes). Untested live.
+- [x] PDF for home printing, ZPL for the counter's thermal printer. The adapters request both.
+- [ ] Customs forms for international: CN22, CN23, commercial invoice, built from the item list the customer already types. Waits on keys.
+- [ ] End-of-day: USPS SCAN form, UPS and FedEx manifests, pickup requests. Waits on keys.
+- [x] Printer agent: [`printer-agent/`](printer-agent/README.md), a small Node program on the counter PC that watches the `print_queue` table, so a staff tap on the tablet prints at the counter. Needs a test on the shop's Zebra (issue 5).
 
 ### Phase 4: tracking (1 to 2 weeks)
 
-- Register carrier webhooks where offered, poll where not, store events per shipment.
-- Tracking page on the site, same look as the done page, no login needed.
-- Email and text updates: shipped, out for delivery, delivered, exception. Text costs about a cent a message through a provider like Twilio; email is free through Cloudflare Email Workers or a transactional service.
-- Exceptions list for staff: anything stuck, returned or damaged.
+- [ ] Register carrier webhooks where offered. Waits on keys.
+- [x] Poll: `/api/track-poll` from the printer agent every ten minutes and a GitHub Action every thirty, events stored per shipment.
+- [x] Tracking page `/track`, same look as the done page, 13 languages, no login.
+- [x] Email and text updates: in transit, out for delivery, delivered, exception, returned, once per status. Resend for email, Twilio for text, logged until the keys exist. Opt-in box on the ship form.
+- [x] Exceptions list for staff at `/counter/exceptions`: carrier exceptions, returns, never scanned, not moving.
 
 ### Phase 5: counter app (3 to 4 weeks)
 
-- Replaces the counter pages with one staff app on the tablet: PIN login, roles.
-- Quote queue: everything customers reserved online, plus walk-ups entered by staff.
-- Drop-off capture: scan an incoming prepaid package's barcode, record it, print a receipt, so "I dropped it off and it never moved" has an answer. Rate Pro does this and it matters.
-- Customer lookup and history, address book, returning customer flag, which feeds the Coupon Counter.
-- Returns: generate return labels for online retailers' customers.
-- Third-party insurance quote and purchase.
-- Reports: daily shipments and margin, carrier reconciliation against the carrier invoice, returning customers, busiest hours. Agenda items 15 and 36 come free.
+- [ ] Replaces the counter pages with one staff app on the tablet: PIN login, roles (`staff` table exists). Today the counter pages share one PIN and a staff navigation line.
+- [ ] Quote queue: everything customers reserved online, plus walk-ups entered by staff.
+- [x] Drop-off capture at `/counter/dropoff`: scan the barcode, carrier guessed from the number, customer name and phone, "carrier picked up" marks the hand-over. Receipt printing not yet.
+- [ ] Customer lookup and history, address book, returning customer flag, which feeds the Coupon Counter.
+- [ ] Returns: generate return labels for online retailers' customers.
+- [ ] Third-party insurance quote and purchase.
+- [x] Reports at `/counter/reports`: daily shipments and margin, by carrier and service, busiest hours and days, returning customers, drop-offs, CSV for reconciling the carrier invoice.
 
 ### Phase 6: switch over (1 month of running both)
 
@@ -268,22 +269,26 @@ gantt
   title PeterShip build
   dateFormat YYYY-MM-DD
   axisFormat %b %d
+  section Done
+    Rating engine and five adapters        :done, d1, 2026-10-21, 1d
+    Store tracking print queue dropoffs    :done, d2, 2026-10-26, 1d
+    Poll exceptions notifications reports  :done, d3, 2026-10-26, 1d
   section Owners
     Open carrier developer accounts        :a1, 2026-11-03, 21d
     Ask GP Brands about Rate Pro           :a2, 2026-11-03, 14d
-  section Build
-    Rating engine USPS then UPS FedEx DHL  :b1, 2026-11-17, 21d
-    Labels PDF ZPL QR customs manifests    :b2, 2026-12-08, 21d
-    Printer agent at the counter           :b3, 2026-12-15, 10d
-    Tracking webhooks page notifications   :b4, 2026-12-29, 14d
-    Counter app queue dropoffs customers   :b5, 2027-01-12, 28d
-    Reports and reconciliation             :b6, 2027-02-02, 10d
+    Test printer agent on the Zebra        :a3, 2026-11-03, 7d
+  section Build after keys
+    Sandbox fixes per carrier              :b1, 2026-11-24, 14d
+    Customs forms manifests pickups        :b2, 2026-12-08, 14d
+    Carrier webhooks                       :b3, 2026-12-15, 7d
+    Parity test against Rate Pro           :b4, 2026-12-22, 14d
+    Counter app queue customers returns    :b5, 2027-01-05, 21d
   section Switch
-    Run beside Easyship and compare        :c1, 2027-02-09, 30d
-    Turn Easyship off                      :milestone, 2027-03-11, 0d
+    Run beside Easyship and compare        :c1, 2027-01-26, 30d
+    Turn Easyship off                      :milestone, 2027-02-25, 0d
 ```
 
-About four months from carrier access to switch-over, holiday season excluded from the risky parts. The build weeks assume Claude Code doing most of the typing with one person reviewing; a traditional team would quote two to three times longer.
+The first two months of the original plan were done in two sessions, October 21 and 26, 2026, because none of it needed carrier keys. About three months from carrier access to switch-over now, holiday season excluded from the risky parts. The build weeks assume Claude Code doing most of the typing with one person reviewing; a traditional team would quote two to three times longer.
 
 ## What it costs
 
@@ -307,7 +312,7 @@ Full site costs are in [`site/costs/README.md`](../site/costs/README.md).
 - **Rate parity.** If the counter and the website disagree by a dollar, customers notice. Phase 2's parity test is the gate.
 - **Franchise rules.** GP Brands may require Rate Pro for franchisee shipping. Ask before building Phase 5.
 - **Hazmat and restricted goods.** The customer form needs the carrier's hazmat questions before labels go live. Lithium batteries are the common case.
-- **Printer plumbing.** Printing from a browser to a thermal printer is the fiddliest part of any shipping client. The printer agent in Phase 3 is the fix and should be prototyped early.
+- **Printer plumbing.** Printing from a browser to a thermal printer is the fiddliest part of any shipping client. The printer agent is written and waits for a test on the shop's Zebra (issue 5); until it passes, staff print from the label PDF.
 - **Support burden.** Easyship answers "why did my label fail" today. After switch-over, we do.
 
 ## Decisions for Rin before Phase 2

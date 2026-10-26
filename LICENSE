@@ -13,7 +13,8 @@ to the copyright holders named above, and neither part grants any right to
 the trademarks listed in the NOTICE file.
 
 PART A. CODE AND PAGES: Apache License, Version 2.0
-   Applies to: everything under scripts/, the .github/ workflows, and the
+   Applies to: everything under scripts/, the .github/ workflows other
+   than track-poll.yml, and the
    HTML pages at the repository root (launch-book.html, ad-concepts.html,
    coupon-counter.html, brand-kit.html, designs/index.html), together with
    any other source code or configuration file, EXCEPT PeterShip (see
@@ -36,8 +37,13 @@ PART B. DESIGNS, DOCUMENTS AND RESEARCH:
 
 PART C. PETERSHIP: PROPRIETARY
    Applies to: everything under shipping-client/ and site/src/shipping/,
-   the shipping tables in site/db/schema.sql, and the carrier
-   configuration in site/.dev.vars.example and site/wrangler.jsonc.
+   the PeterShip pages and API routes under site/src/pages/ (track/,
+   counter/dropoff, counter/exceptions, counter/reports, and the
+   api/track, track-poll, print, dropoff, exceptions, reports and compare
+   routes), the shipping tables in site/db/schema.sql, the
+   .github/workflows/track-poll.yml workflow, and the carrier, printer
+   and messaging configuration in site/.dev.vars.example and
+   site/wrangler.jsonc. shipping-client/LICENSE lists them in full.
    PeterShip is the store's own shipping client. It may be read and run
    locally for evaluation only; it may not be deployed, distributed,
    modified or used by any other business. Full terms are in
