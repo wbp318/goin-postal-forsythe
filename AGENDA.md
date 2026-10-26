@@ -2,7 +2,7 @@
 
 Working list for the Forsythe store's marketing kit. Updated as each item is finished.
 
-_Last updated: Oct 19, 2026_
+_Last updated: Oct 26, 2026_
 
 ## Status
 
@@ -256,6 +256,27 @@ timeline
     Feb 1 : St. Frederick 2027 football program ads go on sale
 ```
 
+## Next up
+
+What gets built next, in order. None of it needs carrier keys.
+
+| # | Item | What you get | Status |
+|---|---|---|---|
+| N1 | PeterShip quote queue (#44e) | `/counter/queue`: every quote customers reserved online plus walk-ups staff type in, oldest first, with buy-label and void from the same screen | ⏳ Next |
+| N2 | PeterShip customer lookup (#44e) | `/counter/customers`: search by name, phone or email, shipment history, address book, returning-customer flag that feeds the Coupon Counter | ⏳ After N1 |
+| N3 | Retail rules editor (#44b, #43) | Markup rules moved from `ratepro.json` into the `retail_rules` table with a staff screen to edit them, so Rin's prices change without a deploy | ⏳ After N2 |
+| N4 | Drop-off receipt printing (#44e) | Receipt through the print queue when a drop-off is captured | ⏳ After N3 |
+
+```mermaid
+flowchart LR
+  N1["N1 Quote queue"] --> N2["N2 Customer lookup"] --> N3["N3 Retail rules editor"] --> N4["N4 Drop-off receipt"]
+  N3 -.->|"after the export, issue 11"| R["#43 prices match Rate Pro"]
+  classDef store fill:#f2b705,stroke:#3b2c00,color:#3b2c00
+  classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
+  class N1,N2,N3,N4 store
+  class R cloud
+```
+
 ## To do: things only the owners can supply
 
 Nothing in the repo is blocked except these. Each one unlocks the item in the right-hand column.
@@ -312,3 +333,4 @@ flowchart LR
 - **Oct 18:** Round 3 added (#24 to #37): fourteen store improvements, from a Google review card and services menu board to a ULM student mailbox program, small-business accounts, a referral code and a home-turf competitor map. Released as v1.1.0.
 - **Oct 18:** #23b done. `research/` now has 23 state folders (alaska through wyoming), each with a ranked candidate table, two charts, a dropped list and sources. Top picks re-checked by search. Released as v1.4.0.
 - **Oct 19:** Owner guard fixed so the scripts also run under `python -I` (v1.4.1). To-do table T1 to T6 added for the things only the owners can supply; the listing link (T1) is what holds up #12 and #25. Released as v1.5.0.
+- **Oct 26:** PeterShip v1.17.0 to v1.20.1: tracking, print queue and printer agent, drop-offs, poll, exceptions, email and text updates, reports, docs and licenses. Next-up table added (N1 to N4): quote queue, customer lookup, retail rules editor, drop-off receipt.
