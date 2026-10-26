@@ -1,0 +1,74 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+
+// Public tracking page. Same look as the done page, no login. Takes the pickup code (GP-XXXXXX) or
+// the carrier tracking number; /track?q=... fills it in so the done page and emails can link straight here.
+const q = Astro.url.searchParams.get('q') ?? '';
+---
+<Base title="Track a package · Goin' Postal Forsythe" description="Track a package shipped from Goin' Postal Forsythe with your pickup code or tracking number.">
+  <section class="hero">
+    <h1 data-i18n="track.title">Track a package</h1>
+    <p class="lead" data-i18n="track.lead">Type the pickup code from your order page, or the carrier tracking number from your label.</p>
+  </section>
+
+  <form id="track" class="card" autocomplete="off">
+    <label><span data-i18n="track.field">Pickup code or tracking number</span> <input name="q" value={q} placeholder="GP-7K3M9Q" required minlength="4" maxlength="40" inputmode="text" autocapitalize="characters" /></label>
+    <p class="btnrow"><button class="btn" type="submit" data-i18n="track.button">Track</button></p>
+    <p id="msg" class="err" role="alert"></p>
+  </form>
+
+  <div id="result" class="grid hidden">
+    <div class="card">
+      <h3 id="r-status"></h3>
+      <p><span id="r-service"></span> <span data-i18n="track.to">to</span> <strong id="r-to"></strong></p>
+      <p><span data-i18n="done.tracking">Tracking</span>: <span class="code" id="r-tracking"></span></p>
+      <p class="muted"><span data-i18n="done.code">Pickup code</span> <span id="r-id"></span></p>
+    </div>
+    <div class="card">
+      <h3 data-i18n="track.history">History</h3>
+      <ol class="timeline" id="r-events"></ol>
+    </div>
+  </div>
+
+  <script>
+    import { t } from '../../i18n';
+    const form = document.getElementById('track') as HTMLFormElement;
+    const msg = document.getElementById('msg')!;
+    const result = document.getElementById('result')!;
+    const $ = (id: string) => document.getElementById(id)!;
+    const STATUS: Record<string, string> = {
+      labeled: 'track.s.labeled', printed: 'track.s.labeled', label_created: 'track.s.labeled', in_transit: 'track.s.transit',
+      out_for_delivery: 'track.s.out', delivered: 'track.s.delivered', exception: 'track.s.exception', returned: 'track.s.returned', voided: 'track.s.voided', unknown: 'track.s.unknown',
+    };
+    const fmt = (iso: string) => new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+
+    async function lookup(q: string) {
+      msg.textContent = '';
+      result.classList.add('hidden');
+      const res = await fetch(`/api/track?q=${encodeURIComponent(q)}`);
+      const j = await res.json();
+      if (!res.ok) { msg.textContent = res.status === 404 ? t('track.notfound') : j.error; return; }
+      $('r-status').textContent = t(STATUS[j.status] ?? 'track.s.unknown');
+      $('r-service').textContent = `${j.carrier} ${j.service}`.trim();
+      $('r-to').textContent = j.to;
+      $('r-tracking').textContent = j.tracking_number ?? '—';
+      $('r-id').textContent = j.id;
+      const ol = $('r-events');
+      ol.innerHTML = '';
+      for (const e of j.events) {
+        const li = document.createElement('li');
+        li.innerHTML = `<time>${fmt(e.at)}</time><strong></strong><span></span>`;
+        li.querySelector('strong')!.textContent = e.description;
+        li.querySelector('span')!.textContent = e.location ?? '';
+        ol.appendChild(li);
+      }
+      result.classList.remove('hidden');
+      history.replaceState(null, '', `/track?q=${encodeURIComponent(q)}`);
+    }
+
+    form.addEventListener('submit', (ev) => { ev.preventDefault(); lookup((form.elements.namedItem('q') as HTMLInputElement).value.trim()); });
+    const initial = (form.elements.namedItem('q') as HTMLInputElement).value.trim();
+    if (initial) lookup(initial);
+  </script>
+</Base>

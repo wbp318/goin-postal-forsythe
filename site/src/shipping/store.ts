@@ -1,0 +1,218 @@
+// PeterShip's own records: shipments, tracking events, the print queue and drop-offs, in Cloudflare D1.
+// Orders still live in KV (that is what the customer pages read); every bought label is also written
+// here, which is what tracking, the printer agent, drop-offs and the reports in agenda item 36 read.
+// Without a D1 binding (plain `npm run dev`) everything falls back to memory so the pages still work.
+import type { Label, TrackingEvent } from './types';
+import type { Order } from '../lib/orders';
+
+export interface ShipmentRow {
+  id: string;
+  carrier: string;
+  service: string;
+  rate_id: string;
+  provider: string;
+  origin_json: string;
+  destination_json: string;
+  parcel_json: string;
+  billable_weight_lb: number | null;
+  cost: number;
+  price: number;
+  tax: number;
+  paid_via: string | null;
+  tracking_number: string | null;
+  label_id: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PrintJob {
+  id: number;
+  shipment_id: string | null;
+  kind: 'label_zpl' | 'label_pdf' | 'receipt' | 'card_sheet';
+  payload: string;
+  printer: string;
+  queued_at: string;
+  printed_at: string | null;
+}
+
+export interface Dropoff {
+  id: number;
+  barcode: string;
+  carrier: string | null;
+  customer_name: string | null;
+  customer_phone: string | null;
+  accepted_by: string | null;
+  accepted_at: string;
+  handed_to_carrier_at: string | null;
+  notes: string | null;
+}
+
+/** Guess the carrier from a barcode or tracking number. Good enough for drop-offs; the carrier confirms on scan. */
+export function carrierFromBarcode(code: string): string | null {
+  const c = code.replace(/\s+/g, '').toUpperCase();
+  if (/^1Z[0-9A-Z]{16}$/.test(c)) return 'UPS';
+  if (/^(9[2-5]\d{20,24}|420\d{27,31}|[A-Z]{2}\d{9}US)$/.test(c)) return 'USPS';
+  if (/^(\d{12}|\d{15}|\d{20}|96\d{20})$/.test(c)) return 'FedEx';
+  if (/^(\d{10}|JD\d{18}|JJD\d{16,18})$/.test(c)) return 'DHL';
+  return null;
+}
+
+const now = () => new Date().toISOString();
+
+// ---- memory fallback -------------------------------------------------------------------------
+const mem = {
+  shipments: new Map<string, ShipmentRow>(),
+  events: new Map<string, (TrackingEvent & { id: number })[]>(),
+  jobs: [] as PrintJob[],
+  dropoffs: [] as Dropoff[],
+  seq: 1,
+};
+
+// ---- shipments --------------------------------------------------------------------------------
+export async function recordShipment(env: Env, order: Order, label: Label, paidVia: 'stripe' | 'pos' | 'mock') {
+  const t = now();
+  const row: ShipmentRow = {
+    id: order.id,
+    carrier: order.rate.carrier, service: order.rate.service, rate_id: order.rate.id, provider: order.rate.id.split(':')[0],
+    origin_json: JSON.stringify(order.origin), destination_json: JSON.stringify(order.destination), parcel_json: JSON.stringify(order.parcel),
+    billable_weight_lb: order.rate.billable_weight_lb ?? null,
+    cost: label.cost || order.rate.cost, price: order.rate.total_charge, tax: 0, paid_via: paidVia,
+    tracking_number: label.tracking_number, label_id: label.id, status: 'labeled', created_at: order.created_at, updated_at: t,
+  };
+  if (env.DB) {
+    await env.DB.prepare(
+      `INSERT OR REPLACE INTO shipments (id, carrier, service, rate_id, provider, origin_json, destination_json, parcel_json, billable_weight_lb, cost, price, tax, paid_via, tracking_number, label_id, status, created_at, updated_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)`,
+    ).bind(row.id, row.carrier, row.service, row.rate_id, row.provider, row.origin_json, row.destination_json, row.parcel_json, row.billable_weight_lb, row.cost, row.price, row.tax, row.paid_via, row.tracking_number, row.label_id, row.status, row.created_at, row.updated_at).run();
+  } else {
+    mem.shipments.set(row.id, row);
+  }
+  await addTrackingEvents(env, row.id, [{ at: t, status: 'label_created', description: `Label created, ${row.carrier} ${row.service}` }]);
+  return row;
+}
+
+/** Look a shipment up by its GP code or by tracking number. */
+export async function findShipment(env: Env, q: string): Promise<ShipmentRow | null> {
+  const code = q.trim().toUpperCase();
+  const tracking = q.replace(/\s+/g, '').toUpperCase();
+  if (env.DB) {
+    return (await env.DB.prepare('SELECT * FROM shipments WHERE id = ?1 OR REPLACE(UPPER(tracking_number), " ", "") = ?2 LIMIT 1').bind(code, tracking).first<ShipmentRow>()) ?? null;
+  }
+  for (const s of mem.shipments.values()) if (s.id === code || (s.tracking_number ?? '').replace(/\s+/g, '').toUpperCase() === tracking) return s;
+  return null;
+}
+
+export async function setShipmentStatus(env: Env, id: string, status: string) {
+  if (env.DB) { await env.DB.prepare('UPDATE shipments SET status = ?2, updated_at = ?3 WHERE id = ?1').bind(id, status, now()).run(); return; }
+  const s = mem.shipments.get(id);
+  if (s) { s.status = status; s.updated_at = now(); }
+}
+
+/** Shipments that have not been delivered yet, oldest first; what the tracking poller and the staff exceptions list walk. */
+export async function openShipments(env: Env, limit = 200): Promise<ShipmentRow[]> {
+  const open = ['labeled', 'printed', 'in_transit', 'out_for_delivery', 'exception'];
+  if (env.DB) {
+    const r = await env.DB.prepare(`SELECT * FROM shipments WHERE status IN (${open.map(() => '?').join(',')}) ORDER BY updated_at ASC LIMIT ${limit}`).bind(...open).all<ShipmentRow>();
+    return r.results;
+  }
+  return [...mem.shipments.values()].filter((s) => open.includes(s.status)).sort((a, b) => a.updated_at.localeCompare(b.updated_at)).slice(0, limit);
+}
+
+// ---- tracking events --------------------------------------------------------------------------
+export async function addTrackingEvents(env: Env, shipmentId: string, events: TrackingEvent[]) {
+  if (!events.length) return 0;
+  const existing = await listTrackingEvents(env, shipmentId);
+  const seen = new Set(existing.map((e) => `${e.at}|${e.status}|${e.description}`));
+  const fresh = events.filter((e) => !seen.has(`${e.at}|${e.status}|${e.description}`));
+  if (!fresh.length) return 0;
+  if (env.DB) {
+    const stmt = env.DB.prepare('INSERT INTO tracking_events (shipment_id, at, status, description, location) VALUES (?1, ?2, ?3, ?4, ?5)');
+    await env.DB.batch(fresh.map((e) => stmt.bind(shipmentId, e.at, e.status, e.description, e.location ?? null)));
+  } else {
+    const list = mem.events.get(shipmentId) ?? [];
+    for (const e of fresh) list.push({ ...e, id: mem.seq++ });
+    mem.events.set(shipmentId, list);
+  }
+  // The newest event drives the shipment's status, except that a label event never moves it backwards.
+  const latest = [...fresh].sort((a, b) => b.at.localeCompare(a.at))[0];
+  if (latest.status !== 'label_created' && latest.status !== 'unknown') await setShipmentStatus(env, shipmentId, latest.status);
+  return fresh.length;
+}
+
+export async function listTrackingEvents(env: Env, shipmentId: string): Promise<TrackingEvent[]> {
+  if (env.DB) {
+    const r = await env.DB.prepare('SELECT at, status, description, location FROM tracking_events WHERE shipment_id = ?1 ORDER BY at DESC').bind(shipmentId).all<TrackingEvent>();
+    return r.results.map((e) => ({ ...e, location: e.location ?? undefined }));
+  }
+  return [...(mem.events.get(shipmentId) ?? [])].sort((a, b) => b.at.localeCompare(a.at)).map(({ id, ...e }) => e);
+}
+
+// ---- print queue ------------------------------------------------------------------------------
+export async function queuePrint(env: Env, job: Pick<PrintJob, 'shipment_id' | 'kind' | 'payload'> & { printer?: string }): Promise<number> {
+  const printer = job.printer ?? 'counter';
+  if (env.DB) {
+    const r = await env.DB.prepare('INSERT INTO print_queue (shipment_id, kind, payload, printer, queued_at) VALUES (?1, ?2, ?3, ?4, ?5) RETURNING id').bind(job.shipment_id, job.kind, job.payload, printer, now()).first<{ id: number }>();
+    return r!.id;
+  }
+  const j: PrintJob = { id: mem.seq++, shipment_id: job.shipment_id, kind: job.kind, payload: job.payload, printer, queued_at: now(), printed_at: null };
+  mem.jobs.push(j);
+  return j.id;
+}
+
+/** Oldest unprinted job for a printer. The agent calls this every few seconds. */
+export async function nextPrintJob(env: Env, printer = 'counter'): Promise<PrintJob | null> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM print_queue WHERE printer = ?1 AND printed_at IS NULL ORDER BY id ASC LIMIT 1').bind(printer).first<PrintJob>()) ?? null;
+  return mem.jobs.find((j) => j.printer === printer && !j.printed_at) ?? null;
+}
+
+export async function markPrinted(env: Env, id: number) {
+  if (env.DB) { await env.DB.prepare('UPDATE print_queue SET printed_at = ?2 WHERE id = ?1 AND printed_at IS NULL').bind(id, now()).run(); return; }
+  const j = mem.jobs.find((x) => x.id === id);
+  if (j && !j.printed_at) j.printed_at = now();
+}
+
+export async function pendingPrintJobs(env: Env): Promise<PrintJob[]> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM print_queue WHERE printed_at IS NULL ORDER BY id ASC LIMIT 50').all<PrintJob>()).results;
+  return mem.jobs.filter((j) => !j.printed_at);
+}
+
+// ---- drop-offs --------------------------------------------------------------------------------
+export async function recordDropoff(env: Env, d: { barcode: string; carrier?: string | null; customer_name?: string; customer_phone?: string; accepted_by?: string; notes?: string }): Promise<Dropoff> {
+  const row: Omit<Dropoff, 'id'> = {
+    barcode: d.barcode.replace(/\s+/g, '').toUpperCase(), carrier: d.carrier ?? carrierFromBarcode(d.barcode),
+    customer_name: d.customer_name?.trim() || null, customer_phone: d.customer_phone?.trim() || null,
+    accepted_by: d.accepted_by?.trim() || null, accepted_at: now(), handed_to_carrier_at: null, notes: d.notes?.trim() || null,
+  };
+  if (env.DB) {
+    const r = await env.DB.prepare('INSERT INTO dropoffs (barcode, carrier, customer_name, customer_phone, accepted_by, accepted_at, notes) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7) RETURNING id')
+      .bind(row.barcode, row.carrier, row.customer_name, row.customer_phone, row.accepted_by, row.accepted_at, row.notes).first<{ id: number }>();
+    return { id: r!.id, ...row };
+  }
+  const full = { id: mem.seq++, ...row };
+  mem.dropoffs.unshift(full);
+  return full;
+}
+
+export async function findDropoffs(env: Env, barcode: string): Promise<Dropoff[]> {
+  const b = barcode.replace(/\s+/g, '').toUpperCase();
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM dropoffs WHERE barcode = ?1 ORDER BY id DESC').bind(b).all<Dropoff>()).results;
+  return mem.dropoffs.filter((d) => d.barcode === b);
+}
+
+export async function recentDropoffs(env: Env, limit = 50): Promise<Dropoff[]> {
+  if (env.DB) return (await env.DB.prepare(`SELECT * FROM dropoffs ORDER BY id DESC LIMIT ${limit}`).all<Dropoff>()).results;
+  return mem.dropoffs.slice(0, limit);
+}
+
+/** End of day: every drop-off accepted today that is not yet marked as handed to its carrier. */
+export async function markDropoffsHanded(env: Env, carrier: string): Promise<number> {
+  const t = now();
+  if (env.DB) {
+    const r = await env.DB.prepare('UPDATE dropoffs SET handed_to_carrier_at = ?2 WHERE carrier = ?1 AND handed_to_carrier_at IS NULL').bind(carrier, t).run();
+    return r.meta.changes ?? 0;
+  }
+  let n = 0;
+  for (const d of mem.dropoffs) if (d.carrier === carrier && !d.handed_to_carrier_at) { d.handed_to_carrier_at = t; n++; }
+  return n;
+}

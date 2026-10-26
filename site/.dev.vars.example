@@ -4,6 +4,9 @@
 # Staff PIN for the counter pages and the parity endpoint.
 COUNTER_PIN=1234
 
+# Shared secret for the counter printer agent (shipping-client/printer-agent). Any long random string.
+PRINTER_KEY=change-me
+
 # Stripe: dashboard > Developers > API keys (sk_test_ for testing). Webhook secret from Developers > Webhooks.
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=

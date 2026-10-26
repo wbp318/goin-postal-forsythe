@@ -27,7 +27,7 @@ const paid = order.status === 'labeled' || order.status === 'printed';
       <p>{order.parcel.weight_lb} lb · {order.parcel.length_in}×{order.parcel.width_in}×{order.parcel.height_in} in</p>
       <p><strong>${order.rate.total_charge.toFixed(2)}</strong> {order.status === 'reserved' ? '(pay at the counter)' : '(paid)'}</p>
       {paid && order.label?.label_url && <p><a class="btn" href={order.label.label_url} target="_blank" rel="noopener" data-i18n="done.download">Download label (PDF)</a></p>}
-      {paid && order.label?.tracking_number && <p><span data-i18n="done.tracking">Tracking</span>: {order.label.tracking_number}</p>}
+      {paid && order.label?.tracking_number && <p><span data-i18n="done.tracking">Tracking</span>: {order.label.tracking_number} · <a href={`/track?q=${order.id}`} data-i18n="done.track">Track this package</a></p>}
       {order.status === 'awaiting_payment' && <p><span data-i18n="done.startagain">If you closed the payment page,</span> <a href="/ship" data-i18n="done.again">start again</a>.</p>}
     </div>
 

@@ -1,0 +1,91 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+
+// Staff page: drop-off capture. A customer brings a prepaid or return package; scan or type its
+// barcode and we record it with the time. A USB or Bluetooth barcode scanner acts as a keyboard,
+// so a scan types the number into the focused field and presses Enter.
+---
+<Base title="Counter · Drop-offs">
+  <section class="hero">
+    <h1>Drop-offs</h1>
+    <p class="lead">Scan the label's barcode, or type the tracking number. Each scan is recorded with the time, so a customer asking "did my package go out?" gets an answer.</p>
+  </section>
+
+  <div class="grid">
+    <form id="accept" class="card" autocomplete="off">
+      <label>Staff PIN <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
+      <label>Barcode or tracking number <input name="barcode" required minlength="8" maxlength="40" autofocus autocapitalize="characters" placeholder="Scan here" /></label>
+      <label>Carrier <select name="carrier"><option value="">Guess from the barcode</option><option>USPS</option><option>UPS</option><option>FedEx</option><option>DHL</option><option>Amazon</option></select></label>
+      <label>Customer name (optional) <input name="customer_name" maxlength="60" /></label>
+      <label>Customer phone (optional) <input name="customer_phone" maxlength="20" inputmode="tel" /></label>
+      <label>Your name or initials <input name="staff" maxlength="20" /></label>
+      <p class="btnrow"><button class="btn" type="submit">Accept drop-off</button></p>
+      <p id="msg" role="alert"></p>
+    </form>
+
+    <div class="card">
+      <h3>Recent</h3>
+      <p class="btnrow">
+        <button class="btn kraft" data-handed="USPS">USPS picked up</button>
+        <button class="btn kraft" data-handed="UPS">UPS picked up</button>
+        <button class="btn kraft" data-handed="FedEx">FedEx picked up</button>
+        <button class="btn kraft" data-handed="DHL">DHL picked up</button>
+      </p>
+      <p class="muted">Tap a carrier when its driver leaves. Every drop-off for that carrier still at the counter is marked as handed over at that time.</p>
+      <ol class="timeline" id="recent"></ol>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('accept') as HTMLFormElement;
+    const msg = document.getElementById('msg')!;
+    const pin = () => (document.getElementById('pin') as HTMLInputElement).value;
+    const recent = document.getElementById('recent')!;
+    const field = (n: string) => form.elements.namedItem(n) as HTMLInputElement;
+    const fmt = (iso: string) => new Date(iso).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    const beep = (ok: boolean) => { try { const c = new AudioContext(); const o = c.createOscillator(); o.frequency.value = ok ? 880 : 220; o.connect(c.destination); o.start(); o.stop(c.currentTime + 0.12); } catch {} };
+
+    async function api(body: Record<string, unknown>) {
+      const res = await fetch('/api/dropoff', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin(), ...body }) });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error);
+      return j;
+    }
+
+    async function refresh() {
+      if (!pin()) return;
+      try {
+        const { dropoffs } = await api({ action: 'recent' });
+        recent.innerHTML = '';
+        for (const d of dropoffs) {
+          const li = document.createElement('li');
+          li.innerHTML = `<time>${fmt(d.accepted_at)}</time><strong></strong><span></span>`;
+          li.querySelector('strong')!.textContent = `${d.carrier ?? '?'} ${d.barcode}`;
+          li.querySelector('span')!.textContent = [d.customer_name, d.handed_to_carrier_at ? `handed to carrier ${fmt(d.handed_to_carrier_at)}` : 'at the counter'].filter(Boolean).join(' · ');
+          recent.appendChild(li);
+        }
+      } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    }
+
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const body = Object.fromEntries(new FormData(form).entries());
+      msg.textContent = '';
+      try {
+        const j = await api({ action: 'accept', ...body });
+        beep(true);
+        msg.className = '';
+        msg.textContent = `Accepted ${j.dropoff.carrier ?? ''} ${j.dropoff.barcode}${j.duplicate ? ' (this barcode was scanned before)' : ''}`;
+        for (const n of ['barcode', 'customer_name', 'customer_phone']) field(n).value = '';
+        field('barcode').focus();
+        refresh();
+      } catch (e: any) { beep(false); msg.className = 'err'; msg.textContent = e.message; }
+    });
+    document.querySelectorAll<HTMLButtonElement>('[data-handed]').forEach((b) => b.addEventListener('click', async () => {
+      try { const j = await api({ action: 'handed', carrier: b.dataset.handed }); msg.className = ''; msg.textContent = `${j.count} ${b.dataset.handed} drop-off(s) marked as picked up.`; refresh(); }
+      catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    }));
+    document.getElementById('pin')!.addEventListener('change', refresh);
+  </script>
+</Base>

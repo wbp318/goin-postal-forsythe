@@ -873,6 +873,8 @@ flowchart LR
 
 About four months from carrier access to switch-over. Carrier APIs cost nothing beyond postage. The one question to settle before building the counter app is whether GP Brands lets a franchisee quote and ship outside Rate Pro.
 
+Built so far, all running in mock mode until the carrier keys arrive: the rating engine with five adapters, a D1 store for shipments, a public tracking page at `/track` in 13 languages, a print queue with a [printer agent](shipping-client/printer-agent/README.md) for the counter PC, and drop-off capture at `/counter/dropoff`.
+
 ## Monetization plan
 
 Every way the store can earn from what it runs on Cloudflare, ranked by effort against money, in [`monetization/README.md`](monetization/README.md). The quick ones need only prices from Rin: an online convenience fee, paper and finish upsells on business cards, insurance and packaging add-ons on labels. Next come mailbox subscriptions billed monthly through Stripe, a returns drop-off service and a text-me-when-delivered fee. Then print products beyond cards, business accounts for local sellers, and a seller API. The big ones, selling the shipping client and a white-label card designer to other Goin' Postal stores, run multi-store on the same single Cloudflare install and need GP Brands' blessing first. Cloudflare's own bill stays between $0 and about $50 a month even at fifty stores. Agenda item 45.

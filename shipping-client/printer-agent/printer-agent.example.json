@@ -1,0 +1,9 @@
+{
+  "site": "http://localhost:4321",
+  "key": "change-me",
+  "printer": "counter",
+  "poll_seconds": 3,
+  "zebra": { "host": "192.168.1.50", "port": 9100, "share": "" },
+  "pdf": { "spool": "spool", "app": "" },
+  "receipt": { "host": "", "port": 9100, "share": "" }
+}

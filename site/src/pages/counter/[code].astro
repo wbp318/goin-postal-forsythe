@@ -26,7 +26,9 @@ if (!order) return new Response('No such order', { status: 404 });
       <label>Staff PIN <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
       {order.status === 'reserved' && <p><button class="btn" data-action="paid">Rung up on the POS. Buy label</button></p>}
       {order.label?.label_url && <p><a class="btn" href={order.label.label_url} target="_blank" rel="noopener">Open label to print</a></p>}
+      {order.label && <p><button class="btn" data-print="counter">Print at the counter</button> <span class="muted">sends it to the label printer</span></p>}
       {order.status === 'labeled' && <p><button class="btn kraft" data-action="printed">Mark printed</button></p>}
+      {order.label?.tracking_number && <p><a href={`/track?q=${order.id}`}>Tracking</a> · <a href="/counter/dropoff">Drop-offs</a></p>}
       {order.status === 'printed' && <p>Printed {order.printed_at}.</p>}
       {order.status === 'awaiting_payment' && <p>Not paid online yet. Ask the customer to finish payment, or quote it again here and ring it up on the POS.</p>}
       <p id="msg"></p>
@@ -42,6 +44,15 @@ if (!order) return new Response('No such order', { status: 404 });
       const j = await res.json();
       if (!res.ok) { msg.textContent = j.error; b.disabled = false; return; }
       location.reload();
+    }));
+    document.querySelectorAll('[data-print]').forEach((b) => b.addEventListener('click', async () => {
+      const pin = document.getElementById('pin').value;
+      b.disabled = true;
+      const res = await fetch('/api/print', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order: id, pin, action: 'queue', printer: b.dataset.print }) });
+      const j = await res.json();
+      b.disabled = false;
+      if (!res.ok) { msg.textContent = j.error; return; }
+      msg.textContent = j.agent ? `Queued for the ${b.dataset.print} printer (${j.kind === 'label_zpl' ? 'thermal' : 'PDF'}).` : 'Queued, but no printer agent is set up yet. Use "Open label to print" for now.';
     }));
   </script>
 </Base>

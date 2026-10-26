@@ -1,6 +1,6 @@
 // Easyship as one adapter among five: the single-call fallback that covers all four carriers.
 // Stays switched on until the direct adapters have passed the parity test, then becomes the fallback.
-import type { Provider, Rate } from '../types';
+import type { Provider, Rate, TrackingEvent } from '../types';
 import { getRates, buyLabel as esBuy } from '../../lib/easyship';
 import { billableWeightLb } from '../dim';
 
@@ -29,5 +29,21 @@ export const easyship: Provider = {
       id: `easyship:${l.easyship_shipment_id}`, carrier: 'USPS', service: '', label_url: l.label_url, label_zpl: null, qr_url: l.qr_url,
       tracking_number: l.tracking_number, tracking_page_url: l.tracking_page_url, cost: 0,
     };
+  },
+
+  // Easyship's tracking lives on its own page (tracking_page_url). With no token we are in mock mode
+  // and invent a plausible sequence from the label time, so the /track page can be tested end to end.
+  async track(env, trackingNumber) {
+    if (env.EASYSHIP_TOKEN) return [];
+    const h = (n: number) => new Date(Date.now() - n * 3600_000).toISOString();
+    const seed = trackingNumber.replace(/\D/g, '').slice(-2);
+    const step = Number(seed) % 4; // 0..3, so repeated lookups of the same number are stable
+    const all: TrackingEvent[] = [
+      { at: h(30), status: 'label_created', description: 'Shipping label created', location: 'Monroe, LA 71201' },
+      { at: h(26), status: 'in_transit', description: 'Accepted at USPS origin facility', location: 'Monroe, LA 71201' },
+      { at: h(14), status: 'in_transit', description: 'Arrived at USPS regional facility', location: 'Shreveport, LA' },
+      { at: h(3), status: 'out_for_delivery', description: 'Out for delivery', location: 'Destination' },
+    ];
+    return all.slice(0, step + 1);
   },
 };

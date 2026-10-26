@@ -1,7 +1,7 @@
 // PeterShip's rating engine. Asks every configured carrier in parallel, normalizes, applies the
 // store's retail rules, caches for five minutes, and returns one list sorted by price.
 // If a carrier is down the others still answer; the failure is logged, never shown.
-import type { Address, Parcel, Rate, Label } from './types';
+import type { Address, Parcel, Rate, Label, TrackingEvent } from './types';
 import { usps } from './providers/usps';
 import { ups } from './providers/ups';
 import { fedex } from './providers/fedex';
@@ -71,4 +71,25 @@ export async function compare(env: Env, origin: Address, destination: Address, p
     catch (e: any) { return { provider: p.id, configured: true, rates: [], error: String(e.message) }; }
   }));
   return rows;
+}
+
+function providerFor(id: string) {
+  const provider = [...DIRECT, easyship].find((p) => p.id === id.split(':')[0]);
+  if (!provider) throw new Error(`Unknown provider in ${id}`);
+  return provider;
+}
+
+/** Void a bought label. Routed by the label id prefix, same as buying. Easyship labels cannot be voided through us yet. */
+export async function voidLabel(env: Env, labelId: string): Promise<void> {
+  const provider = providerFor(labelId);
+  if (!provider.voidLabel) throw new Error(`${provider.id} labels cannot be voided from here`);
+  await provider.voidLabel(env, labelId);
+}
+
+/** Latest carrier events for a shipment, newest first. Routed by the label id prefix. Returns [] when the adapter has no tracking. */
+export async function track(env: Env, labelId: string, trackingNumber: string): Promise<TrackingEvent[]> {
+  const provider = providerFor(labelId);
+  if (!provider.track) return [];
+  const events = await provider.track(env, trackingNumber.replace(/\s+/g, ''));
+  return events.sort((a, b) => b.at.localeCompare(a.at));
 }
