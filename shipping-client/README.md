@@ -298,7 +298,7 @@ The first two months of the original plan were done in two sessions, October 21 
 | Cloudflare D1 database | $0 on the free plan up to 5 GB and 5 million reads a day; $5 a month Workers Paid if exceeded. |
 | Text updates | about $0.01 a message through Twilio or similar. 300 shipments a month with three texts each is about $9. |
 | Email updates | $0 with Cloudflare Email Workers; a transactional service like Resend is free to 3,000 a month. |
-| Thermal label printer | $150 to $400 one time if the shop does not already have a 4x6 thermal printer (issue 5). |
+| Thermal label printer | $0. The shop already has one. The printer agent test against it is issue 5. |
 | Barcode scanner for drop-offs | $30 to $80 one time, or the tablet camera. |
 | Third-party insurance | per policy, passed to the customer. |
 | Saved | Easyship's per-label and per-quote fees, and any Easyship or Rate Pro subscription the store pays today. |

@@ -2,7 +2,7 @@
 
 The question: how much does the store save each month by rating, labelling and tracking through its own client instead of Easyship and GP Rate Pro?
 
-Short answer: on fees alone, between about **$40 and $85 a month** depending on volume, which pays off the one-time hardware in three to twelve months. Whatever the store pays today for a Rate Pro or Easyship subscription comes on top of that, dollar for dollar. The bigger wins are not on this page: the margin on every label is set in our own file, the data is ours, and the counter and the website always quote the same number.
+Short answer: on fees alone, between about **$40 and $85 a month** depending on volume. The shop already owns a thermal label printer, so the only hardware is an optional $30 to $80 barcode scanner and the saving starts in month one. Whatever the store pays today for a Rate Pro or Easyship subscription comes on top of that, dollar for dollar. The bigger wins are not on this page: the margin on every label is set in our own file, the data is ours, and the counter and the website always quote the same number.
 
 Every figure below is an estimate from public pricing. The two numbers only Rin can fill in are marked **[Rin]**.
 
@@ -63,36 +63,37 @@ The tall bars are Easyship today. The short bars are PeterShip.
 
 | One-time item | Cost | Note |
 |---|---|---|
-| Thermal label printer | $150 to $400 | Skip if the shop already has a 4x6 thermal printer. Issue 5. |
-| Barcode scanner for drop-offs | $30 to $80 | Or use the tablet camera for $0. |
+| Thermal label printer | $0 | The shop already has one (confirmed October 26, 2026). What remains is the printer agent test against it, issue 5. |
+| Barcode scanner for drop-offs | $0 to $80 | Or use the tablet camera for $0. |
 | Build time | [Rin] | About three months from carrier keys to switch-over, with Claude Code doing most of the typing and one person reviewing. Count it at whatever that person's time is worth. |
-| **Hardware total** | **$180 to $480** | $0 to $80 if the printer is already there. |
+| **Hardware total** | **$0 to $80** | A scanner if staff want one. Nothing else. |
 
 Optional running cost that is new, not a replacement: text updates at about $0.01 a message. Three texts per shipment is $3, $9 or $18 a month at the three volumes. The monetization plan prices this as a customer add-on, so it can pay for itself.
 
 ## Payback
 
-Cumulative fee saving against the hardware, month by month, at the steady volume of 300 shipments and with no Rate Pro subscription counted.
+With the printer already in the shop, there is almost nothing to pay back. Cumulative fee saving month by month at the three volumes, with no Rate Pro subscription counted, against the $80 scanner if staff buy one.
 
 ```mermaid
 xychart-beta
-  title "Steady volume: cumulative saving vs hardware"
+  title "Cumulative saving in year one, scanner as the only cost"
   x-axis "Months after switch-over" [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-  y-axis "Dollars" 0 --> 750
+  y-axis "Dollars" 0 --> 1050
+  line [39, 78, 117, 156, 195, 234, 273, 312, 351, 390, 429, 468]
   line [59, 118, 177, 236, 295, 354, 413, 472, 531, 590, 649, 708]
-  line [180, 180, 180, 180, 180, 180, 180, 180, 180, 180, 180, 180]
-  line [480, 480, 480, 480, 480, 480, 480, 480, 480, 480, 480, 480]
+  line [84, 168, 252, 336, 420, 504, 588, 672, 756, 840, 924, 1008]
+  line [80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80]
 ```
 
-The rising line is the saving. The two flat lines are the cheap and expensive hardware cases.
+The three rising lines are quiet, steady and busy. The flat line is the scanner.
 
-| Volume | Cheap hardware, $180 | Expensive hardware, $480 | Printer already owned |
-|---|---|---|---|
-| Quiet, $39 a month | 5 months | 13 months | immediate |
-| Steady, $59 a month | 4 months | 9 months | immediate |
-| Busy, $84 a month | 3 months | 6 months | immediate |
+| Volume | With an $80 scanner | Tablet camera, no scanner |
+|---|---|---|
+| Quiet, $39 a month | 3 months | immediate |
+| Steady, $59 a month | 2 months | immediate |
+| Busy, $84 a month | 1 month | immediate |
 
-Every $25 a month of Rate Pro subscription that gets dropped shortens each of these by roughly a third.
+Any Rate Pro subscription that gets dropped is pure saving on top from month one.
 
 ## Where the real money is
 
@@ -117,7 +118,7 @@ flowchart TD
 
 1. What the store pays Easyship a month today, and on which plan.
 2. What, if anything, the store pays for GP Rate Pro, and whether a franchisee is allowed to quote and ship without it.
-3. Whether the shop already has a 4x6 thermal printer.
+3. ~~Whether the shop already has a 4x6 thermal printer.~~ Yes, confirmed October 26, 2026. Next is the printer agent test, issue 5.
 4. Roughly how many shipments the counter does a month, so the right row above is the real one.
 
 ## Sources
