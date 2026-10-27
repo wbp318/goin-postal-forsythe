@@ -53,9 +53,13 @@ These are the big ones and the ones that need GP Brands' blessing. They turn For
 
 | Idea | How it works | Suggested price | Build | Rough money |
 |---|---|---|---|---|
-| **PeterShip for other Goin' Postal stores** | PeterShip, the planned shipping client ([`shipping-client/README.md`](../shipping-client/README.md)) runs multi-store from day one: each store has its own carrier accounts, markup rules, staff and data, on one install. Stores pay monthly. | $49 to $99 a store a month, or a few cents a label, both less than Easyship or Rate Pro | Phase 7 of the shipping client plan, plus billing, onboarding and support | GP Brands lists about 360 stores. Ten stores at $79 is $790 a month. Fifty is nearly $4,000. Support becomes a job. |
+| **PeterShip for other shipping stores** (full plan in [`shipping-client/for-other-stores/README.md`](../shipping-client/for-other-stores/README.md)) | PeterShip, the planned shipping client ([`shipping-client/README.md`](../shipping-client/README.md)) runs multi-store from day one: each store has its own carrier accounts, markup rules, staff and data, on one install. Stores pay monthly. | $49 to $99 a store a month, or a few cents a label, both less than Easyship or Rate Pro | Phase 7 of the shipping client plan, plus billing, onboarding and support | GP Brands lists about 360 stores. Ten stores at $79 is $790 a month. Fifty is nearly $4,000. Support becomes a job. |
 | **Card designer for other print shops** | White-label: a shop gets its own logo, colors, prices and pickup address on the designer, under its own domain. | $29 to $49 a month | A week to make branding and prices per tenant, plus Stripe Connect so each shop is paid directly | Every pack-and-ship and quick-print shop wants this and most send customers to Vistaprint instead. |
 | **Hosted sites for other stores** | The whole website, language picker, readability switches and all, as a template other stores fill in with their own address and hours. | $19 a month including hosting | A few days: move store facts into per-tenant config | Small money, but the on-ramp to the two above. |
+
+## Letting software pay the store: x402
+
+x402 is the HTTP payment protocol under the Linux Foundation that lets AI agents pay a website per request in USDC, with no account or card form. The store's rate quotes, labels, tracking and card renders can sit behind it in a day with Cloudflare's template, at a tenth of a cent per payment instead of Stripe's 30 cents plus 2.9%. Expect small money in 2027 and a head start when agents begin shipping parcels for people. The full plan, with prices per endpoint, fees against Stripe, revenue stages, the accounting and refund rules, and how it adds a zero-commitment tier to PeterShip for other stores, is in [`x402/README.md`](x402/README.md).
 
 ## How the multi-store versions run on Cloudflare
 

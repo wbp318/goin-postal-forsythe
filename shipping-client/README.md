@@ -303,7 +303,7 @@ The first two months of the original plan were done in two sessions, October 21 
 | Third-party insurance | per policy, passed to the customer. |
 | Saved | Easyship's per-label and per-quote fees, and any Easyship or Rate Pro subscription the store pays today. |
 
-Full site costs are in [`site/costs/README.md`](../site/costs/README.md).
+What the store saves against Easyship and Rate Pro, with payback at three volumes, is in [`costs/README.md`](costs/README.md). The plan for selling PeterShip to other pack-and-ship stores, with the market, the incumbents, the features still missing, the features nobody else has, pricing and revenue at 25, 100 and 400 stores, is in [`for-other-stores/README.md`](for-other-stores/README.md). Full site costs are in [`site/costs/README.md`](../site/costs/README.md).
 
 ## Risks
 
