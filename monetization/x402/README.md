@@ -10,7 +10,7 @@ The store already runs on Cloudflare Workers and already exposes the functions a
 sequenceDiagram
   participant A as Agent or app
   participant W as Store Worker on Cloudflare
-  participant F as Facilitator (Coinbase CDP)
+  participant F as Facilitator (PayAI or self-hosted)
   participant C as Base or Solana chain
   A->>W: GET /api/rates?to=70601&lb=5
   W-->>A: 402 Payment Required, price $0.01 USDC, pay-to address
@@ -23,7 +23,7 @@ sequenceDiagram
   F->>C: USDC moves to the store wallet
 ```
 
-The store never touches a wallet key in the Worker. It holds a receiving address. Coinbase's facilitator verifies for free and charges a tenth of a cent per settlement after the first 1,000 a month. Cloudflare's `x402-proxy` Worker template does the 402 dance per route, with per-route prices, and lets humans through free while charging bots.
+The store never touches a wallet key in the Worker. It holds a receiving address, and that address is the store's Kraken deposit address, so every payment lands on the exchange that turns it into dollars. The facilitator is a separate, swappable piece: PayAI's hosted one needs no API key, or the store runs its own with the open-source `x402-rs`. Coinbase's facilitator is the fallback, free to 1,000 settlements a month then a tenth of a cent each. Cloudflare's `x402-proxy` Worker template does the 402 dance per route, with per-route prices, and lets humans through free while charging bots.
 
 ## What the store could sell per request
 
@@ -50,7 +50,7 @@ flowchart LR
   MCP --> K["/api/cards/render $0.25"]:::cloud
   S --> PQ["Print queue<br/>label waits at the counter<br/>or pickup scheduled"]:::store
   K --> CQ["Card order<br/>printed and held"]:::store
-  R & S & T & K --> USDC["USDC to the store wallet<br/>auto-convert to dollars<br/>at Coinbase"]:::store
+  R & S & T & K --> USDC["USDC to the store's<br/>Kraken deposit address<br/>sold for dollars daily"]:::store
   classDef store fill:#f2b705,stroke:#3b2c00,color:#3b2c00
   classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
   classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
@@ -79,7 +79,32 @@ xychart-beta
 
 Tall bars are Stripe. Short bars are x402 with a 1% conversion to dollars assumed on the large payments. The two small payments cannot be taken on Stripe at all.
 
-Running costs: the Cloudflare Worker is already paid for. Coinbase's facilitator is free to 1,000 settlements a month, then $0.001 each. A Coinbase business account for the wallet and conversion is free to open. Nothing else.
+Running costs: the Cloudflare Worker is already paid for. The facilitator is free (self-hosted) or a tenth of a cent a settlement (hosted). A Kraken business account is free to open, USDC deposits are free, and selling USDC for dollars costs Kraken's trading fee, under half a percent at this volume. Nothing else.
+
+## Facilitator and exchange: why Kraken, not Coinbase
+
+x402 needs two things from a money company, and they do not have to be the same company.
+
+| Role | What it does | Options | Pick |
+|---|---|---|---|
+| **Facilitator** | Checks the agent's signed USDC payment and submits it to the chain. Never holds the store's money. Pointed at by one URL in the Worker config. | Coinbase CDP (free to 1,000 a month, then $0.001), PayAI (hosted, no API key, Base, Solana, Polygon and more), thirdweb (0.3%), self-hosted `x402-rs` (free, our own server), Stripe (preview, 1.5%) | **PayAI** to start, **self-hosted `x402-rs`** on a $5 VPS once volume justifies it. Coinbase as the fallback URL if either is down. |
+| **Exchange** | Owns the receiving address, holds USDC for hours, sells it for dollars, wires to the bank, produces the statement the accountant wants. | Coinbase, Kraken, Circle Mint (for larger businesses) | **Kraken.** Business accounts, USDC on Base and Solana, free crypto deposits, free ACH withdrawals for US customers, a lower trading fee than Coinbase at retail tiers, and a long record. |
+
+Kraken does not run an x402 facilitator as of October 2026, which is why the two roles are split. That split is also healthier: the facilitator is a URL that can be changed in an afternoon, and the money sits with an exchange we chose for banking, not for protocol tooling.
+
+What to check with Kraken before the first payment: that the business account is approved for the store's LLC, the daily USD withdrawal limit, and whether the seven-day hold on ACH-funded balances applies to balances funded by crypto deposits (it should not, but ask).
+
+```mermaid
+flowchart LR
+  AG["Agent pays USDC"]:::you --> FAC["Facilitator<br/>PayAI or our own x402-rs<br/>Coinbase as fallback<br/>verifies and settles"]:::cloud
+  FAC --> KR["Kraken deposit address<br/>Base or Solana<br/>the store's business account"]:::store
+  KR --> SELL["Sell USDC for USD daily<br/>Kraken trading fee"]:::store
+  SELL --> BANK["ACH to the store bank<br/>free for US accounts"]:::store
+  BANK --> QB["QuickBooks<br/>sales in dollars<br/>at the day's rate"]:::store
+  classDef store fill:#f2b705,stroke:#3b2c00,color:#3b2c00
+  classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
+  classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
+```
 
 ## What it could earn
 
@@ -117,7 +142,7 @@ The resale plan in [`shipping-client/for-other-stores/README.md`](../../shipping
 
 ```mermaid
 flowchart TD
-  A["Coinbase business account<br/>receiving wallet, USDC to USD<br/>auto-conversion"]:::you --> B["x402-proxy Worker<br/>per-route prices<br/>humans free, bots pay"]:::cloud
+  A["Kraken business account<br/>USDC deposit address on Base and Solana<br/>daily sale to USD, ACH to the bank"]:::you --> B["x402-proxy Worker<br/>per-route prices<br/>humans free, bots pay"]:::cloud
   B --> C["Accounting<br/>every settlement to QuickBooks<br/>in dollars at the day's rate<br/>Louisiana sales tax on cards"]:::store
   C --> D["Terms<br/>refund rule for agent purchases<br/>no label until payment settles"]:::store
   D --> E["MCP server<br/>quote, ship, track, cards<br/>listed on Agent.market"]:::cloud
@@ -129,7 +154,8 @@ flowchart TD
 
 | Piece | What it means | Build | Cost |
 |---|---|---|---|
-| **Wallet and conversion** | A Coinbase business account that receives USDC on Base and Solana and converts to dollars daily into the store's bank. Postage is paid to carriers in dollars, so the store must not sit on USDC. | An afternoon of forms | $0 to open, about 1% to convert |
+| **Wallet and conversion** | A Kraken business account that receives USDC on Base and Solana, sells it for dollars daily and sends the dollars by ACH to the store's bank. Postage is paid to carriers in dollars, so the store must not sit on USDC. | An afternoon of forms, business verification takes days | $0 to open, free deposits and ACH, under half a percent to sell |
+| **Facilitator** | PayAI's hosted facilitator URL in the Worker config to start, no account needed. Later, `x402-rs` on a small VPS the store controls. Coinbase's URL kept as a fallback. | An hour, a day for self-hosting | $0, or $5 a month for the VPS |
 | **The 402 gate** | Cloudflare's `x402-proxy` template in front of the API routes, with a price table. Logged-in staff and the website's own calls bypass it. | A day | $0 |
 | **Settle before you ship** | A label is bought only after the facilitator confirms settlement, not on verify alone. Labels are postage, and postage is not refundable from the carrier. | Half a day | $0 |
 | **Books** | Each settlement becomes a sale in dollars at that day's rate, in QuickBooks, with sales tax on taxable items. The accountant must bless the method before the first dollar. | A day plus an hour of the accountant | $0 |
@@ -141,7 +167,8 @@ About two weeks of build in total, none of it urgent, all of it after the Forsyt
 
 ## Risks
 
-- **No one comes.** Likely in 2027. The cost of being wrong is a day of work and a Coinbase account.
+- **No one comes.** Likely in 2027. The cost of being wrong is a day of work and a Kraken account.
+- **Facilitator goes away.** PayAI is a small company. The Worker config holds a fallback URL and the self-hosted path exists, so the switch is an afternoon, which a developer has already written up doing.
 - **Crypto on the books.** The store receives USDC. Convert daily and record in dollars; the accountant decides the method. Louisiana does not tax postage, does tax printed cards. Never hold a balance.
 - **Volatility.** USDC is a dollar stablecoin, so price risk is near zero, but Circle's reserves are the counterparty. Daily conversion keeps exposure to one day's sales.
 - **Fraud and abuse.** An agent can hammer a free endpoint. Rate-limit by IP and by payer address, keep the free ones cheap to serve. Paid endpoints are self-limiting.
@@ -152,7 +179,7 @@ About two weeks of build in total, none of it urgent, all of it after the Forsyt
 
 ## Decisions for Rin
 
-1. Open a Coinbase business account in the store's name, or wait until PeterShip has its own LLC and open it there.
+1. Open a Kraken business account in the store's name, or wait until PeterShip has its own LLC and open it there.
 2. Agree the refund rule for agent-bought labels and cards.
 3. Have the accountant approve recording USDC sales in dollars with daily conversion.
 4. Pick the prices: a cent a quote, half a cent a track, a quarter a render, or something else.
@@ -161,6 +188,8 @@ About two weeks of build in total, none of it urgent, all of it after the Forsyt
 
 - Protocol and foundation: [x402 Foundation under the Linux Foundation, members including Coinbase, Cloudflare, AWS, Anthropic and Circle](https://blockeden.xyz/blog/2026/03/05/x402-foundation-ai-payment-internet/); [Cloudflare's launch post and deferred payment scheme](https://blog.cloudflare.com/x402); [x402 explained](https://sherlock.xyz/post/x402-explained-the-http-402-payment-protocol).
 - Facilitator fees: [Coinbase Developer Platform, free to 1,000 settlements a month then $0.001](https://x.com/CoinbaseDev/status/1995564027951665551); [CDP FAQ, no processor or chargeback fees](https://docs.cdp.coinbase.com/x402/support/faq); [facilitator comparison including thirdweb 0.3% and Stripe preview 1.5%](https://wavect.io/blog/x402-payments-comparison-2026/); [networks supported](https://stablecoininsider.org/how-to-choose-an-x402-facilitator-for-usdc/).
+- Facilitator options: [x402.org facilitator list, including PayAI and self-hosting](https://docs.x402.org/dev-tools/facilitators); [x402-rs self-hosted facilitator](https://docs.rs/crate/x402-rs/0.3.1); [facilitator fees compared](https://asterpay.io/learn/x402-facilitator-fees-compared/); [replacing a facilitator in an afternoon](https://dev.to/whiteknightonhorse/how-we-replaced-our-x402-payment-facilitator-in-a-single-afternoon-f84); [known facilitators outside CDP and PayAI](https://github.com/coinbase/agentkit/issues/1505).
+- Kraken: [USDC on Base and Solana in Kraken Wallet](https://support.kraken.com/articles/supported-assets-and-networks); [multiple networks for USDC deposits](https://support.kraken.com/articles/multiple-networks-and-methods-on-kraken); [USDC on Solana announcement](https://blog.kraken.com/product/kraken-now-supports-deposits-and-withdrawals-of-usdc-via-the-solana-and-tron-networks); [Kraken fees, October 2026](https://tradersunion.com/brokers/crypto/view/kraken/fees/); [status page, USDC Base and Solana](https://status.kraken.com/). No source found on business-account terms; confirm with Kraken.
 - Cloudflare implementation: [x402-proxy Worker template](https://developers.cloudflare.com/ai-crawl-control/reference/worker-templates); [template update with per-route pricing](https://ppc.land/cloudflare-updates-x402-template-as-micropayments-gain-traction/); [a site charging a penny a page and watching Claude pay it](https://suganthan.com/blog/x402-pay-per-crawl/); [Stack Overflow and Cloudflare pay-per-crawl](https://stackoverflow.blog/2026/02/19/stack-overflow-cloudflare-pay-per-crawl/); [Cloudflare and AWS at the edge](https://www.infoq.com/news/2026/07/cloudflare-aws-x402-micropayment/).
 - Adoption and the honest numbers: [Chainalysis on 100 million agentic payments on Base](https://www.chainalysis.com/blog/x402-agentic-payments-adoption/); [200 million payments, half may be fake](https://startupfortune.com/ai-agents-have-moved-over-200-million-payments-on-x402-but-half-may-be-fake/); [adoption tracker, about $28,000 a day of real commerce](https://presenc.ai/research/x402-protocol-adoption-tracker-2026); [named production deployments](https://majormatters.co/x402).
 - Internal: [monetization plan](../README.md), [PeterShip for other stores](../../shipping-client/for-other-stores/README.md), [site costs](../../site/costs/README.md).
