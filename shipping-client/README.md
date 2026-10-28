@@ -28,6 +28,9 @@ flowchart LR
 | Dotted arrow `-.->` | Only sometimes: when keys are set, when a condition holds, or a later plan |
 | Words on an arrow | What is sent or the condition, for example "when keys set" |
 | Cylinder | A database or stored records (KV, D1, a table) |
+| Diamond with a question in it | A decision. Follow the arrow whose label matches the answer; there is one arrow out per answer |
+| Slanted box (parallelogram) | Something typed in or handed out: a form, a scan, a printed slip |
+| Circle in the middle of a mindmap | The topic; the branches around it are its parts |
 | Rounded box with `/path` | A page on the website; `/counter/...` pages are staff only |
 | Box with a thick or dashed border, or a big frame around boxes | A group: everything inside runs in the same place |
 | ✅ 🔨 ⏳ ⏸ in a box | Done, being built, not started, waiting on someone |
@@ -42,12 +45,12 @@ flowchart LR
   E --> UP["ups adapter"]:::local
   E --> F["fedex adapter"]:::local
   E --> D["dhl adapter"]:::local
-  E --> ES["easyship adapter<br/>fills any carrier<br/>with no keys"]:::local
+  E --> ES["easyship adapter<br/>BRIDGE ONLY: asked for a carrier<br/>only while that carrier has no keys;<br/>never called once all four are live"]:::local
   U -.->|when keys set| UA["USPS APIs v3"]:::cloud
   UP -.->|when keys set| UPA["UPS REST"]:::cloud
   F -.->|when keys set| FA["FedEx REST"]:::cloud
   D -.->|when keys set| DA["MyDHL API"]:::cloud
-  ES --> ESA["Easyship"]:::cloud
+  ES -.->|"only while EASYSHIP_TOKEN is set"| ESA["Easyship"]:::cloud
   C["/api/compare<br/>PIN, parity test"]:::local --> E
   classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
   classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
@@ -85,6 +88,16 @@ flowchart LR
 | Customer updates: email through Resend and text through Twilio when a shipment is first scanned, out for delivery, delivered, in trouble or returned. One message per status. Opt-in box and mobile number on the ship form. Staff email on exceptions | `site/src/shipping/notify.ts`, `shipment_contacts` and `notifications` tables | Done, logs instead of sending until the Resend and Twilio keys are set |
 
 Customers see service, price and days only. Cost and the provider that answered stay on the server.
+
+**About the Easyship box in that chart.** PeterShip does not depend on Easyship and is not built around it. Easyship is the account the store already has, and it answers for all four carriers with one key, so it is the scaffolding that lets every screen work today, before the owners have opened a single carrier developer account. The engine's rule is strict: it asks Easyship only for a carrier that no direct adapter answered for, and only while the `EASYSHIP_TOKEN` secret exists. The day the USPS keys go in, USPS rates and labels come from USPS directly and Easyship is never asked about USPS again; the same for each of the other three. When all four are live, no quote ever reaches the Easyship adapter. Remove the token and the adapter is dead code: the engine simply shows the carriers that answered. In plain `npm run dev` with no keys at all, the same adapter supplies the fake rates, which is why it is also the mock. The goal in the phase chart below is exactly that: Phase 6 runs the direct carriers beside Easyship for a month to compare prices, then turns Easyship off for good.
+
+| Carrier keys present | Who answers for USPS | Who answers for UPS, FedEx, DHL | Is Easyship called? |
+|---|---|---|---|
+| None, no Easyship token (mock mode) | fake rates | fake rates | Yes, as the mock |
+| Easyship token only (today's live option) | Easyship | Easyship | Yes, for all four |
+| USPS keys and Easyship token | USPS directly | Easyship | Yes, for three |
+| All four carriers and Easyship token | USPS directly | each directly | No, never |
+| All four carriers, token removed | USPS directly | each directly | No, and cannot be |
 
 ```mermaid
 flowchart LR

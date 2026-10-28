@@ -26,6 +26,9 @@ flowchart LR
 | Dotted arrow `-.->` | Only sometimes: when keys are set, when a condition holds, or a later plan |
 | Words on an arrow | What is sent or the condition, for example "when keys set" |
 | Cylinder | A database or stored records (KV, D1, a table) |
+| Diamond with a question in it | A decision. Follow the arrow whose label matches the answer; there is one arrow out per answer |
+| Slanted box (parallelogram) | Something typed in or handed out: a form, a scan, a printed slip |
+| Circle in the middle of a mindmap | The topic; the branches around it are its parts |
 | Rounded box with `/path` | A page on the website; `/counter/...` pages are staff only |
 | Box with a thick or dashed border, or a big frame around boxes | A group: everything inside runs in the same place |
 | ✅ 🔨 ⏳ ⏸ in a box | Done, being built, not started, waiting on someone |

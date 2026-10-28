@@ -46,7 +46,12 @@ export async function getQuotes(env: Env, origin: Address, destination: Address,
 
   const covered = new Set(rates.map((r) => r.carrier));
   const missing = (['USPS', 'UPS', 'FedEx', 'DHL'] as const).filter((c) => !covered.has(c));
-  if (missing.length) {
+  // Easyship is a bridge, not a dependency. It is asked only for carriers no direct adapter covered,
+  // and only while its token is set (or in mock mode, when nothing at all is configured). Once the
+  // four direct adapters are live every carrier is covered and this branch never runs; remove the
+  // EASYSHIP_TOKEN secret and the adapter is never called even if a carrier is down.
+  const bridge = !!env.EASYSHIP_TOKEN || direct.length === 0;
+  if (missing.length && bridge) {
     const fill = await fallback.rates(env, origin, destination, parcel).catch((e) => { errors.push({ carrier: 'fallback', message: String(e.message) }); return [] as Rate[]; });
     rates = rates.concat(fill.filter((r) => missing.includes(r.carrier)));
   }
