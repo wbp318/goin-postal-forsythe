@@ -6,6 +6,30 @@ Research date: October 18, 2026. There is no Goin' Postal in Massachusetts today
 
 Athol, Gloucester and Provincetown lead, with Gardner close behind. Massachusetts has 96 UPS Stores, so almost every town of size is within 10 miles of one; the real gaps are the North Quabbin towns of Athol and Gardner, outer Cape Cod, and Cape Ann. Athol has 12,000 people, a hospital, the Starrett tool plant and a 21 mile drive to the Greenfield UPS Store. Gloucester is the largest town in the state without a branded store, 13 miles from Beverly, though an independent already operates there. Provincetown is tiny in winter but swells to about 60,000 in summer with no branded store closer than Harwich, 26 miles down the Cape.
 
+### How to read the charts
+
+Every chart in this repo uses the same three colors, so once you know them you can read any of them.
+
+```mermaid
+flowchart LR
+  Y["Light blue: a person<br/>customer, staff, owner,<br/>or something people use"]:::you --> L["Yellow: ours<br/>code, pages, files or the store itself;<br/>we build it and can change it"]:::local --> C["Navy: someone else's<br/>carrier, Cloudflare, Stripe,<br/>a competitor or a fact we can't change"]:::cloud
+  classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
+  classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
+  classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
+```
+
+| Mark | Meaning |
+|---|---|
+| Solid arrow `-->` | Data or a person moves this way, or this happens next |
+| Dotted arrow `-.->` | Only sometimes: when keys are set, when a condition holds, or a later plan |
+| Words on an arrow | What is sent or the condition, for example "when keys set" |
+| Cylinder | A database or stored records (KV, D1, a table) |
+| Rounded box with `/path` | A page on the website; `/counter/...` pages are staff only |
+| Box with a thick or dashed border, or a big frame around boxes | A group: everything inside runs in the same place |
+| ✅ 🔨 ⏳ ⏸ in a box | Done, being built, not started, waiting on someone |
+
+Other chart kinds you will meet: a **state diagram** shows the statuses one thing passes through, read along the arrows. A **sequence diagram** reads top to bottom, each vertical line is one party and each arrow is one message. A **gantt** is a calendar of who does what when. A **mindmap** is a topic in the middle with its parts around it. A **pie** or **bar chart** is just numbers. GitHub draws all of these on its own; if a chart shows as plain text, you are viewing the file somewhere that does not render Mermaid, and the raw text still reads top to bottom.
+
 ```mermaid
 flowchart TB
   subgraph GO["Go first"]

@@ -6,6 +6,30 @@ Research date: October 18, 2026. There is no Goin' Postal in Delaware today; Del
 
 Delaware's small towns are already well served: 14 UPS Stores cover Dover, Smyrna, Middletown, Seaford, Delmar, Rehoboth Beach and Ocean View, and nearly every remaining Sussex County town has an independent mail center with mailboxes. The cleanest gap is Harrington in southern Kent County, where the locator shows no store or outlet of any kind and the Dover store is about 17 miles away. Milford is the second pick because it is the largest town without a branded store and sits between two hospitals and a growing retiree belt, but The Mail Center on DuPont Boulevard already rents there. Georgetown, the county seat, is the third for the same reason: a strong draw but an incumbent, Marv's Mailroom.
 
+### How to read the charts
+
+Every chart in this repo uses the same three colors, so once you know them you can read any of them.
+
+```mermaid
+flowchart LR
+  Y["Light blue: a person<br/>customer, staff, owner,<br/>or something people use"]:::you --> L["Yellow: ours<br/>code, pages, files or the store itself;<br/>we build it and can change it"]:::local --> C["Navy: someone else's<br/>carrier, Cloudflare, Stripe,<br/>a competitor or a fact we can't change"]:::cloud
+  classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
+  classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
+  classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
+```
+
+| Mark | Meaning |
+|---|---|
+| Solid arrow `-->` | Data or a person moves this way, or this happens next |
+| Dotted arrow `-.->` | Only sometimes: when keys are set, when a condition holds, or a later plan |
+| Words on an arrow | What is sent or the condition, for example "when keys set" |
+| Cylinder | A database or stored records (KV, D1, a table) |
+| Rounded box with `/path` | A page on the website; `/counter/...` pages are staff only |
+| Box with a thick or dashed border, or a big frame around boxes | A group: everything inside runs in the same place |
+| ✅ 🔨 ⏳ ⏸ in a box | Done, being built, not started, waiting on someone |
+
+Other chart kinds you will meet: a **state diagram** shows the statuses one thing passes through, read along the arrows. A **sequence diagram** reads top to bottom, each vertical line is one party and each arrow is one message. A **gantt** is a calendar of who does what when. A **mindmap** is a topic in the middle with its parts around it. A **pie** or **bar chart** is just numbers. GitHub draws all of these on its own; if a chart shows as plain text, you are viewing the file somewhere that does not render Mermaid, and the raw text still reads top to bottom.
+
 ```mermaid
 flowchart TB
   subgraph GO["Go first"]

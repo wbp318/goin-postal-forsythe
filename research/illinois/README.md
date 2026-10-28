@@ -6,6 +6,30 @@ Research date: October 18, 2026. There is no Goin' Postal in Illinois today, and
 
 Jacksonville, Dixon and Taylorville lead. Each is a county seat of 10,000 to 18,000 people with a hospital or college and no branded UPS Store, PostNet or Pak Mail inside 20 miles, and in each the only UPS presence is a counter inside a hardware or engineering store. Jacksonville has the largest trade area and a long drive to a branded store. Dixon is the regional hub for Lee County on Interstate 88. Taylorville is closest to a UPS Store at 24 miles, but that store is on the far side of Springfield and does not serve Christian County.
 
+### How to read the charts
+
+Every chart in this repo uses the same three colors, so once you know them you can read any of them.
+
+```mermaid
+flowchart LR
+  Y["Light blue: a person<br/>customer, staff, owner,<br/>or something people use"]:::you --> L["Yellow: ours<br/>code, pages, files or the store itself;<br/>we build it and can change it"]:::local --> C["Navy: someone else's<br/>carrier, Cloudflare, Stripe,<br/>a competitor or a fact we can't change"]:::cloud
+  classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
+  classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
+  classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
+```
+
+| Mark | Meaning |
+|---|---|
+| Solid arrow `-->` | Data or a person moves this way, or this happens next |
+| Dotted arrow `-.->` | Only sometimes: when keys are set, when a condition holds, or a later plan |
+| Words on an arrow | What is sent or the condition, for example "when keys set" |
+| Cylinder | A database or stored records (KV, D1, a table) |
+| Rounded box with `/path` | A page on the website; `/counter/...` pages are staff only |
+| Box with a thick or dashed border, or a big frame around boxes | A group: everything inside runs in the same place |
+| ✅ 🔨 ⏳ ⏸ in a box | Done, being built, not started, waiting on someone |
+
+Other chart kinds you will meet: a **state diagram** shows the statuses one thing passes through, read along the arrows. A **sequence diagram** reads top to bottom, each vertical line is one party and each arrow is one message. A **gantt** is a calendar of who does what when. A **mindmap** is a topic in the middle with its parts around it. A **pie** or **bar chart** is just numbers. GitHub draws all of these on its own; if a chart shows as plain text, you are viewing the file somewhere that does not render Mermaid, and the raw text still reads top to bottom.
+
 ```mermaid
 flowchart TB
   subgraph GO["Go first"]

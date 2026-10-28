@@ -6,6 +6,30 @@ Research date: October 18, 2026. Arkansas has no Goin' Postal store today, and i
 
 Harrison is the clearest gap: a county seat of about 13,800 that is the headquarters town for FedEx Freight and the Buffalo National River, with only an Ace Hardware counter and the nearest branded The UPS Store roughly 65 miles away in Mountain Home. Siloam Springs is second: 20,000 people, up 17 percent since 2020, a university, and only an independent shipping outlet with no branded store closer than Springdale at 17 miles. Paragould is third: 31,000 and growing, with a PostNet already in town, which makes it a real but shared market. Heber Springs is the best small play for a retiree and lake crowd with nothing but a pharmacy counter.
 
+### How to read the charts
+
+Every chart in this repo uses the same three colors, so once you know them you can read any of them.
+
+```mermaid
+flowchart LR
+  Y["Light blue: a person<br/>customer, staff, owner,<br/>or something people use"]:::you --> L["Yellow: ours<br/>code, pages, files or the store itself;<br/>we build it and can change it"]:::local --> C["Navy: someone else's<br/>carrier, Cloudflare, Stripe,<br/>a competitor or a fact we can't change"]:::cloud
+  classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
+  classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
+  classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
+```
+
+| Mark | Meaning |
+|---|---|
+| Solid arrow `-->` | Data or a person moves this way, or this happens next |
+| Dotted arrow `-.->` | Only sometimes: when keys are set, when a condition holds, or a later plan |
+| Words on an arrow | What is sent or the condition, for example "when keys set" |
+| Cylinder | A database or stored records (KV, D1, a table) |
+| Rounded box with `/path` | A page on the website; `/counter/...` pages are staff only |
+| Box with a thick or dashed border, or a big frame around boxes | A group: everything inside runs in the same place |
+| ✅ 🔨 ⏳ ⏸ in a box | Done, being built, not started, waiting on someone |
+
+Other chart kinds you will meet: a **state diagram** shows the statuses one thing passes through, read along the arrows. A **sequence diagram** reads top to bottom, each vertical line is one party and each arrow is one message. A **gantt** is a calendar of who does what when. A **mindmap** is a topic in the middle with its parts around it. A **pie** or **bar chart** is just numbers. GitHub draws all of these on its own; if a chart shows as plain text, you are viewing the file somewhere that does not render Mermaid, and the raw text still reads top to bottom.
+
 ```mermaid
 flowchart TB
   subgraph GO["Go first"]

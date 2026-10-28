@@ -6,6 +6,30 @@ Research date: October 18, 2026. South Dakota has no Goin' Postal store today. S
 
 The UPS Store has 13 South Dakota locations in ten cities and they cover every town above 12,000 people except two. Vermillion is the top pick: 11,700 people, up 10.6 percent in the 2010s, the University of South Dakota with its law and medical schools, and the only UPS point is an Ace Hardware counter, with Yankton's store 25 miles away. Sturgis is second: 7,000 residents, the Fort Meade veterans hospital, a world-famous rally that fills the town every August, and only a hardware counter, with Spearfish 20 miles away. The Sioux Falls and Rapid City fringe towns, Harrisburg, Tea and Box Elder, are the fastest-growing places in the state and have nothing but hardware counters, but each is within about 10 miles of a branded store, so they are 1-mile urban-radius plays rather than clean gaps.
 
+### How to read the charts
+
+Every chart in this repo uses the same three colors, so once you know them you can read any of them.
+
+```mermaid
+flowchart LR
+  Y["Light blue: a person<br/>customer, staff, owner,<br/>or something people use"]:::you --> L["Yellow: ours<br/>code, pages, files or the store itself;<br/>we build it and can change it"]:::local --> C["Navy: someone else's<br/>carrier, Cloudflare, Stripe,<br/>a competitor or a fact we can't change"]:::cloud
+  classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
+  classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
+  classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
+```
+
+| Mark | Meaning |
+|---|---|
+| Solid arrow `-->` | Data or a person moves this way, or this happens next |
+| Dotted arrow `-.->` | Only sometimes: when keys are set, when a condition holds, or a later plan |
+| Words on an arrow | What is sent or the condition, for example "when keys set" |
+| Cylinder | A database or stored records (KV, D1, a table) |
+| Rounded box with `/path` | A page on the website; `/counter/...` pages are staff only |
+| Box with a thick or dashed border, or a big frame around boxes | A group: everything inside runs in the same place |
+| ✅ 🔨 ⏳ ⏸ in a box | Done, being built, not started, waiting on someone |
+
+Other chart kinds you will meet: a **state diagram** shows the statuses one thing passes through, read along the arrows. A **sequence diagram** reads top to bottom, each vertical line is one party and each arrow is one message. A **gantt** is a calendar of who does what when. A **mindmap** is a topic in the middle with its parts around it. A **pie** or **bar chart** is just numbers. GitHub draws all of these on its own; if a chart shows as plain text, you are viewing the file somewhere that does not render Mermaid, and the raw text still reads top to bottom.
+
 ```mermaid
 flowchart TB
   subgraph GO["Go first"]
