@@ -2,8 +2,9 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { env } from '../../lib/env';
 import { json } from '../../lib/validate';
+import { authenticate } from '../../lib/auth';
 import { getOrder } from '../../lib/orders';
-import { searchCustomers, getCustomer, customerQuotes, allCustomers } from '../../shipping/store';
+import { searchCustomers, getCustomer, customerQuotes, allCustomers, logAudit } from '../../shipping/store';
 
 // Customer lookup from /counter/customers. Staff PIN required.
 //  search: { q } any part of a name, an email, or phone digits. Also returns walk-up quotes that match
@@ -13,7 +14,8 @@ import { searchCustomers, getCustomer, customerQuotes, allCustomers } from '../.
 //  export: CSV of every customer, phone first, for the owners to set beside the Coupon Counter.
 export const POST: APIRoute = async ({ request }) => {
   const b: any = await request.json().catch(() => ({}));
-  if (!env.COUNTER_PIN || String(b.pin) !== env.COUNTER_PIN) return json({ error: 'Wrong PIN' }, 403);
+  const user = await authenticate(env, b.pin);
+  if (!user) return json({ error: 'Wrong PIN' }, 403);
   try {
     if (b.action === 'search') return json(await searchCustomers(env, String(b.q ?? '')));
     if (b.action === 'get') {
@@ -34,6 +36,7 @@ export const POST: APIRoute = async ({ request }) => {
       return json({ customer, quotes, addresses });
     }
     if (b.action === 'export') {
+      await logAudit(env, user, 'customers.export');
       const rows = await allCustomers(env);
       const esc = (v: unknown) => { const s = v == null ? '' : String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
       const lines = [['phone', 'name', 'email', 'shipments', 'returning', 'first_shipment', 'last_seen', 'text_ok', 'email_ok', 'id'].join(',')];

@@ -4,12 +4,14 @@ import { env } from '../../lib/env';
 import { getOrder, saveOrder } from '../../lib/orders';
 import { fulfil } from '../../lib/fulfil';
 import { json } from '../../lib/validate';
+import { authenticate, CAN } from '../../lib/auth';
+import { logAudit } from '../../shipping/store';
 import { voidLabel } from '../../shipping/engine';
 import { setShipmentStatus, saveContacts, getContacts } from '../../shipping/store';
 import { sendEmail } from '../../shipping/notify';
 import { store } from '../../data/store';
 
-// Staff actions from /counter/[code]. Needs the COUNTER_PIN.
+// Staff actions from /counter/[code]. Needs a staff PIN; every action is written to the audit log with the name.
 // action "paid": staff rang the international order up on the Goin' Postal POS, buy the label now.
 // action "printed": mark the label as printed in the shop.
 // action "void": the label was bought but the package is not going; void it with the carrier.
@@ -18,22 +20,26 @@ import { store } from '../../data/store';
 //                 wants to print at home. Body may carry "email" to set or change the order's address.
 export const POST: APIRoute = async ({ request }) => {
   const b: any = await request.json().catch(() => ({}));
-  if (!env.COUNTER_PIN || String(b.pin) !== env.COUNTER_PIN) return json({ error: 'Wrong PIN' }, 403);
+  const user = await authenticate(env, b.pin);
+  if (!user) return json({ error: 'Wrong PIN' }, 403);
   const order = await getOrder(env, String(b.order ?? ''));
   if (!order) return json({ error: 'No such order' }, 404);
   try {
     if (b.action === 'paid' && order.status === 'reserved') {
       const next = await fulfil(env, { ...order, paid_at: new Date().toISOString() }, 'pos');
+      await logAudit(env, user, 'label.buy', order.id, `${order.rate.carrier} ${order.rate.service} $${(order.total ?? order.rate.total_charge).toFixed(2)}, POS`);
       return json({ status: next.status, label_url: next.label?.label_url });
     }
     if (b.action === 'printed' && order.status === 'labeled') {
       await saveOrder(env, { ...order, status: 'printed', printed_at: new Date().toISOString() });
+      await logAudit(env, user, 'label.printed', order.id);
       return json({ status: 'printed' });
     }
     if (b.action === 'void' && (order.status === 'labeled' || order.status === 'printed') && order.label) {
       await voidLabel(env, order.label.id);
       await saveOrder(env, { ...order, status: 'voided', voided_at: new Date().toISOString() });
       await setShipmentStatus(env, order.id, 'voided');
+      await logAudit(env, user, 'label.void', order.id, `${order.rate.carrier} ${order.label.tracking_number ?? ''}, paid $${(order.total ?? order.rate.total_charge).toFixed(2)} via ${order.paid_at ? (order.international || order.source === 'counter' ? 'POS' : 'Stripe') : 'nothing'}`);
       return json({ status: 'voided' });
     }
     if (b.action === 'email' && order.label) {
@@ -61,10 +67,12 @@ export const POST: APIRoute = async ({ request }) => {
       await saveOrder(env, next);
       const c = await getContacts(env, order.id);
       if (c && c.email !== email) await saveContacts(env, order.id, { ...c, email });
+      await logAudit(env, user, 'label.email', order.id, email);
       return json({ ok: true, email, mock });
     }
     if (b.action === 'cancel' && (order.status === 'awaiting_payment' || order.status === 'reserved')) {
       await saveOrder(env, { ...order, status: 'cancelled', cancelled_at: new Date().toISOString() });
+      await logAudit(env, user, 'quote.cancel', order.id);
       return json({ status: 'cancelled' });
     }
     return json({ error: `Cannot ${b.action} an order that is ${order.status}` }, 400);

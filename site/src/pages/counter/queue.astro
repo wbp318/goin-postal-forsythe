@@ -10,7 +10,7 @@ import { store } from '../../data/store';
 <Base title="Counter · Queue">
   <section class="hero">
     <h1 data-i18n="st.q.h1">Queue</h1>
-    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a></p>
+    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a> · <a href="/counter/staff" data-i18n="st.nav.staff">Staff</a></p>
     <p class="lead" data-i18n="st.q.lead">Who is waiting on a label. Online reservations show up here by themselves; type a walk-up in below. Oldest first.</p>
   </section>
 
@@ -131,7 +131,8 @@ import { store } from '../../data/store';
     async function load() {
       if (!pin()) { msg.className = 'err'; msg.textContent = t('st.pinfirst'); return; }
       try {
-        const { open, done } = await api('/api/queue', { action: 'list' });
+        const { open, done, user } = await api('/api/queue', { action: 'list' });
+        if (user && !staff()) ($('staff') as HTMLInputElement).placeholder = user.name;
         body.innerHTML = '';
         for (const q of open) {
           const tr = document.createElement('tr');

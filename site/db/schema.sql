@@ -156,3 +156,17 @@ CREATE TABLE IF NOT EXISTS order_addons (
 );
 CREATE INDEX IF NOT EXISTS order_addons_order ON order_addons(order_id);
 CREATE INDEX IF NOT EXISTS order_addons_created ON order_addons(created_at);
+
+-- Who did what. One row per staff action: buy, print, void, cancel, email, drop-off, price change,
+-- staff change. staff_id is null for the shared PINs; staff_name is always filled.
+CREATE TABLE IF NOT EXISTS audit_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  at TEXT NOT NULL,
+  staff_id INTEGER,
+  staff_name TEXT NOT NULL,
+  action TEXT NOT NULL,                -- label.buy, label.void, dropoff.accept, rules.save, staff.add, ...
+  target TEXT,                         -- GP code, receipt number, staff id
+  detail TEXT
+);
+CREATE INDEX IF NOT EXISTS audit_at ON audit_log(at);
+CREATE INDEX IF NOT EXISTS audit_staff ON audit_log(staff_id, at);

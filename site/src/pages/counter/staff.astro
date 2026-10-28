@@ -1,0 +1,129 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+
+// Owner page: who works here and what they did. Add people with their own PIN, change roles,
+// deactivate, reset a PIN, and read the audit log: every buy, print, void, cancel, email, drop-off,
+// price change and staff change, with the name that did it and when.
+---
+<Base title="Counter · Staff">
+  <section class="hero">
+    <h1 data-i18n="st.s.h1">Staff</h1>
+    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a> · <a href="/counter/staff" data-i18n="st.nav.staff">Staff</a></p>
+    <p class="lead" data-i18n="st.s.lead">Everyone gets their own PIN, so every action carries a name. Owners add people and set roles here; managers and owners can read the audit log.</p>
+  </section>
+
+  <div class="card">
+    <p class="btnrow">
+      <label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
+      <button class="btn" id="load" data-i18n="st.show">Show</button>
+      <span id="who" class="muted"></span>
+    </p>
+    <p id="msg" role="alert"></p>
+  </div>
+
+  <div id="people" class="hidden">
+    <div class="card">
+      <h3 data-i18n="st.s.people">People</h3>
+      <p class="muted" data-i18n="st.s.roles">Counter: queue, drop-offs, customers, reports. Manager: also the audit log. Owner: also prices, add-ons and this page.</p>
+      <table class="list" id="table"><thead><tr><th data-i18n="st.c.th.name">Name</th><th data-i18n="st.s.th.role">Role</th><th data-i18n="st.s.th.active">Active</th><th></th></tr></thead><tbody></tbody></table>
+      <p class="muted" id="shared"></p>
+    </div>
+    <form id="add" class="card" autocomplete="off">
+      <h3 data-i18n="st.s.add">Add a person</h3>
+      <div class="row">
+        <label><span data-i18n="st.c.th.name">Name</span> <input name="name" maxlength="40" required /></label>
+        <label><span data-i18n="st.s.th.role">Role</span> <select name="role"><option value="counter" data-i18n="st.s.role.counter">counter</option><option value="manager" data-i18n="st.s.role.manager">manager</option><option value="owner" data-i18n="st.s.role.owner">owner</option></select></label>
+        <label><span data-i18n="st.s.pin">Their PIN (4 to 8 digits)</span> <input name="pin_new" inputmode="numeric" pattern="\d{4,8}" required autocomplete="new-password" /></label>
+      </div>
+      <p class="btnrow"><button class="btn" type="submit" data-i18n="st.s.add">Add a person</button></p>
+      <p id="aerr" class="err" hidden></p>
+    </form>
+  </div>
+
+  <div id="auditwrap" class="card hidden">
+    <h3 data-i18n="st.s.audit">Audit log</h3>
+    <p class="btnrow">
+      <label><span data-i18n="st.s.filter">Show</span> <select id="filter"><option value="" data-i18n="st.s.everyone">everyone</option></select></label>
+      <button class="btn kraft" id="reload" data-i18n="st.s.refresh">Refresh</button>
+    </p>
+    <table class="list" id="audit"><thead><tr><th data-i18n="st.q.th.when">When</th><th data-i18n="st.s.th.who">Who</th><th data-i18n="st.s.th.action">Action</th><th data-i18n="st.s.th.target">Target</th><th data-i18n="st.s.th.detail">Detail</th></tr></thead><tbody></tbody></table>
+    <p id="aempty" class="muted hidden" data-i18n="st.s.nothing">Nothing logged yet.</p>
+  </div>
+
+  <script>
+    import { t, tf } from '../../i18n';
+    const $ = (id: string) => document.getElementById(id)!;
+    const pin = () => ($('pin') as HTMLInputElement).value;
+    const msg = $('msg'), body = $('table').querySelector('tbody')!, auditBody = $('audit').querySelector('tbody')!;
+    const fmt = (iso: string) => new Date(iso).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    let me: any = null;
+    async function api(extra: Record<string, unknown>) {
+      const res = await fetch('/api/staff', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin(), ...extra }) });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error);
+      return j;
+    }
+    const cell = (tr: HTMLTableRowElement, text: string) => { const td = document.createElement('td'); td.textContent = text; tr.appendChild(td); return td; };
+
+    function renderPeople(staff: any[]) {
+      body.innerHTML = '';
+      const filter = $('filter') as HTMLSelectElement;
+      filter.innerHTML = ''; const all = document.createElement('option'); all.value = ''; all.textContent = t('st.s.everyone'); filter.appendChild(all);
+      for (const s of staff) {
+        const tr = document.createElement('tr');
+        if (!s.active) tr.style.opacity = '.55';
+        cell(tr, s.name);
+        const roleTd = cell(tr, ''); const sel = document.createElement('select');
+        for (const r of ['counter', 'manager', 'owner']) { const o = document.createElement('option'); o.value = r; o.textContent = t(`st.s.role.${r}`); if (r === s.role) o.selected = true; sel.appendChild(o); }
+        sel.addEventListener('change', () => act({ action: 'update', id: s.id, role: sel.value }));
+        roleTd.appendChild(sel);
+        cell(tr, s.active ? t('st.s.yes') : t('st.s.no'));
+        const td = cell(tr, '');
+        const b1 = document.createElement('button'); b1.type = 'button'; b1.className = 'btn small kraft'; b1.textContent = s.active ? t('st.s.deactivate') : t('st.s.reactivate'); b1.addEventListener('click', () => act({ action: 'update', id: s.id, active: !s.active }));
+        const b2 = document.createElement('button'); b2.type = 'button'; b2.className = 'btn small kraft'; b2.textContent = t('st.s.resetpin'); b2.addEventListener('click', () => { const p = window.prompt(tf('st.s.resetprompt', { name: s.name })); if (p) act({ action: 'update', id: s.id, pin_new: p }); });
+        td.append(b1, ' ', b2);
+        body.appendChild(tr);
+        const o = document.createElement('option'); o.value = String(s.id); o.textContent = s.name; filter.appendChild(o);
+      }
+      $('people').classList.remove('hidden');
+    }
+    async function act(extra: Record<string, unknown>) {
+      msg.textContent = '';
+      try { const j = await api(extra); renderPeople(j.staff); msg.className = ''; msg.textContent = t('st.s.saved'); loadAudit(); }
+      catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    }
+    async function loadAudit() {
+      try {
+        const f = ($('filter') as HTMLSelectElement).value;
+        const { entries } = await api({ action: 'audit', staff_id: f || undefined });
+        auditBody.innerHTML = '';
+        for (const e of entries) { const tr = document.createElement('tr'); cell(tr, fmt(e.at)); cell(tr, e.staff_name); cell(tr, e.action); cell(tr, e.target ?? ''); cell(tr, e.detail ?? ''); auditBody.appendChild(tr); }
+        $('aempty').classList.toggle('hidden', !!entries.length);
+        $('auditwrap').classList.remove('hidden');
+      } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    }
+    async function load() {
+      msg.textContent = '';
+      if (!pin()) { msg.className = 'err'; msg.textContent = t('st.pinfirst'); return; }
+      try {
+        me = (await api({ action: 'me' })).user;
+        $('who').textContent = tf('st.s.signedin', { name: me.name, role: t(`st.s.role.${me.role}`) });
+        if (me.role === 'owner') { const j = await api({ action: 'list' }); renderPeople(j.staff); $('shared').textContent = me.shared ? t('st.s.sharednote') : ''; }
+        else $('people').classList.add('hidden');
+        if (me.role !== 'counter') loadAudit(); else { $('auditwrap').classList.add('hidden'); msg.className = ''; msg.textContent = t('st.s.counteronly'); }
+      } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    }
+    $('load').addEventListener('click', load);
+    $('pin').addEventListener('change', load);
+    $('reload').addEventListener('click', loadAudit);
+    $('filter').addEventListener('change', loadAudit);
+    document.addEventListener('langchange', () => { if (pin()) load(); });
+    ($('add') as HTMLFormElement).addEventListener('submit', async (ev) => {
+      ev.preventDefault(); const f = ev.currentTarget as HTMLFormElement; const d = Object.fromEntries(new FormData(f).entries());
+      $('aerr').hidden = true;
+      try { const j = await api({ action: 'add', ...d }); renderPeople(j.staff); f.reset(); msg.className = ''; msg.textContent = t('st.s.saved'); loadAudit(); }
+      catch (e: any) { $('aerr').textContent = e.message; $('aerr').hidden = false; }
+    });
+  </script>
+</Base>

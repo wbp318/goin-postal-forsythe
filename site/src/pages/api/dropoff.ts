@@ -2,7 +2,8 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { env } from '../../lib/env';
 import { json } from '../../lib/validate';
-import { recordDropoff, findDropoffs, recentDropoffs, markDropoffsHanded, carrierFromBarcode, getDropoff, queuePrint, type Dropoff } from '../../shipping/store';
+import { authenticate } from '../../lib/auth';
+import { recordDropoff, findDropoffs, recentDropoffs, markDropoffsHanded, carrierFromBarcode, getDropoff, queuePrint, logAudit, type Dropoff } from '../../shipping/store';
 import { dropoffReceiptZpl, dropoffReceiptText } from '../../shipping/receipt';
 import { sendSms, normalizePhone } from '../../shipping/notify';
 
@@ -25,13 +26,15 @@ async function receipt(env: Env, d: Dropoff, print: boolean, text: boolean) {
 }
 export const POST: APIRoute = async ({ request }) => {
   const b: any = await request.json().catch(() => ({}));
-  if (!env.COUNTER_PIN || String(b.pin) !== env.COUNTER_PIN) return json({ error: 'Wrong PIN' }, 403);
+  const user = await authenticate(env, b.pin);
+  if (!user) return json({ error: 'Wrong PIN' }, 403);
   try {
     if (b.action === 'accept') {
       const barcode = String(b.barcode ?? '').replace(/\s+/g, '');
       if (barcode.length < 8 || barcode.length > 40) return json({ error: 'That does not look like a tracking barcode' }, 400);
       const before = await findDropoffs(env, barcode);
-      const d = await recordDropoff(env, { barcode, carrier: b.carrier || carrierFromBarcode(barcode), customer_name: b.customer_name, customer_phone: b.customer_phone, accepted_by: b.staff, notes: b.notes });
+      const d = await recordDropoff(env, { barcode, carrier: b.carrier || carrierFromBarcode(barcode), customer_name: b.customer_name, customer_phone: b.customer_phone, accepted_by: String(b.staff ?? '').trim() || user.name, notes: b.notes });
+      await logAudit(env, user, 'dropoff.accept', String(d.id), `${d.carrier ?? '?'} ${d.barcode}${d.customer_name ? `, ${d.customer_name}` : ''}`);
       const r = await receipt(env, d, b.receipt === true || b.receipt === 'on', b.text === true || b.text === 'on').catch((e) => ({ error: String(e.message) }));
       return json({ ok: true, dropoff: d, duplicate: before.length > 0, receipt: r });
     }
@@ -39,11 +42,12 @@ export const POST: APIRoute = async ({ request }) => {
       const d = await getDropoff(env, Number(b.id));
       if (!d) return json({ error: 'No such drop-off' }, 404);
       if (b.action === 'get') return json({ dropoff: d, zpl: dropoffReceiptZpl(d), text: dropoffReceiptText(d) });
+      await logAudit(env, user, b.action === 'receipt' ? 'dropoff.reprint' : 'dropoff.retext', String(d.id));
       return json({ ok: true, receipt: await receipt(env, d, b.action === 'receipt', b.action === 'text') });
     }
     if (b.action === 'lookup') return json({ dropoffs: await findDropoffs(env, String(b.barcode ?? '')) });
     if (b.action === 'recent') return json({ dropoffs: await recentDropoffs(env) });
-    if (b.action === 'handed') return json({ ok: true, count: await markDropoffsHanded(env, String(b.carrier ?? '')) });
+    if (b.action === 'handed') { const count = await markDropoffsHanded(env, String(b.carrier ?? '')); await logAudit(env, user, 'dropoff.handed', String(b.carrier ?? ''), `${count} packages`); return json({ ok: true, count }); }
     return json({ error: 'Unknown action' }, 400);
   } catch (e: any) {
     return json({ error: e.message }, 500);

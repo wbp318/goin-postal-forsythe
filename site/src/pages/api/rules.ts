@@ -1,9 +1,10 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
 import { env } from '../../lib/env';
+import { authenticate, CAN } from '../../lib/auth';
 import { json, parseParcel } from '../../lib/validate';
 import { effectiveRules, rulesFromFile, applyRules } from '../../lib/pricing';
-import { saveRules, type RuleRow } from '../../shipping/store';
+import { saveRules, logAudit, type RuleRow } from '../../shipping/store';
 import { getQuotes } from '../../shipping/engine';
 import { store } from '../../data/store';
 
@@ -51,9 +52,9 @@ function clean(b: any): { enabled: boolean; round_to_99: boolean; rules: RuleRow
 
 export const POST: APIRoute = async ({ request }) => {
   const b: any = await request.json().catch(() => ({}));
-  const pin = String(b.pin ?? '');
-  if (!env.COUNTER_PIN || (pin !== env.COUNTER_PIN && pin !== env.OWNER_PIN)) return json({ error: 'Wrong PIN' }, 403);
-  const owner = env.OWNER_PIN ? pin === env.OWNER_PIN : true;
+  const user = await authenticate(env, b.pin);
+  if (!user) return json({ error: 'Wrong PIN' }, 403);
+  const owner = CAN.prices(user);
   try {
     if (b.action === 'get') return json({ ...(await effectiveRules(env)), owner, owner_pin_set: !!env.OWNER_PIN });
     if (b.action === 'file') return json(rulesFromFile());
@@ -62,6 +63,7 @@ export const POST: APIRoute = async ({ request }) => {
       if (b.action === 'save') {
         if (!owner) return json({ error: 'Saving prices needs the owner PIN' }, 403);
         const saved = await saveRules(env, draft);
+        await logAudit(env, user, 'rules.save', null, `${draft.enabled ? 'on' : 'off'}, ${draft.rules.length} rows`);
         return json({ ok: true, ...saved, source: 'table', owner, owner_pin_set: !!env.OWNER_PIN });
       }
       const zip = String(b.zip ?? '75201').replace(/\D/g, '').slice(0, 5) || '75201';

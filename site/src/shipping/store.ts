@@ -74,8 +74,58 @@ const mem = {
   rules: [] as { id: number; scope: string; match: string | null; percent: number | null; flat: number | null; price: number | null; active: number; updated_at: string }[],
   addons: [] as RawAddonRow[],
   orderAddons: [] as { order_id: string; code: string; name: string; qty: number; unit_price: number; total: number; created_at: string }[],
+  staff: [] as StaffRow[],
+  audit: [] as AuditRow[],
   seq: 1,
 };
+
+// ---- staff and the audit log --------------------------------------------------------------------
+export interface StaffRow { id: number; name: string; pin_hash: string; role: string; active: number }
+export interface AuditRow { id: number; at: string; staff_id: number | null; staff_name: string; action: string; target: string | null; detail: string | null }
+
+export async function listStaff(env: Env): Promise<StaffRow[]> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM staff ORDER BY active DESC, name').all<StaffRow>()).results;
+  return [...mem.staff].sort((a, b) => b.active - a.active || a.name.localeCompare(b.name));
+}
+
+export async function addStaff(env: Env, s: { name: string; pin_hash: string; role: string }): Promise<StaffRow> {
+  if (env.DB) {
+    const r = await env.DB.prepare('INSERT INTO staff (name, pin_hash, role, active) VALUES (?1, ?2, ?3, 1) RETURNING id').bind(s.name, s.pin_hash, s.role).first<{ id: number }>();
+    return { id: r!.id, ...s, active: 1 };
+  }
+  const row = { id: mem.seq++, ...s, active: 1 };
+  mem.staff.push(row);
+  return row;
+}
+
+export async function updateStaff(env: Env, id: number, patch: { name?: string; role?: string; active?: number; pin_hash?: string }) {
+  const keys = Object.keys(patch) as (keyof typeof patch)[];
+  if (!keys.length) return;
+  if (env.DB) {
+    await env.DB.prepare(`UPDATE staff SET ${keys.map((k, i) => `${k} = ?${i + 2}`).join(', ')} WHERE id = ?1`).bind(id, ...keys.map((k) => patch[k])).run();
+    return;
+  }
+  const s = mem.staff.find((x) => x.id === id);
+  if (s) Object.assign(s, patch);
+}
+
+/** One line in the audit log. Never throws: a logging failure must not block the action it describes. */
+export async function logAudit(env: Env, who: { id: number | null; name: string }, action: string, target?: string | null, detail?: string | null) {
+  try {
+    const row = { at: now(), staff_id: who.id, staff_name: who.name, action, target: target ?? null, detail: detail ? String(detail).slice(0, 300) : null };
+    if (env.DB) await env.DB.prepare('INSERT INTO audit_log (at, staff_id, staff_name, action, target, detail) VALUES (?1, ?2, ?3, ?4, ?5, ?6)').bind(row.at, row.staff_id, row.staff_name, row.action, row.target, row.detail).run();
+    else mem.audit.unshift({ id: mem.seq++, ...row });
+  } catch (e) { console.error('audit log failed', e); }
+}
+
+export async function listAudit(env: Env, o: { staff_id?: number; limit?: number } = {}): Promise<AuditRow[]> {
+  const limit = Math.min(500, o.limit ?? 200);
+  if (env.DB) {
+    if (o.staff_id) return (await env.DB.prepare(`SELECT * FROM audit_log WHERE staff_id = ?1 ORDER BY id DESC LIMIT ${limit}`).bind(o.staff_id).all<AuditRow>()).results;
+    return (await env.DB.prepare(`SELECT * FROM audit_log ORDER BY id DESC LIMIT ${limit}`).all<AuditRow>()).results;
+  }
+  return mem.audit.filter((a) => !o.staff_id || a.staff_id === o.staff_id).slice(0, limit);
+}
 
 // ---- add-ons and insurance ----------------------------------------------------------------------
 // The catalog the owners edit at /counter/rules (boxes, packing, services) and the insurance terms,

@@ -3,7 +3,8 @@ import type { APIRoute } from 'astro';
 import { env } from '../../lib/env';
 import { json } from '../../lib/validate';
 import { getOrder } from '../../lib/orders';
-import { queuePrint, nextPrintJob, markPrinted, pendingPrintJobs } from '../../shipping/store';
+import { queuePrint, nextPrintJob, markPrinted, pendingPrintJobs, logAudit } from '../../shipping/store';
+import { authenticate } from '../../lib/auth';
 
 // The print queue. Two callers:
 //  - staff on the counter page: POST { pin, action: "queue", order } puts the order's label in the queue.
@@ -30,7 +31,8 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ ok: true });
   }
   if (b.action === 'queue') {
-    if (!env.COUNTER_PIN || String(b.pin) !== env.COUNTER_PIN) return json({ error: 'Wrong PIN' }, 403);
+    const user = await authenticate(env, b.pin);
+    if (!user) return json({ error: 'Wrong PIN' }, 403);
     const order = await getOrder(env, String(b.order ?? ''));
     if (!order?.label) return json({ error: 'No label to print yet' }, 400);
     const l = order.label;
@@ -38,6 +40,7 @@ export const POST: APIRoute = async ({ request }) => {
     const job = l.label_zpl ? { kind: 'label_zpl' as const, payload: l.label_zpl } : pdf ? { kind: 'label_pdf' as const, payload: pdf } : null;
     if (!job) return json({ error: 'Label has no printable file' }, 400);
     const id = await queuePrint(env, { shipment_id: order.id, ...job, printer: String(b.printer ?? 'counter') });
+    await logAudit(env, user, 'label.print', order.id, job.kind);
     return json({ ok: true, id, kind: job.kind, agent: !!env.PRINTER_KEY });
   }
   return json({ error: 'Unknown action' }, 400);

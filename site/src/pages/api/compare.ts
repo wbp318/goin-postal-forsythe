@@ -1,6 +1,7 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
 import { env } from '../../lib/env';
+import { authenticate } from '../../lib/auth';
 import { compare } from '../../shipping/engine';
 import { parseAddress, parseParcel, json } from '../../lib/validate';
 import { store } from '../../data/store';
@@ -10,7 +11,7 @@ import { store } from '../../data/store';
 export const POST: APIRoute = async ({ request }) => {
   try {
     const b: any = await request.json();
-    if (!env.COUNTER_PIN || String(b.pin) !== env.COUNTER_PIN) return json({ error: 'Wrong PIN' }, 403);
+    if (!(await authenticate(env, b.pin))) return json({ error: 'Wrong PIN' }, 403);
     const origin = b.origin ? parseAddress(b.origin) : store.origin;
     const destination = parseAddress(b.destination);
     const parcel = parseParcel(b.parcel);

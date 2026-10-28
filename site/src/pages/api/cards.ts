@@ -1,6 +1,8 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
 import { env } from '../../lib/env';
+import { authenticate } from '../../lib/auth';
+import { logAudit } from '../../shipping/store';
 import { sanitizeDesign, PRICES } from '../../lib/cards';
 import { newCardId, saveCardOrder, type CardOrder } from '../../lib/cardOrders';
 import { json } from '../../lib/validate';
@@ -38,7 +40,8 @@ export const POST: APIRoute = async ({ request }) => {
 // Staff: mark printed or picked up.
 export const PUT: APIRoute = async ({ request }) => {
   const b: any = await request.json().catch(() => ({}));
-  if (!env.COUNTER_PIN || String(b.pin) !== env.COUNTER_PIN) return json({ error: 'Wrong PIN' }, 403);
+  const user = await authenticate(env, b.pin);
+  if (!user) return json({ error: 'Wrong PIN' }, 403);
   const { getCardOrder } = await import('../../lib/cardOrders');
   const o = await getCardOrder(env, String(b.order ?? ''));
   if (!o) return json({ error: 'No such order' }, 404);
@@ -46,5 +49,6 @@ export const PUT: APIRoute = async ({ request }) => {
   else if (b.action === 'picked_up' && (o.status === 'paid' || o.status === 'printed')) o.status = 'picked_up';
   else return json({ error: `Cannot ${b.action} an order that is ${o.status}` }, 400);
   await saveCardOrder(env, o);
+  await logAudit(env, user, `card.${b.action}`, o.id);
   return json({ status: o.status });
 };

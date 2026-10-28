@@ -4,7 +4,8 @@ import { env } from '../../lib/env';
 import { quote } from '../../lib/quote';
 import { newOrderId, saveOrder, getOrder, type Order } from '../../lib/orders';
 import { parseAddress, parseParcel, json } from '../../lib/validate';
-import { listQueue } from '../../shipping/store';
+import { listQueue, logAudit } from '../../shipping/store';
+import { authenticate } from '../../lib/auth';
 import { store } from '../../data/store';
 import { effectiveAddons, priceExtras } from '../../lib/addons';
 
@@ -20,9 +21,10 @@ import { effectiveAddons, priceExtras } from '../../lib/addons';
 // Buying, printing, voiding and cancelling go through /api/counter and /api/print as before.
 export const POST: APIRoute = async ({ request }) => {
   const b: any = await request.json().catch(() => ({}));
-  if (!env.COUNTER_PIN || String(b.pin) !== env.COUNTER_PIN) return json({ error: 'Wrong PIN' }, 403);
+  const user = await authenticate(env, b.pin);
+  if (!user) return json({ error: 'Wrong PIN' }, 403);
   try {
-    if (b.action === 'list') return json(await listQueue(env));
+    if (b.action === 'list') return json({ ...(await listQueue(env)), user: { name: user.name, role: user.role } });
     if (b.action === 'order') {
       // Prefill a walk-up from an earlier order ("ship here again" on the customer page).
       const o = await getOrder(env, String(b.order ?? ''));
@@ -49,11 +51,12 @@ export const POST: APIRoute = async ({ request }) => {
       const total = Math.round((rate.total_charge + extras.extras_total) * 100) / 100;
       const order: Order = {
         id: newOrderId(), status: 'reserved', created_at: new Date().toISOString(),
-        email, phone: phone || undefined, sms, name: name || undefined, source: 'counter', staff: String(b.staff ?? '').trim().slice(0, 20) || undefined,
+        email, phone: phone || undefined, sms, name: name || undefined, source: 'counter', staff: String(b.staff ?? '').trim().slice(0, 20) || user.name.slice(0, 20),
         origin, destination, parcel, rate, international: destination.country_alpha2 !== 'US', kind: isReturn ? 'return' : 'ship',
         addons: extras.addons.length ? extras.addons : undefined, insurance: extras.insurance, total,
       };
       await saveOrder(env, order);
+      await logAudit(env, user, isReturn ? 'quote.create.return' : 'quote.create', order.id, `${rate.carrier} ${rate.service} $${total.toFixed(2)}${name ? `, ${name}` : ''}`);
       return json({ ok: true, id: order.id, price: total, label_price: rate.total_charge, extras });
     }
     return json({ error: 'Unknown action' }, 400);

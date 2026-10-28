@@ -1,6 +1,7 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
 import { env } from '../../lib/env';
+import { authenticate } from '../../lib/auth';
 import { json } from '../../lib/validate';
 import { pollTracking } from '../../shipping/poll';
 
@@ -10,7 +11,7 @@ import { pollTracking } from '../../shipping/poll';
 export const POST: APIRoute = async ({ request }) => {
   const b: any = await request.json().catch(() => ({}));
   const agent = !!env.PRINTER_KEY && request.headers.get('x-printer-key') === env.PRINTER_KEY;
-  const staff = !!env.COUNTER_PIN && String(b.pin ?? '') === env.COUNTER_PIN;
+  const staff = !!(await authenticate(env, b.pin));
   if (!agent && !staff) return json({ error: 'Not allowed' }, 403);
   try {
     const r = await pollTracking(env, Number(b.limit) || 50);

@@ -2,6 +2,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { env } from '../../lib/env';
 import { json } from '../../lib/validate';
+import { authenticate } from '../../lib/auth';
 import { report } from '../../shipping/store';
 
 // Staff reports. POST { pin, from, to } (ISO days, inclusive, at most 366 days) returns the report;
@@ -10,7 +11,8 @@ const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 export const POST: APIRoute = async ({ request }) => {
   const b: any = await request.json().catch(() => ({}));
-  if (!env.COUNTER_PIN || String(b.pin) !== env.COUNTER_PIN) return json({ error: 'Wrong PIN' }, 403);
+  const user = await authenticate(env, b.pin);
+  if (!user) return json({ error: 'Wrong PIN' }, 403);
   const today = new Date().toISOString().slice(0, 10);
   const to = DAY.test(b.to) ? b.to : today;
   const from = DAY.test(b.from) ? b.from : to;

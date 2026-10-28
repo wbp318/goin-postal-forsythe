@@ -1,9 +1,10 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
 import { env } from '../../lib/env';
+import { authenticate, CAN } from '../../lib/auth';
 import { json } from '../../lib/validate';
 import { effectiveAddons, addonsFromFile } from '../../lib/addons';
-import { saveAddons, type AddonRow } from '../../shipping/store';
+import { saveAddons, logAudit, type AddonRow } from '../../shipping/store';
 
 // Add-ons and insurance terms, from the Add-ons section of /counter/rules. Same PIN rule as prices:
 // the staff PIN can view, the owner PIN (when set) is needed to save.
@@ -41,15 +42,16 @@ function clean(b: any): { insurance: { included_usd: number; per_100_usd: number
 
 export const POST: APIRoute = async ({ request }) => {
   const b: any = await request.json().catch(() => ({}));
-  const pin = String(b.pin ?? '');
-  if (!env.COUNTER_PIN || (pin !== env.COUNTER_PIN && pin !== env.OWNER_PIN)) return json({ error: 'Wrong PIN' }, 403);
-  const owner = env.OWNER_PIN ? pin === env.OWNER_PIN : true;
+  const user = await authenticate(env, b.pin);
+  if (!user) return json({ error: 'Wrong PIN' }, 403);
+  const owner = CAN.prices(user);
   try {
     if (b.action === 'get') return json({ ...(await effectiveAddons(env)), owner });
     if (b.action === 'file') return json(addonsFromFile());
     if (b.action === 'save') {
       if (!owner) return json({ error: 'Saving add-ons needs the owner PIN' }, 403);
       const saved = await saveAddons(env, clean(b));
+      await logAudit(env, user, 'addons.save', null, `${saved.items.length} items`);
       return json({ ok: true, ...saved, source: 'table', owner });
     }
     return json({ error: 'Unknown action' }, 400);
