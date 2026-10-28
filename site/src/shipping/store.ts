@@ -273,7 +273,9 @@ export async function upsertQuote(env: Env, order: Order) {
     id: order.id, source: order.source ?? 'online', status: order.status,
     customer_name: order.name?.trim() || d.contact_name || null, email: normEmail(order.email), phone: normalizePhone(order.phone),
     carrier: order.rate.carrier, service: order.rate.service, price: order.rate.total_charge,
-    destination: `${d.contact_name}, ${d.city}, ${d.state} ${d.postal_code}${d.country_alpha2 !== 'US' ? ` ${d.country_alpha2}` : ''}`.replace(/\s+/g, ' ').trim(),
+    destination: (order.kind === 'return'
+      ? `Return from ${order.origin.city}, ${order.origin.state} to ${d.contact_name}`
+      : `${d.contact_name}, ${d.city}, ${d.state} ${d.postal_code}${d.country_alpha2 !== 'US' ? ` ${d.country_alpha2}` : ''}`).replace(/\s+/g, ' ').trim(),
     international: order.international ? 1 : 0, staff: order.staff?.trim() || null,
     created_at: order.created_at, updated_at: now(),
   };

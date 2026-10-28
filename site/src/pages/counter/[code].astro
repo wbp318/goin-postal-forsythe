@@ -17,6 +17,7 @@ if (!order) return new Response('No such order', { status: 404 });
   <div class="grid">
     <div class="card">
       <h3>{order.rate.service} · ${order.rate.total_charge.toFixed(2)}</h3>
+      {order.kind === 'return' && <p><strong>Return label.</strong> From {order.origin.contact_name}, {order.origin.city}, {order.origin.state} {order.origin.postal_code}. Email it to the sender below.</p>}
       <p><strong>To:</strong> {order.destination.contact_name}<br/>{order.destination.line_1}{order.destination.line_2 ? `, ${order.destination.line_2}` : ''}<br/>{order.destination.city}, {order.destination.state} {order.destination.postal_code} {order.destination.country_alpha2}</p>
       <p><strong>Parcel:</strong> {order.parcel.weight_lb} lb · {order.parcel.length_in}×{order.parcel.width_in}×{order.parcel.height_in} in · {order.parcel.description || 'no description'} · ${order.parcel.value_usd}</p>
       <p><strong>Customer:</strong> {order.email}</p>
@@ -27,6 +28,7 @@ if (!order) return new Response('No such order', { status: 404 });
       {order.status === 'reserved' && <p><button class="btn" data-action="paid">Rung up on the POS. Buy label</button></p>}
       {order.label?.label_url && <p><a class="btn" href={order.label.label_url} target="_blank" rel="noopener">Open label to print</a></p>}
       {order.label && <p><button class="btn" data-print="counter">Print at the counter</button> <span class="muted">sends it to the label printer</span></p>}
+      {order.label && <p><label>Email the label to <input id="email" type="email" value={order.email} placeholder="name@example.com" /></label> <button class="btn kraft" data-email>Email label</button>{order.emailed_at && <span class="muted"> last sent {order.emailed_at}</span>}</p>}
       {order.status === 'labeled' && <p><button class="btn kraft" data-action="printed">Mark printed</button></p>}
       {(order.status === 'labeled' || order.status === 'printed') && <p><button class="btn small" data-action="void" data-confirm="Void this label with the carrier? If the customer paid, refund them on the POS or in Stripe by hand.">Void label</button></p>}
       {(order.status === 'awaiting_payment' || order.status === 'reserved') && <p><button class="btn small" data-action="cancel" data-confirm="Drop this quote? Nothing has been bought.">Cancel quote</button></p>}
@@ -49,6 +51,15 @@ if (!order) return new Response('No such order', { status: 404 });
       const j = await res.json();
       if (!res.ok) { msg.textContent = j.error; b.disabled = false; return; }
       location.reload();
+    }));
+    document.querySelectorAll('[data-email]').forEach((b) => b.addEventListener('click', async () => {
+      const pin = document.getElementById('pin').value;
+      const email = document.getElementById('email').value;
+      b.disabled = true;
+      const res = await fetch('/api/counter', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order: id, pin, action: 'email', email }) });
+      const j = await res.json();
+      b.disabled = false;
+      msg.textContent = res.ok ? (j.mock ? `Label email logged for ${j.email} (no Resend key yet).` : `Label emailed to ${j.email}.`) : j.error;
     }));
     document.querySelectorAll('[data-print]').forEach((b) => b.addEventListener('click', async () => {
       const pin = document.getElementById('pin').value;

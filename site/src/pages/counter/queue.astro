@@ -1,6 +1,7 @@
 ---
 export const prerender = false;
 import Base from '../../layouts/Base.astro';
+import { store } from '../../data/store';
 
 // Staff page: the quote queue. Every quote a customer reserved online and every walk-up staff typed
 // in, oldest first, with buy, print, void and cancel on the same screen. Walk-ups are quoted with the
@@ -30,6 +31,7 @@ import Base from '../../layouts/Base.astro';
     </details>
   </div>
 
+  <script type="application/json" id="storeAddr" set:html={JSON.stringify(store.origin)} />
   <h2>Walk-up</h2>
   <p class="muted">Quote a customer at the counter. Pick a rate and add it to the queue; ring it up on the POS, then press Buy label in the queue. The customer gets the same price the website would show.</p>
   <form id="walkup" class="ship-form" autocomplete="off">
@@ -43,7 +45,25 @@ import Base from '../../layouts/Base.astro';
       <label class="check"><input name="sms" type="checkbox" /> Text them when it ships and when it is delivered</label>
     </fieldset>
     <fieldset>
-      <legend>Where is it going</legend>
+      <legend>Return label?</legend>
+      <label class="check"><input name="is_return" type="checkbox" id="isReturn" /> This is a <strong>return</strong>: the package is somewhere else and travels <em>to</em> us or to a local business. We pay here, then email the label to the sender.</label>
+      <div id="returnFields" class="hidden">
+        <p class="muted">Where the package is now (the sender). US addresses only; international returns need customs forms, so quote those on the Ship page.</p>
+        <label>Sender name <input name="from_contact_name" /></label>
+        <label>Street address <input name="from_line_1" maxlength="35" /></label>
+        <label>Apt, suite (optional) <input name="from_line_2" maxlength="35" /></label>
+        <div class="row">
+          <label>City <input name="from_city" /></label>
+          <label>State <input name="from_state" placeholder="TX" maxlength="2" /></label>
+          <label>ZIP <input name="from_postal_code" /></label>
+        </div>
+        <label>Comes back to
+          <select name="return_to" id="returnTo"><option value="store">Us, the store (the business picks it up here)</option><option value="other">Another address, typed below</option></select>
+        </label>
+      </div>
+    </fieldset>
+    <fieldset id="destFields">
+      <legend id="destLegend">Where is it going</legend>
       <label>Recipient name <input name="contact_name" required /></label>
       <label>Street address <input name="line_1" required maxlength="35" /></label>
       <label>Apt, suite (optional) <input name="line_2" maxlength="35" /></label>
@@ -112,7 +132,8 @@ import Base from '../../layouts/Base.astro';
           if (Date.now() - new Date(q.created_at).getTime() > 20 * 60000 && q.status !== 'awaiting_payment') wait.style.color = '#b91c1c';
           const code = cell(tr, ''); code.innerHTML = `<a href="/counter/${q.id}"></a>`; code.querySelector('a')!.textContent = q.id;
           cell(tr, [q.customer_name, q.phone, q.source === 'counter' ? `walk-up${q.staff ? `, ${q.staff}` : ''}` : 'online'].filter(Boolean).join(' · '));
-          cell(tr, q.destination + (q.international ? ' · international' : ''));
+          const dest = cell(tr, q.destination + (q.international ? ' · international' : ''));
+          if (q.destination.startsWith('Return from')) dest.style.fontWeight = '700';
           cell(tr, `${q.carrier} ${q.service} · $${Number(q.price).toFixed(2)}`);
           cell(tr, STATUS[q.status] ?? q.status);
           const act = document.createElement('td'); act.className = 'btnrow';
@@ -120,6 +141,12 @@ import Base from '../../layouts/Base.astro';
           if (q.status === 'labeled') {
             act.appendChild(button('Print at the counter', '', async () => { const j = await api('/api/print', { order: q.id, action: 'queue', printer: 'counter' }); msg.textContent = j.agent ? `${q.id}: sent to the counter printer.` : `${q.id}: queued, but no printer agent is set up. Open the order and use "Open label to print".`; }));
             act.appendChild(button('Mark printed', 'kraft', async () => { await api('/api/counter', { order: q.id, action: 'printed' }); await load(); }));
+            act.appendChild(button('Email label', 'kraft', async () => {
+              const email = window.prompt(`Email the label for ${q.id} to:`, q.email ?? '');
+              if (email === null) return;
+              const j = await api('/api/counter', { order: q.id, action: 'email', email });
+              msg.textContent = j.mock ? `${q.id}: label email logged (no Resend key yet) for ${j.email}.` : `${q.id}: label emailed to ${j.email}.`;
+            }));
             act.appendChild(button('Void', 'kraft', async () => { if (!window.confirm(`Void the label for ${q.id} with the carrier? Refund the customer by hand if they paid.`)) return; await api('/api/counter', { order: q.id, action: 'void' }); await load(); }));
           }
           if (q.status === 'reserved' || q.status === 'awaiting_payment') act.appendChild(button('Cancel', 'kraft', async () => { if (!window.confirm(`Drop quote ${q.id}? Nothing has been bought.`)) return; await api('/api/counter', { order: q.id, action: 'cancel' }); await load(); }));
@@ -147,11 +174,28 @@ import Base from '../../layouts/Base.astro';
     const f = $('walkup') as HTMLFormElement;
     const werr = $('werr'), results = $('results'), ratesEl = $('rates'), addBtn = $('addBtn') as HTMLButtonElement, rateBtn = $('rateBtn') as HTMLButtonElement;
     let payload: any = null, picked: string | null = null;
+    const STORE = JSON.parse(document.getElementById('storeAddr')!.textContent!);
+    const isReturn = $('isReturn') as HTMLInputElement, returnTo = $('returnTo') as HTMLSelectElement, destFields = $('destFields');
+    const destRequired = f.querySelectorAll<HTMLInputElement>('#destFields [required]');
+    function returnMode() {
+      const r = isReturn.checked;
+      $('returnFields').classList.toggle('hidden', !r);
+      const toStore = r && returnTo.value === 'store';
+      destFields.classList.toggle('hidden', toStore);
+      destRequired.forEach((el) => { el.required = !toStore; });
+      $('destLegend').textContent = r ? 'Where it comes back to' : 'Where is it going';
+      f.querySelectorAll<HTMLInputElement>('#returnFields input').forEach((el) => { el.required = r && el.name !== 'from_line_2'; });
+    }
+    isReturn.addEventListener('change', returnMode); returnTo.addEventListener('change', returnMode);
     function read() {
       const d = Object.fromEntries(new FormData(f).entries()) as Record<string, string>;
+      const r = isReturn.checked;
       return {
+        kind: r ? 'return' : 'ship',
+        return_to: r ? returnTo.value : undefined,
+        origin: r ? { contact_name: d.from_contact_name, line_1: d.from_line_1, line_2: d.from_line_2, city: d.from_city, state: d.from_state, postal_code: d.from_postal_code, country_alpha2: 'US' } : undefined,
         customer: { name: d.name, phone: d.phone, email: d.email, sms: d.sms === 'on' },
-        destination: { contact_name: d.contact_name, line_1: d.line_1, line_2: d.line_2, city: d.city, state: d.state, postal_code: d.postal_code, country_alpha2: d.country_alpha2.toUpperCase() },
+        destination: r && returnTo.value === 'store' ? undefined : { contact_name: d.contact_name, line_1: d.line_1, line_2: d.line_2, city: d.city, state: d.state, postal_code: d.postal_code, country_alpha2: d.country_alpha2.toUpperCase() },
         parcel: { weight_lb: d.weight_lb, length_in: d.length_in, width_in: d.width_in, height_in: d.height_in, description: d.description, value_usd: d.value_usd },
       };
     }
@@ -160,7 +204,7 @@ import Base from '../../layouts/Base.astro';
       werr.hidden = true; results.hidden = true; picked = null; addBtn.disabled = true; rateBtn.disabled = true;
       payload = read();
       try {
-        const res = await fetch('/api/rates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ destination: payload.destination, parcel: payload.parcel }) });
+        const res = await fetch('/api/rates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ origin: payload.origin, destination: payload.destination ?? STORE, parcel: payload.parcel }) });
         const j = await res.json();
         if (!res.ok) throw new Error(j.error);
         $('mockNote').hidden = !j.demo;
@@ -183,13 +227,15 @@ import Base from '../../layouts/Base.astro';
       if (!picked || !payload) return;
       addBtn.disabled = true; werr.hidden = true;
       try {
-        const j = await api('/api/queue', { action: 'create', ...payload.customer, destination: payload.destination, parcel: payload.parcel, rate_id: picked, staff: staff() });
-        msg.className = ''; msg.textContent = `${j.id} added to the queue at $${j.price.toFixed(2)}. Ring it up on the POS, then press Buy label.`;
-        f.reset(); results.hidden = true; payload = null; picked = null;
+        const j = await api('/api/queue', { action: 'create', ...payload.customer, kind: payload.kind, return_to: payload.return_to, origin: payload.origin, destination: payload.destination, parcel: payload.parcel, rate_id: picked, staff: staff() });
+        msg.className = ''; msg.textContent = payload.kind === 'return'
+          ? `${j.id} added to the queue at $${j.price.toFixed(2)}. Ring it up on the POS, press Buy label, then Email label to the sender.`
+          : `${j.id} added to the queue at $${j.price.toFixed(2)}. Ring it up on the POS, then press Buy label.`;
+        f.reset(); returnMode(); results.hidden = true; payload = null; picked = null;
         await load(); window.scrollTo({ top: 0, behavior: 'smooth' });
       } catch (e: any) { werr.textContent = e.message; werr.hidden = false; addBtn.disabled = false; }
     });
-    $('clear').addEventListener('click', () => { f.reset(); results.hidden = true; werr.hidden = true; });
+    $('clear').addEventListener('click', () => { f.reset(); returnMode(); results.hidden = true; werr.hidden = true; });
 
     // ?from=GP-CODE: "ship here again" from the customer page. Fills the form once the PIN is entered.
     const from = new URLSearchParams(location.search).get('from');
@@ -199,6 +245,9 @@ import Base from '../../layouts/Base.astro';
         const o = await api('/api/queue', { action: 'order', order: from });
         const set = (n: string, v: unknown) => { const el = f.elements.namedItem(n) as HTMLInputElement | null; if (el && v != null && v !== '') el.value = String(v); };
         set('name', o.name); set('email', o.email); set('phone', o.phone); (f.elements.namedItem('sms') as HTMLInputElement).checked = !!o.sms;
+        isReturn.checked = o.kind === 'return';
+        if (o.origin) for (const k of ['contact_name', 'line_1', 'line_2', 'city', 'state', 'postal_code']) set(`from_${k}`, o.origin[k]);
+        returnMode();
         for (const k of ['contact_name', 'line_1', 'line_2', 'city', 'state', 'postal_code', 'country_alpha2']) set(k, o.destination[k]);
         for (const k of ['weight_lb', 'length_in', 'width_in', 'height_in', 'description', 'value_usd']) set(k, o.parcel[k]);
         msg.className = ''; msg.textContent = `Walk-up form filled from ${from}. Check the weight and size, then Get rates.`;

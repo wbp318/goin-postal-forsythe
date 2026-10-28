@@ -19,6 +19,8 @@ export interface Order {
   sms?: boolean;
   name?: string;          // walk-ups: who is standing at the counter
   source?: 'online' | 'counter'; // undefined means online, from before the queue existed
+  kind?: 'ship' | 'return';      // return: the package travels from origin (the far end) back to us or to a local business
+  emailed_at?: string;           // when the label was last emailed from the counter
   staff?: string;         // walk-ups: who typed it in
   voided_at?: string;
   cancelled_at?: string;

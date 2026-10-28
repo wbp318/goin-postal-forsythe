@@ -13,6 +13,9 @@ import { store } from '../../data/store';
 //  create: a walk-up. Staff typed the address and parcel in and picked a rate; the order is saved as
 //          "reserved", the same state an international online order lands in, so the existing
 //          "rung up on the POS, buy label" step and the print queue take it from there.
+//          With kind "return" the package travels the other way: origin is the far end (typed in),
+//          destination is the store, or another address such as a local business's shop. The label
+//          is paid here and emailed to the person at the far end with the Email label button.
 // Buying, printing, voiding and cancelling go through /api/counter and /api/print as before.
 export const POST: APIRoute = async ({ request }) => {
   const b: any = await request.json().catch(() => ({}));
@@ -23,10 +26,14 @@ export const POST: APIRoute = async ({ request }) => {
       // Prefill a walk-up from an earlier order ("ship here again" on the customer page).
       const o = await getOrder(env, String(b.order ?? ''));
       if (!o) return json({ error: 'No such order' }, 404);
-      return json({ name: o.name ?? '', email: o.email, phone: o.phone ?? '', sms: !!o.sms, destination: o.destination, parcel: o.parcel });
+      return json({ name: o.name ?? '', email: o.email, phone: o.phone ?? '', sms: !!o.sms, destination: o.destination, parcel: o.parcel, kind: o.kind ?? 'ship', origin: o.kind === 'return' ? o.origin : undefined });
     }
     if (b.action === 'create') {
-      const destination = parseAddress(b.destination);
+      const isReturn = b.kind === 'return';
+      if (isReturn && !b.origin?.line_1) throw new Error("Type the sender's address: where the package is now");
+      const origin = isReturn ? parseAddress(b.origin) : store.origin;
+      if (isReturn && origin.country_alpha2 !== 'US') throw new Error('Return labels from outside the US need customs paperwork; quote it on the Ship page instead');
+      const destination = isReturn && b.return_to === 'store' ? store.origin : parseAddress(b.destination);
       const parcel = parseParcel(b.parcel);
       const email = String(b.email ?? '').trim();
       if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error('That email does not look right; leave it blank if they have none');
@@ -34,13 +41,13 @@ export const POST: APIRoute = async ({ request }) => {
       const sms = (b.sms === true || b.sms === 'on') && phone.replace(/\D/g, '').length >= 10;
       const name = String(b.name ?? '').trim().slice(0, 60);
       // Quote again on the server so the price in the queue is the engine's, not the browser's.
-      const { rates } = await quote(env, store.origin, destination, parcel);
+      const { rates } = await quote(env, origin, destination, parcel);
       const rate = rates.find((r) => r.id === b.rate_id);
       if (!rate) throw new Error('That rate is no longer available. Quote again.');
       const order: Order = {
         id: newOrderId(), status: 'reserved', created_at: new Date().toISOString(),
         email, phone: phone || undefined, sms, name: name || undefined, source: 'counter', staff: String(b.staff ?? '').trim().slice(0, 20) || undefined,
-        origin: store.origin, destination, parcel, rate, international: destination.country_alpha2 !== 'US',
+        origin, destination, parcel, rate, international: destination.country_alpha2 !== 'US', kind: isReturn ? 'return' : 'ship',
       };
       await saveOrder(env, order);
       return json({ ok: true, id: order.id, price: rate.total_charge });
