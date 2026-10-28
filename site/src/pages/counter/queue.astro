@@ -94,6 +94,7 @@ import { store } from '../../data/store';
     <p id="werr" class="err" hidden></p>
   </form>
   <section id="results" hidden>
+    <p id="addrNote" hidden></p>
     <p id="packNote" class="muted" hidden></p>
     <p id="mockNote" class="muted" hidden data-i18n="ship.mock">Demo rates: live carrier rates appear once the store's carrier accounts are connected.</p>
     <div id="rates" class="rates"></div>
@@ -208,6 +209,19 @@ import { store } from '../../data/store';
     }
     wInsure.addEventListener('change', wTotal);
     addonList.addEventListener('input', wTotal);
+    let addrForce = false;
+    function renderAddress(ad: any) {
+      const an = $('addrNote'); an.innerHTML = ''; an.hidden = true; addrForce = false;
+      if (!ad || (!ad.errors.length && !ad.warnings.length)) return;
+      an.className = ad.errors.length ? 'err' : 'card';
+      an.textContent = [...ad.errors, ...ad.warnings].join(' ');
+      if (ad.errors.length) {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'btn small kraft'; b.style.marginLeft = '8px'; b.textContent = t('st.ad.anyway');
+        b.addEventListener('click', () => { addrForce = true; an.className = 'card'; b.remove(); an.append(' ' + t('st.ad.forced')); });
+        an.appendChild(b);
+      }
+      an.hidden = false;
+    }
     function renderPacking(pk: any) {
       const pn = $('packNote'); pn.innerHTML = ''; pn.hidden = true;
       if (!pk) return;
@@ -293,6 +307,7 @@ import { store } from '../../data/store';
         if (!j.rates.length) throw new Error(t('st.q.norates'));
         renderExtras(j.extras);
         renderPacking(j.packing);
+        renderAddress(j.address);
         results.hidden = false; results.scrollIntoView({ behavior: 'smooth' });
       } catch (e: any) { werr.textContent = e.message; werr.hidden = false; }
       rateBtn.disabled = false;
@@ -301,7 +316,7 @@ import { store } from '../../data/store';
       if (!picked || !payload) return;
       addBtn.disabled = true; werr.hidden = true;
       try {
-        const j = await api('/api/queue', { action: 'create', ...payload.customer, kind: payload.kind, return_to: payload.return_to, origin: payload.origin, destination: payload.destination, parcel: payload.parcel, rate_id: picked, staff: staff(), insure: wInsure.checked, addons: pickedAddons() });
+        const j = await api('/api/queue', { action: 'create', ...payload.customer, kind: payload.kind, return_to: payload.return_to, origin: payload.origin, destination: payload.destination, parcel: payload.parcel, rate_id: picked, staff: staff(), insure: wInsure.checked, addons: pickedAddons(), force: addrForce });
         msg.className = ''; msg.textContent = payload.customer.account_id ? tf('st.b.added', { id: j.id, price: j.price.toFixed(2) }) : tf(payload.kind === 'return' ? 'st.q.added.return' : 'st.q.added', { id: j.id, price: j.price.toFixed(2) });
         f.reset(); returnMode(); results.hidden = true; $('extras').classList.add('hidden'); payload = null; picked = null;
         await load(); window.scrollTo({ top: 0, behavior: 'smooth' });

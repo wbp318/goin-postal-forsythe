@@ -8,6 +8,7 @@ import { listQueue, logAudit, getAccount } from '../../shipping/store';
 import { authenticate } from '../../lib/auth';
 import { store } from '../../data/store';
 import { effectiveAddons, priceExtras } from '../../lib/addons';
+import { checkAddress } from '../../lib/address';
 
 // The counter queue, from /counter/queue. Staff PIN required.
 //  order:  one order's customer, destination and parcel, to prefill the walk-up form.
@@ -37,6 +38,8 @@ export const POST: APIRoute = async ({ request }) => {
       const origin = isReturn ? parseAddress(b.origin) : store.origin;
       if (isReturn && origin.country_alpha2 !== 'US') throw new Error('Return labels from outside the US need customs paperwork; quote it on the Ship page instead');
       const destination = isReturn && b.return_to === 'store' ? store.origin : parseAddress(b.destination);
+      // Staff can push past an address error with force: true after reading it; online cannot.
+      for (const a of [destination, ...(isReturn ? [origin] : [])]) { const c = checkAddress(a); if (c.errors.length && !b.force) throw new Error(c.errors[0]); }
       const parcel = parseParcel(b.parcel);
       const email = String(b.email ?? '').trim();
       if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error('That email does not look right; leave it blank if they have none');
@@ -66,6 +69,6 @@ export const POST: APIRoute = async ({ request }) => {
     }
     return json({ error: 'Unknown action' }, 400);
   } catch (e: any) {
-    return json({ error: e.message }, e.message?.startsWith('Missing') || /must be|look right|no longer/.test(e.message ?? '') ? 400 : 500);
+    return json({ error: e.message }, e.message?.startsWith('Missing') || /must be|look right|no longer|sender|closed|ZIP/.test(e.message ?? '') ? 400 : 500);
   }
 };

@@ -6,6 +6,7 @@ import { parseAddress, parseParcel, json } from '../../lib/validate';
 import { store } from '../../data/store';
 import { effectiveAddons, extrasOffer } from '../../lib/addons';
 import { advise, boxesFrom } from '../../lib/packing';
+import { checkAddress } from '../../lib/address';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -21,7 +22,10 @@ export const POST: APIRoute = async ({ request }) => {
     const extras = extrasOffer(cfg, parcel.value_usd);
     // Packing advice: what the carriers bill by size, which stocked box fits, whether a smaller one saves weight.
     const packing = advise(parcel, boxesFrom(cfg.items));
-    return json({ rates: visible, international: destination.country_alpha2 !== 'US', demo, oversize, extras, packing });
+    // Address checks: errors stop the label later; warnings are shown now. PO boxes drop UPS and FedEx from the list.
+    const address = checkAddress(destination);
+    const offered = address.po_box || address.military ? visible.filter((r) => r.carrier === 'USPS') : visible;
+    return json({ rates: offered, international: destination.country_alpha2 !== 'US', demo, oversize, extras, packing, address });
   } catch (e: any) {
     return json({ error: e.message }, 400);
   }

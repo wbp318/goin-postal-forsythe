@@ -8,6 +8,7 @@ import { parseAddress, parseParcel, json } from '../../lib/validate';
 import { store } from '../../data/store';
 import { effectiveAddons, priceExtras } from '../../lib/addons';
 import { accountForContact } from '../../shipping/store';
+import { checkAddress } from '../../lib/address';
 
 // Customer picked a rate. Domestic: start Stripe Checkout. International: reserve and pay at the counter.
 export const POST: APIRoute = async ({ request }) => {
@@ -15,6 +16,8 @@ export const POST: APIRoute = async ({ request }) => {
     const b: any = await request.json();
     const origin = b.origin ? parseAddress(b.origin) : store.origin;
     const destination = parseAddress(b.destination);
+    const check = checkAddress(destination);
+    if (check.errors.length) throw new Error(check.errors[0]);
     const parcel = parseParcel(b.parcel);
     const email = String(b.email ?? '').trim();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error('A valid email is needed for the receipt and label');

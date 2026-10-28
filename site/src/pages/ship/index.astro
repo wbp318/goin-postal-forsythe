@@ -55,6 +55,7 @@ const cancelled = Astro.url.searchParams.get('cancelled');
   <section id="results" hidden>
     <h2 data-i18n="ship.rates">Rates</h2>
     <p id="intlNote" class="card" hidden data-i18n="ship.intl">International shipments are paid in the shop. Reserve the rate here, bring the package and the pickup code in, and we handle customs forms and payment with you at the counter.</p>
+    <p id="addrNote" class="card" hidden></p>
     <p id="packNote" class="muted" hidden></p>
     <p id="mockNote" class="card" hidden data-i18n="ship.mock">Demo rates for testing. Live carrier rates appear once the store connects its accounts.</p>
     <div id="rates" class="rates"></div>
@@ -115,6 +116,8 @@ const cancelled = Astro.url.searchParams.get('cancelled');
       if (extras?.insurance.covered) { insRow.hidden = true; insBox.checked = false; insCovered.hidden = false; insCovered.textContent = t('ship.inscovered').replace('{n}', String(extras.insurance.included_usd)); }
       else { insRow.hidden = false; insCovered.hidden = true; document.getElementById('insFee')!.textContent = t('ship.insfee').replace('{fee}', extras.insurance.fee.toFixed(2)).replace('{value}', String(extras.insurance.declared_usd)); }
       document.getElementById('intlNote')!.hidden = !international;
+      const an = document.getElementById('addrNote')!, ad = j.address;
+      if (ad && (ad.errors.length || ad.warnings.length)) { an.textContent = [...ad.errors, ...ad.warnings].join(' '); an.className = ad.errors.length ? 'err' : 'card'; an.hidden = false; } else an.hidden = true;
       const pk = j.packing, pn = document.getElementById('packNote')!;
       if (pk && pk.dim_applies) { const top = pk.billable.reduce((a: any, b: any) => (b.lb > a.lb ? b : a)); pn.textContent = t('ship.packing.dim').replace('{actual}', String(pk.actual_lb)).replace('{billable}', String(top.lb)).replace('{carrier}', top.carrier) + (pk.better ? ' ' + t('ship.packing.better').replace('{box}', pk.better.box.name).replace('{saves}', String(pk.better.saves_lb)) : ''); pn.hidden = false; }
       else if (pk && pk.oversize) { pn.textContent = t('ship.packing.oversize'); pn.hidden = false; }
