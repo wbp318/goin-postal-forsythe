@@ -11,7 +11,7 @@ if (!order) return new Response('No such order', { status: 404 });
 <Base title={`Counter · ${order.id}`}>
   <section class="hero">
     <h1>{order.id}</h1>
-    <p class="lead">Status: <strong>{order.status.replace('_', ' ')}</strong> · {order.international ? 'International, ring up on the POS' : 'Domestic, paid online'}</p>
+    <p class="lead">Status: <strong>{order.status.replace('_', ' ')}</strong> · {order.international ? 'International, ring up on the POS' : order.source === 'counter' ? 'Walk-up, ring up on the POS' : 'Domestic, paid online'}{order.name ? ` · ${order.name}` : ''}</p>
   </section>
 
   <div class="grid">
@@ -28,8 +28,12 @@ if (!order) return new Response('No such order', { status: 404 });
       {order.label?.label_url && <p><a class="btn" href={order.label.label_url} target="_blank" rel="noopener">Open label to print</a></p>}
       {order.label && <p><button class="btn" data-print="counter">Print at the counter</button> <span class="muted">sends it to the label printer</span></p>}
       {order.status === 'labeled' && <p><button class="btn kraft" data-action="printed">Mark printed</button></p>}
-      <p class="staff-nav">{order.label?.tracking_number && <><a href={`/track?q=${order.id}`}>Tracking</a> · </>}<a href="/counter/dropoff">Drop-offs</a> · <a href="/counter/exceptions">Exceptions</a> · <a href="/counter/reports">Reports</a></p>
+      {(order.status === 'labeled' || order.status === 'printed') && <p><button class="btn small" data-action="void" data-confirm="Void this label with the carrier? If the customer paid, refund them on the POS or in Stripe by hand.">Void label</button></p>}
+      {(order.status === 'awaiting_payment' || order.status === 'reserved') && <p><button class="btn small" data-action="cancel" data-confirm="Drop this quote? Nothing has been bought.">Cancel quote</button></p>}
+      <p class="staff-nav">{order.label?.tracking_number && <><a href={`/track?q=${order.id}`}>Tracking</a> · </>}<a href="/counter/queue">Queue</a> · <a href="/counter/dropoff">Drop-offs</a> · <a href="/counter/exceptions">Exceptions</a> · <a href="/counter/reports">Reports</a></p>
       {order.status === 'printed' && <p>Printed {order.printed_at}.</p>}
+      {order.status === 'voided' && <p>Label voided {order.voided_at}. Refund the customer by hand if they paid.</p>}
+      {order.status === 'cancelled' && <p>Quote cancelled {order.cancelled_at}. Nothing was bought.</p>}
       {order.status === 'awaiting_payment' && <p>Not paid online yet. Ask the customer to finish payment, or quote it again here and ring it up on the POS.</p>}
       <p id="msg"></p>
     </div>
@@ -39,6 +43,7 @@ if (!order) return new Response('No such order', { status: 404 });
     const msg = document.getElementById('msg');
     document.querySelectorAll('[data-action]').forEach((b) => b.addEventListener('click', async () => {
       const pin = document.getElementById('pin').value;
+      if (b.dataset.confirm && !window.confirm(b.dataset.confirm)) return;
       b.disabled = true;
       const res = await fetch('/api/counter', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order: id, pin, action: b.dataset.action }) });
       const j = await res.json();

@@ -1,19 +1,27 @@
 // Orders live in Cloudflare KV. One record per quote the customer accepted.
 import type { Address, Parcel, Rate, Label } from '../shipping/types';
+import { upsertQuote } from '../shipping/store';
 
 export type OrderStatus =
   | 'awaiting_payment'   // domestic: Stripe Checkout started, not paid
   | 'reserved'           // international: pay at the counter, label bought then
   | 'labeled'            // label bought, customer can print or show the QR
-  | 'printed';           // staff printed it at the counter
+  | 'printed'            // staff printed it at the counter
+  | 'voided'             // label bought, then voided by staff before it shipped
+  | 'cancelled';         // quote dropped before any label was bought
 
 export interface Order {
   id: string;             // pickup code shown to the customer, e.g. GP-7K3M9Q
   status: OrderStatus;
   created_at: string;
-  email: string;
+  email: string;          // blank for a walk-up who gave none
   phone?: string;         // customer's own number, only when they asked for text updates
   sms?: boolean;
+  name?: string;          // walk-ups: who is standing at the counter
+  source?: 'online' | 'counter'; // undefined means online, from before the queue existed
+  staff?: string;         // walk-ups: who typed it in
+  voided_at?: string;
+  cancelled_at?: string;
   origin: Address;
   destination: Address;
   parcel: Parcel;
@@ -45,6 +53,8 @@ function kv(env: Env) {
 
 export async function saveOrder(env: Env, order: Order) {
   await kv(env).put(KEY(order.id), JSON.stringify(order), { expirationTtl: 60 * 60 * 24 * 90 });
+  // Mirror into the queue index so /counter/queue can list it. KV stays the record of truth.
+  await upsertQuote(env, order).catch((e) => console.error('queue mirror failed', e));
 }
 
 export async function getOrder(env: Env, id: string): Promise<Order | null> {

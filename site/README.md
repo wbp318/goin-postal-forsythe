@@ -42,7 +42,8 @@ flowchart LR
 | `/contact` | customers | Formspree contact form |
 | `/counter/card/CODE` | staff | Card order, already paid online: preview both sides, print sheet, mark printed, mark picked up. Unpaid orders are flagged do not print |
 | `/counter/card/CODE/sheet` | staff | Print-ready 10-up US letter sheet, fronts then mirrored backs |
-| `/counter/CODE` | staff | Order details. For international: ring up on the POS, then press the button to buy the label. Print at the counter (queues for the printer agent), mark printed. Needs the PIN |
+| `/counter/queue` | staff | The quote queue: every quote reserved online and every walk-up staff typed in, oldest first, with Buy label, Print at the counter, Mark printed, Void and Cancel on one screen. Walk-up form quotes with the same engine as the website. Refreshes itself every thirty seconds. PIN |
+| `/counter/CODE` | staff | Order details. For international and walk-ups: ring up on the POS, then press the button to buy the label. Print at the counter (queues for the printer agent), mark printed, void the label, cancel an unbought quote. Needs the PIN |
 | `/counter/dropoff` | staff | Drop-off capture: scan a prepaid or return package's barcode, record it with the time, mark a carrier's pickup. PIN |
 | `/counter/reports` | staff | Shipments, paid, cost and margin by day, carrier and service; busiest hours and days; returning customers; drop-offs; CSV download for reconciling the carrier invoice. PIN |
 | `/counter/exceptions` | staff | Shipments needing a human: carrier exceptions, returns, never scanned after three days, not moving for a week. Check carriers now runs the poll. PIN |
@@ -50,7 +51,8 @@ flowchart LR
 | `POST /api/compare` | staff | Every provider's rates side by side for the parity test. PIN |
 | `POST /api/orders` | site | Re-quotes server side so prices cannot be edited, then Stripe or reserve |
 | `POST /api/stripe-webhook` | Stripe | `checkout.session.completed` buys the label for a `GP-` order or marks a `CD-` card order paid |
-| `POST /api/counter` | staff page | `paid` and `printed` actions |
+| `POST /api/counter` | staff pages | `paid` (buy the label after the POS), `printed`, `void` (cancels the label with the carrier) and `cancel` (drops a quote with no label) actions, PIN |
+| `POST /api/queue` | staff page | `list` (open quotes oldest first, plus the last day's finished ones) and `create` (a walk-up: re-quoted on the server, saved as reserved), PIN |
 | `GET /api/track?q=` | site | Public: shipment status and events by pickup code or tracking number, refreshed from the carrier when older than fifteen minutes |
 | `POST /api/print` | staff page, printer agent | `queue` (PIN) puts a label in the print queue; `GET` and `done` (header `X-Printer-Key`) are what the counter PC's [printer agent](../shipping-client/printer-agent/README.md) calls |
 | `POST /api/dropoff` | staff page | `accept`, `lookup`, `recent`, `handed` actions, PIN |

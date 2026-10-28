@@ -68,8 +68,68 @@ const mem = {
   events: new Map<string, (TrackingEvent & { id: number })[]>(),
   jobs: [] as PrintJob[],
   dropoffs: [] as Dropoff[],
+  quotes: new Map<string, QuoteRow>(),
   seq: 1,
 };
+
+// ---- counter queue ----------------------------------------------------------------------------
+// One row per order, written on every saveOrder(). The queue page lists these oldest first; the order
+// itself (addresses, parcel, label) is still read from KV by code.
+export interface QuoteRow {
+  id: string;
+  source: 'online' | 'counter';
+  status: string;
+  customer_name: string | null;
+  email: string | null;
+  phone: string | null;
+  carrier: string;
+  service: string;
+  price: number;
+  destination: string;
+  international: number;
+  staff: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export const OPEN_QUOTE_STATUSES = ['awaiting_payment', 'reserved', 'labeled'];
+
+export async function upsertQuote(env: Env, order: Order) {
+  const d = order.destination;
+  const row: QuoteRow = {
+    id: order.id, source: order.source ?? 'online', status: order.status,
+    customer_name: order.name?.trim() || d.contact_name || null, email: order.email || null, phone: order.phone || null,
+    carrier: order.rate.carrier, service: order.rate.service, price: order.rate.total_charge,
+    destination: `${d.contact_name}, ${d.city}, ${d.state} ${d.postal_code}${d.country_alpha2 !== 'US' ? ` ${d.country_alpha2}` : ''}`.replace(/\s+/g, ' ').trim(),
+    international: order.international ? 1 : 0, staff: order.staff?.trim() || null,
+    created_at: order.created_at, updated_at: now(),
+  };
+  if (env.DB) {
+    await env.DB.prepare(
+      `INSERT OR REPLACE INTO quotes (id, source, status, customer_name, email, phone, carrier, service, price, destination, international, staff, created_at, updated_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)`,
+    ).bind(row.id, row.source, row.status, row.customer_name, row.email, row.phone, row.carrier, row.service, row.price, row.destination, row.international, row.staff, row.created_at, row.updated_at).run();
+  } else {
+    mem.quotes.set(row.id, row);
+  }
+  return row;
+}
+
+/** What the counter sees: everything not yet printed, oldest first, then what was finished or dropped in the last day. */
+export async function listQueue(env: Env): Promise<{ open: QuoteRow[]; done: QuoteRow[] }> {
+  const since = new Date(Date.now() - DAY).toISOString();
+  const marks = OPEN_QUOTE_STATUSES.map(() => '?').join(',');
+  if (env.DB) {
+    const open = (await env.DB.prepare(`SELECT * FROM quotes WHERE status IN (${marks}) ORDER BY created_at ASC LIMIT 200`).bind(...OPEN_QUOTE_STATUSES).all<QuoteRow>()).results;
+    const done = (await env.DB.prepare(`SELECT * FROM quotes WHERE status NOT IN (${marks}) AND updated_at >= ? ORDER BY updated_at DESC LIMIT 50`).bind(...OPEN_QUOTE_STATUSES, since).all<QuoteRow>()).results;
+    return { open, done };
+  }
+  const all = [...mem.quotes.values()];
+  return {
+    open: all.filter((q) => OPEN_QUOTE_STATUSES.includes(q.status)).sort((a, b) => a.created_at.localeCompare(b.created_at)).slice(0, 200),
+    done: all.filter((q) => !OPEN_QUOTE_STATUSES.includes(q.status) && q.updated_at >= since).sort((a, b) => b.updated_at.localeCompare(a.updated_at)).slice(0, 50),
+  };
+}
 
 // ---- shipments --------------------------------------------------------------------------------
 export async function recordShipment(env: Env, order: Order, label: Label, paidVia: 'stripe' | 'pos' | 'mock') {
@@ -91,7 +151,7 @@ export async function recordShipment(env: Env, order: Order, label: Label, paidV
     mem.shipments.set(row.id, row);
   }
   await addTrackingEvents(env, row.id, [{ at: t, status: 'label_created', description: `Label created, ${row.service.toLowerCase().startsWith(row.carrier.toLowerCase()) ? row.service : `${row.carrier} ${row.service}`}` }]);
-  await saveContacts(env, row.id, { email: order.email, phone: order.phone ?? null, sms_opt_in: !!order.sms && !!order.phone });
+  await saveContacts(env, row.id, { email: order.email || null, phone: order.phone ?? null, sms_opt_in: !!order.sms && !!order.phone });
   return row;
 }
 

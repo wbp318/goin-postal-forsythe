@@ -1,7 +1,7 @@
 // Easyship as one adapter among five: the single-call fallback that covers all four carriers.
 // Stays switched on until the direct adapters have passed the parity test, then becomes the fallback.
 import type { Provider, Rate, TrackingEvent } from '../types';
-import { getRates, buyLabel as esBuy } from '../../lib/easyship';
+import { getRates, buyLabel as esBuy, cancelShipment } from '../../lib/easyship';
 import { billableWeightLb } from '../dim';
 
 const carrierOf = (umbrella: string): Rate['carrier'] => {
@@ -29,6 +29,11 @@ export const easyship: Provider = {
       id: `easyship:${l.easyship_shipment_id}`, carrier: 'USPS', service: '', label_url: l.label_url, label_zpl: null, qr_url: l.qr_url,
       tracking_number: l.tracking_number, tracking_page_url: l.tracking_page_url, cost: 0,
     };
+  },
+
+  // Void: Easyship cancels the shipment and credits the postage back. The label id is "easyship:<shipment id>".
+  async voidLabel(env, labelId) {
+    await cancelShipment(env.EASYSHIP_TOKEN, labelId.replace(/^easyship:/, ''));
   },
 
   // Easyship's tracking lives on its own page (tracking_page_url). With no token we are in mock mode

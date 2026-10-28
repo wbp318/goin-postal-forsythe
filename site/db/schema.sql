@@ -111,3 +111,24 @@ CREATE TABLE IF NOT EXISTS notifications (
   sent_at TEXT NOT NULL,
   UNIQUE (shipment_id, status)
 );
+
+-- The counter queue: one row per quote a customer accepted online or staff typed in for a walk-up,
+-- kept in step with the KV order on every save. Orders themselves stay in KV; this is the listable
+-- index the staff queue page reads, oldest first.
+CREATE TABLE IF NOT EXISTS quotes (
+  id TEXT PRIMARY KEY,                 -- GP-XXXXXX, same as the order code
+  source TEXT NOT NULL,                -- online, counter
+  status TEXT NOT NULL,                -- awaiting_payment, reserved, labeled, printed, voided, cancelled
+  customer_name TEXT,
+  email TEXT,
+  phone TEXT,
+  carrier TEXT NOT NULL,
+  service TEXT NOT NULL,
+  price REAL NOT NULL,
+  destination TEXT NOT NULL,           -- "Name, City, ST 71201"
+  international INTEGER NOT NULL DEFAULT 0,
+  staff TEXT,                          -- who typed a walk-up in
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS quotes_status ON quotes(status, created_at);

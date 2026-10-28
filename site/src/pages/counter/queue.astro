@@ -1,0 +1,194 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+
+// Staff page: the quote queue. Every quote a customer reserved online and every walk-up staff typed
+// in, oldest first, with buy, print, void and cancel on the same screen. Walk-ups are quoted with the
+// same rating engine the website uses, so the counter and the site never disagree on a price.
+---
+<Base title="Counter · Queue">
+  <section class="hero">
+    <h1>Queue</h1>
+    <p class="staff-nav">Staff: <a href="/counter/queue">Queue</a> · <a href="/counter/dropoff">Drop-offs</a> · <a href="/counter/exceptions">Exceptions</a> · <a href="/counter/reports">Reports</a></p>
+    <p class="lead">Who is waiting on a label. Online reservations show up here by themselves; type a walk-up in below. Oldest first.</p>
+  </section>
+
+  <div class="card">
+    <p class="btnrow">
+      <label>Staff PIN <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
+      <label>Your name or initials <input id="staff" maxlength="20" /></label>
+      <button class="btn" id="load">Show queue</button>
+    </p>
+    <p id="msg" role="alert"></p>
+    <table class="list hidden" id="table">
+      <thead><tr><th>Waiting</th><th>Code</th><th>Customer</th><th>To</th><th>Service</th><th>Status</th><th>Do</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <p id="empty" class="muted hidden">Nobody is waiting.</p>
+    <details id="donewrap" class="hidden"><summary>Finished in the last day</summary>
+      <table class="list" id="done"><thead><tr><th>When</th><th>Code</th><th>Customer</th><th>Service</th><th>Status</th><th></th></tr></thead><tbody></tbody></table>
+    </details>
+  </div>
+
+  <h2>Walk-up</h2>
+  <p class="muted">Quote a customer at the counter. Pick a rate and add it to the queue; ring it up on the POS, then press Buy label in the queue. The customer gets the same price the website would show.</p>
+  <form id="walkup" class="ship-form" autocomplete="off">
+    <fieldset>
+      <legend>Who is shipping</legend>
+      <div class="row">
+        <label>Customer name <input name="name" maxlength="60" /></label>
+        <label>Mobile (optional) <input name="phone" inputmode="tel" maxlength="20" /></label>
+        <label>Email (optional) <input name="email" type="email" /></label>
+      </div>
+      <label class="check"><input name="sms" type="checkbox" /> Text them when it ships and when it is delivered</label>
+    </fieldset>
+    <fieldset>
+      <legend>Where is it going</legend>
+      <label>Recipient name <input name="contact_name" required /></label>
+      <label>Street address <input name="line_1" required maxlength="35" /></label>
+      <label>Apt, suite (optional) <input name="line_2" maxlength="35" /></label>
+      <div class="row">
+        <label>City <input name="city" required /></label>
+        <label>State <input name="state" placeholder="LA" maxlength="2" /></label>
+        <label>ZIP / postal code <input name="postal_code" required /></label>
+        <label>Country <input name="country_alpha2" value="US" maxlength="2" required /></label>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>What is it</legend>
+      <div class="row">
+        <label>Weight (lb) <input name="weight_lb" type="number" step="0.1" min="0.1" max="150" required /></label>
+        <label>Length (in) <input name="length_in" type="number" min="1" required /></label>
+        <label>Width (in) <input name="width_in" type="number" min="1" required /></label>
+        <label>Height (in) <input name="height_in" type="number" min="1" required /></label>
+      </div>
+      <div class="row">
+        <label>What's inside <input name="description" maxlength="80" placeholder="Clothing" /></label>
+        <label>Value in USD <input name="value_usd" type="number" min="1" placeholder="25" /></label>
+      </div>
+    </fieldset>
+    <p class="btnrow"><button class="btn" type="submit" id="rateBtn">Get rates</button> <button class="btn kraft" type="button" id="clear">Clear form</button></p>
+    <p id="werr" class="err" hidden></p>
+  </form>
+  <section id="results" hidden>
+    <p id="mockNote" class="muted" hidden>Demo rates: live carrier rates appear once the store's carrier accounts are connected.</p>
+    <div id="rates" class="rates"></div>
+    <p class="btnrow"><button class="btn" id="addBtn" disabled>Add to queue</button></p>
+  </section>
+
+  <script>
+    const $ = (id: string) => document.getElementById(id)!;
+    const pin = () => ($('pin') as HTMLInputElement).value;
+    const staff = () => ($('staff') as HTMLInputElement).value;
+    const msg = $('msg');
+    const table = $('table'), body = table.querySelector('tbody')!, empty = $('empty');
+    const doneWrap = $('donewrap'), doneBody = $('done').querySelector('tbody')!;
+    const STATUS: Record<string, string> = { awaiting_payment: 'Not paid online', reserved: 'Pay on the POS', labeled: 'Label bought', printed: 'Printed', voided: 'Voided', cancelled: 'Cancelled' };
+    const fmt = (iso: string) => new Date(iso).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    const ago = (iso: string) => { const m = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000)); return m < 60 ? `${m} min` : m < 1440 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${Math.floor(m / 1440)} d`; };
+
+    async function api(path: string, extra: Record<string, unknown> = {}) {
+      const res = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin(), ...extra }) });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error);
+      return j;
+    }
+    const cell = (tr: HTMLTableRowElement, text: string, cls?: string) => { const td = document.createElement('td'); td.textContent = text; if (cls) td.className = cls; tr.appendChild(td); return td; };
+    const button = (label: string, cls: string, onClick: () => Promise<void>) => {
+      const b = document.createElement('button'); b.className = `btn small ${cls}`.trim(); b.textContent = label;
+      b.addEventListener('click', async () => { b.disabled = true; msg.className = ''; msg.textContent = ''; try { await onClick(); } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; } b.disabled = false; });
+      return b;
+    };
+
+    async function load() {
+      if (!pin()) { msg.className = 'err'; msg.textContent = 'Enter the staff PIN first.'; return; }
+      try {
+        const { open, done } = await api('/api/queue', { action: 'list' });
+        body.innerHTML = '';
+        for (const q of open) {
+          const tr = document.createElement('tr');
+          tr.className = q.status;
+          const wait = cell(tr, ago(q.created_at));
+          if (Date.now() - new Date(q.created_at).getTime() > 20 * 60000 && q.status !== 'awaiting_payment') wait.style.color = '#b91c1c';
+          const code = cell(tr, ''); code.innerHTML = `<a href="/counter/${q.id}"></a>`; code.querySelector('a')!.textContent = q.id;
+          cell(tr, [q.customer_name, q.phone, q.source === 'counter' ? `walk-up${q.staff ? `, ${q.staff}` : ''}` : 'online'].filter(Boolean).join(' · '));
+          cell(tr, q.destination + (q.international ? ' · international' : ''));
+          cell(tr, `${q.carrier} ${q.service} · $${Number(q.price).toFixed(2)}`);
+          cell(tr, STATUS[q.status] ?? q.status);
+          const act = document.createElement('td'); act.className = 'btnrow';
+          if (q.status === 'reserved') act.appendChild(button('Rung up. Buy label', '', async () => { await api('/api/counter', { order: q.id, action: 'paid' }); msg.textContent = `${q.id}: label bought.`; await load(); }));
+          if (q.status === 'labeled') {
+            act.appendChild(button('Print at the counter', '', async () => { const j = await api('/api/print', { order: q.id, action: 'queue', printer: 'counter' }); msg.textContent = j.agent ? `${q.id}: sent to the counter printer.` : `${q.id}: queued, but no printer agent is set up. Open the order and use "Open label to print".`; }));
+            act.appendChild(button('Mark printed', 'kraft', async () => { await api('/api/counter', { order: q.id, action: 'printed' }); await load(); }));
+            act.appendChild(button('Void', 'kraft', async () => { if (!window.confirm(`Void the label for ${q.id} with the carrier? Refund the customer by hand if they paid.`)) return; await api('/api/counter', { order: q.id, action: 'void' }); await load(); }));
+          }
+          if (q.status === 'reserved' || q.status === 'awaiting_payment') act.appendChild(button('Cancel', 'kraft', async () => { if (!window.confirm(`Drop quote ${q.id}? Nothing has been bought.`)) return; await api('/api/counter', { order: q.id, action: 'cancel' }); await load(); }));
+          tr.appendChild(act);
+          body.appendChild(tr);
+        }
+        table.classList.toggle('hidden', !open.length);
+        empty.classList.toggle('hidden', !!open.length);
+        doneBody.innerHTML = '';
+        for (const q of done) {
+          const tr = document.createElement('tr');
+          cell(tr, fmt(q.updated_at)); const code = cell(tr, ''); code.innerHTML = `<a href="/counter/${q.id}"></a>`; code.querySelector('a')!.textContent = q.id;
+          cell(tr, q.customer_name ?? ''); cell(tr, `${q.carrier} ${q.service} · $${Number(q.price).toFixed(2)}`); cell(tr, STATUS[q.status] ?? q.status);
+          const td = cell(tr, ''); if (q.status === 'printed') td.innerHTML = `<a href="/track?q=${q.id}">Track</a>`;
+          doneBody.appendChild(tr);
+        }
+        doneWrap.classList.toggle('hidden', !done.length);
+      } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    }
+    $('load').addEventListener('click', load);
+    $('pin').addEventListener('change', load);
+    setInterval(() => { if (pin() && document.visibilityState === 'visible') load(); }, 30000);
+
+    // ---- walk-up quote ----
+    const f = $('walkup') as HTMLFormElement;
+    const werr = $('werr'), results = $('results'), ratesEl = $('rates'), addBtn = $('addBtn') as HTMLButtonElement, rateBtn = $('rateBtn') as HTMLButtonElement;
+    let payload: any = null, picked: string | null = null;
+    function read() {
+      const d = Object.fromEntries(new FormData(f).entries()) as Record<string, string>;
+      return {
+        customer: { name: d.name, phone: d.phone, email: d.email, sms: d.sms === 'on' },
+        destination: { contact_name: d.contact_name, line_1: d.line_1, line_2: d.line_2, city: d.city, state: d.state, postal_code: d.postal_code, country_alpha2: d.country_alpha2.toUpperCase() },
+        parcel: { weight_lb: d.weight_lb, length_in: d.length_in, width_in: d.width_in, height_in: d.height_in, description: d.description, value_usd: d.value_usd },
+      };
+    }
+    f.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      werr.hidden = true; results.hidden = true; picked = null; addBtn.disabled = true; rateBtn.disabled = true;
+      payload = read();
+      try {
+        const res = await fetch('/api/rates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ destination: payload.destination, parcel: payload.parcel }) });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.error);
+        $('mockNote').hidden = !j.demo;
+        ratesEl.innerHTML = '';
+        for (const r of j.rates) {
+          const el = document.createElement('label');
+          el.className = 'rate card';
+          el.innerHTML = `<input type="radio" name="rate"><span class="carrier"></span><span class="service"></span><span class="days"></span><span class="price"></span>`;
+          el.querySelector('.carrier')!.textContent = r.carrier; el.querySelector('.service')!.textContent = r.service;
+          el.querySelector('.days')!.textContent = `${r.min_days ?? '?'}–${r.max_days ?? '?'} days`; el.querySelector('.price')!.textContent = `$${r.total_charge.toFixed(2)}`;
+          el.querySelector('input')!.addEventListener('change', () => { picked = r.id; addBtn.disabled = false; });
+          ratesEl.appendChild(el);
+        }
+        if (!j.rates.length) throw new Error('No rates came back for that address and parcel.');
+        results.hidden = false; results.scrollIntoView({ behavior: 'smooth' });
+      } catch (e: any) { werr.textContent = e.message; werr.hidden = false; }
+      rateBtn.disabled = false;
+    });
+    addBtn.addEventListener('click', async () => {
+      if (!picked || !payload) return;
+      addBtn.disabled = true; werr.hidden = true;
+      try {
+        const j = await api('/api/queue', { action: 'create', ...payload.customer, destination: payload.destination, parcel: payload.parcel, rate_id: picked, staff: staff() });
+        msg.className = ''; msg.textContent = `${j.id} added to the queue at $${j.price.toFixed(2)}. Ring it up on the POS, then press Buy label.`;
+        f.reset(); results.hidden = true; payload = null; picked = null;
+        await load(); window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (e: any) { werr.textContent = e.message; werr.hidden = false; addBtn.disabled = false; }
+    });
+    $('clear').addEventListener('click', () => { f.reset(); results.hidden = true; werr.hidden = true; });
+  </script>
+</Base>

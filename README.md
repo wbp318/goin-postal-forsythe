@@ -116,6 +116,7 @@ The site runs in **test mode** because no keys are set: shipping rates are sampl
 | Buy a domestic label | same page | Pick a rate, enter any email, press Pay and get label. You land on a done page with a pickup code like GP-7K3M9Q, a Download label link and a QR code |
 | Reserve an international label | same page, country Canada | The button reads Reserve and pay at the counter. The done page says Reserved |
 | Staff counter page | scan the QR, or open http://localhost:4321/counter/GP-XXXXXX with your code | Shows the order. PIN is **1234**. For a reserved order, press Rung up on the POS, buy label. For a paid one, Mark printed |
+| Staff queue | http://localhost:4321/counter/queue | PIN 1234, Show queue. Your reserved order is listed. Type a walk-up in below, Get rates, pick one, Add to queue; it appears at the top. Try Buy label, Print at the counter, Void and Cancel |
 | Design business cards | http://localhost:4321/cards | Pick a color, then a layout. Click text on the card and type. Drag it. Try the Back tab, Undo, Download PNG |
 | Order cards | bottom of the designer | Quantity, name, email, Pay and order. Done page with a code like CD-3DBY5A and a QR |
 | Card counter page and print sheet | http://localhost:4321/counter/card/CD-XXXXXX | Both sides, Open print sheet shows ten cards on a letter page. PIN 1234 |

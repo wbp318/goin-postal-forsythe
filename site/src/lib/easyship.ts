@@ -128,6 +128,12 @@ export async function buyLabel(token: string | undefined, origin: Address, desti
   };
 }
 
+/** Cancels a shipment whose label has not been used. Easyship refunds the postage to the account on its own schedule. */
+export async function cancelShipment(token: string | undefined, easyship_shipment_id: string): Promise<void> {
+  if (!token) return; // mock mode: nothing was bought
+  await call(token, `/shipments/${encodeURIComponent(easyship_shipment_id)}/cancel`, {});
+}
+
 // ---- mock mode -------------------------------------------------------------
 
 function mockRates(international: boolean): Rate[] {
