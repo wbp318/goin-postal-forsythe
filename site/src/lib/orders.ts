@@ -33,6 +33,16 @@ export interface Order {
   paid_at?: string;
   label?: Label;
   printed_at?: string;
+  // Insurance and packaging add-ons priced on the server from the catalog (lib/addons.ts). total is
+  // what the customer pays: label plus add-ons plus insurance. Orders from before N6 have none.
+  addons?: { code: string; name: string; qty: number; unit_price: number; total: number }[];
+  insurance?: { declared_usd: number; fee: number };
+  total?: number;
+}
+
+/** What the customer pays, label and extras together. Older orders have only the label. */
+export function orderTotal(o: Order): number {
+  return o.total ?? o.rate.total_charge;
 }
 
 const KEY = (id: string) => `order:${id}`;

@@ -3,7 +3,7 @@ export const prerender = false;
 import QRCode from 'qrcode';
 import { env } from '../../lib/env';
 import Base from '../../layouts/Base.astro';
-import { getOrder } from '../../lib/orders';
+import { getOrder, orderTotal } from '../../lib/orders';
 import { store } from '../../data/store';
 
 const order = await getOrder(env, Astro.url.searchParams.get('order') ?? '');
@@ -25,7 +25,8 @@ const paid = order.status === 'labeled' || order.status === 'printed';
       <h3>{order.rate.service}</h3>
       <p>To {order.destination.contact_name}, {order.destination.city}, {order.destination.state} {order.destination.postal_code}, {order.destination.country_alpha2}</p>
       <p>{order.parcel.weight_lb} lb · {order.parcel.length_in}×{order.parcel.width_in}×{order.parcel.height_in} in</p>
-      <p><strong>${order.rate.total_charge.toFixed(2)}</strong> {order.status === 'reserved' ? '(pay at the counter)' : '(paid)'}</p>
+      {(order.addons?.length || order.insurance) && <p class="muted">{order.rate.service} ${order.rate.total_charge.toFixed(2)}{order.addons?.map((l) => ` · ${l.name}${l.qty > 1 ? ` × ${l.qty}` : ''} $${l.total.toFixed(2)}`).join('')}{order.insurance && <> · <span data-i18n="done.insurance">Insurance</span> ${order.insurance.fee.toFixed(2)}</>}</p>}
+      <p><span data-i18n="done.total">Total</span> <strong>${orderTotal(order).toFixed(2)}</strong> {order.status === 'reserved' ? '(pay at the counter)' : '(paid)'}</p>
       {paid && order.label?.label_url && <p><a class="btn" href={order.label.label_url} target="_blank" rel="noopener" data-i18n="done.download">Download label (PDF)</a></p>}
       {paid && order.label?.tracking_number && <p><span data-i18n="done.tracking">Tracking</span>: {order.label.tracking_number} · <a href={`/track?q=${order.id}`} data-i18n="done.track">Track this package</a></p>}
       {order.status === 'awaiting_payment' && <p><span data-i18n="done.startagain">If you closed the payment page,</span> <a href="/ship" data-i18n="done.again">start again</a>.</p>}

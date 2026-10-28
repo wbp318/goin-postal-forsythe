@@ -2,7 +2,7 @@
 export const prerender = false;
 import Base from '../../layouts/Base.astro';
 import { env } from '../../lib/env';
-import { getOrder } from '../../lib/orders';
+import { getOrder, orderTotal } from '../../lib/orders';
 
 // Staff page. Opened by scanning the customer's QR code. Buying or marking printed needs the PIN.
 const order = await getOrder(env, Astro.params.code ?? '');
@@ -17,6 +17,9 @@ if (!order) return new Response('No such order', { status: 404 });
   <div class="grid">
     <div class="card">
       <h3>{order.rate.service} · ${order.rate.total_charge.toFixed(2)}</h3>
+      {order.addons?.map((l) => <p>{l.name}{l.qty > 1 ? ` × ${l.qty}` : ''} · ${l.total.toFixed(2)}</p>)}
+      {order.insurance && <p><span data-i18n="done.insurance">Insurance</span> ${'to'} ${order.insurance.declared_usd} · ${order.insurance.fee.toFixed(2)}</p>}
+      <p><strong data-i18n="st.o.ringup">Total:</strong> <strong>${orderTotal(order).toFixed(2)}</strong>{order.status === 'reserved' && <span class="muted"> · <span data-i18n="st.o.ringup.pos">ring this up on the POS</span></span>}</p>
       {order.kind === 'return' && <p><strong data-i18n="st.o.return">Return label.</strong> <span data-i18n="st.o.return.from">From</span> {order.origin.contact_name}, {order.origin.city}, {order.origin.state} {order.origin.postal_code}. <span data-i18n="st.o.return.email">Email it to the sender below.</span></p>}
       <p><strong data-i18n="st.o.to">To:</strong> {order.destination.contact_name}<br/>{order.destination.line_1}{order.destination.line_2 ? `, ${order.destination.line_2}` : ''}<br/>{order.destination.city}, {order.destination.state} {order.destination.postal_code} {order.destination.country_alpha2}</p>
       <p><strong data-i18n="st.o.parcel">Parcel:</strong> {order.parcel.weight_lb} lb · {order.parcel.length_in}×{order.parcel.width_in}×{order.parcel.height_in} in · {order.parcel.description ? order.parcel.description : <span data-i18n="st.o.nodesc">no description</span>} · ${order.parcel.value_usd}</p>

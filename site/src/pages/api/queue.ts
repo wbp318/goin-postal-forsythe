@@ -6,6 +6,7 @@ import { newOrderId, saveOrder, getOrder, type Order } from '../../lib/orders';
 import { parseAddress, parseParcel, json } from '../../lib/validate';
 import { listQueue } from '../../shipping/store';
 import { store } from '../../data/store';
+import { effectiveAddons, priceExtras } from '../../lib/addons';
 
 // The counter queue, from /counter/queue. Staff PIN required.
 //  order:  one order's customer, destination and parcel, to prefill the walk-up form.
@@ -26,7 +27,7 @@ export const POST: APIRoute = async ({ request }) => {
       // Prefill a walk-up from an earlier order ("ship here again" on the customer page).
       const o = await getOrder(env, String(b.order ?? ''));
       if (!o) return json({ error: 'No such order' }, 404);
-      return json({ name: o.name ?? '', email: o.email, phone: o.phone ?? '', sms: !!o.sms, destination: o.destination, parcel: o.parcel, kind: o.kind ?? 'ship', origin: o.kind === 'return' ? o.origin : undefined });
+      return json({ name: o.name ?? '', email: o.email, phone: o.phone ?? '', sms: !!o.sms, destination: o.destination, parcel: o.parcel, kind: o.kind ?? 'ship', origin: o.kind === 'return' ? o.origin : undefined, addons: o.addons ?? [], insure: !!o.insurance });
     }
     if (b.action === 'create') {
       const isReturn = b.kind === 'return';
@@ -44,13 +45,16 @@ export const POST: APIRoute = async ({ request }) => {
       const { rates } = await quote(env, origin, destination, parcel);
       const rate = rates.find((r) => r.id === b.rate_id);
       if (!rate) throw new Error('That rate is no longer available. Quote again.');
+      const extras = priceExtras(await effectiveAddons(env), b.addons, parcel.value_usd, b.insure === true || b.insure === 'on');
+      const total = Math.round((rate.total_charge + extras.extras_total) * 100) / 100;
       const order: Order = {
         id: newOrderId(), status: 'reserved', created_at: new Date().toISOString(),
         email, phone: phone || undefined, sms, name: name || undefined, source: 'counter', staff: String(b.staff ?? '').trim().slice(0, 20) || undefined,
         origin, destination, parcel, rate, international: destination.country_alpha2 !== 'US', kind: isReturn ? 'return' : 'ship',
+        addons: extras.addons.length ? extras.addons : undefined, insurance: extras.insurance, total,
       };
       await saveOrder(env, order);
-      return json({ ok: true, id: order.id, price: rate.total_charge });
+      return json({ ok: true, id: order.id, price: total, label_price: rate.total_charge, extras });
     }
     return json({ error: 'Unknown action' }, 400);
   } catch (e: any) {

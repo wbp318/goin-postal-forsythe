@@ -3,7 +3,7 @@
 // carrier adapter produced the chosen rate, then records the shipment in PeterShip's
 // own store so tracking, the printer agent and the reports can see it.
 import { buyLabel } from '../shipping/engine';
-import { recordShipment } from '../shipping/store';
+import { recordShipment, recordOrderAddons } from '../shipping/store';
 import { saveOrder, type Order } from './orders';
 
 export async function fulfil(env: Env, order: Order, paidVia: 'stripe' | 'pos' | 'mock' = order.international ? 'pos' : env.STRIPE_SECRET_KEY ? 'stripe' : 'mock'): Promise<Order> {
@@ -12,5 +12,6 @@ export async function fulfil(env: Env, order: Order, paidVia: 'stripe' | 'pos' |
   const next: Order = { ...order, status: 'labeled', paid_at: order.paid_at ?? new Date().toISOString(), label };
   await saveOrder(env, next);
   await recordShipment(env, next, label, paidVia).catch((e) => console.error('shipment record failed', e));
+  await recordOrderAddons(env, next).catch((e) => console.error('add-on record failed', e));
   return next;
 }

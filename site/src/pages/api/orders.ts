@@ -6,6 +6,7 @@ import { newOrderId, saveOrder, type Order } from '../../lib/orders';
 import { createCheckout } from '../../lib/stripe';
 import { parseAddress, parseParcel, json } from '../../lib/validate';
 import { store } from '../../data/store';
+import { effectiveAddons, priceExtras } from '../../lib/addons';
 
 // Customer picked a rate. Domestic: start Stripe Checkout. International: reserve and pay at the counter.
 export const POST: APIRoute = async ({ request }) => {
@@ -26,11 +27,13 @@ export const POST: APIRoute = async ({ request }) => {
     if (!rate) throw new Error('That rate is no longer available. Please quote again.');
 
     const international = destination.country_alpha2 !== 'US';
+    const extras = priceExtras(await effectiveAddons(env), b.addons, parcel.value_usd, b.insure === true || b.insure === 'on');
     const order: Order = {
       id: newOrderId(),
       status: international ? 'reserved' : 'awaiting_payment',
       created_at: new Date().toISOString(),
       email, phone: sms ? phone : undefined, sms, origin, destination, parcel, rate, international,
+      addons: extras.addons.length ? extras.addons : undefined, insurance: extras.insurance, total: Math.round((rate.total_charge + extras.extras_total) * 100) / 100,
     };
     await saveOrder(env, order);
 

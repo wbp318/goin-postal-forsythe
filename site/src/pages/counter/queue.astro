@@ -93,6 +93,13 @@ import { store } from '../../data/store';
   <section id="results" hidden>
     <p id="mockNote" class="muted" hidden data-i18n="ship.mock">Demo rates: live carrier rates appear once the store's carrier accounts are connected.</p>
     <div id="rates" class="rates"></div>
+    <fieldset id="extras" class="hidden">
+      <legend data-i18n="st.a.legend">Add-ons</legend>
+      <label class="check" id="wInsRow"><input id="wInsure" type="checkbox" /> <span data-i18n="st.a.insure">Insurance for the declared value</span> <span id="wInsFee" class="muted"></span></label>
+      <p id="wInsCovered" class="muted hidden"></p>
+      <div id="addonList" class="row"></div>
+      <p class="price"><span data-i18n="st.a.total">Total to ring up on the POS</span>: <strong id="wTotal"></strong></p>
+    </fieldset>
     <p class="btnrow"><button class="btn" id="addBtn" disabled data-i18n="st.q.add">Add to queue</button></p>
   </section>
 
@@ -175,8 +182,31 @@ import { store } from '../../data/store';
     // ---- walk-up quote ----
     const f = $('walkup') as HTMLFormElement;
     const werr = $('werr'), results = $('results'), ratesEl = $('rates'), addBtn = $('addBtn') as HTMLButtonElement, rateBtn = $('rateBtn') as HTMLButtonElement;
-    let payload: any = null, picked: string | null = null;
+    let payload: any = null, picked: string | null = null, pickedPrice = 0, extras: any = null;
     const STORE = JSON.parse(document.getElementById('storeAddr')!.textContent!);
+    const wInsure = $('wInsure') as HTMLInputElement, addonList = $('addonList');
+    function pickedAddons() { return [...addonList.querySelectorAll<HTMLInputElement>('input[data-code]')].map((i) => ({ code: i.dataset.code!, qty: Number(i.value) || 0 })).filter((a) => a.qty > 0); }
+    function wTotal() {
+      const fee = wInsure.checked && extras && !extras.insurance.covered ? extras.insurance.fee : 0;
+      const add = pickedAddons().reduce((a, p) => a + p.qty * (extras.addons.find((x: any) => x.code === p.code)?.price ?? 0), 0);
+      $('wTotal').textContent = `$${(pickedPrice + fee + add).toFixed(2)}`;
+    }
+    wInsure.addEventListener('change', wTotal);
+    addonList.addEventListener('input', wTotal);
+    function renderExtras(ex: any) {
+      extras = ex;
+      if (ex.insurance.covered) { $('wInsRow').classList.add('hidden'); wInsure.checked = false; $('wInsCovered').classList.remove('hidden'); $('wInsCovered').textContent = t('ship.inscovered').replace('{n}', String(ex.insurance.included_usd)); }
+      else { $('wInsRow').classList.remove('hidden'); $('wInsCovered').classList.add('hidden'); $('wInsFee').textContent = t('ship.insfee').replace('{fee}', ex.insurance.fee.toFixed(2)).replace('{value}', String(ex.insurance.declared_usd)); }
+      addonList.innerHTML = '';
+      for (const a of ex.addons) {
+        const l = document.createElement('label');
+        l.innerHTML = `<span></span> <input type="number" min="0" max="20" value="0" inputmode="numeric" />`;
+        l.querySelector('span')!.textContent = `${a.name} · $${a.price.toFixed(2)}`;
+        const inp = l.querySelector('input')!; inp.dataset.code = a.code;
+        addonList.appendChild(l);
+      }
+      $('extras').classList.remove('hidden');
+    }
     const isReturn = $('isReturn') as HTMLInputElement, returnTo = $('returnTo') as HTMLSelectElement, destFields = $('destFields');
     const destRequired = f.querySelectorAll<HTMLInputElement>('#destFields [required]');
     function returnMode() {
@@ -217,10 +247,11 @@ import { store } from '../../data/store';
           el.innerHTML = `<input type="radio" name="rate"><span class="carrier"></span><span class="service"></span><span class="days"></span><span class="price"></span>`;
           el.querySelector('.carrier')!.textContent = r.carrier; el.querySelector('.service')!.textContent = r.service;
           el.querySelector('.days')!.textContent = `${r.min_days ?? '?'}–${r.max_days ?? '?'} ${t('ship.days')}`; el.querySelector('.price')!.textContent = `$${r.total_charge.toFixed(2)}`;
-          el.querySelector('input')!.addEventListener('change', () => { picked = r.id; addBtn.disabled = false; });
+          el.querySelector('input')!.addEventListener('change', () => { picked = r.id; pickedPrice = r.total_charge; addBtn.disabled = false; wTotal(); });
           ratesEl.appendChild(el);
         }
         if (!j.rates.length) throw new Error(t('st.q.norates'));
+        renderExtras(j.extras);
         results.hidden = false; results.scrollIntoView({ behavior: 'smooth' });
       } catch (e: any) { werr.textContent = e.message; werr.hidden = false; }
       rateBtn.disabled = false;
@@ -229,9 +260,9 @@ import { store } from '../../data/store';
       if (!picked || !payload) return;
       addBtn.disabled = true; werr.hidden = true;
       try {
-        const j = await api('/api/queue', { action: 'create', ...payload.customer, kind: payload.kind, return_to: payload.return_to, origin: payload.origin, destination: payload.destination, parcel: payload.parcel, rate_id: picked, staff: staff() });
+        const j = await api('/api/queue', { action: 'create', ...payload.customer, kind: payload.kind, return_to: payload.return_to, origin: payload.origin, destination: payload.destination, parcel: payload.parcel, rate_id: picked, staff: staff(), insure: wInsure.checked, addons: pickedAddons() });
         msg.className = ''; msg.textContent = tf(payload.kind === 'return' ? 'st.q.added.return' : 'st.q.added', { id: j.id, price: j.price.toFixed(2) });
-        f.reset(); returnMode(); results.hidden = true; payload = null; picked = null;
+        f.reset(); returnMode(); results.hidden = true; $('extras').classList.add('hidden'); payload = null; picked = null;
         await load(); window.scrollTo({ top: 0, behavior: 'smooth' });
       } catch (e: any) { werr.textContent = e.message; werr.hidden = false; addBtn.disabled = false; }
     });

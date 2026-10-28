@@ -4,6 +4,7 @@ import { env } from '../../lib/env';
 import { quote } from '../../lib/quote';
 import { parseAddress, parseParcel, json } from '../../lib/validate';
 import { store } from '../../data/store';
+import { effectiveAddons, extrasOffer } from '../../lib/addons';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -14,7 +15,9 @@ export const POST: APIRoute = async ({ request }) => {
     const { rates, demo, oversize } = await quote(env, origin, destination, parcel);
     // Customers see service, price and days. Cost and provider stay server side.
     const visible = rates.map(({ id, carrier, service, total_charge, currency, min_days, max_days }) => ({ id, carrier, service, total_charge, currency, min_days, max_days }));
-    return json({ rates: visible, international: destination.country_alpha2 !== 'US', demo, oversize });
+    // Insurance fee for this declared value and the add-on catalog, so the page can show totals before buying.
+    const extras = extrasOffer(await effectiveAddons(env), parcel.value_usd);
+    return json({ rates: visible, international: destination.country_alpha2 !== 'US', demo, oversize, extras });
   } catch (e: any) {
     return json({ error: e.message }, 400);
   }

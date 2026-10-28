@@ -132,3 +132,27 @@ CREATE TABLE IF NOT EXISTS quotes (
   updated_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS quotes_status ON quotes(status, created_at);
+
+-- Insurance and packaging add-ons (Phase 5). The catalog the owners edit at /counter/rules, and the
+-- lines actually sold, so reports can add them up. kind "setting" rows hold the insurance terms.
+CREATE TABLE IF NOT EXISTS addons (
+  code TEXT PRIMARY KEY,               -- box-s, pack, signature, or a setting name
+  kind TEXT NOT NULL,                  -- box, packing, service, setting
+  name TEXT NOT NULL,
+  price REAL NOT NULL,                 -- for a setting, the value
+  active INTEGER NOT NULL DEFAULT 1,
+  sort INTEGER NOT NULL DEFAULT 0,
+  updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS order_addons (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id TEXT NOT NULL,              -- GP-XXXXXX
+  code TEXT NOT NULL,                  -- an add-on code, or "insurance"
+  name TEXT NOT NULL,
+  qty INTEGER NOT NULL DEFAULT 1,
+  unit_price REAL NOT NULL,
+  total REAL NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS order_addons_order ON order_addons(order_id);
+CREATE INDEX IF NOT EXISTS order_addons_created ON order_addons(created_at);

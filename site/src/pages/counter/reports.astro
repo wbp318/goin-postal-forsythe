@@ -37,6 +37,7 @@ const monthStart = today.slice(0, 8) + '01';
       <div class="card"><h3 data-i18n="st.p.paid">Customers paid</h3><p class="big" id="t-rev"></p></div>
       <div class="card"><h3 data-i18n="st.p.cost">Carriers charged</h3><p class="big" id="t-cost"></p></div>
       <div class="card"><h3 data-i18n="st.p.margin">Margin</h3><p class="big" id="t-margin"></p><p class="muted" id="t-pct"></p></div>
+      <div class="card"><h3 data-i18n="st.p.addons">Add-ons sold</h3><p class="big" id="t-addons"></p><p class="muted" id="t-addons-n"></p></div>
     </div>
 
     <div class="grid">
@@ -107,6 +108,8 @@ const monthStart = today.slice(0, 8) + '01';
       $('t-rev').textContent = usd(r.total.revenue);
       $('t-cost').textContent = usd(r.total.cost);
       $('t-margin').textContent = usd(r.total.margin);
+      $('t-addons').textContent = usd(r.addons.revenue);
+      $('t-addons-n').textContent = r.addons.by_item.map((i: any) => `${i.name} × ${i.qty}`).join(' · ');
       $('t-pct').textContent = r.total.revenue ? `${Math.round((r.total.margin / r.total.revenue) * 100)}${t('st.p.pct')}` : '';
       rows($('by-day'), r.by_day.map((d: any) => [d.day, d.shipments, usd(d.revenue), usd(d.cost), usd(d.margin)]));
       rows($('by-carrier'), r.by_carrier.map((d: any) => [d.carrier, d.shipments, usd(d.revenue), usd(d.cost), usd(d.margin)]));

@@ -2,7 +2,7 @@
 
 PeterShip is the store's own shipping client. A plan for replacing Easyship with software the store owns: rating, labels, tracking, drop-offs and reports for USPS, UPS, FedEx and DHL, built on the same Cloudflare stack as the website. The same thing ShippingEasy, Easyship and GP Rate Pro do, but ours. PeterShip is proprietary, see [LICENSE](LICENSE); it is not under the repository's Apache license.
 
-Item 44 in [`AGENDA.md`](../AGENDA.md) tracks it. Everything that can be built without carrier keys is built and running in mock mode: the rating engine (Phase 2), the print queue and printer agent (Phase 3), tracking, poll, exceptions and customer updates (Phase 4), and drop-off capture, reports, the quote queue, customer lookup, the price rules editor, drop-off receipts and returns (Phase 5). Releases v1.16.0 through v1.26.0, October 21 to 28, 2026. See [What is built so far](#what-is-built-so-far). What remains waits on the owners' carrier accounts (Phase 1).
+Item 44 in [`AGENDA.md`](../AGENDA.md) tracks it. Everything that can be built without carrier keys is built and running in mock mode: the rating engine (Phase 2), the print queue and printer agent (Phase 3), tracking, poll, exceptions and customer updates (Phase 4), and drop-off capture, reports, the quote queue, customer lookup, the price rules editor, drop-off receipts, returns, insurance and add-ons (Phase 5). The counter app that needs no carrier keys is complete. Releases v1.16.0 through v1.28.1, October 21 to 28, 2026. See [What is built so far](#what-is-built-so-far). What remains waits on the owners' carrier accounts (Phase 1).
 
 New to this? [The long version](#the-long-version-how-petership-works-and-how-to-run-it) further down explains every word, every file, how to run it on your own computer, a screen-by-screen test script, what happens to one shipment from quote to delivery, and the go-live list in order. It is written for Peter, Rin and William and assumes none of this has been seen before.
 
@@ -81,6 +81,7 @@ flowchart LR
 | Exceptions list for staff: carrier exceptions, returns to sender, labels not scanned after three days, no movement for seven days, with Check carriers now | `/counter/exceptions`, `POST /api/exceptions` | Done |
 | Reports for staff: shipments, what customers paid, what carriers charged and the margin, by day, carrier and service; busiest hours and weekdays; returning customers; drop-offs by carrier; CSV of every shipment for reconciling the carrier invoice | `/counter/reports`, `POST /api/reports`, `store.report()` | Done. Margin reads zero in mock mode because the fallback adapter reports its price as the cost |
 | Quote queue for the counter: every online reservation and every walk-up on one screen, oldest first, waiting time in red after twenty minutes, with buy, print, mark printed, void and cancel. Walk-ups are typed in on the same page and quoted by the same engine as the website, so counter and site prices agree. A `quotes` table mirrors every order save, since KV cannot be listed cheaply | `/counter/queue`, `POST /api/queue`, `quotes` table | Done |
+| Insurance and packaging add-ons: declared-value insurance (free up to the carrier's included cover, then per $100 with a minimum and a cap) and a catalog of boxes, packing and services, all priced on the server from a table the owners edit on the Prices page. The Ship page offers insurance and shows the running total; the walk-up form offers insurance and the catalog with quantities and shows the total to ring up; Stripe gets one line per item; the done and order pages show the breakdown; the queue shows the total; reports show add-ons sold. Seed prices in `addons.json` are placeholders for the owners (issue 9) | `src/lib/addons.ts`, `POST /api/addons`, `addons` and `order_addons` tables | Done |
 | Returns at the counter: the walk-up form's return mode. The sender's US address is typed in as the origin, the package comes to the store (a local business collects it here) or to any other address such as the business's own shop, the label is paid on the POS and bought like any walk-up, then Email label sends the label link, tracking number, drop-off instructions and the tracking page to the sender. Email label also works for any bought label, for customers who want to print at home. Returns show as "Return from City, ST to Name" in the queue and on the customer's history | queue return mode, `POST /api/queue` `kind: return`, `POST /api/counter` `email` | Done. Emails log until the Resend key is set |
 | Drop-off receipts: when a drop-off is scanned a 4 by 6 receipt goes to the counter printer through the print queue (store name, time, carrier, receipt number, customer, who accepted it, the tracking barcode in Code 128, and what to do next), and, if the customer gave a mobile number, the same receipt as a text. Print again and Text again on every recent drop-off, and a browser-printable copy at `/counter/receipt/ID` for when the agent is not running | `src/shipping/receipt.ts`, `/api/dropoff` `receipt` and `text`, `/counter/receipt/[id]` | Done. Texts log until the Twilio keys are set |
 | Price rules editor: the markup between carrier cost and customer price, edited by the owners at `/counter/rules` and stored in the `retail_rules` table; the JSON file is only the starting point. On/off and round-to-.99 switches, a Default row, a row per carrier, any number of service rows, each percent plus flat fee or a fixed price. Preview applies a draft to a real quote for a sample box and shows cost, price now and price after, before anything is saved. The rate cache stores cost, so a save shows on the very next quote online and at the counter. Optional `OWNER_PIN` so staff can view but only the owner can save | `/counter/rules`, `POST /api/rules`, `src/lib/pricing.ts` | Done. Numbers still to be copied from Rate Pro (issue 11) |
@@ -149,6 +150,7 @@ A shipping client is the software between a person with a box and the carriers. 
 | **Void** | Cancelling a bought label so the carrier refunds the postage. Only possible before the package is scanned. |
 | **ZPL** | Zebra Programming Language, the plain-text format thermal label printers understand. Carriers can send the label as ZPL or as a PDF. |
 | **Billable weight** | Carriers charge by the greater of actual weight and **dimensional weight** (length times width times height divided by a carrier-specific number). Big light boxes cost more than they weigh. |
+| **Add-ons** and **declared value** | Boxes, packing and services sold with the label, and the value the customer says the contents are worth. Carriers include some cover (usually $100); insurance above that is sold per $100 of declared value. |
 | **Retail rules** or **markup** | What the store adds on top of the carrier's cost. Cost is what the carrier bills us; **price** is what the customer pays. The difference is the margin. |
 | **Adapter** or **provider** | One file per carrier that translates between our shapes and that carrier's API. Swap or fix one without touching the others. |
 | **Mock mode** | How everything runs today. With no carrier keys, the Easyship adapter invents plausible rates and a fake label, so every screen can be tested without spending money. |
@@ -172,6 +174,7 @@ site/
   .dev.vars.example             every secret and switch, with comments. Copy to .dev.vars locally
   src/data/store.ts             the shop: name, address, hours, the ship-from address
   src/data/ratepro.json         the starting retail rules (markup); the live ones are in the retail_rules table
+    src/data/addons.json          the starting add-on catalog and insurance terms; the live ones are in the addons table
   src/shipping/                 PeterShip proper
     types.ts                    the shared shapes: Address, Parcel, Rate, Label, TrackingEvent, Provider
     dim.ts                      billable weight: dimensional divisors, rounding, oversize checks
@@ -191,6 +194,7 @@ site/
     orders.ts                   the Order record in KV and its statuses
     quote.ts                    thin wrapper: pages call quote(), quote() calls the engine
     fulfil.ts                   "the money arrived, buy the label now", shared by Stripe and the POS step
+    addons.ts                   insurance fee and add-on pricing, always on the server, from the catalog
     validate.ts                 turn form input into a clean Address and Parcel, or a clear error
     stripe.ts                   Stripe Checkout for online card payments
     easyship.ts                 the raw Easyship HTTP client and the mock rates and label
@@ -271,6 +275,8 @@ Do these in order the first time; each one leaves something for the next to find
 
 **5c-2. A return label.** Still in the walk-up form, tick **This is a return**. The form now asks where the package is now (the sender, US only) and where it comes back to: us, or another address such as a local shop's. Type a Dallas address as the sender, leave Comes back to on Us, Get rates, pick one, Add to queue. The queue row reads "Return from Dallas, TX to Goin' Postal Forsythe". Ring it up on the POS as usual (the business standing at the counter is paying for their customer's return), press Buy label, then **Email label**: it asks for the address, and the sender gets the label link, the tracking number, what to do with the box and the tracking page. In mock mode the email is written to the terminal window instead. Email label is on every bought label, for anyone who would rather print at home.
 
+**5c-3. Insurance and a box.** Quote a walk-up with a value of $650. Under the rates an Add-ons box appears: insurance for the declared value with its fee (the carrier covers the first $100 free, then $1.25 per $100 with a $2.75 minimum, until the owners change those numbers), and the catalog of boxes, packing and services with a quantity each. Tick insurance, put 1 on a medium box and 1 on Pack it for me, and the Total to ring up on the POS updates as you go. Add to queue: the queue row shows the total, the order page lists every line with the total to ring up, and after Buy label the reports' Add-ons sold card counts them. On the Ship page the same insurance box appears to customers with the running total; boxes are not offered online because the customer is printing at home. Quote a $30 box instead and the insurance line is replaced by a note that the carrier covers it.
+
 **5d. Customers.** Open `/counter/customers`, PIN, type part of the name or phone number you used in 5c. One row comes back with the number of shipments and a returning badge once they have two. Open shows contact details, every shipment with its status, and the address book. **Ship here again** jumps to the queue with the walk-up form already filled in from that earlier order; check the weight and size, Get rates, done. **Download CSV of everyone** gives a spreadsheet keyed by phone number, the same key the Coupon Counter uses, so the owners can see who is a regular.
 
 A walk-up with no phone and no email cannot be tied to a person (two John Smiths must not merge), so those appear in a separate list under the search results, found by name only.
@@ -285,7 +291,7 @@ A walk-up with no phone and no email cannot be tied to a person (two John Smiths
 
 **5i. Reports.** Open `/counter/reports`, pick today. Shipments, what customers paid, what carriers charged, margin, by day, carrier and service; busiest hours and weekdays; returning customers; drop-offs; and a CSV of every shipment for reconciling the carrier's invoice. In mock mode the margin is zero because the fake adapter reports its price as its cost.
 
-**5j. Prices.** Open `/counter/rules`. It says nothing has been saved yet and shows the file's rules: everything at zero, switched off. Put 20 in Default percent and 1 in Default flat fee, tick Rules are on, press Preview: the table shows each sample rate's carrier cost, the price now (equal to cost) and the price after (cost plus 20 percent plus a dollar, rounded up to .99). Save, then go back to `/ship` and quote the same box: the new prices. Come back, untick Rules are on, Save, and the Ship page is back to cost. In real life the numbers are copied from Rate Pro so that the website and the counter can never disagree.
+**5j. Prices.** Open `/counter/rules`. Below the price rules is Add-ons and insurance: the four insurance numbers and the catalog, with Save add-ons. Change the small box to $2.99, save, quote a walk-up, and the new price is in the list. It says nothing has been saved yet and shows the file's rules: everything at zero, switched off. Put 20 in Default percent and 1 in Default flat fee, tick Rules are on, press Preview: the table shows each sample rate's carrier cost, the price now (equal to cost) and the price after (cost plus 20 percent plus a dollar, rounded up to .99). Save, then go back to `/ship` and quote the same box: the new prices. Come back, untick Rules are on, Save, and the Ship page is back to cost. In real life the numbers are copied from Rate Pro so that the website and the counter can never disagree.
 
 **5k. The printer agent.** Read `shipping-client/printer-agent/README.md`. In short: copy the folder to the counter PC, put the site address and the `PRINTER_KEY` in its JSON file, `node agent.mjs --test` prints a test label, `node agent.mjs` leaves it running. It polls the print queue every three seconds and refreshes tracking every ten minutes. Nothing inbound reaches the shop; the agent only makes outbound requests.
 
@@ -381,6 +387,7 @@ This is the owners' list. Each step is independent; stop anywhere and the site k
 | Look at the database in production | `npx wrangler d1 execute goin-postal --remote --command "SELECT id, status, price FROM shipments ORDER BY created_at DESC LIMIT 20"`. Add `--local` instead of `--remote` for your computer's copy. Any SQL works; it is SQLite. |
 | Change the PIN | `npx wrangler secret put COUNTER_PIN`. Takes effect on the next request. |
 | Add a table or column | Add it to `schema.sql` as a new `CREATE TABLE IF NOT EXISTS` (new tables, not new columns on old ones, so the file stays re-runnable), then `npm run db:local` and `npm run db:remote`. |
+| Change a box price or the insurance terms | `/counter/rules`, the Add-ons and insurance section, Save add-ons. Same owner PIN rule as prices. |
 | Change a price rule | `/counter/rules`: change the number, Preview to see cost against price for a sample box, Save. The next quote uses it, online and at the counter. No deploy. Set `OWNER_PIN` so only the owner can save. |
 | See why a carrier call failed | Cloudflare dashboard, the Worker, Logs. Every carrier error is logged with the carrier's name in front. Customers never see it. |
 | Refund a voided label | By hand: Stripe dashboard for online orders, the POS for counter ones. The order page reminds you. |
@@ -449,7 +456,7 @@ mindmap
       Drop-off capture by scan
       Customer lookup and history
       Returns ✅
-      Insurance
+      Insurance ✅
       Print to label printer
     Reports
       Daily shipments and margin
@@ -525,7 +532,7 @@ flowchart TB
   P2["2 · Rating engine<br/>engine, five adapters, dim weight,<br/>cache, parity endpoint<br/>✅ built, untested live"]:::local --> P3
   P3["3 · Labels<br/>print queue, printer agent, void ✅<br/>customs, manifests ⏸ keys"]:::local --> P4
   P4["4 · Tracking<br/>page, poll, exceptions,<br/>email and text ✅<br/>webhooks ⏸ keys"]:::local --> P5
-  P5["5 · Counter app<br/>drop-offs and receipts, reports,<br/>queue, customers, prices, returns ✅<br/>insurance ⏳"]:::local --> P6
+  P5["5 · Counter app<br/>drop-offs and receipts, reports, queue,<br/>customers, prices, returns, insurance ✅"]:::local --> P6
   P6["6 · Switch over<br/>run beside Easyship for<br/>a month, then turn it off"]:::you --> P7
   P7["7 · Later<br/>business accounts, CSV batch,<br/>Shopify and Etsy, multi-store"]:::cloud
   classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00

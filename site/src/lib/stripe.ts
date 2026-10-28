@@ -19,17 +19,21 @@ export async function createCheckout(env: Env, order: Order): Promise<string> {
     mode: 'payment',
     customer_email: order.email,
     client_reference_id: order.id,
-    line_items: [{
-      quantity: 1,
-      price_data: {
-        currency: order.rate.currency.toLowerCase(),
-        unit_amount: Math.round(order.rate.total_charge * 100),
-        product_data: {
-          name: `${order.rate.service} label`,
-          description: `To ${order.destination.city}, ${order.destination.state} ${order.destination.postal_code}. Pickup code ${order.id}.`,
+    line_items: [
+      {
+        quantity: 1,
+        price_data: {
+          currency: order.rate.currency.toLowerCase(),
+          unit_amount: Math.round(order.rate.total_charge * 100),
+          product_data: {
+            name: `${order.rate.service} label`,
+            description: `To ${order.destination.city}, ${order.destination.state} ${order.destination.postal_code}. Pickup code ${order.id}.`,
+          },
         },
       },
-    }],
+      ...(order.addons ?? []).map((l) => ({ quantity: l.qty, price_data: { currency: 'usd', unit_amount: Math.round(l.unit_price * 100), product_data: { name: l.name } } })),
+      ...(order.insurance ? [{ quantity: 1, price_data: { currency: 'usd', unit_amount: Math.round(order.insurance.fee * 100), product_data: { name: `Insurance to $${order.insurance.declared_usd}` } } }] : []),
+    ],
     success_url: `${site}/ship/done?order=${order.id}`,
     cancel_url: `${site}/ship?cancelled=${order.id}`,
   });

@@ -59,6 +59,9 @@ const cancelled = Astro.url.searchParams.get('cancelled');
     <div id="rates" class="rates"></div>
     <form id="buy" class="buy" hidden>
       <label><span data-i18n="ship.email">Your email (for the receipt and label)</span> <input name="email" type="email" required /></label>
+      <label class="check" id="insRow" hidden><input name="insure" type="checkbox" /> <span data-i18n="ship.insure">Insure it for the full value</span> <span id="insFee" class="muted"></span></label>
+      <p id="insCovered" class="muted" hidden></p>
+      <p id="totalRow" class="price"><span data-i18n="ship.total">Total</span>: <strong id="totalAmt"></strong></p>
       <label class="check"><input name="sms" type="checkbox" /> <span data-i18n="ship.sms">Text me when it ships and when it is delivered</span></label>
       <label id="phoneRow" hidden><span data-i18n="ship.phone">Your mobile number</span> <input name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="318 555 0100" /></label>
       <button class="btn" type="submit" id="buyBtn" data-i18n="ship.continue">Continue</button>
@@ -79,7 +82,15 @@ const cancelled = Astro.url.searchParams.get('cancelled');
 
     let payload: any = null;
     let picked: string | null = null;
+    let pickedPrice = 0;
     let international = false;
+    let extras: any = null;
+    const insBox = buy.querySelector('[name=insure]') as HTMLInputElement;
+    function total() {
+      const fee = insBox.checked && extras && !extras.insurance.covered ? extras.insurance.fee : 0;
+      document.getElementById('totalAmt')!.textContent = `$${(pickedPrice + fee).toFixed(2)}`;
+    }
+    insBox.addEventListener('change', total);
 
     function read() {
       const d = Object.fromEntries(new FormData(f).entries()) as Record<string, string>;
@@ -98,6 +109,10 @@ const cancelled = Astro.url.searchParams.get('cancelled');
       const j = await res.json();
       if (!res.ok) { err.textContent = j.error; err.hidden = false; return; }
       international = j.international;
+      extras = j.extras;
+      const insRow = document.getElementById('insRow')!, insCovered = document.getElementById('insCovered')!;
+      if (extras?.insurance.covered) { insRow.hidden = true; insBox.checked = false; insCovered.hidden = false; insCovered.textContent = t('ship.inscovered').replace('{n}', String(extras.insurance.included_usd)); }
+      else { insRow.hidden = false; insCovered.hidden = true; document.getElementById('insFee')!.textContent = t('ship.insfee').replace('{fee}', extras.insurance.fee.toFixed(2)).replace('{value}', String(extras.insurance.declared_usd)); }
       document.getElementById('intlNote')!.hidden = !international;
       document.getElementById('mockNote')!.hidden = !j.demo;
       buyBtn.dataset.i18n = international ? 'ship.reserve' : 'ship.pay';
@@ -111,7 +126,7 @@ const cancelled = Astro.url.searchParams.get('cancelled');
           <span class="service">${r.service}</span>
           <span class="days">${r.min_days ?? '?'}–${r.max_days ?? '?'} ${t('ship.days')}</span>
           <span class="price">$${r.total_charge.toFixed(2)}</span>`;
-        el.querySelector('input')!.addEventListener('change', () => { picked = r.id; buy.hidden = false; });
+        el.querySelector('input')!.addEventListener('change', () => { picked = r.id; pickedPrice = r.total_charge; buy.hidden = false; total(); });
         ratesEl.appendChild(el);
       }
       results.hidden = false;
@@ -128,7 +143,8 @@ const cancelled = Astro.url.searchParams.get('cancelled');
       const email = (buy.querySelector('[name=email]') as HTMLInputElement).value;
       const sms = (buy.querySelector('[name=sms]') as HTMLInputElement).checked;
       const phone = (buy.querySelector('[name=phone]') as HTMLInputElement).value;
-      const res = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, email, sms, phone, rate_id: picked }) });
+      const insure = insBox.checked;
+      const res = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, email, sms, phone, rate_id: picked, insure }) });
       const j = await res.json();
       if (!res.ok) { err.textContent = j.error; err.hidden = false; buyBtn.removeAttribute('disabled'); return; }
       location.href = j.next;

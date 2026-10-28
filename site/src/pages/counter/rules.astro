@@ -74,6 +74,26 @@ import Base from '../../layouts/Base.astro';
     <p id="ferr" class="err" hidden></p>
   </form>
 
+  <form id="addons" class="ship-form hidden" autocomplete="off">
+    <fieldset>
+      <legend data-i18n="st.a.h">Add-ons and insurance</legend>
+      <p class="muted" data-i18n="st.a.lead">Boxes, packing and services sold with a label, and the insurance terms. These appear on the walk-up form and, for insurance, on the Ship page, and go into the Stripe total and the POS total alike.</p>
+      <div class="row">
+        <label><span data-i18n="st.a.ins.included">Carrier covers up to $</span> <input name="included_usd" type="number" step="1" min="0" /></label>
+        <label><span data-i18n="st.a.ins.per100">Per $100 above that $</span> <input name="per_100_usd" type="number" step="0.05" min="0" /></label>
+        <label><span data-i18n="st.a.ins.min">Minimum fee $</span> <input name="minimum_usd" type="number" step="0.05" min="0" /></label>
+        <label><span data-i18n="st.a.ins.max">Most we insure $</span> <input name="max_declared_usd" type="number" step="100" min="100" /></label>
+      </div>
+      <table class="list" id="addontable">
+        <thead><tr><th data-i18n="st.a.th.code">Code</th><th data-i18n="st.a.th.kind">Kind</th><th data-i18n="st.a.th.name">Name</th><th data-i18n="st.a.th.price">Price $</th><th data-i18n="st.u.th.active">Active</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p class="btnrow"><button class="btn small kraft" type="button" id="addaddon" data-i18n="st.a.addrow">Add a row</button></p>
+      <p class="btnrow"><button class="btn" type="submit" id="saveaddons" data-i18n="st.a.save">Save add-ons</button> <span id="asource" class="muted"></span></p>
+      <p id="aerr" class="err" hidden></p>
+    </fieldset>
+  </form>
+
   <script>
     import { t, tf } from '../../i18n';
     const $ = (id: string) => document.getElementById(id)!;
@@ -141,6 +161,7 @@ import Base from '../../layouts/Base.astro';
       try {
         const c = await api({ action: 'get' });
         owner = c.owner;
+        try { renderAddons(await aapi({ action: 'get' })); } catch (e: any) { aerr.textContent = e.message; aerr.hidden = false; }
         source.textContent = c.source === 'table'
           ? `${tf('st.u.src.table', { when: new Date(c.updated_at).toLocaleString() })} ${c.enabled ? t('st.u.on') : t('st.u.off')}`
           : t('st.u.src.file');
@@ -166,6 +187,44 @@ import Base from '../../layouts/Base.astro';
         }
         $('previewtable').classList.remove('hidden');
       } catch (e: any) { ferr.textContent = e.message; ferr.hidden = false; }
+    });
+
+    // ---- add-ons and insurance ----
+    const aform = $('addons') as HTMLFormElement, abody = $('addontable').querySelector('tbody')!, aerr = $('aerr');
+    const KINDS = ['box', 'packing', 'service'];
+    async function aapi(extra: Record<string, unknown>) {
+      const res = await fetch('/api/addons', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin(), ...extra }) });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error);
+      return j;
+    }
+    function addonRow(r: any) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td><input data-f="code" maxlength="20" /></td><td><select data-f="kind">${KINDS.map((k) => `<option value="${k}"></option>`).join('')}</select></td><td><input data-f="name" maxlength="80" /></td><td><input data-f="price" type="number" step="0.01" min="0" inputmode="decimal" /></td><td><input data-f="active" type="checkbox" /></td><td><button type="button" class="btn small kraft"></button></td>`;
+      tr.querySelectorAll<HTMLOptionElement>('option').forEach((o) => { o.textContent = t(`st.a.kind.${o.value}`); });
+      const f = (n: string) => tr.querySelector<HTMLInputElement>(`[data-f="${n}"]`)!;
+      f('code').value = r?.code ?? ''; (f('kind') as any).value = r?.kind ?? 'box'; f('name').value = r?.name ?? ''; f('price').value = r?.price == null ? '' : String(r.price); f('active').checked = r ? !!r.active : true;
+      const rm = tr.querySelector('button')!; rm.textContent = t('st.u.remove'); rm.addEventListener('click', () => tr.remove());
+      return tr;
+    }
+    function renderAddons(c: any) {
+      for (const k of ['included_usd', 'per_100_usd', 'minimum_usd', 'max_declared_usd']) (aform.elements.namedItem(k) as HTMLInputElement).value = String(c.insurance[k]);
+      abody.innerHTML = '';
+      for (const r of c.items) abody.appendChild(addonRow(r));
+      $('asource').textContent = c.source === 'table' ? tf('st.u.src.table', { when: new Date(c.updated_at).toLocaleString() }) : t('st.a.src.file');
+      $('saveaddons').toggleAttribute('disabled', !owner);
+      aform.classList.remove('hidden');
+    }
+    function collectAddons() {
+      const d = Object.fromEntries(new FormData(aform).entries()) as Record<string, string>;
+      const items = [...abody.querySelectorAll('tr')].map((tr) => { const f = (n: string) => tr.querySelector<HTMLInputElement>(`[data-f="${n}"]`)!; return { code: f('code').value, kind: (f('kind') as any).value, name: f('name').value, price: f('price').value, active: f('active').checked }; });
+      return { insurance: { included_usd: d.included_usd, per_100_usd: d.per_100_usd, minimum_usd: d.minimum_usd, max_declared_usd: d.max_declared_usd }, items };
+    }
+    $('addaddon').addEventListener('click', () => { abody.appendChild(addonRow(null)); (abody.lastElementChild!.querySelector('input') as HTMLInputElement).focus(); });
+    aform.addEventListener('submit', async (ev) => {
+      ev.preventDefault(); aerr.hidden = true;
+      try { const c = await aapi({ action: 'save', ...collectAddons() }); renderAddons(c); msg.className = ''; msg.textContent = t('st.a.saved'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+      catch (e: any) { aerr.textContent = e.message; aerr.hidden = false; }
     });
 
     form.addEventListener('submit', async (ev) => {

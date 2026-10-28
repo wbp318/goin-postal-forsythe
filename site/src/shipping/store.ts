@@ -72,8 +72,69 @@ const mem = {
   quotes: new Map<string, QuoteRow>(),
   customers: new Map<string, CustomerRow>(),
   rules: [] as { id: number; scope: string; match: string | null; percent: number | null; flat: number | null; price: number | null; active: number; updated_at: string }[],
+  addons: [] as RawAddonRow[],
+  orderAddons: [] as { order_id: string; code: string; name: string; qty: number; unit_price: number; total: number; created_at: string }[],
   seq: 1,
 };
+
+// ---- add-ons and insurance ----------------------------------------------------------------------
+// The catalog the owners edit at /counter/rules (boxes, packing, services) and the insurance terms,
+// kept as rows of one table; lib/addons.ts prices against it. Until the first save the table is empty
+// and the seed file stands in. order_addons holds what was actually sold, for the reports.
+export interface AddonRow { code: string; kind: 'box' | 'packing' | 'service'; name: string; price: number; active: number; sort: number }
+interface RawAddonRow extends Omit<AddonRow, 'kind'> { kind: string; updated_at: string }
+export interface AddonsSaved { insurance: { included_usd: number; per_100_usd: number; minimum_usd: number; max_declared_usd: number }; items: AddonRow[]; updated_at: string | null }
+const INS_KEYS = ['included_usd', 'per_100_usd', 'minimum_usd', 'max_declared_usd'] as const;
+let addonsCache: { at: number; value: AddonsSaved | null } | null = null;
+
+export async function loadAddons(env: Env, fresh = false): Promise<AddonsSaved | null> {
+  if (!fresh && addonsCache && Date.now() - addonsCache.at < RULES_TTL) return addonsCache.value;
+  const rows: RawAddonRow[] = env.DB ? (await env.DB.prepare('SELECT * FROM addons ORDER BY sort, code').all<RawAddonRow>()).results : mem.addons;
+  let value: AddonsSaved | null = null;
+  if (rows.length) {
+    const setting = (k: string, d: number) => rows.find((r) => r.kind === 'setting' && r.code === k)?.price ?? d;
+    value = {
+      insurance: { included_usd: setting('included_usd', 100), per_100_usd: setting('per_100_usd', 1.25), minimum_usd: setting('minimum_usd', 2.75), max_declared_usd: setting('max_declared_usd', 5000) },
+      items: rows.filter((r) => r.kind !== 'setting').map(({ code, kind, name, price, active, sort }) => ({ code, kind: kind as AddonRow['kind'], name, price, active, sort })),
+      updated_at: rows.map((r) => r.updated_at).sort().pop() ?? null,
+    };
+  }
+  addonsCache = { at: Date.now(), value };
+  return value;
+}
+
+export async function saveAddons(env: Env, c: { insurance: AddonsSaved['insurance']; items: AddonRow[] }): Promise<AddonsSaved> {
+  const t = now();
+  const rows: RawAddonRow[] = [
+    ...INS_KEYS.map((k) => ({ code: k, kind: 'setting', name: k, price: c.insurance[k], active: 1, sort: 0, updated_at: t })),
+    ...c.items.map((i) => ({ ...i, kind: i.kind as string, active: i.active ? 1 : 0, updated_at: t })),
+  ];
+  if (env.DB) {
+    const ins = env.DB.prepare('INSERT INTO addons (code, kind, name, price, active, sort, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)');
+    await env.DB.batch([env.DB.prepare('DELETE FROM addons'), ...rows.map((r) => ins.bind(r.code, r.kind, r.name, r.price, r.active, r.sort, r.updated_at))]);
+  } else {
+    mem.addons = rows;
+  }
+  addonsCache = null;
+  return (await loadAddons(env, true))!;
+}
+
+/** Record what was sold with a label, once, when the label is bought. */
+export async function recordOrderAddons(env: Env, order: Order) {
+  const lines = [...(order.addons ?? []).map((l) => ({ code: l.code, name: l.name, qty: l.qty, unit_price: l.unit_price, total: l.total })),
+    ...(order.insurance ? [{ code: 'insurance', name: `Insurance to $${order.insurance.declared_usd}`, qty: 1, unit_price: order.insurance.fee, total: order.insurance.fee }] : [])];
+  if (!lines.length) return;
+  const t = now();
+  if (env.DB) {
+    const already = await env.DB.prepare('SELECT 1 FROM order_addons WHERE order_id = ?1 LIMIT 1').bind(order.id).first();
+    if (already) return;
+    const ins = env.DB.prepare('INSERT INTO order_addons (order_id, code, name, qty, unit_price, total, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)');
+    await env.DB.batch(lines.map((l) => ins.bind(order.id, l.code, l.name, l.qty, l.unit_price, l.total, t)));
+  } else {
+    if (mem.orderAddons.some((l) => l.order_id === order.id)) return;
+    for (const l of lines) mem.orderAddons.push({ order_id: order.id, ...l, created_at: t });
+  }
+}
 
 // ---- retail rules -----------------------------------------------------------------------------
 // The markup between carrier cost and the price customers see, editable at /counter/rules without a
@@ -272,7 +333,7 @@ export async function upsertQuote(env: Env, order: Order) {
   const row: QuoteRow = {
     id: order.id, source: order.source ?? 'online', status: order.status,
     customer_name: order.name?.trim() || d.contact_name || null, email: normEmail(order.email), phone: normalizePhone(order.phone),
-    carrier: order.rate.carrier, service: order.rate.service, price: order.rate.total_charge,
+    carrier: order.rate.carrier, service: order.rate.service, price: order.total ?? order.rate.total_charge,
     destination: (order.kind === 'return'
       ? `Return from ${order.origin.city}, ${order.origin.state} to ${d.contact_name}`
       : `${d.contact_name}, ${d.city}, ${d.state} ${d.postal_code}${d.country_alpha2 !== 'US' ? ` ${d.country_alpha2}` : ''}`).replace(/\s+/g, ' ').trim(),
@@ -554,6 +615,7 @@ export interface Report {
   status: { status: string; shipments: number }[];
   returning: { customers: number; returning: number; share: number };
   dropoffs: { carrier: string; count: number }[];
+  addons: { lines: number; revenue: number; by_item: { name: string; qty: number; revenue: number }[] };
   rows: { id: string; created_at: string; carrier: string; service: string; tracking_number: string | null; provider: string; cost: number; price: number; paid_via: string | null; status: string; email: string | null }[];
 }
 
@@ -562,7 +624,9 @@ export async function report(env: Env, from: string, to: string): Promise<Report
   let rows: Report['rows'];
   let dropRows: { carrier: string | null }[];
   let emails: { email: string | null; n: number }[];
+  let addonRows: { name: string; qty: number; total: number }[];
   if (env.DB) {
+    addonRows = (await env.DB.prepare('SELECT name, qty, total FROM order_addons WHERE created_at BETWEEN ?1 AND ?2').bind(start, end).all<{ name: string; qty: number; total: number }>()).results;
     rows = (await env.DB.prepare(
       `SELECT s.id, s.created_at, s.carrier, s.service, s.tracking_number, s.provider, s.cost, s.price, s.paid_via, s.status, c.email
        FROM shipments s LEFT JOIN shipment_contacts c ON c.shipment_id = s.id
@@ -570,6 +634,7 @@ export async function report(env: Env, from: string, to: string): Promise<Report
     dropRows = (await env.DB.prepare('SELECT carrier FROM dropoffs WHERE accepted_at BETWEEN ?1 AND ?2').bind(start, end).all<{ carrier: string | null }>()).results;
     emails = (await env.DB.prepare(`SELECT c.email, COUNT(*) AS n FROM shipment_contacts c JOIN shipments s ON s.id = c.shipment_id WHERE c.email IS NOT NULL AND s.status != 'voided' GROUP BY c.email`).all<{ email: string; n: number }>()).results;
   } else {
+    addonRows = mem.orderAddons.filter((l) => l.created_at >= start && l.created_at <= end);
     rows = [...mem.shipments.values()].filter((s) => s.created_at >= start && s.created_at <= end && s.status !== 'voided').sort((a, b) => a.created_at.localeCompare(b.created_at))
       .map((s) => ({ id: s.id, created_at: s.created_at, carrier: s.carrier, service: s.service, tracking_number: s.tracking_number, provider: s.provider, cost: s.cost, price: s.price, paid_via: s.paid_via, status: s.status, email: mem.contacts.get(s.id)?.email ?? null }));
     dropRows = mem.dropoffs.filter((d) => d.accepted_at >= start && d.accepted_at <= end);
@@ -600,6 +665,8 @@ export async function report(env: Env, from: string, to: string): Promise<Report
   }
   const drops = new Map<string, number>();
   for (const d of dropRows) drops.set(d.carrier ?? 'Unknown', (drops.get(d.carrier ?? 'Unknown') ?? 0) + 1);
+  const byItem = new Map<string, { qty: number; revenue: number }>();
+  for (const l of addonRows) { const e = byItem.get(l.name) ?? { qty: 0, revenue: 0 }; e.qty += l.qty; e.revenue += l.total; byItem.set(l.name, e); }
   const inRange = new Set(rows.map((r) => r.email).filter(Boolean));
   const returning = emails.filter((e) => inRange.has(e.email) && e.n > 1).length;
 
@@ -613,6 +680,7 @@ export async function report(env: Env, from: string, to: string): Promise<Report
     status: [...status].map(([status, shipments]) => ({ status, shipments })),
     returning: { customers: inRange.size, returning, share: inRange.size ? +(returning / inRange.size).toFixed(3) : 0 },
     dropoffs: [...drops].map(([carrier, count]) => ({ carrier, count })).sort((a, b) => b.count - a.count),
+    addons: { lines: addonRows.length, revenue: +addonRows.reduce((a, l) => a + l.total, 0).toFixed(2), by_item: [...byItem].map(([name, e]) => ({ name, qty: e.qty, revenue: +e.revenue.toFixed(2) })).sort((a, b) => b.revenue - a.revenue) },
     rows,
   };
 }

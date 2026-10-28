@@ -1,0 +1,17 @@
+{
+  "_comment": "Starting add-on prices and insurance terms. The live ones are edited at /counter/rules (Add-ons and insurance) and stored in the addons table; this file only seeds a fresh install. TODO owners: real box costs and the insurance terms from the carrier contracts (issue 9).",
+  "insurance": {
+    "included_usd": 100,
+    "per_100_usd": 1.25,
+    "minimum_usd": 2.75,
+    "max_declared_usd": 5000
+  },
+  "items": [
+    { "code": "box-s", "kind": "box", "name": "Small box, up to 12 x 9 x 6 in", "price": 2.49 },
+    { "code": "box-m", "kind": "box", "name": "Medium box, up to 16 x 12 x 10 in", "price": 3.99 },
+    { "code": "box-l", "kind": "box", "name": "Large box, up to 20 x 16 x 12 in", "price": 5.99 },
+    { "code": "pack", "kind": "packing", "name": "Pack it for me: cushioning, tape, seal", "price": 6.00 },
+    { "code": "fragile", "kind": "packing", "name": "Fragile: double wrap and label", "price": 4.00 },
+    { "code": "signature", "kind": "service", "name": "Signature required on delivery", "price": 3.50 }
+  ]
+}
