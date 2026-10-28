@@ -35,7 +35,9 @@ export const POST: APIRoute = async ({ request }) => {
       const barcode = String(b.barcode ?? '').replace(/\s+/g, '');
       if (barcode.length < 8 || barcode.length > 40) return json({ error: 'That does not look like a tracking barcode' }, 400);
       const before = await findDropoffs(env, barcode);
-      const d = await recordDropoff(env, { barcode, carrier: b.carrier || carrierFromBarcode(barcode), customer_name: b.customer_name, customer_phone: b.customer_phone, accepted_by: String(b.staff ?? '').trim() || user.name, notes: b.notes });
+      // A scan replayed from the page's offline outbox carries the time it was really scanned (up to seven days back).
+      const scanned = typeof b.scanned_at === 'string' && !Number.isNaN(Date.parse(b.scanned_at)) && Date.now() - Date.parse(b.scanned_at) < 7 * 86_400_000 && Date.parse(b.scanned_at) <= Date.now() + 60_000 ? new Date(b.scanned_at).toISOString() : undefined;
+      const d = await recordDropoff(env, { barcode, carrier: b.carrier || carrierFromBarcode(barcode), customer_name: b.customer_name, customer_phone: b.customer_phone, accepted_by: String(b.staff ?? '').trim() || user.name, notes: [b.notes, scanned ? 'scanned while offline' : ''].filter(Boolean).join('. ') || undefined, accepted_at: scanned });
       await logAudit(env, user, 'dropoff.accept', String(d.id), `${d.carrier ?? '?'} ${d.barcode}${d.customer_name ? `, ${d.customer_name}` : ''}`);
       const r = await receipt(env, d, b.receipt === true || b.receipt === 'on', b.text === true || b.text === 'on').catch((e) => ({ error: String(e.message) }));
       return json({ ok: true, dropoff: d, duplicate: before.length > 0, receipt: r });

@@ -864,11 +864,11 @@ export async function pendingPrintJobs(env: Env): Promise<PrintJob[]> {
 }
 
 // ---- drop-offs --------------------------------------------------------------------------------
-export async function recordDropoff(env: Env, d: { barcode: string; carrier?: string | null; customer_name?: string; customer_phone?: string; accepted_by?: string; notes?: string }): Promise<Dropoff> {
+export async function recordDropoff(env: Env, d: { barcode: string; carrier?: string | null; customer_name?: string; customer_phone?: string; accepted_by?: string; notes?: string; accepted_at?: string }): Promise<Dropoff> {
   const row: Omit<Dropoff, 'id'> = {
     barcode: d.barcode.replace(/\s+/g, '').toUpperCase(), carrier: d.carrier ?? carrierFromBarcode(d.barcode),
     customer_name: d.customer_name?.trim() || null, customer_phone: d.customer_phone?.trim() || null,
-    accepted_by: d.accepted_by?.trim() || null, accepted_at: now(), handed_to_carrier_at: null, notes: d.notes?.trim() || null,
+    accepted_by: d.accepted_by?.trim() || null, accepted_at: d.accepted_at ?? now(), handed_to_carrier_at: null, notes: d.notes?.trim() || null,
   };
   if (env.DB) {
     const r = await env.DB.prepare('INSERT INTO dropoffs (barcode, carrier, customer_name, customer_phone, accepted_by, accepted_at, notes) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7) RETURNING id')

@@ -21,6 +21,7 @@ import { store } from '../../data/store';
       <button class="btn" id="load" data-i18n="st.q.showqueue">Show queue</button>
     </p>
     <p id="msg" role="alert"></p>
+    <p id="offline" class="err hidden"></p>
     <p id="printer" class="muted"></p>
     <div id="failedwrap" class="hidden"><strong data-i18n="st.pr.failed">Print jobs the printer could not do</strong><table class="list" id="failed"><tbody></tbody></table></div>
     <table class="list hidden" id="table">
@@ -165,7 +166,17 @@ import { store } from '../../data/store';
       try {
         if (!accountNames.size) await loadAccounts();
         printerStatus();
-        const { open, done, user } = await api('/api/queue', { action: 'list' });
+        let open: any[], done: any[], user: any;
+        try {
+          ({ open, done, user } = await api('/api/queue', { action: 'list' }));
+          try { localStorage.setItem('queue_cache', JSON.stringify({ at: Date.now(), open, done })); } catch {}
+          $('offline').classList.add('hidden');
+        } catch (e: any) {
+          const cached = (() => { try { return JSON.parse(localStorage.getItem('queue_cache') || 'null'); } catch { return null; } })();
+          if (!(e instanceof TypeError) || !cached) throw e;
+          ({ open, done } = cached); user = null;
+          $('offline').textContent = tf('st.off.queue', { when: new Date(cached.at).toLocaleTimeString() }); $('offline').classList.remove('hidden');
+        }
         if (user && !staff()) ($('staff') as HTMLInputElement).placeholder = user.name;
         body.innerHTML = '';
         for (const q of open) {

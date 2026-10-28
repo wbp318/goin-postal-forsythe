@@ -196,7 +196,7 @@ Identical to Windows: nothing is on the mini. A spare mini, or the old Windows P
 | Printers | Reserved IP addresses in the router (DHCP reservation by MAC) | The agent's config holds the address; it must not change on a reboot |
 | Counter machines | Ordinary DHCP is fine | Nothing connects to them |
 | Wi-Fi versus cable | Cable for the printers, cable for station 1 if a socket is near | A Wi-Fi hiccup during a print leaves a half label |
-| Internet down | Labels cannot be bought (the carriers are online). Drop-off scans and the queue keep working from cache once T6 ships; the POS keeps selling | Know what still works: say so to the customer rather than guess |
+| Internet down | Labels cannot be bought (the carriers are online). The staff pages still open, the queue shows its last state, drop-off scans are kept on the device and sent when the connection returns; the POS keeps selling | Know what still works: say so to the customer rather than guess |
 | Guest Wi-Fi | Keep the counter machines and printers off it | Customers' phones should not see the printer on port 9100 |
 
 ## 6. Costs

@@ -25,6 +25,7 @@ import Base from '../../layouts/Base.astro';
       <label class="check"><input name="text" type="checkbox" /> <span data-i18n="st.d.text">Text the receipt to the phone above</span></label>
       <p class="btnrow"><button class="btn" type="submit" data-i18n="st.d.accept">Accept drop-off</button></p>
       <p id="msg" role="alert"></p>
+      <p id="outbox" class="muted hidden"></p>
     </form>
 
     <div class="card">
@@ -75,11 +76,34 @@ import Base from '../../layouts/Base.astro';
       } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
     }
 
+    // Offline outbox: a scan that cannot reach the site is kept on this device and sent when the connection is back.
+    const OUTBOX = 'dropoff_outbox';
+    const outbox = (): any[] => { try { return JSON.parse(localStorage.getItem(OUTBOX) || '[]'); } catch { return []; } };
+    const saveOutbox = (list: any[]) => { try { localStorage.setItem(OUTBOX, JSON.stringify(list)); } catch {} showOutbox(); };
+    function showOutbox() { const n = outbox().length; const el = document.getElementById('outbox')!; el.classList.toggle('hidden', !n); el.textContent = n ? tf('st.off.waiting', { n }) : ''; }
+    const isNetworkError = (e: any) => e instanceof TypeError || /fetch|network|Failed/i.test(String(e?.message));
+    let flushing = false;
+    async function flushOutbox() {
+      if (flushing || !pin()) return; flushing = true;
+      try {
+        let list = outbox();
+        while (list.length) {
+          const item = list[0];
+          try { const j = await api({ action: 'accept', ...item }); list = list.slice(1); saveOutbox(list); msg.className = ''; msg.textContent = tf('st.off.sent', { barcode: j.dropoff.barcode, id: j.dropoff.id }); }
+          catch (e: any) { if (isNetworkError(e)) break; list = list.slice(1); saveOutbox(list); msg.className = 'err'; msg.textContent = `${item.barcode}: ${e.message}`; }
+        }
+        if (!outbox().length) refresh();
+      } finally { flushing = false; }
+    }
+    window.addEventListener('online', flushOutbox);
+    setInterval(flushOutbox, 15000);
+    showOutbox();
     form.addEventListener('submit', async (ev) => {
       ev.preventDefault();
       const body = Object.fromEntries(new FormData(form).entries());
       msg.textContent = '';
       try {
+        if (outbox().length) throw new TypeError('offline'); // keep order: earlier scans go first
         const j = await api({ action: 'accept', ...body });
         beep(true);
         msg.className = '';
@@ -94,7 +118,18 @@ import Base from '../../layouts/Base.astro';
         field('text').checked = false;
         field('barcode').focus();
         refresh();
-      } catch (e: any) { beep(false); msg.className = 'err'; msg.textContent = e.message; }
+      } catch (e: any) {
+        if (isNetworkError(e)) {
+          // No connection: keep the scan here with its time, clear the form, carry on scanning.
+          saveOutbox([...outbox(), { ...body, scanned_at: new Date().toISOString() }]);
+          beep(true); msg.className = ''; msg.textContent = tf('st.off.kept', { barcode: String(body.barcode) });
+          for (const n of ['barcode', 'customer_name', 'customer_phone']) field(n).value = '';
+          field('barcode').focus();
+          flushOutbox();
+          return;
+        }
+        beep(false); msg.className = 'err'; msg.textContent = e.message;
+      }
     });
     document.querySelectorAll<HTMLButtonElement>('[data-handed]').forEach((b) => b.addEventListener('click', async () => {
       try { const j = await api({ action: 'handed', carrier: b.dataset.handed }); msg.className = ''; msg.textContent = tf('st.d.marked', { n: j.count, carrier: b.dataset.handed! }); refresh(); }

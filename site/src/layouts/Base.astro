@@ -53,6 +53,10 @@ const { title, description = "Shipping, packing, mailboxes and printing at 1800 
       import { apply, setLang, t, tf, type Lang } from '../i18n';
       (window as any).t = t; (window as any).tf = tf; // for the inline scripts on the order pages
       apply();
+      // Staff pages keep working when the shop's internet drops: see public/counter-sw.js.
+      if (location.pathname.startsWith('/counter/') && 'serviceWorker' in navigator) navigator.serviceWorker.register('/counter-sw.js', { scope: '/counter/' }).catch(() => {});
+      // Staff pages keep working when the shop's internet drops: see public/counter-sw.js.
+      if (location.pathname.startsWith('/counter/') && 'serviceWorker' in navigator) navigator.serviceWorker.register('/counter-sw.js', { scope: '/counter/' }).catch(() => {});
       // Text size and contrast, remembered on this device.
       const root = document.documentElement;
       const get = (k: string) => { try { return localStorage.getItem(k); } catch { return null; } };
