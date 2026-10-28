@@ -60,6 +60,8 @@ Only outbound requests from the shop. No port forwarding, no printer drivers in 
 | `pdf.spool` | Folder for downloaded PDF labels. Defaults to `spool` next to the agent |
 | `pdf.app` | Leave blank to print PDFs with Windows' default PDF app. Or a path to SumatraPDF for silent printing |
 | `track_poll_minutes` | How often the agent asks the site to refresh tracking for open shipments. 10 by default, 0 to turn it off |
+| `max_tries` | How many times a job is attempted before it is set aside for staff to retry. 5 by default |
+| `receipt.host` or `receipt.share` | A separate receipt printer. With `RECEIPT_FORMAT=escpos` on the website, drop-off receipts and Z-reports come as ESC/POS for a till-roll printer here; otherwise they come as 4 by 6 ZPL and print on the Zebra (or on this printer if it is a second Zebra). `node agent.mjs --test-receipt` prints a test slip |
 
 4. Test the printer without the website:
 
@@ -82,7 +84,11 @@ Leave the window open. To start it with Windows, create a shortcut to `node C:\P
 1. Staff open the order on the tablet (scan the customer's QR or go to `/counter/GP-XXXXXX`), type the PIN and tap **Print at the counter**.
 2. The website puts a job in the `print_queue` table: ZPL if the carrier returned it, otherwise the PDF URL. Drop-off receipts arrive the same way as 4 by 6 ZPL (kind `receipt`) and print on the Zebra unless a separate `receipt` printer is configured.
 3. The agent picks the job up within three seconds, prints it, and marks it done.
-4. If a job fails five times (printer off, out of labels) it is skipped with a message in the agent window, and the label can still be opened and printed from the counter page by hand.
+4. If a job fails five times (printer off, out of labels, PDF unreachable) the agent reports it to the website and sets it aside. The queue page lists it under "Print jobs the printer could not do" with the error and a **Retry** button, which puts it back; the label can also be opened and printed from the counter page by hand.
+
+## Heartbeat
+
+Every twenty seconds the agent tells the website it is alive, with its version, which printers it is configured for, when it last printed and its last error. The queue page shows "Printer agent online, printer 192.168.1.50, last job 2 min ago", or **OFFLINE** when nothing has arrived for two minutes, so a crashed agent or a sleeping PC is noticed before a customer is waiting for a label.
 
 ## Tracking refresh
 
@@ -96,6 +102,8 @@ While it runs, the agent also calls `POST /api/track-poll` every ten minutes, wh
 | `no printer configured` | Both `zebra.host` and `zebra.share` are blank |
 | `printer 192.168.x.x timed out` | Wrong IP, printer asleep, or not on the same network. Print a config label from the printer to see its address |
 | Test label prints, real labels blank or garbled | The carrier sent a PDF and the job went to the Zebra as raw bytes. Check the kind in the agent log; PDFs need `pdf.app` or the default PDF app |
+| Queue page says OFFLINE while the agent window is running | The agent cannot reach the website: check `site` in the JSON file, the shop's internet, and that the site accepts the printer key (a 403 shows in the agent window) |
+| `an ESC/POS receipt arrived but no receipt printer is configured` | `RECEIPT_FORMAT=escpos` is set on the website but `receipt.host` and `receipt.share` are blank in the agent. Fill one in, or clear the website setting to print receipts on the Zebra |
 | PDF opens on screen instead of printing | Windows has no default PDF printer set. Install SumatraPDF and put its path in `pdf.app`; it prints silently |
 
 ## Mock mode

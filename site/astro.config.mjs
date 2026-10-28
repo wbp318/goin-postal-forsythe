@@ -6,7 +6,6 @@ import cloudflare from '@astrojs/cloudflare';
 // (the shipping API and the order pages) run as Cloudflare functions.
 export default defineConfig({
   output: 'static',
-  adapter: cloudflare({
-    platformProxy: { enabled: true }, // reads wrangler.jsonc so KV and .dev.vars work in `npm run dev`
-  }),
+  // The adapter's platform proxy is on by default: wrangler.jsonc and .dev.vars are read in `npm run dev`.
+  adapter: cloudflare(),
 });

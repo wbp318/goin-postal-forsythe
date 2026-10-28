@@ -21,6 +21,8 @@ import { store } from '../../data/store';
       <button class="btn" id="load" data-i18n="st.q.showqueue">Show queue</button>
     </p>
     <p id="msg" role="alert"></p>
+    <p id="printer" class="muted"></p>
+    <div id="failedwrap" class="hidden"><strong data-i18n="st.pr.failed">Print jobs the printer could not do</strong><table class="list" id="failed"><tbody></tbody></table></div>
     <table class="list hidden" id="table">
       <thead><tr><th data-i18n="st.q.th.waiting">Waiting</th><th data-i18n="st.q.th.code">Code</th><th data-i18n="st.q.th.customer">Customer</th><th data-i18n="st.q.th.to">To</th><th data-i18n="st.q.th.service">Service</th><th data-i18n="st.q.th.status">Status</th><th data-i18n="st.q.th.do">Do</th></tr></thead>
       <tbody></tbody>
@@ -141,10 +143,28 @@ import { store } from '../../data/store';
         for (const a of accounts) { const o = document.createElement('option'); o.value = String(a.id); o.textContent = `${a.business_name} (${a.discount_percent}% off)`; sel.appendChild(o); accountNames.add(a.business_name); }
       } catch {}
     }
+    async function printerStatus() {
+      try {
+        const s = await api('/api/print', { action: 'status' });
+        const p = $('printer');
+        if (!s.key_set) p.textContent = t('st.pr.nokey');
+        else if (!s.online) p.textContent = t('st.pr.offline');
+        else { const a = s.agent; const since = a.last_job_at ? ago(a.last_job_at) : null; p.textContent = tf('st.pr.online', { printer: a.zebra ?? '?', last: since ? tf('st.pr.lastjob', { ago: since }) : t('st.pr.nojob') }) + (a.last_error ? ` · ${t('st.pr.lasterror')} ${a.last_error}` : ''); }
+        const fb = $('failed').querySelector('tbody')!; fb.innerHTML = '';
+        for (const f of s.failed) {
+          const tr = document.createElement('tr');
+          cell(tr, `#${f.job_id} ${f.kind}${f.shipment_id ? ` ${f.shipment_id}` : ''}`); cell(tr, f.error ?? ''); cell(tr, ago(f.at));
+          const td = document.createElement('td'); td.appendChild(button(t('st.pr.retry'), 'kraft', async () => { await api('/api/print', { action: 'retry', id: f.job_id }); msg.className = ''; msg.textContent = t('st.pr.retried'); await printerStatus(); })); tr.appendChild(td);
+          fb.appendChild(tr);
+        }
+        $('failedwrap').classList.toggle('hidden', !s.failed.length);
+      } catch {}
+    }
     async function load() {
       if (!pin()) { msg.className = 'err'; msg.textContent = t('st.pinfirst'); return; }
       try {
         if (!accountNames.size) await loadAccounts();
+        printerStatus();
         const { open, done, user } = await api('/api/queue', { action: 'list' });
         if (user && !staff()) ($('staff') as HTMLInputElement).placeholder = user.name;
         body.innerHTML = '';

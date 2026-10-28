@@ -96,7 +96,7 @@ flowchart LR
 | `POST /api/rules` | owner page | `get` (rules in force and their source), `file` (the JSON file's rules), `preview` (a draft applied to a real quote, nothing stored) and `save` (replace all, validated). Staff PIN, or `OWNER_PIN` to save |
 | `POST /api/customers` | staff page | `search` (name, email or phone digits; also unlinked walk-ups by name), `get` (customer, every quote, address book) and `export` (CSV), PIN |
 | `GET /api/track?q=` | site | Public: shipment status and events by pickup code or tracking number, refreshed from the carrier when older than fifteen minutes |
-| `POST /api/print` | staff page, printer agent | `queue` (PIN) puts a label in the print queue; `GET` and `done` (header `X-Printer-Key`) are what the counter PC's [printer agent](../shipping-client/printer-agent/README.md) calls |
+| `POST /api/print` | staff page, printer agent | `queue` (PIN) puts a label in the print queue; `status` (PIN) returns the agent's heartbeat and the jobs it gave up on; `retry` (PIN) puts one back. `GET`, `done`, `heartbeat` and `failed` (header `X-Printer-Key`) are what the counter PC's [printer agent](../shipping-client/printer-agent/README.md) calls |
 | `POST /api/dropoff` | staff page | `accept` (with `receipt` and `text` flags), `lookup`, `recent`, `handed`, `get`, `receipt` (re-queue the slip) and `text` (re-send it) actions, PIN |
 | `POST /api/track-poll` | printer agent, GitHub Action, staff page | Refreshes tracking for open shipments older than fifteen minutes and sends customer updates for anything new. `X-Printer-Key` header or PIN |
 | `POST /api/exceptions` | staff page | The exceptions list, PIN |
@@ -191,7 +191,7 @@ cp .dev.vars.example .dev.vars
 npm run dev
 ```
 
-Run `npm run db:local` once to create PeterShip's tables in the local D1 database (shipments, tracking, print queue, drop-offs); without it those routes answer with a database error. With `.dev.vars` left blank the site runs in mock mode: fake rates, fake label, Stripe skipped. Orders live in memory until restart; the D1 records live in `.wrangler/`. Fill in `EASYSHIP_TOKEN` with a `sand_` token to hit Easyship's sandbox, and the Stripe test keys to use real Checkout.
+`npm run check` type-checks every page, API and library file with Astro's checker and `npm test` runs the check and the build together; the CI workflow runs both on every push, plus a syntax check of the printer agent and the Python scripts and a parse of `db/schema.sql`. Run `npm run db:local` once to create PeterShip's tables in the local D1 database (shipments, tracking, print queue, drop-offs); without it those routes answer with a database error. With `.dev.vars` left blank the site runs in mock mode: fake rates, fake label, Stripe skipped. Orders live in memory until restart; the D1 records live in `.wrangler/`. Fill in `EASYSHIP_TOKEN` with a `sand_` token to hit Easyship's sandbox, and the Stripe test keys to use real Checkout.
 
 ## Before launch
 

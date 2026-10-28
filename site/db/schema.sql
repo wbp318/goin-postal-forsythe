@@ -256,3 +256,12 @@ CREATE TABLE IF NOT EXISTS notes (
   at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS notes_target ON notes(kind, target, id);
+
+-- Print jobs the agent gave up on (printer off, out of labels, PDF unreachable). Left out of the
+-- queue until staff press Retry on the queue page, which deletes the row.
+CREATE TABLE IF NOT EXISTS print_failures (
+  job_id INTEGER PRIMARY KEY REFERENCES print_queue(id),
+  error TEXT,
+  tries INTEGER NOT NULL DEFAULT 0,
+  at TEXT NOT NULL
+);

@@ -10,6 +10,8 @@ OWNER_PIN=
 
 # Shared secret for the counter printer agent (shipping-client/printer-agent). Any long random string.
 PRINTER_KEY=change-me
+# Receipts and Z-reports print as 4x6 ZPL on the Zebra. Set escpos if the shop has a till-roll receipt printer configured in the agent.
+RECEIPT_FORMAT=
 
 # Customer updates (PeterShip Phase 4). Blank = messages are logged in the terminal, nothing sent.
 # Resend: resend.com, API Keys. MAIL_FROM must be on a domain verified there. STAFF_EMAIL gets exception alerts.

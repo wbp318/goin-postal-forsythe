@@ -3,7 +3,7 @@ import type { APIRoute } from 'astro';
 import { env } from '../../lib/env';
 import { json } from '../../lib/validate';
 import { authenticate, CAN } from '../../lib/auth';
-import { buildClose, closeZpl } from '../../lib/close';
+import { buildClose, closeZpl, closeEscpos } from '../../lib/close';
 import { saveClose, listCloses, getClose, queuePrint, logAudit } from '../../shipping/store';
 
 // End-of-day close, from /counter/close. Any staff member can look; closing the day needs a manager
@@ -28,7 +28,9 @@ export const POST: APIRoute = async ({ request }) => {
       const zpl = closeZpl(report, user.name, note);
       const saved = await saveClose(env, { day, closed_by: user.name, note, report, zpl });
       let printed: number | null = null;
-      if (b.print) printed = await queuePrint(env, { shipment_id: null, kind: 'receipt', payload: btoa(unescape(encodeURIComponent(zpl))), printer: 'counter' });
+      if (b.print) printed = env.RECEIPT_FORMAT === 'escpos'
+        ? await queuePrint(env, { shipment_id: null, kind: 'receipt_escpos', payload: btoa(closeEscpos(report, user.name, note)), printer: 'counter' })
+        : await queuePrint(env, { shipment_id: null, kind: 'receipt', payload: btoa(unescape(encodeURIComponent(zpl))), printer: 'counter' });
       await logAudit(env, user, 'day.close', day, `POS ${report.pos_expected.toFixed(2)}, Stripe ${report.stripe_expected.toFixed(2)}, ${report.labels.count} labels, ${report.voided.length} voids${note ? `, note: ${note.slice(0, 60)}` : ''}`);
       return json({ ok: true, id: saved.id, report, printed, agent: !!env.PRINTER_KEY });
     }

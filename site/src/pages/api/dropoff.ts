@@ -4,7 +4,7 @@ import { env } from '../../lib/env';
 import { json } from '../../lib/validate';
 import { authenticate } from '../../lib/auth';
 import { recordDropoff, findDropoffs, recentDropoffs, markDropoffsHanded, carrierFromBarcode, getDropoff, queuePrint, logAudit, type Dropoff } from '../../shipping/store';
-import { dropoffReceiptZpl, dropoffReceiptText } from '../../shipping/receipt';
+import { dropoffReceiptZpl, dropoffReceiptText, dropoffReceiptEscpos } from '../../shipping/receipt';
 import { sendSms, normalizePhone } from '../../shipping/notify';
 
 // Drop-off capture from /counter/dropoff. Staff PIN required.
@@ -15,7 +15,9 @@ import { sendSms, normalizePhone } from '../../shipping/notify';
 async function receipt(env: Env, d: Dropoff, print: boolean, text: boolean) {
   const out: { printed?: number; agent?: boolean; texted?: boolean; text_mock?: boolean } = {};
   if (print) {
-    out.printed = await queuePrint(env, { shipment_id: null, kind: 'receipt', payload: btoa(unescape(encodeURIComponent(dropoffReceiptZpl(d)))), printer: 'counter' });
+    out.printed = env.RECEIPT_FORMAT === 'escpos'
+      ? await queuePrint(env, { shipment_id: null, kind: 'receipt_escpos', payload: btoa(dropoffReceiptEscpos(d)), printer: 'counter' })
+      : await queuePrint(env, { shipment_id: null, kind: 'receipt', payload: btoa(unescape(encodeURIComponent(dropoffReceiptZpl(d)))), printer: 'counter' });
     out.agent = !!env.PRINTER_KEY;
   }
   if (text && d.customer_phone && normalizePhone(d.customer_phone)) {

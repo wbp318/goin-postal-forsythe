@@ -34,6 +34,32 @@ export function dropoffReceiptZpl(d: Dropoff): string {
   return lines.filter(Boolean).join('\n');
 }
 
+/** ESC/POS bytes for a till-roll receipt printer (58 or 80 mm), when RECEIPT_FORMAT=escpos is set. Returned as a binary string for btoa(). */
+export function dropoffReceiptEscpos(d: Dropoff): string {
+  return escpos([
+    { t: store.name, bold: true, center: true }, { t: store.address, center: true }, { t: store.phone, center: true }, { t: '' },
+    { t: 'DROP-OFF RECEIPT', bold: true, center: true, wide: true }, { t: '' },
+    { t: `Received ${when(d.accepted_at)}` }, { t: `Carrier: ${d.carrier ?? 'to be confirmed'}` }, { t: `Receipt no. ${d.id}` },
+    ...(d.customer_name ? [{ t: `From: ${d.customer_name}` }] : []), ...(d.accepted_by ? [{ t: `Accepted by: ${d.accepted_by}` }] : []),
+    { t: '' }, { t: 'Tracking number', center: true }, { barcode: d.barcode }, { t: d.barcode, center: true }, { t: '' },
+    { t: "We handed this package to the carrier named above on their next pickup. Track it on the carrier's website with the number above. Keep this receipt until it is delivered." },
+    { t: '' }, { t: `Questions: ${store.phone}. Bring this receipt or the number.` }, { t: '' }, { t: 'Thank you for shipping with us.', center: true },
+  ]);
+}
+
+/** A small ESC/POS builder: init, alignment, bold, double width, Code 128 barcode, feed and cut. Latin-1 text only. */
+export function escpos(lines: ({ t: string; bold?: boolean; center?: boolean; wide?: boolean } | { barcode: string })[]): string {
+  const ESC = '\x1b', GS = '\x1d';
+  let out = `${ESC}@`;
+  for (const l of lines) {
+    if ('barcode' in l) { const code = l.barcode.replace(/[^\x20-\x7e]/g, '').slice(0, 40); out += `${ESC}a\x01${GS}h\x50${GS}w\x02${GS}H\x00${GS}k\x49${String.fromCharCode(code.length + 2)}{B${code}\n${ESC}a\x00`; continue; }
+    const text = l.t.normalize('NFKD').replace(/[^\x20-\x7e\n]/g, '');
+    out += `${ESC}a${l.center ? '\x01' : '\x00'}${ESC}E${l.bold ? '\x01' : '\x00'}${GS}!${l.wide ? '\x11' : '\x00'}${wrap(text, l.wide ? 16 : 32)}\n${GS}!\x00${ESC}E\x00${ESC}a\x00`;
+  }
+  return out + `\n\n\n${GS}V\x41\x03`;
+}
+const wrap = (s: string, w: number) => s.split('\n').flatMap((line) => { const words = line.split(' '); const rows: string[] = []; let cur = ''; for (const wd of words) { if ((cur + ' ' + wd).trim().length > w) { rows.push(cur.trim()); cur = wd; } else cur = (cur + ' ' + wd); } rows.push(cur.trim()); return rows; }).join('\n');
+
 /** The same receipt in one text message. */
 export function dropoffReceiptText(d: Dropoff): string {
   return `${store.name}: we received your ${d.carrier ?? ''} package ${d.barcode} on ${when(d.accepted_at)} (receipt ${d.id}). It goes out on the carrier's next pickup; track it on their site with that number. Questions: ${store.phone}.`.replace(/\s+/g, ' ');

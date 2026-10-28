@@ -14,6 +14,41 @@ env:
   GOIN_POSTAL_OWNER: ${{ secrets.GOIN_POSTAL_OWNER }}
 
 jobs:
+  code:
+    name: Check the code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the site's packages
+        working-directory: site
+        run: npm ci
+      - name: Type-check every page, API and library file
+        working-directory: site
+        run: npm run check
+      - name: Build the site the way Cloudflare does
+        working-directory: site
+        run: npm run build
+      - name: Syntax-check the printer agent
+        run: node --check shipping-client/printer-agent/agent.mjs
+      - name: Syntax-check the Python scripts
+        run: python -m py_compile scripts/*.py
+      - name: Check the database schema parses
+        run: |
+          python - <<'EOF'
+          import sqlite3
+          sql = open('site/db/schema.sql', encoding='utf-8').read()
+          con = sqlite3.connect(':memory:'); con.executescript(sql); con.executescript(sql)  # re-runnable
+          print('schema ok, re-runnable')
+          EOF
+
   designs:
     name: Check designs
     runs-on: ubuntu-latest

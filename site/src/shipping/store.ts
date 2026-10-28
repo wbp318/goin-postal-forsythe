@@ -30,7 +30,7 @@ export interface ShipmentRow {
 export interface PrintJob {
   id: number;
   shipment_id: string | null;
-  kind: 'label_zpl' | 'label_pdf' | 'receipt' | 'card_sheet';
+  kind: 'label_zpl' | 'label_pdf' | 'receipt' | 'receipt_escpos' | 'card_sheet';
   payload: string;
   printer: string;
   queued_at: string;
@@ -83,8 +83,40 @@ const mem = {
   statements: [] as StatementRow[],
   billing: new Map<string, { account_id: number; statement_id: number | null }>(),
   notes: [] as NoteRow[],
+  printFailures: new Map<number, PrintFailure>(),
+  heartbeats: new Map<string, AgentHeartbeat>(),
   seq: 1,
 };
+
+// ---- printer agent: failures and heartbeat -----------------------------------------------------
+export interface PrintFailure { job_id: number; error: string | null; tries: number; at: string; kind?: string; shipment_id?: string | null; queued_at?: string }
+export interface AgentHeartbeat { printer: string; at: string; version?: string; zebra?: string | null; receipt?: string | null; last_job_at?: string | null; last_error?: string | null; printed?: number; failed?: number }
+
+export async function markPrintFailed(env: Env, jobId: number, error: string, tries: number) {
+  if (env.DB) { await env.DB.prepare('INSERT OR REPLACE INTO print_failures (job_id, error, tries, at) VALUES (?1, ?2, ?3, ?4)').bind(jobId, error.slice(0, 300), tries, now()).run(); return; }
+  mem.printFailures.set(jobId, { job_id: jobId, error: error.slice(0, 300), tries, at: now() });
+}
+
+export async function clearPrintFailure(env: Env, jobId: number): Promise<boolean> {
+  if (env.DB) { const r = await env.DB.prepare('DELETE FROM print_failures WHERE job_id = ?1').bind(jobId).run(); return (r.meta.changes ?? 0) > 0; }
+  return mem.printFailures.delete(jobId);
+}
+
+export async function listPrintFailures(env: Env): Promise<PrintFailure[]> {
+  if (env.DB) return (await env.DB.prepare('SELECT f.*, q.kind, q.shipment_id, q.queued_at FROM print_failures f JOIN print_queue q ON q.id = f.job_id WHERE q.printed_at IS NULL ORDER BY f.at DESC LIMIT 50').all<PrintFailure>()).results;
+  return [...mem.printFailures.values()].map((f) => { const j = mem.jobs.find((x) => x.id === f.job_id); return { ...f, kind: j?.kind, shipment_id: j?.shipment_id ?? null, queued_at: j?.queued_at }; }).filter((f) => f.kind);
+}
+
+/** The agent's last word, kept two minutes in KV so the queue page can say online or offline. */
+export async function setHeartbeat(env: Env, h: AgentHeartbeat) {
+  if (env.ORDERS) { await env.ORDERS.put(`printer:${h.printer}`, JSON.stringify(h), { expirationTtl: 120 }); return; }
+  mem.heartbeats.set(h.printer, h);
+}
+export async function getHeartbeat(env: Env, printer = 'counter'): Promise<AgentHeartbeat | null> {
+  if (env.ORDERS) { const raw = await env.ORDERS.get(`printer:${printer}`); return raw ? (JSON.parse(raw) as AgentHeartbeat) : null; }
+  const h = mem.heartbeats.get(printer);
+  return h && Date.now() - new Date(h.at).getTime() < 120_000 ? h : null;
+}
 
 // ---- notes --------------------------------------------------------------------------------------
 export interface NoteRow { id: number; kind: 'customer' | 'order'; target: string; note: string; by_name: string; at: string }
@@ -816,8 +848,8 @@ export async function queuePrint(env: Env, job: Pick<PrintJob, 'shipment_id' | '
 
 /** Oldest unprinted job for a printer. The agent calls this every few seconds. */
 export async function nextPrintJob(env: Env, printer = 'counter'): Promise<PrintJob | null> {
-  if (env.DB) return (await env.DB.prepare('SELECT * FROM print_queue WHERE printer = ?1 AND printed_at IS NULL ORDER BY id ASC LIMIT 1').bind(printer).first<PrintJob>()) ?? null;
-  return mem.jobs.find((j) => j.printer === printer && !j.printed_at) ?? null;
+  if (env.DB) return (await env.DB.prepare('SELECT q.* FROM print_queue q LEFT JOIN print_failures f ON f.job_id = q.id WHERE q.printer = ?1 AND q.printed_at IS NULL AND f.job_id IS NULL ORDER BY q.id ASC LIMIT 1').bind(printer).first<PrintJob>()) ?? null;
+  return mem.jobs.find((j) => j.printer === printer && !j.printed_at && !mem.printFailures.has(j.id)) ?? null;
 }
 
 export async function markPrinted(env: Env, id: number) {
@@ -827,8 +859,8 @@ export async function markPrinted(env: Env, id: number) {
 }
 
 export async function pendingPrintJobs(env: Env): Promise<PrintJob[]> {
-  if (env.DB) return (await env.DB.prepare('SELECT * FROM print_queue WHERE printed_at IS NULL ORDER BY id ASC LIMIT 50').all<PrintJob>()).results;
-  return mem.jobs.filter((j) => !j.printed_at);
+  if (env.DB) return (await env.DB.prepare('SELECT q.* FROM print_queue q LEFT JOIN print_failures f ON f.job_id = q.id WHERE q.printed_at IS NULL AND f.job_id IS NULL ORDER BY q.id ASC LIMIT 50').all<PrintJob>()).results;
+  return mem.jobs.filter((j) => !j.printed_at && !mem.printFailures.has(j.id));
 }
 
 // ---- drop-offs --------------------------------------------------------------------------------
