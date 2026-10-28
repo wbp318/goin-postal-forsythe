@@ -2,7 +2,7 @@
 
 PeterShip is the store's own shipping client. A plan for replacing Easyship with software the store owns: rating, labels, tracking, drop-offs and reports for USPS, UPS, FedEx and DHL, built on the same Cloudflare stack as the website. The same thing ShippingEasy, Easyship and GP Rate Pro do, but ours. PeterShip is proprietary, see [LICENSE](LICENSE); it is not under the repository's Apache license.
 
-Item 44 in [`AGENDA.md`](../AGENDA.md) tracks it. Everything that can be built without carrier keys is built and running in mock mode: the rating engine (Phase 2), the print queue and printer agent (Phase 3), tracking, poll, exceptions and customer updates (Phase 4), and drop-off capture, reports, the quote queue, customer lookup, the price rules editor, drop-off receipts, returns, insurance and add-ons (Phase 5). The counter app that needs no carrier keys is complete. Releases v1.16.0 through v1.29.0, October 21 to 28, 2026. See [What is built so far](#what-is-built-so-far). What remains waits on the owners' carrier accounts (Phase 1).
+Item 44 in [`AGENDA.md`](../AGENDA.md) tracks it. Everything that can be built without carrier keys is built and running in mock mode: the rating engine (Phase 2), the print queue and printer agent (Phase 3), tracking, poll, exceptions and customer updates (Phase 4), and drop-off capture, reports, the quote queue, customer lookup, the price rules editor, drop-off receipts, returns, insurance and add-ons (Phase 5). The counter app that needs no carrier keys is complete. Releases v1.16.0 through v1.30.0, October 21 to 28, 2026. See [What is built so far](#what-is-built-so-far). What remains waits on the owners' carrier accounts (Phase 1).
 
 New to this? [The long version](#the-long-version-how-petership-works-and-how-to-run-it) further down explains every word, every file, how to run it on your own computer, a screen-by-screen test script, what happens to one shipment from quote to delivery, and the go-live list in order. It is written for Peter, Rin and William and assumes none of this has been seen before.
 
@@ -81,6 +81,7 @@ flowchart LR
 | Exceptions list for staff: carrier exceptions, returns to sender, labels not scanned after three days, no movement for seven days, with Check carriers now | `/counter/exceptions`, `POST /api/exceptions` | Done |
 | Reports for staff: shipments, what customers paid, what carriers charged and the margin, by day, carrier and service; busiest hours and weekdays; returning customers; drop-offs by carrier; CSV of every shipment for reconciling the carrier invoice | `/counter/reports`, `POST /api/reports`, `store.report()` | Done. Margin reads zero in mock mode because the fallback adapter reports its price as the cost |
 | Quote queue for the counter: every online reservation and every walk-up on one screen, oldest first, waiting time in red after twenty minutes, with buy, print, mark printed, void and cancel. Walk-ups are typed in on the same page and quoted by the same engine as the website, so counter and site prices agree. A `quotes` table mirrors every order save, since KV cannot be listed cheaply | `/counter/queue`, `POST /api/queue`, `quotes` table | Done |
+| Carrier invoice audit: open the carrier's weekly invoice CSV at `/counter/invoices`, the columns are guessed from the headers and can be changed, surcharge lines are folded into their tracking number, and every number is matched to our shipment by tracking number. Each line is one of: OK, overcharged (dimensional adjustment, address correction, surcharge added after the fact), under, voided but billed, billed twice, or not ours; the summary says what the carrier billed, what we expected and what to dispute. Save the audit, mark lines disputed with the claim number, download the flagged lines to send to the carrier. A sample invoice built from our own shipments lets the owners try it before a real one exists | `src/lib/invoices.ts`, `/counter/invoices`, `POST /api/invoices`, `invoices` and `invoice_lines` tables | Done. Real invoices arrive once the carrier accounts exist |
 | Staff logins and the audit log: everyone gets their own PIN with a role (counter, manager, owner), managed by an owner at `/counter/staff`; every buy, print, mark printed, void, cancel, email, walk-up, drop-off, pickup, receipt reprint, price save, add-on save and staff change is written to `audit_log` with the name and the time, readable newest first and filterable by person. The two shared PINs still work and are named as such, so nothing breaks on day one; the page tells a shared-PIN user to add themselves and retire the shared secrets. The walk-up and drop-off forms fill the staff name from the login | `src/lib/auth.ts`, `/counter/staff`, `POST /api/staff`, `audit_log` table | Done |
 | Insurance and packaging add-ons: declared-value insurance (free up to the carrier's included cover, then per $100 with a minimum and a cap) and a catalog of boxes, packing and services, all priced on the server from a table the owners edit on the Prices page. The Ship page offers insurance and shows the running total; the walk-up form offers insurance and the catalog with quantities and shows the total to ring up; Stripe gets one line per item; the done and order pages show the breakdown; the queue shows the total; reports show add-ons sold. Seed prices in `addons.json` are placeholders for the owners (issue 9) | `src/lib/addons.ts`, `POST /api/addons`, `addons` and `order_addons` tables | Done |
 | Returns at the counter: the walk-up form's return mode. The sender's US address is typed in as the origin, the package comes to the store (a local business collects it here) or to any other address such as the business's own shop, the label is paid on the POS and bought like any walk-up, then Email label sends the label link, tracking number, drop-off instructions and the tracking page to the sender. Email label also works for any bought label, for customers who want to print at home. Returns show as "Return from City, ST to Name" in the queue and on the customer's history | queue return mode, `POST /api/queue` `kind: return`, `POST /api/counter` `email` | Done. Emails log until the Resend key is set |
@@ -160,6 +161,7 @@ A shipping client is the software between a person with a box and the carriers. 
 | **D1** | Cloudflare's SQL database (SQLite). PeterShip's own tables live here: shipments, tracking events, customers, quotes, drop-offs, print queue. Easy to list and report on. |
 | **Secret** | A password or API key. Never in the code. Locally in `site/.dev.vars`, in production set with `npx wrangler secret put NAME`. |
 | **PIN** and **role** | Each staff member's own 4-to-8-digit code, typed on every `/counter/` page. It says who they are and what they may do: **counter** runs the queue, drop-offs, customers and reports; **manager** also reads the audit log; **owner** also saves prices and add-ons and manages people at `/counter/staff`. Two shared codes, the secrets `COUNTER_PIN` and `OWNER_PIN`, work as stop-gaps until everyone has their own. |
+| **Invoice audit** | Matching what the carrier billed to what we quoted, line by line, and disputing the difference. Carriers adjust charges after the fact (dimensional weight, address corrections, residential surcharges) and the only defence is checking. |
 | **Audit log** | One line per action with the name, the time, what was done and to what. Who voided that label, who changed the UPS markup, who accepted that drop-off. Read at `/counter/staff`. |
 | **Printer agent** | A small Node program on the counter PC that watches the print queue and sends labels to the Zebra. |
 | **Drop-off** | A package a customer brings in that already has a label (an Amazon return, a prepaid label). We do not sell anything; we scan it so there is a record it was handed to us, and the customer leaves with a receipt that says so. |
@@ -198,13 +200,14 @@ site/
     fulfil.ts                   "the money arrived, buy the label now", shared by Stripe and the POS step
     addons.ts                   insurance fee and add-on pricing, always on the server, from the catalog
     auth.ts                     who a PIN belongs to, roles, what each role may do
+    invoices.ts                 the invoice matcher: group surcharges, compare with our cost, flag
     validate.ts                 turn form input into a clean Address and Parcel, or a clear error
     stripe.ts                   Stripe Checkout for online card payments
     easyship.ts                 the raw Easyship HTTP client and the mock rates and label
   src/pages/
     ship/                       customer: quote form, done page with QR code
     track/                      customer: tracking page, 14 languages
-    counter/                    staff, PIN: queue, customers, dropoff, exceptions, reports, rules, staff, [code]
+    counter/                    staff, PIN: queue, customers, dropoff, exceptions, reports, invoices, rules, staff, [code]
     api/                        the JSON endpoints every page calls (table in site/README.md)
 shipping-client/
   printer-agent/                the counter PC program, its own README
@@ -295,6 +298,8 @@ A walk-up with no phone and no email cannot be tied to a person (two John Smiths
 **5i. Reports.** Open `/counter/reports`, pick today. Shipments, what customers paid, what carriers charged, margin, by day, carrier and service; busiest hours and weekdays; returning customers; drop-offs; and a CSV of every shipment for reconciling the carrier's invoice. In mock mode the margin is zero because the fake adapter reports its price as its cost.
 
 **5j. Prices.** Open `/counter/rules`. Below the price rules is Add-ons and insurance: the four insurance numbers and the catalog, with Save add-ons. Change the small box to $2.99, save, quote a walk-up, and the new price is in the list. It says nothing has been saved yet and shows the file's rules: everything at zero, switched off. Put 20 in Default percent and 1 in Default flat fee, tick Rules are on, press Preview: the table shows each sample rate's carrier cost, the price now (equal to cost) and the price after (cost plus 20 percent plus a dollar, rounded up to .99). Save, then go back to `/ship` and quote the same box: the new prices. Come back, untick Rules are on, Save, and the Ship page is back to cost. In real life the numbers are copied from Rate Pro so that the website and the counter can never disagree.
+
+**5j-2. Carrier invoices.** Open `/counter/invoices` with a manager or owner PIN and press Download a sample invoice: a CSV built from your own test shipments with a few deliberate overcharges. Open it with the Invoice CSV field, check that the tracking and amount columns were guessed right, press Check the invoice. The three cards say what the carrier billed, what we expected and what to dispute; the table lists the flagged lines first. Press Save this audit, then Dispute on a line and type a claim number; Download flagged lines gives the spreadsheet to send the carrier. In real life the CSV comes from the carrier's billing site every week, and this is the ten-minute job that catches the $18 address corrections and the labels they billed after we voided them.
 
 **5k-0. People.** Open `/counter/staff` with the shared PIN 1234. It says you are signed in as Counter (shared PIN) and asks you to add yourself. Add Rin as an owner with a PIN of her choosing, Peter as a manager, a counter person as counter. Sign out by clearing the PIN box, sign in with the counter PIN on `/counter/queue`, and run a walk-up: the Audit log on the staff page now shows that walk-up with that person's name. Try the counter PIN on `/counter/rules`: it can look but not save. Reset a PIN, deactivate someone, and watch the old PIN stop working at once.
 
@@ -390,6 +395,7 @@ This is the owners' list. Each step is independent; stop anywhere and the site k
 | Need | Do |
 |---|---|
 | Look at the database in production | `npx wrangler d1 execute goin-postal --remote --command "SELECT id, status, price FROM shipments ORDER BY created_at DESC LIMIT 20"`. Add `--local` instead of `--remote` for your computer's copy. Any SQL works; it is SQLite. |
+| Check a carrier invoice | `/counter/invoices`: open the CSV, check the columns, Check the invoice, Save, dispute the flagged lines with the carrier and mark them as you go. Weekly, when the invoice arrives. |
 | Add a person, change a role, reset or revoke a PIN | `/counter/staff` as an owner. A deactivated person's PIN stops working on the next request. |
 | See who did what | `/counter/staff`, the Audit log, newest first, filter by person. Managers and owners. |
 | Change a shared PIN | `npx wrangler secret put COUNTER_PIN`. Takes effect on the next request. Better: retire the shared PINs once everyone has their own. |
@@ -468,7 +474,7 @@ mindmap
       Print to label printer
     Reports
       Daily shipments and margin
-      Carrier reconciliation
+      Carrier reconciliation ✅
       Returning customers
     Admin
       Carrier accounts and keys

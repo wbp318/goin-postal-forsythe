@@ -1,0 +1,172 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+
+// Manager page: carrier invoice audit. Open the carrier's invoice CSV, confirm which columns are the
+// tracking number and the amount, and see every line matched to our shipment with the difference.
+// Overcharges, voided labels still billed, duplicates and unknown numbers float to the top. Save the
+// audit, mark lines as disputed as you send them to the carrier, and download the flagged lines.
+---
+<Base title="Counter · Invoices">
+  <section class="hero">
+    <h1 data-i18n="st.i.h1">Carrier invoices</h1>
+    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/invoices" data-i18n="st.nav.invoices">Invoices</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a> · <a href="/counter/staff" data-i18n="st.nav.staff">Staff</a></p>
+    <p class="lead" data-i18n="st.i.lead">What the carrier billed against what we quoted. Open the invoice CSV from the carrier's billing site, and every tracking number is matched to our shipment. Anything billed above our cost, billed after we voided it, billed twice, or not ours at all comes out on top.</p>
+  </section>
+
+  <div class="card">
+    <p class="btnrow">
+      <label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
+      <label><span data-i18n="st.i.file">Invoice CSV</span> <input id="file" type="file" accept=".csv,text/csv" /></label>
+      <button class="btn kraft" id="sample" data-i18n="st.i.sample">Download a sample invoice to try</button>
+    </p>
+    <div id="mapping" class="row hidden">
+      <label><span data-i18n="st.i.col.tracking">Tracking column</span> <select id="colT"></select></label>
+      <label><span data-i18n="st.i.col.billed">Amount column</span> <select id="colB"></select></label>
+      <label><span data-i18n="st.i.col.desc">Description column</span> <select id="colD"></select></label>
+      <label><span data-i18n="st.i.col.date">Date column</span> <select id="colA"></select></label>
+      <label><span data-i18n="st.i.carrier">Carrier</span> <select id="carrier"><option>USPS</option><option>UPS</option><option>FedEx</option><option>DHL</option></select></label>
+      <label><span data-i18n="st.i.label">Name for this audit</span> <input id="label" maxlength="60" placeholder="UPS week 43" /></label>
+    </div>
+    <p class="btnrow hidden" id="runrow"><button class="btn" id="run" data-i18n="st.i.run">Check the invoice</button> <button class="btn kraft" id="save" data-i18n="st.i.save">Save this audit</button></p>
+    <p id="msg" role="alert"></p>
+  </div>
+
+  <div id="result" class="hidden">
+    <div class="grid">
+      <div class="card"><h3 data-i18n="st.i.s.billed">Carrier billed</h3><p class="big" id="s-billed"></p></div>
+      <div class="card"><h3 data-i18n="st.i.s.expected">We expected</h3><p class="big" id="s-expected"></p></div>
+      <div class="card"><h3 data-i18n="st.i.s.flagged">To dispute</h3><p class="big" id="s-flagged"></p><p class="muted" id="s-counts"></p></div>
+    </div>
+    <div class="card">
+      <p class="btnrow"><label class="check"><input id="onlyflagged" type="checkbox" checked /> <span data-i18n="st.i.onlyflagged">Show flagged lines only</span></label> <button class="btn kraft hidden" id="csv" data-i18n="st.i.csv">Download flagged lines</button></p>
+      <table class="list" id="lines"><thead><tr><th data-i18n="st.q.th.status">Status</th><th data-i18n="st.r.tracking">Tracking number</th><th data-i18n="st.q.th.code">Code</th><th data-i18n="st.q.th.service">Service</th><th data-i18n="st.i.th.billed">Billed</th><th data-i18n="st.i.th.expected">Expected</th><th data-i18n="st.i.th.diff">Difference</th><th data-i18n="st.i.th.what">What they charged</th><th></th></tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+
+  <div class="card" id="pastwrap">
+    <h3 data-i18n="st.i.past">Past audits</h3>
+    <table class="list" id="past"><thead><tr><th data-i18n="st.q.th.when">When</th><th data-i18n="st.i.carrier">Carrier</th><th data-i18n="st.i.label">Name</th><th data-i18n="st.i.s.billed">Carrier billed</th><th data-i18n="st.i.s.flagged">To dispute</th><th data-i18n="st.s.th.who">Who</th><th></th></tr></thead><tbody></tbody></table>
+    <p id="pastempty" class="muted hidden" data-i18n="st.i.none">No audits saved yet.</p>
+  </div>
+
+  <script>
+    import { t, tf } from '../../i18n';
+    const $ = (id: string) => document.getElementById(id)!;
+    const pin = () => ($('pin') as HTMLInputElement).value;
+    const msg = $('msg');
+    const usd = (n: number | null) => (n == null ? '—' : n.toLocaleString(undefined, { style: 'currency', currency: 'USD' }));
+    const fmt = (iso: string) => new Date(iso).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    let headers: string[] = [], rows: string[][] = [], current: any = null, currentId: number | null = null;
+
+    async function api(extra: Record<string, unknown>) {
+      const res = await fetch('/api/invoices', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin(), ...extra }) });
+      if (!res.ok) throw new Error((await res.json()).error);
+      return res;
+    }
+    // Plain CSV parser: quotes, commas inside quotes, CRLF. Carrier exports are simple.
+    function parseCsv(text: string): string[][] {
+      const out: string[][] = []; let row: string[] = [], cell = '', q = false;
+      for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (q) { if (c === '"' && text[i + 1] === '"') { cell += '"'; i++; } else if (c === '"') q = false; else cell += c; }
+        else if (c === '"') q = true;
+        else if (c === ',') { row.push(cell); cell = ''; }
+        else if (c === '\n' || c === '\r') { if (c === '\r' && text[i + 1] === '\n') i++; row.push(cell); if (row.some((x) => x.trim())) out.push(row); row = []; cell = ''; }
+        else cell += c;
+      }
+      row.push(cell); if (row.some((x) => x.trim())) out.push(row);
+      return out;
+    }
+    function guess(): { tracking: number; billed: number; description: number; date: number } {
+      const h = headers.map((x) => x.toLowerCase());
+      const find = (...w: string[]) => { for (const k of w) { const i = h.findIndex((x) => (k.length <= 3 ? new RegExp(`\\b${k}\\b`).test(x) : x.includes(k))); if (i >= 0) return i; } return -1; };
+      const sample = rows.slice(0, 20);
+      let tracking = find('tracking', 'trk', 'pkg id', 'package id', 'airbill', 'awb', 'waybill', 'pic');
+      if (tracking < 0) tracking = headers.findIndex((_, i) => sample.some((r) => /^(1Z[0-9A-Z]{16}|9[2-5]\d{20,24}|\d{12}|\d{15}|\d{10})$/.test((r[i] ?? '').replace(/\s+/g, '').toUpperCase())));
+      let billed = find('net charge', 'net amount', 'total charge', 'amount billed', 'billed', 'net', 'total', 'charge', 'amount');
+      if (billed < 0) billed = headers.findIndex((_, i) => sample.every((r) => /^-?\$?\d+(\.\d+)?$/.test(String(r[i] ?? '').trim())));
+      return { tracking, billed, description: find('description', 'charge type', 'charge description', 'service', 'detail', 'type'), date: find('invoice date', 'ship date', 'pickup date', 'date') };
+    }
+    function fillSelect(id: string, chosen: number, allowNone: boolean) {
+      const sel = $(id) as HTMLSelectElement; sel.innerHTML = '';
+      if (allowNone) { const o = document.createElement('option'); o.value = '-1'; o.textContent = '—'; sel.appendChild(o); }
+      headers.forEach((h, i) => { const o = document.createElement('option'); o.value = String(i); o.textContent = h || `#${i + 1}`; sel.appendChild(o); });
+      sel.value = String(chosen);
+    }
+    ($('file') as HTMLInputElement).addEventListener('change', async (ev) => {
+      const f = (ev.target as HTMLInputElement).files?.[0]; if (!f) return;
+      const all = parseCsv(await f.text());
+      if (all.length < 2) { msg.className = 'err'; msg.textContent = t('st.i.empty'); return; }
+      headers = all[0]; rows = all.slice(1);
+      const g = guess();
+      fillSelect('colT', g.tracking, false); fillSelect('colB', g.billed, false); fillSelect('colD', g.description, true); fillSelect('colA', g.date, true);
+      const firstT = rows[0]?.[g.tracking]?.replace(/\s+/g, '').toUpperCase() ?? '';
+      ($('carrier') as HTMLSelectElement).value = firstT.startsWith('1Z') ? 'UPS' : /^9[2-5]\d{20,}$/.test(firstT) ? 'USPS' : /^\d{12}$|^\d{15}$/.test(firstT) ? 'FedEx' : /^\d{10}$/.test(firstT) ? 'DHL' : 'UPS';
+      ($('label') as HTMLInputElement).value = f.name.replace(/\.csv$/i, '').slice(0, 60);
+      $('mapping').classList.remove('hidden'); $('runrow').classList.remove('hidden');
+      msg.className = ''; msg.textContent = tf('st.i.loaded', { n: rows.length });
+    });
+    function collect() {
+      const ci = (id: string) => Number(($(id) as HTMLSelectElement).value);
+      const tI = ci('colT'), bI = ci('colB'), dI = ci('colD'), aI = ci('colA');
+      return rows.map((r) => ({ tracking: r[tI], billed: r[bI], description: dI >= 0 ? r[dI] : undefined, date: aI >= 0 ? r[aI] : undefined }));
+    }
+    function render(result: any) {
+      current = result;
+      const s = result.summary;
+      $('s-billed').textContent = usd(s.billed); $('s-expected').textContent = usd(s.expected); $('s-flagged').textContent = usd(s.overcharged_amount);
+      $('s-counts').textContent = tf('st.i.counts', { over: s.over, voided: s.voided, duplicate: s.duplicate, unknown: s.unknown, under: s.under, match: s.match });
+      const body = $('lines').querySelector('tbody')!; body.innerHTML = '';
+      const only = ($('onlyflagged') as HTMLInputElement).checked;
+      for (const l of result.lines) {
+        if (only && l.status === 'match') continue;
+        const tr = document.createElement('tr'); tr.className = l.status === 'match' ? '' : l.status === 'under' ? 'stuck' : 'exception';
+        for (const v of [t(`st.i.status.${l.status}`), l.tracking, l.shipment_id ?? '', [l.carrier, l.service].filter(Boolean).join(' '), usd(l.billed), usd(l.expected), l.variance == null ? '—' : (l.variance > 0 ? '+' : '') + usd(l.variance), l.description ?? '']) { const td = document.createElement('td'); td.textContent = v; tr.appendChild(td); }
+        const td = document.createElement('td');
+        if (l.shipment_id) { const a = document.createElement('a'); a.href = `/counter/${l.shipment_id}`; a.textContent = t('st.order'); td.appendChild(a); }
+        if (currentId && l.status !== 'match') {
+          const b = document.createElement('button'); b.type = 'button'; b.className = 'btn small kraft'; b.textContent = l.disputed ? t('st.i.undispute') : t('st.i.dispute');
+          b.addEventListener('click', async () => { const note = l.disputed ? '' : (window.prompt(t('st.i.noteprompt'), l.note ?? '') ?? null); if (note === null) return; try { await api({ action: 'dispute', id: currentId, line: l.id, disputed: !l.disputed, note }); l.disputed = !l.disputed; l.note = note; render(current); } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; } });
+          td.append(' ', b);
+          if (l.disputed) { const s2 = document.createElement('span'); s2.className = 'muted'; s2.textContent = ` ${t('st.i.disputed')}${l.note ? `: ${l.note}` : ''}`; td.appendChild(s2); }
+        }
+        tr.appendChild(td); body.appendChild(tr);
+      }
+      $('csv').classList.toggle('hidden', !currentId);
+      $('result').classList.remove('hidden');
+    }
+    async function run(save: boolean) {
+      msg.textContent = '';
+      if (!pin()) { msg.className = 'err'; msg.textContent = t('st.pinfirst'); return; }
+      try {
+        const j = await (await api({ action: 'audit', rows: collect(), carrier: ($('carrier') as HTMLSelectElement).value, label: ($('label') as HTMLInputElement).value, save })).json();
+        currentId = j.saved?.id ?? null;
+        if (currentId) { const full = await (await api({ action: 'get', id: currentId })).json(); render(full); msg.className = ''; msg.textContent = tf('st.i.savedmsg', { label: j.saved.label }); loadPast(); }
+        else { render(j); msg.className = ''; msg.textContent = t('st.i.checked'); }
+      } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    }
+    $('run').addEventListener('click', () => run(false));
+    $('save').addEventListener('click', () => run(true));
+    $('onlyflagged').addEventListener('change', () => { if (current) render(current); });
+    $('csv').addEventListener('click', async () => { try { const blob = await (await api({ action: 'csv', id: currentId })).blob(); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `invoice-audit-${currentId}.csv`; a.click(); } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; } });
+    $('sample').addEventListener('click', async () => { if (!pin()) { msg.className = 'err'; msg.textContent = t('st.pinfirst'); return; } try { const blob = await (await api({ action: 'sample' })).blob(); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'sample-carrier-invoice.csv'; a.click(); } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; } });
+    async function loadPast() {
+      if (!pin()) return;
+      try {
+        const { invoices } = await (await api({ action: 'list' })).json();
+        const body = $('past').querySelector('tbody')!; body.innerHTML = '';
+        for (const inv of invoices) {
+          const tr = document.createElement('tr');
+          for (const v of [fmt(inv.uploaded_at), inv.carrier, inv.label, usd(inv.billed_total), usd(inv.flagged_total), inv.uploaded_by]) { const td = document.createElement('td'); td.textContent = v; tr.appendChild(td); }
+          const td = document.createElement('td'); const b = document.createElement('button'); b.type = 'button'; b.className = 'btn small'; b.textContent = t('st.open');
+          b.addEventListener('click', async () => { try { currentId = inv.id; render(await (await api({ action: 'get', id: inv.id })).json()); window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; } });
+          td.appendChild(b); tr.appendChild(td); body.appendChild(tr);
+        }
+        $('pastempty').classList.toggle('hidden', !!invoices.length);
+      } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    }
+    $('pin').addEventListener('change', loadPast);
+    document.addEventListener('langchange', () => { if (current) render(current); loadPast(); });
+  </script>
+</Base>

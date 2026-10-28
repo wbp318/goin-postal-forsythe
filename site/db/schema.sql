@@ -170,3 +170,33 @@ CREATE TABLE IF NOT EXISTS audit_log (
 );
 CREATE INDEX IF NOT EXISTS audit_at ON audit_log(at);
 CREATE INDEX IF NOT EXISTS audit_staff ON audit_log(staff_id, at);
+
+-- Carrier invoice audits: one row per invoice checked, one per billed tracking number.
+CREATE TABLE IF NOT EXISTS invoices (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  carrier TEXT NOT NULL,
+  label TEXT NOT NULL,
+  uploaded_at TEXT NOT NULL,
+  uploaded_by TEXT NOT NULL,
+  line_count INTEGER NOT NULL,
+  billed_total REAL NOT NULL,
+  expected_total REAL NOT NULL,
+  flagged_total REAL NOT NULL           -- overcharges plus voided and duplicate lines
+);
+CREATE TABLE IF NOT EXISTS invoice_lines (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  invoice_id INTEGER NOT NULL REFERENCES invoices(id),
+  tracking TEXT NOT NULL,
+  shipment_id TEXT,
+  carrier TEXT,
+  service TEXT,
+  billed REAL NOT NULL,
+  expected REAL,
+  variance REAL,
+  status TEXT NOT NULL,                 -- match, over, under, unknown, voided, duplicate
+  description TEXT,
+  line_date TEXT,
+  disputed INTEGER NOT NULL DEFAULT 0,
+  note TEXT
+);
+CREATE INDEX IF NOT EXISTS invoice_lines_invoice ON invoice_lines(invoice_id, status);

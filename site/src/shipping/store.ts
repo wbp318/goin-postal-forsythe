@@ -76,8 +76,86 @@ const mem = {
   orderAddons: [] as { order_id: string; code: string; name: string; qty: number; unit_price: number; total: number; created_at: string }[],
   staff: [] as StaffRow[],
   audit: [] as AuditRow[],
+  invoices: [] as InvoiceRow[],
+  invoiceLines: [] as InvoiceLineRow[],
   seq: 1,
 };
+
+// ---- carrier invoice audits ----------------------------------------------------------------------
+export interface InvoiceRow { id: number; carrier: string; label: string; uploaded_at: string; uploaded_by: string; line_count: number; billed_total: number; expected_total: number; flagged_total: number }
+export interface InvoiceLineRow { id: number; invoice_id: number; tracking: string; shipment_id: string | null; carrier: string | null; service: string | null; billed: number; expected: number | null; variance: number | null; status: string; description: string | null; line_date: string | null; disputed: number; note: string | null }
+
+/** Shipments keyed by normalized tracking number, for a list of numbers, in chunks D1 can bind. */
+export async function shipmentsByTracking(env: Env, trackings: string[]): Promise<Map<string, ShipmentRow>> {
+  const want = [...new Set(trackings.map((t) => t.replace(/\s+/g, '').toUpperCase()).filter(Boolean))];
+  const out = new Map<string, ShipmentRow>();
+  if (env.DB) {
+    for (let i = 0; i < want.length; i += 80) {
+      const chunk = want.slice(i, i + 80);
+      const r = await env.DB.prepare(`SELECT * FROM shipments WHERE REPLACE(UPPER(tracking_number), ' ', '') IN (${chunk.map((_, k) => `?${k + 1}`).join(',')})`).bind(...chunk).all<ShipmentRow>();
+      for (const s of r.results) out.set((s.tracking_number ?? '').replace(/\s+/g, '').toUpperCase(), s);
+    }
+    return out;
+  }
+  const set = new Set(want);
+  for (const s of mem.shipments.values()) { const k = (s.tracking_number ?? '').replace(/\s+/g, '').toUpperCase(); if (set.has(k)) out.set(k, s); }
+  return out;
+}
+
+export async function recentShipments(env: Env, limit = 40): Promise<ShipmentRow[]> {
+  if (env.DB) return (await env.DB.prepare(`SELECT * FROM shipments WHERE tracking_number IS NOT NULL ORDER BY created_at DESC LIMIT ${limit}`).all<ShipmentRow>()).results;
+  return [...mem.shipments.values()].filter((s) => s.tracking_number).sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, limit);
+}
+
+export async function saveInvoice(env: Env, inv: { carrier: string; label: string; uploaded_by: string; lines: Omit<InvoiceLineRow, 'id' | 'invoice_id' | 'disputed' | 'note'>[]; summary: { lines: number; billed: number; expected: number; overcharged_amount: number } }): Promise<InvoiceRow> {
+  const row: Omit<InvoiceRow, 'id'> = { carrier: inv.carrier, label: inv.label, uploaded_at: now(), uploaded_by: inv.uploaded_by, line_count: inv.summary.lines, billed_total: inv.summary.billed, expected_total: inv.summary.expected, flagged_total: inv.summary.overcharged_amount };
+  if (env.DB) {
+    const r = await env.DB.prepare('INSERT INTO invoices (carrier, label, uploaded_at, uploaded_by, line_count, billed_total, expected_total, flagged_total) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8) RETURNING id')
+      .bind(row.carrier, row.label, row.uploaded_at, row.uploaded_by, row.line_count, row.billed_total, row.expected_total, row.flagged_total).first<{ id: number }>();
+    const id = r!.id;
+    const ins = env.DB.prepare('INSERT INTO invoice_lines (invoice_id, tracking, shipment_id, carrier, service, billed, expected, variance, status, description, line_date) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)');
+    for (let i = 0; i < inv.lines.length; i += 100) await env.DB.batch(inv.lines.slice(i, i + 100).map((l) => ins.bind(id, l.tracking, l.shipment_id, l.carrier, l.service, l.billed, l.expected, l.variance, l.status, l.description, l.line_date)));
+    return { id, ...row };
+  }
+  const id = mem.seq++;
+  mem.invoices.unshift({ id, ...row });
+  for (const l of inv.lines) mem.invoiceLines.push({ id: mem.seq++, invoice_id: id, ...l, disputed: 0, note: null });
+  return { id, ...row };
+}
+
+export async function listInvoices(env: Env): Promise<InvoiceRow[]> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM invoices ORDER BY id DESC LIMIT 100').all<InvoiceRow>()).results;
+  return mem.invoices.slice(0, 100);
+}
+
+export async function getInvoice(env: Env, id: number): Promise<(InvoiceRow & { lines: InvoiceLineRow[]; summary: { lines: number; billed: number; expected: number; variance: number; over: number; under: number; unknown: number; voided: number; duplicate: number; match: number; overcharged_amount: number } }) | null> {
+  let inv: InvoiceRow | null; let lines: InvoiceLineRow[];
+  if (env.DB) {
+    inv = (await env.DB.prepare('SELECT * FROM invoices WHERE id = ?1').bind(id).first<InvoiceRow>()) ?? null;
+    if (!inv) return null;
+    lines = (await env.DB.prepare('SELECT * FROM invoice_lines WHERE invoice_id = ?1 ORDER BY id').bind(id).all<InvoiceLineRow>()).results;
+  } else {
+    inv = mem.invoices.find((x) => x.id === id) ?? null;
+    if (!inv) return null;
+    lines = mem.invoiceLines.filter((l) => l.invoice_id === id);
+  }
+  const order: Record<string, number> = { voided: 0, duplicate: 1, over: 2, unknown: 3, under: 4, match: 5 };
+  lines.sort((a, b) => (order[a.status] ?? 9) - (order[b.status] ?? 9) || Math.abs(b.variance ?? 0) - Math.abs(a.variance ?? 0));
+  const count = (st: string) => lines.filter((l) => l.status === st).length;
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+  return { ...inv, lines, summary: { lines: lines.length, billed: inv.billed_total, expected: inv.expected_total, variance: r2(inv.billed_total - inv.expected_total), over: count('over'), under: count('under'), unknown: count('unknown'), voided: count('voided'), duplicate: count('duplicate'), match: count('match'), overcharged_amount: inv.flagged_total } };
+}
+
+export async function disputeLine(env: Env, invoiceId: number, lineId: number, disputed: boolean, note: string): Promise<boolean> {
+  if (env.DB) {
+    const r = await env.DB.prepare('UPDATE invoice_lines SET disputed = ?3, note = ?4 WHERE id = ?2 AND invoice_id = ?1').bind(invoiceId, lineId, disputed ? 1 : 0, note || null).run();
+    return (r.meta.changes ?? 0) > 0;
+  }
+  const l = mem.invoiceLines.find((x) => x.id === lineId && x.invoice_id === invoiceId);
+  if (!l) return false;
+  l.disputed = disputed ? 1 : 0; l.note = note || null;
+  return true;
+}
 
 // ---- staff and the audit log --------------------------------------------------------------------
 export interface StaffRow { id: number; name: string; pin_hash: string; role: string; active: number }
