@@ -1,0 +1,165 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+
+// Manager page: business accounts. A local shop, Etsy seller or contractor gets a discount and a
+// monthly statement instead of paying per label at the POS. Open an account on a customer, set the
+// discount, see what is unbilled, issue the month's statement (Stripe invoice when a key exists,
+// emailed either way) and mark it paid.
+const thisMonth = new Date().toISOString().slice(0, 7);
+---
+<Base title="Counter · Accounts">
+  <section class="hero">
+    <h1 data-i18n="st.b.h1">Business accounts</h1>
+    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/accounts" data-i18n="st.nav.accounts">Accounts</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/close" data-i18n="st.nav.close">End of day</a> · <a href="/counter/invoices" data-i18n="st.nav.invoices">Invoices</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a> · <a href="/counter/staff" data-i18n="st.nav.staff">Staff</a></p>
+    <p class="lead" data-i18n="st.b.lead">Local shops, online sellers and contractors who ship often: a discount on every label, bill to account at the counter instead of paying each time, and one statement a month with a link to pay online.</p>
+  </section>
+
+  <div class="card">
+    <p class="btnrow">
+      <label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
+      <button class="btn" id="load" data-i18n="st.show">Show</button>
+    </p>
+    <p id="msg" role="alert"></p>
+    <table class="list hidden" id="table"><thead><tr><th data-i18n="st.b.th.business">Business</th><th data-i18n="st.b.th.contact">Contact</th><th data-i18n="st.b.th.discount">Discount</th><th data-i18n="st.b.th.unbilled">Unbilled</th><th data-i18n="st.u.th.active">Active</th><th></th></tr></thead><tbody></tbody></table>
+    <p id="empty" class="muted hidden" data-i18n="st.b.none">No accounts yet.</p>
+  </div>
+
+  <form id="add" class="card hidden" autocomplete="off">
+    <h3 data-i18n="st.b.add">Open an account</h3>
+    <div class="row">
+      <label><span data-i18n="st.b.business">Business name</span> <input name="business_name" maxlength="80" required /></label>
+      <label><span data-i18n="st.b.discount">Discount %</span> <input name="discount_percent" type="number" step="0.5" min="0" max="50" value="10" /></label>
+    </div>
+    <p class="muted" data-i18n="st.b.contact.lead">The contact: pick an existing customer by searching, or type a new one. An email or mobile is needed so the statement can reach them.</p>
+    <div class="row">
+      <label><span data-i18n="st.b.search">Find a customer</span> <input id="q" placeholder="name, phone, email" /></label>
+      <label><span data-i18n="st.b.picked">Picked</span> <select name="customer_id" id="picked"><option value="" data-i18n="st.b.newcontact">new contact, typed below</option></select></label>
+    </div>
+    <div class="row" id="newcontact">
+      <label><span data-i18n="st.c.th.name">Name</span> <input name="name" maxlength="60" /></label>
+      <label><span data-i18n="st.c.th.email">Email</span> <input name="email" type="email" /></label>
+      <label><span data-i18n="st.c.th.phone">Phone</span> <input name="phone" inputmode="tel" /></label>
+    </div>
+    <label><span data-i18n="st.b.notes">Notes (pickup day, who to call, terms)</span> <input name="notes" maxlength="300" /></label>
+    <p class="btnrow"><button class="btn" type="submit" data-i18n="st.b.add">Open an account</button></p>
+    <p id="aerr" class="err" hidden></p>
+  </form>
+
+  <div id="detail" class="hidden">
+    <div class="grid">
+      <div class="card">
+        <h3 id="d-name"></h3>
+        <p id="d-contact"></p>
+        <p class="btnrow">
+          <label><span data-i18n="st.b.discount">Discount %</span> <input id="d-discount" type="number" step="0.5" min="0" max="50" /></label>
+          <button class="btn small" id="d-save" data-i18n="st.u.saved.short">Save</button>
+          <button class="btn small kraft" id="d-toggle"></button>
+        </p>
+        <label><span data-i18n="st.b.notes.short">Notes</span> <input id="d-notes" maxlength="300" /></label>
+      </div>
+      <div class="card">
+        <h3 data-i18n="st.b.statement">Statement</h3>
+        <p class="btnrow">
+          <label><span data-i18n="st.b.period">Month</span> <input id="period" type="month" value={thisMonth} max={thisMonth} /></label>
+          <button class="btn" id="issue" data-i18n="st.b.issue">Issue the statement</button>
+        </p>
+        <p class="muted" data-i18n="st.b.issue.lead">Sums every bill-to-account shipment not yet on a statement up to the end of that month, emails it, and raises a Stripe invoice when Stripe is set up.</p>
+      </div>
+    </div>
+    <div class="card">
+      <h3 data-i18n="st.b.unbilled.h3">Unbilled shipments</h3>
+      <table class="list" id="unbilled"><thead><tr><th data-i18n="st.q.th.when">When</th><th data-i18n="st.q.th.code">Code</th><th data-i18n="st.q.th.to">To</th><th data-i18n="st.q.th.service">Service</th><th data-i18n="st.i.th.billed">Amount</th></tr></thead><tbody></tbody></table>
+      <p id="nounbilled" class="muted hidden" data-i18n="st.b.nounbilled">Nothing unbilled.</p>
+    </div>
+    <div class="card">
+      <h3 data-i18n="st.b.statements">Statements</h3>
+      <table class="list" id="statements"><thead><tr><th data-i18n="st.b.period">Month</th><th data-i18n="st.b.issued">Issued</th><th data-i18n="st.i.th.billed">Amount</th><th data-i18n="st.q.th.status">Status</th><th></th></tr></thead><tbody></tbody></table>
+      <p id="nostatements" class="muted hidden" data-i18n="st.b.nostatements">No statements yet.</p>
+    </div>
+  </div>
+
+  <script>
+    import { t, tf } from '../../i18n';
+    const $ = (id: string) => document.getElementById(id)!;
+    const pin = () => ($('pin') as HTMLInputElement).value;
+    const msg = $('msg');
+    const usd = (n: number) => n.toLocaleString(undefined, { style: 'currency', currency: 'USD' });
+    const fmt = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    let current: any = null;
+    async function api(extra: Record<string, unknown>) {
+      const res = await fetch('/api/accounts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin(), ...extra }) });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error);
+      return j;
+    }
+    const cell = (tr: HTMLTableRowElement, text: string) => { const td = document.createElement('td'); td.textContent = text; tr.appendChild(td); return td; };
+
+    async function load() {
+      msg.textContent = '';
+      if (!pin()) { msg.className = 'err'; msg.textContent = t('st.pinfirst'); return; }
+      try {
+        const { accounts } = await api({ action: 'list' });
+        const body = $('table').querySelector('tbody')!; body.innerHTML = '';
+        for (const a of accounts) {
+          const tr = document.createElement('tr'); if (!a.active) tr.style.opacity = '.55';
+          cell(tr, a.business_name); cell(tr, [a.contact_name, a.phone, a.email].filter(Boolean).join(' · ')); cell(tr, `${a.discount_percent}%`); cell(tr, usd(a.unbilled_total)); cell(tr, a.active ? t('st.s.yes') : t('st.s.no'));
+          const td = cell(tr, ''); const b = document.createElement('button'); b.className = 'btn small'; b.textContent = t('st.open'); b.addEventListener('click', () => open(a.id)); td.appendChild(b);
+          body.appendChild(tr);
+        }
+        $('table').classList.toggle('hidden', !accounts.length); $('empty').classList.toggle('hidden', !!accounts.length);
+        $('add').classList.remove('hidden');
+      } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    }
+    async function open(id: number) {
+      try {
+        const j = await api({ action: 'get', id });
+        current = j;
+        const a = j.account, c = j.customer;
+        $('d-name').textContent = a.business_name;
+        $('d-contact').textContent = [c?.name, c?.phone, c?.email].filter(Boolean).join(' · ');
+        ($('d-discount') as HTMLInputElement).value = String(a.discount_percent); ($('d-notes') as HTMLInputElement).value = a.notes ?? '';
+        $('d-toggle').textContent = a.active ? t('st.s.deactivate') : t('st.s.reactivate');
+        const ub = $('unbilled').querySelector('tbody')!; ub.innerHTML = '';
+        for (const s of j.unbilled) { const tr = document.createElement('tr'); cell(tr, fmt(s.created_at)); const code = cell(tr, ''); code.innerHTML = `<a href="/counter/${s.id}"></a>`; code.querySelector('a')!.textContent = s.id; cell(tr, s.to); cell(tr, `${s.carrier} ${s.service}`); cell(tr, usd(s.total)); ub.appendChild(tr); }
+        $('nounbilled').classList.toggle('hidden', !!j.unbilled.length);
+        const sb = $('statements').querySelector('tbody')!; sb.innerHTML = '';
+        for (const s of j.statements) {
+          const tr = document.createElement('tr'); cell(tr, s.period); cell(tr, fmt(s.issued_at)); cell(tr, usd(s.total)); cell(tr, s.paid_at ? `${t('st.b.paid')} ${fmt(s.paid_at)}` : t('st.b.unpaid'));
+          const td = cell(tr, '');
+          if (s.stripe_invoice_url) { const l = document.createElement('a'); l.href = s.stripe_invoice_url; l.target = '_blank'; l.rel = 'noopener'; l.textContent = t('st.b.paylink'); td.appendChild(l); td.append(' '); }
+          if (!s.paid_at) { const b = document.createElement('button'); b.className = 'btn small kraft'; b.textContent = t('st.b.markpaid'); b.addEventListener('click', async () => { try { await api({ action: 'paid', statement_id: s.id }); open(id); } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; } }); td.appendChild(b); }
+          sb.appendChild(tr);
+        }
+        $('nostatements').classList.toggle('hidden', !!j.statements.length);
+        $('detail').classList.remove('hidden'); $('detail').scrollIntoView({ behavior: 'smooth' });
+      } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    }
+    $('load').addEventListener('click', load);
+    $('pin').addEventListener('change', load);
+    $('d-save').addEventListener('click', async () => { if (!current) return; try { await api({ action: 'update', id: current.account.id, discount_percent: ($('d-discount') as HTMLInputElement).value, notes: ($('d-notes') as HTMLInputElement).value }); msg.className = ''; msg.textContent = t('st.s.saved'); load(); open(current.account.id); } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; } });
+    $('d-toggle').addEventListener('click', async () => { if (!current) return; try { await api({ action: 'update', id: current.account.id, active: !current.account.active }); load(); open(current.account.id); } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; } });
+    $('issue').addEventListener('click', async () => {
+      if (!current) return;
+      const period = ($('period') as HTMLInputElement).value;
+      if (!window.confirm(tf('st.b.confirm', { name: current.account.business_name, period }))) return;
+      try { const j = await api({ action: 'statement', id: current.account.id, period }); msg.className = ''; msg.textContent = tf('st.b.issued.msg', { total: usd(j.statement.total), email: j.emailed ? t('st.b.emailed') : t('st.b.noemail'), stripe: j.stripe ? t('st.b.stripeyes') : t('st.b.stripeno') }); open(current.account.id); load(); }
+      catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    });
+    // customer search for the add form
+    let timer: any = null;
+    $('q').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(async () => {
+      const q = ($('q') as HTMLInputElement).value.trim(); if (q.length < 2) return;
+      try { const { customers } = await api({ action: 'customers', q }); const sel = $('picked') as HTMLSelectElement; while (sel.options.length > 1) sel.remove(1); for (const c of customers) { const o = document.createElement('option'); o.value = c.id; o.textContent = [c.name, c.phone, c.email].filter(Boolean).join(' · '); sel.appendChild(o); } if (customers.length) sel.value = customers[0].id; $('newcontact').classList.toggle('hidden', !!customers.length); }
+      catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    }, 300); });
+    ($('picked') as HTMLSelectElement).addEventListener('change', (ev) => { $('newcontact').classList.toggle('hidden', !!(ev.target as HTMLSelectElement).value); });
+    ($('add') as HTMLFormElement).addEventListener('submit', async (ev) => {
+      ev.preventDefault(); $('aerr').hidden = true;
+      const f = ev.currentTarget as HTMLFormElement; const d = Object.fromEntries(new FormData(f).entries());
+      try { const j = await api({ action: 'add', ...d }); f.reset(); msg.className = ''; msg.textContent = t('st.s.saved'); await load(); open(j.account.id); }
+      catch (e: any) { $('aerr').textContent = e.message; $('aerr').hidden = false; }
+    });
+    document.addEventListener('langchange', () => { if (pin()) load(); if (current) open(current.account.id); });
+  </script>
+</Base>

@@ -7,7 +7,7 @@ import { json } from '../../lib/validate';
 import { authenticate, CAN } from '../../lib/auth';
 import { logAudit } from '../../shipping/store';
 import { voidLabel } from '../../shipping/engine';
-import { setShipmentStatus, saveContacts, getContacts } from '../../shipping/store';
+import { setShipmentStatus, saveContacts, getContacts, billShipmentToAccount } from '../../shipping/store';
 import { sendEmail } from '../../shipping/notify';
 import { store } from '../../data/store';
 
@@ -16,6 +16,7 @@ import { store } from '../../data/store';
 // action "printed": mark the label as printed in the shop.
 // action "void": the label was bought but the package is not going; void it with the carrier.
 // action "cancel": drop a quote that never got a label (customer changed their mind, or never paid).
+// action "bill": the order belongs to a business account; buy the label now and put it on the next statement.
 // action "email": send the label and tracking number to an address, for returns and for anyone who
 //                 wants to print at home. Body may carry "email" to set or change the order's address.
 export const POST: APIRoute = async ({ request }) => {
@@ -28,6 +29,12 @@ export const POST: APIRoute = async ({ request }) => {
     if (b.action === 'paid' && order.status === 'reserved') {
       const next = await fulfil(env, { ...order, paid_at: new Date().toISOString() }, 'pos');
       await logAudit(env, user, 'label.buy', order.id, `${order.rate.carrier} ${order.rate.service} $${(order.total ?? order.rate.total_charge).toFixed(2)}, POS`);
+      return json({ status: next.status, label_url: next.label?.label_url });
+    }
+    if (b.action === 'bill' && order.status === 'reserved' && order.account_id) {
+      const next = await fulfil(env, { ...order, paid_at: new Date().toISOString() }, 'account');
+      await billShipmentToAccount(env, order.id, order.account_id);
+      await logAudit(env, user, 'label.buy', order.id, `${order.rate.carrier} ${order.rate.service} $${(order.total ?? order.rate.total_charge).toFixed(2)}, billed to ${order.account_name ?? 'account'}`);
       return json({ status: next.status, label_url: next.label?.label_url });
     }
     if (b.action === 'printed' && order.status === 'labeled') {

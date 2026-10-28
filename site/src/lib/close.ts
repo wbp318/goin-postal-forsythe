@@ -45,6 +45,7 @@ export function closeZpl(c: CloseReport, closedBy: string, note: string): string
   line(`Margin on labels ${money(c.labels.revenue - c.labels.cost)}`); rule();
   line(`Paid at the counter (POS) ${money(c.paid.pos)}`, 30, true);
   line(`Paid online (Stripe) ${money(c.paid.stripe)}`);
+  line(`Billed to business accounts ${money(c.paid.account ?? 0)}`);
   line(`Voided today ${c.voided.length}, refunds owed ${money(c.refunds_owed.reduce((a, x) => a + x.amount, 0))}`);
   line(`POS should show from PeterShip: ${money(c.pos_expected)}`, 30, true); rule();
   line(`Drop-offs accepted ${c.dropoffs.accepted}, handed to carriers ${c.dropoffs.handed}, still here ${c.dropoffs.waiting}`);

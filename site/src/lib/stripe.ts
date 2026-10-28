@@ -62,6 +62,18 @@ export async function createCardCheckout(env: Env, order: CardOrder): Promise<st
   return session.url!;
 }
 
+/** A Stripe invoice for a business account's monthly statement, sent by email with a hosted pay link. Null in mock mode. */
+export async function createInvoice(env: Env, inv: { email: string | null; name: string; amount: number; description: string }): Promise<{ id: string; url: string | null } | null> {
+  const stripe = stripeClient(env);
+  if (!stripe || !inv.email) return null;
+  const found = await stripe.customers.list({ email: inv.email, limit: 1 });
+  const customer = found.data[0] ?? (await stripe.customers.create({ email: inv.email, name: inv.name }));
+  await stripe.invoiceItems.create({ customer: customer.id, amount: Math.round(inv.amount * 100), currency: 'usd', description: inv.description });
+  const draft = await stripe.invoices.create({ customer: customer.id, collection_method: 'send_invoice', days_until_due: 14, description: inv.description });
+  const final = await stripe.invoices.finalizeInvoice(draft.id);
+  return { id: final.id, url: final.hosted_invoice_url ?? null };
+}
+
 export async function verifyWebhook(env: Env, request: Request): Promise<Stripe.Event> {
   const stripe = stripeClient(env);
   if (!stripe || !env.STRIPE_WEBHOOK_SECRET) throw new Error('Stripe is not configured');

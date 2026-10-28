@@ -7,6 +7,7 @@ import { createCheckout } from '../../lib/stripe';
 import { parseAddress, parseParcel, json } from '../../lib/validate';
 import { store } from '../../data/store';
 import { effectiveAddons, priceExtras } from '../../lib/addons';
+import { accountForContact } from '../../shipping/store';
 
 // Customer picked a rate. Domestic: start Stripe Checkout. International: reserve and pay at the counter.
 export const POST: APIRoute = async ({ request }) => {
@@ -23,8 +24,11 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Re-quote server side so the price cannot be edited in the browser.
     const { rates } = await quote(env, origin, destination, parcel);
-    const rate = rates.find((r) => r.id === b.rate_id);
-    if (!rate) throw new Error('That rate is no longer available. Please quote again.');
+    const found = rates.find((r) => r.id === b.rate_id);
+    if (!found) throw new Error('That rate is no longer available. Please quote again.');
+    // A business account's email gets its discount online too; the card is still charged now.
+    const account = await accountForContact(env, email, phone);
+    const rate = account && account.discount_percent ? { ...found, total_charge: Math.round(found.total_charge * (1 - account.discount_percent / 100) * 100) / 100 } : found;
 
     const international = destination.country_alpha2 !== 'US';
     const extras = priceExtras(await effectiveAddons(env), b.addons, parcel.value_usd, b.insure === true || b.insure === 'on');
@@ -34,6 +38,7 @@ export const POST: APIRoute = async ({ request }) => {
       created_at: new Date().toISOString(),
       email, phone: sms ? phone : undefined, sms, origin, destination, parcel, rate, international,
       addons: extras.addons.length ? extras.addons : undefined, insurance: extras.insurance, total: Math.round((rate.total_charge + extras.extras_total) * 100) / 100,
+      account_name: account?.business_name, discount_percent: account?.discount_percent || undefined,
     };
     await saveOrder(env, order);
 

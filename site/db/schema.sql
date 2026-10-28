@@ -215,3 +215,33 @@ CREATE TABLE IF NOT EXISTS day_closes (
   zpl TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS day_closes_day ON day_closes(day);
+
+-- Business accounts (agenda item 28, PeterShip T1): a discount and monthly billing on top of a customer.
+CREATE TABLE IF NOT EXISTS accounts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id TEXT NOT NULL UNIQUE REFERENCES customers(id),
+  business_name TEXT NOT NULL,
+  discount_percent REAL NOT NULL DEFAULT 0,
+  notes TEXT,
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS account_statements (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  account_id INTEGER NOT NULL REFERENCES accounts(id),
+  period TEXT NOT NULL,                -- YYYY-MM
+  issued_at TEXT NOT NULL,
+  total REAL NOT NULL,
+  lines_json TEXT NOT NULL,            -- the shipments billed
+  stripe_invoice_id TEXT,
+  stripe_invoice_url TEXT,
+  paid_at TEXT
+);
+CREATE INDEX IF NOT EXISTS account_statements_account ON account_statements(account_id, period);
+-- Which statement a bill-to-account shipment landed on. Kept apart from shipments (no column migrations).
+CREATE TABLE IF NOT EXISTS shipment_billing (
+  shipment_id TEXT PRIMARY KEY REFERENCES shipments(id),
+  account_id INTEGER NOT NULL REFERENCES accounts(id),
+  statement_id INTEGER REFERENCES account_statements(id)
+);
+CREATE INDEX IF NOT EXISTS shipment_billing_account ON shipment_billing(account_id, statement_id);

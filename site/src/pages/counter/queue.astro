@@ -10,7 +10,7 @@ import { store } from '../../data/store';
 <Base title="Counter · Queue">
   <section class="hero">
     <h1 data-i18n="st.q.h1">Queue</h1>
-    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/close" data-i18n="st.nav.close">End of day</a> · <a href="/counter/invoices" data-i18n="st.nav.invoices">Invoices</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a> · <a href="/counter/staff" data-i18n="st.nav.staff">Staff</a></p>
+    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/accounts" data-i18n="st.nav.accounts">Accounts</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/close" data-i18n="st.nav.close">End of day</a> · <a href="/counter/invoices" data-i18n="st.nav.invoices">Invoices</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a> · <a href="/counter/staff" data-i18n="st.nav.staff">Staff</a></p>
     <p class="lead" data-i18n="st.q.lead">Who is waiting on a label. Online reservations show up here by themselves; type a walk-up in below. Oldest first.</p>
   </section>
 
@@ -43,6 +43,9 @@ import { store } from '../../data/store';
         <label><span data-i18n="st.q.email">Email (optional)</span> <input name="email" type="email" /></label>
       </div>
       <label class="check"><input name="sms" type="checkbox" /> <span data-i18n="st.q.sms">Text them when it ships and when it is delivered</span></label>
+      <label><span data-i18n="st.b.billto">Bill to a business account (discount applied, no POS payment)</span>
+        <select name="account_id" id="accountSel"><option value="" data-i18n="st.b.noaccount">No, pay at the counter</option></select>
+      </label>
     </fieldset>
     <fieldset>
       <legend data-i18n="st.q.return.legend">Return label?</legend>
@@ -128,9 +131,18 @@ import { store } from '../../data/store';
       return b;
     };
 
+    const accountNames = new Set<string>();
+    async function loadAccounts() {
+      try {
+        const { accounts } = await api('/api/accounts', { action: 'list' });
+        const sel = $('accountSel') as HTMLSelectElement; while (sel.options.length > 1) sel.remove(1); accountNames.clear();
+        for (const a of accounts) { const o = document.createElement('option'); o.value = String(a.id); o.textContent = `${a.business_name} (${a.discount_percent}% off)`; sel.appendChild(o); accountNames.add(a.business_name); }
+      } catch {}
+    }
     async function load() {
       if (!pin()) { msg.className = 'err'; msg.textContent = t('st.pinfirst'); return; }
       try {
+        if (!accountNames.size) await loadAccounts();
         const { open, done, user } = await api('/api/queue', { action: 'list' });
         if (user && !staff()) ($('staff') as HTMLInputElement).placeholder = user.name;
         body.innerHTML = '';
@@ -146,7 +158,8 @@ import { store } from '../../data/store';
           cell(tr, `${q.carrier} ${q.service} · $${Number(q.price).toFixed(2)}`);
           cell(tr, STATUS(q.status));
           const act = document.createElement('td'); act.className = 'btnrow';
-          if (q.status === 'reserved') act.appendChild(button(t('st.buy'), '', async () => { await api('/api/counter', { order: q.id, action: 'paid' }); msg.textContent = tf('st.q.labelbought', { id: q.id }); await load(); }));
+          if (q.status === 'reserved' && q.customer_name && q.customer_name.includes(': ') && accountNames.has(q.customer_name.split(': ')[0])) act.appendChild(button(t('st.b.bill'), '', async () => { await api('/api/counter', { order: q.id, action: 'bill' }); msg.textContent = tf('st.q.labelbought', { id: q.id }); await load(); }));
+          else if (q.status === 'reserved') act.appendChild(button(t('st.buy'), '', async () => { await api('/api/counter', { order: q.id, action: 'paid' }); msg.textContent = tf('st.q.labelbought', { id: q.id }); await load(); }));
           if (q.status === 'labeled') {
             act.appendChild(button(t('st.print'), '', async () => { const j = await api('/api/print', { order: q.id, action: 'queue', printer: 'counter' }); msg.textContent = j.agent ? tf('st.q.sentprinter', { id: q.id }) : tf('st.q.noagent', { id: q.id }); }));
             act.appendChild(button(t('st.printed'), 'kraft', async () => { await api('/api/counter', { order: q.id, action: 'printed' }); await load(); }));
@@ -227,7 +240,7 @@ import { store } from '../../data/store';
         kind: r ? 'return' : 'ship',
         return_to: r ? returnTo.value : undefined,
         origin: r ? { contact_name: d.from_contact_name, line_1: d.from_line_1, line_2: d.from_line_2, city: d.from_city, state: d.from_state, postal_code: d.from_postal_code, country_alpha2: 'US' } : undefined,
-        customer: { name: d.name, phone: d.phone, email: d.email, sms: d.sms === 'on' },
+        customer: { name: d.name, phone: d.phone, email: d.email, sms: d.sms === 'on', account_id: d.account_id || undefined },
         destination: r && returnTo.value === 'store' ? undefined : { contact_name: d.contact_name, line_1: d.line_1, line_2: d.line_2, city: d.city, state: d.state, postal_code: d.postal_code, country_alpha2: d.country_alpha2.toUpperCase() },
         parcel: { weight_lb: d.weight_lb, length_in: d.length_in, width_in: d.width_in, height_in: d.height_in, description: d.description, value_usd: d.value_usd },
       };
@@ -262,7 +275,7 @@ import { store } from '../../data/store';
       addBtn.disabled = true; werr.hidden = true;
       try {
         const j = await api('/api/queue', { action: 'create', ...payload.customer, kind: payload.kind, return_to: payload.return_to, origin: payload.origin, destination: payload.destination, parcel: payload.parcel, rate_id: picked, staff: staff(), insure: wInsure.checked, addons: pickedAddons() });
-        msg.className = ''; msg.textContent = tf(payload.kind === 'return' ? 'st.q.added.return' : 'st.q.added', { id: j.id, price: j.price.toFixed(2) });
+        msg.className = ''; msg.textContent = payload.customer.account_id ? tf('st.b.added', { id: j.id, price: j.price.toFixed(2) }) : tf(payload.kind === 'return' ? 'st.q.added.return' : 'st.q.added', { id: j.id, price: j.price.toFixed(2) });
         f.reset(); returnMode(); results.hidden = true; $('extras').classList.add('hidden'); payload = null; picked = null;
         await load(); window.scrollTo({ top: 0, behavior: 'smooth' });
       } catch (e: any) { werr.textContent = e.message; werr.hidden = false; addBtn.disabled = false; }
@@ -278,6 +291,7 @@ import { store } from '../../data/store';
         const set = (n: string, v: unknown) => { const el = f.elements.namedItem(n) as HTMLInputElement | null; if (el && v != null && v !== '') el.value = String(v); };
         set('name', o.name); set('email', o.email); set('phone', o.phone); (f.elements.namedItem('sms') as HTMLInputElement).checked = !!o.sms;
         isReturn.checked = o.kind === 'return';
+        if (o.account_id) ($('accountSel') as HTMLSelectElement).value = String(o.account_id);
         if (o.origin) for (const k of ['contact_name', 'line_1', 'line_2', 'city', 'state', 'postal_code']) set(`from_${k}`, o.origin[k]);
         returnMode();
         for (const k of ['contact_name', 'line_1', 'line_2', 'city', 'state', 'postal_code', 'country_alpha2']) set(k, o.destination[k]);

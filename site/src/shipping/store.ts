@@ -79,14 +79,124 @@ const mem = {
   invoices: [] as InvoiceRow[],
   invoiceLines: [] as InvoiceLineRow[],
   closes: [] as DayCloseRow[],
+  accounts: [] as AccountRow[],
+  statements: [] as StatementRow[],
+  billing: new Map<string, { account_id: number; statement_id: number | null }>(),
   seq: 1,
 };
+
+// ---- business accounts -------------------------------------------------------------------------
+export interface AccountRow { id: number; customer_id: string; business_name: string; discount_percent: number; notes: string | null; active: number; created_at: string }
+export interface AccountListRow extends AccountRow { contact_name: string | null; email: string | null; phone: string | null; unbilled_total: number }
+export interface StatementRow { id: number; account_id: number; period: string; issued_at: string; total: number; lines_json: string; stripe_invoice_id: string | null; stripe_invoice_url: string | null; paid_at: string | null }
+export interface UnbilledLine { id: string; created_at: string; carrier: string; service: string; to: string; total: number }
+
+export async function listAccounts(env: Env, includeInactive = false): Promise<AccountListRow[]> {
+  let rows: AccountRow[];
+  if (env.DB) rows = (await env.DB.prepare(`SELECT * FROM accounts ${includeInactive ? '' : 'WHERE active = 1'} ORDER BY business_name`).all<AccountRow>()).results;
+  else rows = mem.accounts.filter((a) => includeInactive || a.active).sort((a, b) => a.business_name.localeCompare(b.business_name));
+  const out: AccountListRow[] = [];
+  for (const a of rows) {
+    const c = await getCustomer(env, a.customer_id);
+    const unbilled = await accountOpenShipments(env, a);
+    out.push({ ...a, contact_name: c?.name ?? null, email: c?.email ?? null, phone: c?.phone ?? null, unbilled_total: Math.round(unbilled.reduce((x, s) => x + s.total, 0) * 100) / 100 });
+  }
+  return out;
+}
+
+export async function getAccount(env: Env, id: number): Promise<AccountRow | null> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM accounts WHERE id = ?1').bind(id).first<AccountRow>()) ?? null;
+  return mem.accounts.find((a) => a.id === id) ?? null;
+}
+
+/** The active account behind an email or phone, so the discount can apply online and the walk-up form can offer it. */
+export async function accountForContact(env: Env, email: string | null | undefined, phone: string | null | undefined): Promise<AccountRow | null> {
+  const c = await findCustomer(env, normEmail(email), normalizePhone(phone));
+  if (!c) return null;
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM accounts WHERE customer_id = ?1 AND active = 1').bind(c.id).first<AccountRow>()) ?? null;
+  return mem.accounts.find((a) => a.customer_id === c.id && a.active) ?? null;
+}
+
+export async function addAccount(env: Env, a: { customer_id: string; business_name: string; discount_percent: number; notes: string }): Promise<AccountRow> {
+  const row: Omit<AccountRow, 'id'> = { ...a, notes: a.notes || null, active: 1, created_at: now() };
+  if (env.DB) {
+    const r = await env.DB.prepare('INSERT INTO accounts (customer_id, business_name, discount_percent, notes, active, created_at) VALUES (?1, ?2, ?3, ?4, 1, ?5) RETURNING id').bind(row.customer_id, row.business_name, row.discount_percent, row.notes, row.created_at).first<{ id: number }>();
+    return { id: r!.id, ...row };
+  }
+  const full = { id: mem.seq++, ...row };
+  mem.accounts.push(full);
+  return full;
+}
+
+export async function updateAccount(env: Env, id: number, patch: Partial<Pick<AccountRow, 'business_name' | 'discount_percent' | 'notes' | 'active'>>): Promise<boolean> {
+  const keys = Object.keys(patch) as (keyof typeof patch)[];
+  if (!keys.length) return !!(await getAccount(env, id));
+  if (env.DB) {
+    const r = await env.DB.prepare(`UPDATE accounts SET ${keys.map((k, i) => `${k} = ?${i + 2}`).join(', ')} WHERE id = ?1`).bind(id, ...keys.map((k) => patch[k] ?? null)).run();
+    return (r.meta.changes ?? 0) > 0;
+  }
+  const a = mem.accounts.find((x) => x.id === id);
+  if (!a) return false;
+  Object.assign(a, patch);
+  return true;
+}
+
+/** Tie a bought label to an account, to be billed on the next statement. */
+export async function billShipmentToAccount(env: Env, shipmentId: string, accountId: number) {
+  if (env.DB) { await env.DB.prepare('INSERT OR REPLACE INTO shipment_billing (shipment_id, account_id, statement_id) VALUES (?1, ?2, NULL)').bind(shipmentId, accountId).run(); return; }
+  mem.billing.set(shipmentId, { account_id: accountId, statement_id: null });
+}
+
+/** Bill-to-account shipments not yet on a statement, oldest first, with the add-ons folded into the total. */
+export async function accountOpenShipments(env: Env, a: AccountRow): Promise<UnbilledLine[]> {
+  let ships: ShipmentRow[];
+  if (env.DB) ships = (await env.DB.prepare("SELECT s.* FROM shipments s JOIN shipment_billing b ON b.shipment_id = s.id WHERE b.account_id = ?1 AND b.statement_id IS NULL AND s.status != 'voided' ORDER BY s.created_at").bind(a.id).all<ShipmentRow>()).results;
+  else ships = [...mem.billing].filter(([, b]) => b.account_id === a.id && !b.statement_id).map(([id]) => mem.shipments.get(id)!).filter((s) => s && s.status !== 'voided').sort((x, y) => x.created_at.localeCompare(y.created_at));
+  const out: UnbilledLine[] = [];
+  for (const s of ships) {
+    const extras = env.DB
+      ? ((await env.DB.prepare('SELECT COALESCE(SUM(total), 0) AS t FROM order_addons WHERE order_id = ?1').bind(s.id).first<{ t: number }>())?.t ?? 0)
+      : mem.orderAddons.filter((l) => l.order_id === s.id).reduce((x, l) => x + l.total, 0);
+    const d = JSON.parse(s.destination_json);
+    out.push({ id: s.id, created_at: s.created_at, carrier: s.carrier, service: s.service, to: `${d.contact_name}, ${d.city}, ${d.state}`, total: Math.round((s.price + extras) * 100) / 100 });
+  }
+  return out;
+}
+
+export async function saveStatement(env: Env, st: { account_id: number; period: string; total: number; lines: UnbilledLine[]; stripe_invoice_id: string | null; stripe_invoice_url: string | null }): Promise<StatementRow> {
+  const row: Omit<StatementRow, 'id'> = { account_id: st.account_id, period: st.period, issued_at: now(), total: st.total, lines_json: JSON.stringify(st.lines), stripe_invoice_id: st.stripe_invoice_id, stripe_invoice_url: st.stripe_invoice_url, paid_at: null };
+  let id: number;
+  if (env.DB) {
+    const r = await env.DB.prepare('INSERT INTO account_statements (account_id, period, issued_at, total, lines_json, stripe_invoice_id, stripe_invoice_url) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7) RETURNING id').bind(row.account_id, row.period, row.issued_at, row.total, row.lines_json, row.stripe_invoice_id, row.stripe_invoice_url).first<{ id: number }>();
+    id = r!.id;
+    const upd = env.DB.prepare('UPDATE shipment_billing SET statement_id = ?2 WHERE shipment_id = ?1');
+    for (let i = 0; i < st.lines.length; i += 100) await env.DB.batch(st.lines.slice(i, i + 100).map((l) => upd.bind(l.id, id)));
+  } else {
+    id = mem.seq++;
+    mem.statements.unshift({ id, ...row });
+    for (const l of st.lines) { const b = mem.billing.get(l.id); if (b) b.statement_id = id; }
+  }
+  return { id, ...row };
+}
+
+export async function listStatements(env: Env, accountId: number): Promise<StatementRow[]> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM account_statements WHERE account_id = ?1 ORDER BY id DESC').bind(accountId).all<StatementRow>()).results;
+  return mem.statements.filter((s) => s.account_id === accountId);
+}
+
+export async function markStatementPaid(env: Env, id: number): Promise<boolean> {
+  if (env.DB) { const r = await env.DB.prepare('UPDATE account_statements SET paid_at = ?2 WHERE id = ?1 AND paid_at IS NULL').bind(id, now()).run(); return (r.meta.changes ?? 0) > 0; }
+  const s = mem.statements.find((x) => x.id === id);
+  if (!s || s.paid_at) return false;
+  s.paid_at = now();
+  return true;
+}
 
 // ---- end-of-day close ----------------------------------------------------------------------------
 export interface DayFigures {
   labels: { count: number; revenue: number; cost: number };
   addons: { lines: number; revenue: number };
-  paid: { pos: number; stripe: number };
+  paid: { pos: number; stripe: number; account: number };
   voided: { id: string; paid_via: string | null; total: number; voided_at: string }[];
   dropoffs: { accepted: number; handed: number; waiting: number };
   open_quotes: number;
@@ -131,9 +241,10 @@ export async function dayFigures(env: Env, start: string, end: string): Promise<
   const sold = ships.filter((s) => s.status !== 'voided' || !voidedToday.some((v) => v.id === s.id) ? true : true); // everything bought today counts as sold; voids are listed separately
   const labels = { count: sold.length, revenue: r2(sold.reduce((a, s) => a + s.price, 0)), cost: r2(sold.reduce((a, s) => a + s.cost, 0)) };
   const addons = { lines: addonLines.filter((l) => ships.some((s) => s.id === l.order_id)).length, revenue: r2(ships.reduce((a, s) => a + (addonsOf.get(s.id) ?? 0), 0)) };
-  const via = (s: typeof ships[number]) => (s.paid_via === 'pos' ? 'pos' : 'stripe');
-  const paid = { pos: r2(ships.filter((s) => via(s) === 'pos').reduce((a, s) => a + s.price + (addonsOf.get(s.id) ?? 0), 0)), stripe: r2(ships.filter((s) => via(s) === 'stripe').reduce((a, s) => a + s.price + (addonsOf.get(s.id) ?? 0), 0)) };
-  const voided = voidedToday.map((s) => ({ id: s.id, paid_via: s.paid_via === 'pos' ? 'pos' : 'stripe', total: r2(s.price + (addonsOf.get(s.id) ?? 0)), voided_at: s.updated_at }));
+  const via = (s: typeof ships[number]) => (s.paid_via === 'pos' ? 'pos' : s.paid_via === 'account' ? 'account' : 'stripe');
+  const bucket = (k: string) => r2(ships.filter((s) => via(s) === k).reduce((a, s) => a + s.price + (addonsOf.get(s.id) ?? 0), 0));
+  const paid = { pos: bucket('pos'), stripe: bucket('stripe'), account: bucket('account') };
+  const voided = voidedToday.map((s) => ({ id: s.id, paid_via: via(s), total: r2(s.price + (addonsOf.get(s.id) ?? 0)), voided_at: s.updated_at }));
   const dropoffs = {
     accepted: drops.filter((d) => d.accepted_at >= start && d.accepted_at <= end).length,
     handed: drops.filter((d) => d.handed_to_carrier_at && d.handed_to_carrier_at >= start && d.handed_to_carrier_at <= end).length,
@@ -553,7 +664,7 @@ export async function upsertQuote(env: Env, order: Order) {
   const d = order.destination;
   const row: QuoteRow = {
     id: order.id, source: order.source ?? 'online', status: order.status,
-    customer_name: order.name?.trim() || d.contact_name || null, email: normEmail(order.email), phone: normalizePhone(order.phone),
+    customer_name: (order.account_name ? `${order.account_name}: ` : '') + (order.name?.trim() || d.contact_name || ''), email: normEmail(order.email), phone: normalizePhone(order.phone),
     carrier: order.rate.carrier, service: order.rate.service, price: order.total ?? order.rate.total_charge,
     destination: (order.kind === 'return'
       ? `Return from ${order.origin.city}, ${order.origin.state} to ${d.contact_name}`
@@ -590,7 +701,7 @@ export async function listQueue(env: Env): Promise<{ open: QuoteRow[]; done: Quo
 }
 
 // ---- shipments --------------------------------------------------------------------------------
-export async function recordShipment(env: Env, order: Order, label: Label, paidVia: 'stripe' | 'pos' | 'mock') {
+export async function recordShipment(env: Env, order: Order, label: Label, paidVia: 'stripe' | 'pos' | 'mock' | 'account') {
   const t = now();
   const customer = await findCustomer(env, normEmail(order.email), normalizePhone(order.phone));
   const row: ShipmentRow = {

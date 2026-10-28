@@ -59,7 +59,7 @@ New ideas for the Forsythe store itself, not just its ads. Each one is something
 | 25 | Google review card | Counter card and receipt slip with a QR straight to the store's review form, a staff line to ask for it, and a goal of 50 reviews by spring | ⏸ Waiting on the listing link |
 | 26 | Services menu board | One board by the door listing everything the store does (USPS, UPS, FedEx, mailboxes, notary, packing, printing, shredding, passport photos) with prices, so nobody asks "do you do that?" | ⏳ Not started |
 | 27 | Returns-dropped-here sign | Window and sidewalk sign for online-order returns, which bring in people who have never shipped anything, plus a "while you're here" offer on the receipt | ⏳ Not started |
-| 28 | Small-business accounts | A one-page offer for local shops, Etsy sellers and contractors: monthly invoice, discounted rates, scheduled pickup. Tracked as code BIZ10 | ⏳ Not started |
+| 28 | Small-business accounts | A one-page offer for local shops, Etsy sellers and contractors: monthly invoice, discounted rates, scheduled pickup. Tracked as code BIZ10 | 🔨 The software side is built (v1.32.0, PeterShip T1): accounts, discount, bill to account, monthly statement with Stripe invoice. The one-page offer and the BIZ10 code are still to do |
 | 29 | Mailbox promo | Three months free on a 12-month mailbox, matching what the UPS Stores in town advertise, with a sign and a social post | ⏳ Not started |
 | 30 | Referral code | FRIEND10: the referred customer and the referrer each get a discount, tracked in the Coupon Counter so the store can see who sends people | ⏳ Not started |
 | 31 | Neighborhood postcard | One Every Door Direct Mail postcard to the carrier routes around Forsythe Ave and N 18th St with a code MAIL10, costed in the ad calendar | ⏳ Not started |
@@ -283,7 +283,7 @@ What gets built next, in order. None of it needs carrier keys.
 | N9 | Staff logins and audit log (#44e) | Personal PINs with roles (counter, manager, owner) in the `staff` table, an owner page to manage them, and an audit log of every buy, print, void, cancel, email, drop-off, price change and staff change with the name that did it | ✅ Done Oct 28, v1.29.0 |
 | N10 | Carrier invoice audit (#44b) | Import the carrier's invoice CSV, match each line to a shipment by tracking number, flag anything billed above the quote: dimensional adjustments, address corrections, surcharges | ✅ Done Oct 28, v1.30.0 |
 | N11 | End-of-day close (#44e) | One screen per day: labels sold, add-ons, drop-offs, voids, refunds owed, what the POS should show, with a printable Z-report through the printer agent | ✅ Done Oct 28, v1.31.0 |
-| N8 | West Carroll Parish site research (#51) | The `research/` method applied to Oak Grove, Epps, Forest, Kilbourne and Pioneer | ⏳ Next |
+| N8 | West Carroll Parish site research (#51) | The `research/` method applied to Oak Grove, Epps, Forest, Kilbourne and Pioneer | ⏳ After the to-do table (owner's call, Oct 28) |
 
 ### PeterShip to-do
 
@@ -291,7 +291,7 @@ Everything else worth adding, in rough order of value. None of it needs carrier 
 
 | # | Item | What you get | Status |
 |---|---|---|---|
-| T1 | Business accounts (#28) | An account flag on a customer, a saved address book, a discount rule, a monthly statement with a Stripe invoice link instead of paying per label. The Etsy-seller and contractor market | ⏳ |
+| T1 | Business accounts (#28) | An account flag on a customer, a saved address book, a discount rule, a monthly statement with a Stripe invoice link instead of paying per label. The Etsy-seller and contractor market | ✅ Done Oct 28, v1.32.0 |
 | T2 | Packing advisor | From the parcel size and the box catalog, suggest the right box and warn when it pushes the dimensional weight past the next bracket | ⏳ |
 | T3 | Notes and reasons | Free-text notes on a customer and on an order, and a required reason on every void and cancel, shown in the audit log | ⏳ |
 | T4 | Address validation | Catch bad ZIPs and missing apartment numbers before a label is bought. A ZIP-to-city table now; the carrier's address API once the keys exist | ⏳ (full version waits on issue 12) |
@@ -304,11 +304,11 @@ Everything else worth adding, in rough order of value. None of it needs carrier 
 
 ```mermaid
 flowchart LR
-  N1["N1 Quote queue ✅"] --> N2["N2 Customer lookup ✅"] --> N3["N3 Retail rules editor ✅"] --> N4["N4 Drop-off receipt ✅"] --> N5["N5 Returns ✅"] --> N7["N7 Staff pages in 14 languages ✅"] --> N6["N6 Insurance and add-ons ✅"] --> N9["N9 Staff logins, audit log ✅"] --> N10["N10 Invoice audit ✅"] --> N11["N11 End-of-day close ✅"] --> N8["N8 West Carroll research"]
+  N1["N1 Quote queue ✅"] --> N2["N2 Customer lookup ✅"] --> N3["N3 Retail rules editor ✅"] --> N4["N4 Drop-off receipt ✅"] --> N5["N5 Returns ✅"] --> N7["N7 Staff pages in 14 languages ✅"] --> N6["N6 Insurance and add-ons ✅"] --> N9["N9 Staff logins, audit log ✅"] --> N10["N10 Invoice audit ✅"] --> N11["N11 End-of-day close ✅"] --> T["T1 to T10 to-do table"] --> N8["N8 West Carroll research"]
   N3 -.->|"after the export, issue 11"| R["#43 prices match Rate Pro"]
   classDef store fill:#f2b705,stroke:#3b2c00,color:#3b2c00
   classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
-  class N1,N2,N3,N4,N5,N6,N7,N8,N9,N10,N11 store
+  class N1,N2,N3,N4,N5,N6,N7,N8,N9,N10,N11,T store
   class R cloud
 ```
 
@@ -378,4 +378,5 @@ flowchart LR
 - **Oct 28:** N6 done, v1.28.1 (the v1.28.0 tag was cut on the wrong commit and is marked as such). Insurance and packaging add-ons: declared-value insurance and a catalog of boxes, packing and services, priced on the server from a table the owners edit on the Prices page, offered on the Ship page (insurance) and the walk-up form (both), charged by Stripe line by line, shown as the total to ring up on the POS, and counted in the reports. That completes the Phase 5 counter app that needs no carrier keys. Next is item 51, the West Carroll Parish site research.
 - **Oct 28:** N9 done, v1.29.0. Personal staff PINs with roles, an owner page to manage people, and an audit log of every action with the name. The shared PINs still work as stop-gaps and name themselves. Next-up table extended with N9 to N11 (staff logins, invoice audit, end-of-day close) ahead of the West Carroll research, and a PeterShip to-do table (T1 to T10) added: business accounts, packing advisor, notes and reasons, address validation, printer agent hardening, offline resilience, automated tests, and the three sale-pitch items, multi-store tenancy, a public API with a Shopify app, and full data export.
 - **Oct 28:** N10 done, v1.30.0. Carrier invoice audit: open the carrier's invoice CSV, every line matched to our shipment by tracking number, overcharges, voided-but-billed, billed-twice and not-ours flagged with the amount to dispute; save, dispute with a claim number, download the flagged lines; a sample invoice for trying it. Next is N11, the end-of-day close.
+- **Oct 28:** T1 done, v1.32.0. Business accounts: an account on a customer with a discount, Bill to account on the walk-up form, the discount online by email, a monthly statement emailed with a Stripe invoice link, Mark paid, and an account bucket in the end-of-day close. The owner chose to run the to-do table before the West Carroll research; N8 moves after T10.
 - **Oct 28:** N11 done, v1.31.0. End-of-day close: the day's figures, what the POS should show for PeterShip's part, refunds owed with where to make them, drop-offs, open quotes and exceptions; a manager or owner freezes the day under their name with a note and prints the Z-report. The three items the owners asked for after N6 are all done. Next is N8, the West Carroll Parish site research, then the to-do table T1 to T10.

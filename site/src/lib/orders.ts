@@ -38,6 +38,11 @@ export interface Order {
   addons?: { code: string; name: string; qty: number; unit_price: number; total: number }[];
   insurance?: { declared_usd: number; fee: number };
   total?: number;
+  // Business accounts (T1): the discount already taken off rate.total_charge, and the account a
+  // counter order is billed to instead of being paid at the POS.
+  account_id?: number;
+  account_name?: string;
+  discount_percent?: number;
 }
 
 /** What the customer pays, label and extras together. Older orders have only the label. */

@@ -4,7 +4,7 @@ import { env } from '../../lib/env';
 import { quote } from '../../lib/quote';
 import { newOrderId, saveOrder, getOrder, type Order } from '../../lib/orders';
 import { parseAddress, parseParcel, json } from '../../lib/validate';
-import { listQueue, logAudit } from '../../shipping/store';
+import { listQueue, logAudit, getAccount } from '../../shipping/store';
 import { authenticate } from '../../lib/auth';
 import { store } from '../../data/store';
 import { effectiveAddons, priceExtras } from '../../lib/addons';
@@ -29,7 +29,7 @@ export const POST: APIRoute = async ({ request }) => {
       // Prefill a walk-up from an earlier order ("ship here again" on the customer page).
       const o = await getOrder(env, String(b.order ?? ''));
       if (!o) return json({ error: 'No such order' }, 404);
-      return json({ name: o.name ?? '', email: o.email, phone: o.phone ?? '', sms: !!o.sms, destination: o.destination, parcel: o.parcel, kind: o.kind ?? 'ship', origin: o.kind === 'return' ? o.origin : undefined, addons: o.addons ?? [], insure: !!o.insurance });
+      return json({ name: o.name ?? '', email: o.email, phone: o.phone ?? '', sms: !!o.sms, destination: o.destination, parcel: o.parcel, kind: o.kind ?? 'ship', origin: o.kind === 'return' ? o.origin : undefined, addons: o.addons ?? [], insure: !!o.insurance, account_id: o.account_id ?? null });
     }
     if (b.action === 'create') {
       const isReturn = b.kind === 'return';
@@ -45,8 +45,12 @@ export const POST: APIRoute = async ({ request }) => {
       const name = String(b.name ?? '').trim().slice(0, 60);
       // Quote again on the server so the price in the queue is the engine's, not the browser's.
       const { rates } = await quote(env, origin, destination, parcel);
-      const rate = rates.find((r) => r.id === b.rate_id);
-      if (!rate) throw new Error('That rate is no longer available. Quote again.');
+      const found = rates.find((r) => r.id === b.rate_id);
+      if (!found) throw new Error('That rate is no longer available. Quote again.');
+      // A business account takes its discount off the label here, before the total is built.
+      const account = b.account_id ? await getAccount(env, Number(b.account_id)) : null;
+      if (b.account_id && (!account || !account.active)) throw new Error('That account is closed');
+      const rate = account && account.discount_percent ? { ...found, total_charge: Math.round(found.total_charge * (1 - account.discount_percent / 100) * 100) / 100 } : found;
       const extras = priceExtras(await effectiveAddons(env), b.addons, parcel.value_usd, b.insure === true || b.insure === 'on');
       const total = Math.round((rate.total_charge + extras.extras_total) * 100) / 100;
       const order: Order = {
@@ -54,9 +58,10 @@ export const POST: APIRoute = async ({ request }) => {
         email, phone: phone || undefined, sms, name: name || undefined, source: 'counter', staff: String(b.staff ?? '').trim().slice(0, 20) || user.name.slice(0, 20),
         origin, destination, parcel, rate, international: destination.country_alpha2 !== 'US', kind: isReturn ? 'return' : 'ship',
         addons: extras.addons.length ? extras.addons : undefined, insurance: extras.insurance, total,
+        account_id: account?.id, account_name: account?.business_name, discount_percent: account?.discount_percent || undefined,
       };
       await saveOrder(env, order);
-      await logAudit(env, user, isReturn ? 'quote.create.return' : 'quote.create', order.id, `${rate.carrier} ${rate.service} $${total.toFixed(2)}${name ? `, ${name}` : ''}`);
+      await logAudit(env, user, isReturn ? 'quote.create.return' : 'quote.create', order.id, `${rate.carrier} ${rate.service} $${total.toFixed(2)}${name ? `, ${name}` : ''}${account ? `, account ${account.business_name}` : ''}`);
       return json({ ok: true, id: order.id, price: total, label_price: rate.total_charge, extras });
     }
     return json({ error: 'Unknown action' }, 400);

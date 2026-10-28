@@ -10,7 +10,7 @@ const today = new Date().toISOString().slice(0, 10);
 <Base title="Counter · End of day">
   <section class="hero noprint">
     <h1 data-i18n="st.z.h1">End of day</h1>
-    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/close" data-i18n="st.nav.close">End of day</a> · <a href="/counter/invoices" data-i18n="st.nav.invoices">Invoices</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a> · <a href="/counter/staff" data-i18n="st.nav.staff">Staff</a></p>
+    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/accounts" data-i18n="st.nav.accounts">Accounts</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/close" data-i18n="st.nav.close">End of day</a> · <a href="/counter/invoices" data-i18n="st.nav.invoices">Invoices</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a> · <a href="/counter/staff" data-i18n="st.nav.staff">Staff</a></p>
     <p class="lead" data-i18n="st.z.lead">What PeterShip did today, what the POS drawer should show for the counter-paid part, which refunds are still owed, and what is left open. Close the day to freeze the numbers under your name and print the Z-report.</p>
   </section>
 
@@ -89,7 +89,7 @@ const today = new Date().toISOString().slice(0, 10);
       rows($('sales').querySelector('tbody')!, [
         [t('st.z.r.labels'), `${r.labels.count} · ${usd(r.labels.revenue)}`], [t('st.z.r.addons'), `${r.addons.lines} · ${usd(r.addons.revenue)}`],
         [t('st.z.r.cost'), usd(r.labels.cost)], [t('st.z.r.margin'), usd(r.labels.revenue + r.addons.revenue - r.labels.cost)],
-        [t('st.z.r.pos'), usd(r.paid.pos)], [t('st.z.r.stripe'), usd(r.paid.stripe)],
+        [t('st.z.r.pos'), usd(r.paid.pos)], [t('st.z.r.stripe'), usd(r.paid.stripe)], [t('st.z.r.account'), usd(r.paid.account ?? 0)],
       ]);
       rows($('counter').querySelector('tbody')!, [
         [t('st.z.r.walkups'), String(r.walkups)], [t('st.z.r.returns'), String(r.returns)], [t('st.z.r.voided'), String(r.voided.length)], [t('st.z.r.cancelled'), String(r.cancelled)],
