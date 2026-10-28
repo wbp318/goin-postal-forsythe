@@ -5,7 +5,7 @@ import { applyRules, rulesFromFile } from '../src/lib/pricing';
 import type { Rate } from '../src/shipping/types';
 
 const parcel = (w: number, l: number, wd: number, h: number) => ({ weight_lb: w, length_in: l, width_in: wd, height_in: h, description: '', value_usd: 1 });
-const rate = (carrier: Rate['carrier'], service: string, cost: number): Rate => ({ id: `x:${service}`, carrier, service, cost, total_charge: cost, currency: 'USD', min_days: 1, max_days: 3 });
+const rate = (carrier: Rate['carrier'], service: string, cost: number): Rate => ({ id: `x:${service}`, carrier, service, cost, total_charge: cost, currency: 'USD', min_days: 1, max_days: 3, billable_weight_lb: 2 });
 
 describe('dimensional weight', () => {
   it('USPS ignores size under a cubic foot, bills ounces under a pound', () => {

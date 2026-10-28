@@ -8,7 +8,7 @@ import type { Label } from '../src/shipping/types';
 const env = {} as any;
 const dest = { contact_name: 'Jane Doe', line_1: '1 Main St', city: 'Monroe', state: 'LA', postal_code: '71201', country_alpha2: 'US' } as any;
 const parcel = { weight_lb: 2, length_in: 10, width_in: 8, height_in: 4, description: 'Books', value_usd: 30 };
-const rate = (price = 9.65) => ({ id: 'easyship:mock-usps-ground', carrier: 'USPS' as const, service: 'USPS Ground Advantage', cost: price, total_charge: price, currency: 'USD', min_days: 2, max_days: 5 });
+const rate = (price = 9.65) => ({ id: 'easyship:mock-usps-ground', carrier: 'USPS' as const, service: 'USPS Ground Advantage', cost: price, total_charge: price, currency: 'USD', min_days: 2, max_days: 5, billable_weight_lb: 2 });
 const label = (n: string): Label => ({ id: `easyship:${n}`, carrier: 'USPS', service: '', label_url: '/demo-label.html', label_zpl: null, qr_url: null, tracking_number: `9400${n.padStart(18, '0')}`, tracking_page_url: null, cost: 0 });
 let seq = 100;
 const order = (over: Partial<Order> = {}): Order => ({ id: `GP-T${++seq}`, status: 'reserved', created_at: new Date().toISOString(), email: '', origin: dest, destination: dest, parcel, rate: rate(), international: false, source: 'counter', ...over });
