@@ -94,6 +94,7 @@ import { store } from '../../data/store';
     <p id="werr" class="err" hidden></p>
   </form>
   <section id="results" hidden>
+    <p id="packNote" class="muted" hidden></p>
     <p id="mockNote" class="muted" hidden data-i18n="ship.mock">Demo rates: live carrier rates appear once the store's carrier accounts are connected.</p>
     <div id="rates" class="rates"></div>
     <fieldset id="extras" class="hidden">
@@ -207,6 +208,31 @@ import { store } from '../../data/store';
     }
     wInsure.addEventListener('change', wTotal);
     addonList.addEventListener('input', wTotal);
+    function renderPacking(pk: any) {
+      const pn = $('packNote'); pn.innerHTML = ''; pn.hidden = true;
+      if (!pk) return;
+      const bits: string[] = [];
+      const top = pk.billable.reduce((a: any, b: any) => (b.lb > a.lb ? b : a));
+      bits.push(tf('st.pk.billable', { actual: pk.actual_lb, usps: pk.billable.find((b: any) => b.carrier === 'USPS').lb, ups: pk.billable.find((b: any) => b.carrier === 'UPS').lb }));
+      if (pk.dim_applies) bits.push(tf('st.pk.dim', { carrier: top.carrier }));
+      if (pk.oversize) bits.push(t('st.pk.oversize'));
+      if (pk.fits) bits.push(tf('st.pk.fits', { box: pk.fits.name, price: pk.fits.price.toFixed(2) }));
+      else bits.push(t('st.pk.nofit'));
+      pn.textContent = bits.join(' ');
+      const use = (box: any, label: string) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'btn small kraft'; b.textContent = label; b.style.marginLeft = '8px';
+        b.addEventListener('click', () => {
+          const inp = addonList.querySelector<HTMLInputElement>(`input[data-code="${box.code}"]`); if (inp) { inp.value = '1'; wTotal(); }
+          const setN = (n: string, v: number) => { (f.elements.namedItem(n) as HTMLInputElement).value = String(v); };
+          setN('length_in', box.dims[0]); setN('width_in', box.dims[1]); setN('height_in', box.dims[2]);
+          f.requestSubmit();
+        });
+        pn.appendChild(b);
+      };
+      if (pk.better) { const s = document.createElement('span'); s.textContent = ' ' + tf('st.pk.better', { box: pk.better.box.name, saves: pk.better.saves_lb }); pn.appendChild(s); use(pk.better.box, t('st.pk.usebox')); }
+      else if (pk.fits && !(pk.fits.dims[0] === Number((f.elements.namedItem('length_in') as HTMLInputElement).value) && pk.fits.dims[1] === Number((f.elements.namedItem('width_in') as HTMLInputElement).value) && pk.fits.dims[2] === Number((f.elements.namedItem('height_in') as HTMLInputElement).value))) use(pk.fits, t('st.pk.usebox'));
+      pn.hidden = false;
+    }
     function renderExtras(ex: any) {
       extras = ex;
       if (ex.insurance.covered) { $('wInsRow').classList.add('hidden'); wInsure.checked = false; $('wInsCovered').classList.remove('hidden'); $('wInsCovered').textContent = t('ship.inscovered').replace('{n}', String(ex.insurance.included_usd)); }
@@ -266,6 +292,7 @@ import { store } from '../../data/store';
         }
         if (!j.rates.length) throw new Error(t('st.q.norates'));
         renderExtras(j.extras);
+        renderPacking(j.packing);
         results.hidden = false; results.scrollIntoView({ behavior: 'smooth' });
       } catch (e: any) { werr.textContent = e.message; werr.hidden = false; }
       rateBtn.disabled = false;
