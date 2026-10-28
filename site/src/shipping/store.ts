@@ -78,8 +78,101 @@ const mem = {
   audit: [] as AuditRow[],
   invoices: [] as InvoiceRow[],
   invoiceLines: [] as InvoiceLineRow[],
+  closes: [] as DayCloseRow[],
   seq: 1,
 };
+
+// ---- end-of-day close ----------------------------------------------------------------------------
+export interface DayFigures {
+  labels: { count: number; revenue: number; cost: number };
+  addons: { lines: number; revenue: number };
+  paid: { pos: number; stripe: number };
+  voided: { id: string; paid_via: string | null; total: number; voided_at: string }[];
+  dropoffs: { accepted: number; handed: number; waiting: number };
+  open_quotes: number;
+  exceptions: number;
+  walkups: number;
+  returns: number;
+  cancelled: number;
+}
+export interface DayCloseRow { id: number; day: string; closed_at: string; closed_by: string; note: string | null; pos_expected: number; stripe_expected: number; labels: number; report_json: string; zpl: string }
+
+/** Everything the close needs for one window of time (UTC ISO strings), from the shipments, add-ons, quotes and drop-offs tables. */
+export async function dayFigures(env: Env, start: string, end: string): Promise<DayFigures> {
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+  let ships: Pick<ShipmentRow, 'id' | 'cost' | 'price' | 'paid_via' | 'status' | 'created_at' | 'updated_at'>[];
+  let voidedToday: typeof ships;
+  let addonLines: { order_id: string; total: number }[];
+  let addonsOf: Map<string, number>;
+  let drops: { accepted_at: string; handed_to_carrier_at: string | null }[];
+  let quotes: QuoteRow[];
+  if (env.DB) {
+    ships = (await env.DB.prepare('SELECT id, cost, price, paid_via, status, created_at, updated_at FROM shipments WHERE created_at BETWEEN ?1 AND ?2').bind(start, end).all<typeof ships[number]>()).results;
+    voidedToday = (await env.DB.prepare("SELECT id, cost, price, paid_via, status, created_at, updated_at FROM shipments WHERE status = 'voided' AND updated_at BETWEEN ?1 AND ?2").bind(start, end).all<typeof ships[number]>()).results;
+    const ids = [...new Set([...ships, ...voidedToday].map((s) => s.id))];
+    addonLines = [];
+    for (let i = 0; i < ids.length; i += 80) {
+      const chunk = ids.slice(i, i + 80);
+      if (chunk.length) addonLines.push(...(await env.DB.prepare(`SELECT order_id, total FROM order_addons WHERE order_id IN (${chunk.map((_, k) => `?${k + 1}`).join(',')})`).bind(...chunk).all<{ order_id: string; total: number }>()).results);
+    }
+    drops = (await env.DB.prepare('SELECT accepted_at, handed_to_carrier_at FROM dropoffs WHERE accepted_at BETWEEN ?1 AND ?2 OR (handed_to_carrier_at BETWEEN ?1 AND ?2) OR handed_to_carrier_at IS NULL').bind(start, end).all<{ accepted_at: string; handed_to_carrier_at: string | null }>()).results;
+    quotes = (await env.DB.prepare('SELECT * FROM quotes WHERE created_at BETWEEN ?1 AND ?2 OR updated_at BETWEEN ?1 AND ?2 OR status IN (\'awaiting_payment\', \'reserved\', \'labeled\')').bind(start, end).all<QuoteRow>()).results;
+  } else {
+    const all = [...mem.shipments.values()];
+    ships = all.filter((s) => s.created_at >= start && s.created_at <= end);
+    voidedToday = all.filter((s) => s.status === 'voided' && s.updated_at >= start && s.updated_at <= end);
+    const ids = new Set([...ships, ...voidedToday].map((s) => s.id));
+    addonLines = mem.orderAddons.filter((l) => ids.has(l.order_id)).map((l) => ({ order_id: l.order_id, total: l.total }));
+    drops = mem.dropoffs.filter((d) => (d.accepted_at >= start && d.accepted_at <= end) || (d.handed_to_carrier_at && d.handed_to_carrier_at >= start && d.handed_to_carrier_at <= end) || !d.handed_to_carrier_at);
+    quotes = [...mem.quotes.values()].filter((q) => (q.created_at >= start && q.created_at <= end) || (q.updated_at >= start && q.updated_at <= end) || OPEN_QUOTE_STATUSES.includes(q.status));
+  }
+  addonsOf = new Map();
+  for (const l of addonLines) addonsOf.set(l.order_id, (addonsOf.get(l.order_id) ?? 0) + l.total);
+  const sold = ships.filter((s) => s.status !== 'voided' || !voidedToday.some((v) => v.id === s.id) ? true : true); // everything bought today counts as sold; voids are listed separately
+  const labels = { count: sold.length, revenue: r2(sold.reduce((a, s) => a + s.price, 0)), cost: r2(sold.reduce((a, s) => a + s.cost, 0)) };
+  const addons = { lines: addonLines.filter((l) => ships.some((s) => s.id === l.order_id)).length, revenue: r2(ships.reduce((a, s) => a + (addonsOf.get(s.id) ?? 0), 0)) };
+  const via = (s: typeof ships[number]) => (s.paid_via === 'pos' ? 'pos' : 'stripe');
+  const paid = { pos: r2(ships.filter((s) => via(s) === 'pos').reduce((a, s) => a + s.price + (addonsOf.get(s.id) ?? 0), 0)), stripe: r2(ships.filter((s) => via(s) === 'stripe').reduce((a, s) => a + s.price + (addonsOf.get(s.id) ?? 0), 0)) };
+  const voided = voidedToday.map((s) => ({ id: s.id, paid_via: s.paid_via === 'pos' ? 'pos' : 'stripe', total: r2(s.price + (addonsOf.get(s.id) ?? 0)), voided_at: s.updated_at }));
+  const dropoffs = {
+    accepted: drops.filter((d) => d.accepted_at >= start && d.accepted_at <= end).length,
+    handed: drops.filter((d) => d.handed_to_carrier_at && d.handed_to_carrier_at >= start && d.handed_to_carrier_at <= end).length,
+    waiting: drops.filter((d) => !d.handed_to_carrier_at).length,
+  };
+  const inDay = (q: QuoteRow) => q.created_at >= start && q.created_at <= end;
+  return {
+    labels, addons, paid, voided, dropoffs,
+    open_quotes: quotes.filter((q) => OPEN_QUOTE_STATUSES.includes(q.status)).length,
+    exceptions: (await listExceptions(env)).length,
+    walkups: quotes.filter((q) => inDay(q) && q.source === 'counter').length,
+    returns: quotes.filter((q) => inDay(q) && q.destination.startsWith('Return from')).length,
+    cancelled: quotes.filter((q) => q.status === 'cancelled' && q.updated_at >= start && q.updated_at <= end).length,
+  };
+}
+
+export async function saveClose(env: Env, c: { day: string; closed_by: string; note: string; report: { pos_expected: number; stripe_expected: number; labels: { count: number } }; zpl: string }): Promise<DayCloseRow> {
+  const row: Omit<DayCloseRow, 'id'> = { day: c.day, closed_at: now(), closed_by: c.closed_by, note: c.note || null, pos_expected: c.report.pos_expected, stripe_expected: c.report.stripe_expected, labels: c.report.labels.count, report_json: JSON.stringify(c.report), zpl: c.zpl };
+  if (env.DB) {
+    const r = await env.DB.prepare('INSERT INTO day_closes (day, closed_at, closed_by, note, pos_expected, stripe_expected, labels, report_json, zpl) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9) RETURNING id')
+      .bind(row.day, row.closed_at, row.closed_by, row.note, row.pos_expected, row.stripe_expected, row.labels, row.report_json, row.zpl).first<{ id: number }>();
+    return { id: r!.id, ...row };
+  }
+  const full = { id: mem.seq++, ...row };
+  mem.closes.unshift(full);
+  return full;
+}
+
+export async function listCloses(env: Env): Promise<Omit<DayCloseRow, 'report_json' | 'zpl'>[]> {
+  if (env.DB) return (await env.DB.prepare('SELECT id, day, closed_at, closed_by, note, pos_expected, stripe_expected, labels FROM day_closes ORDER BY id DESC LIMIT 60').all<Omit<DayCloseRow, 'report_json' | 'zpl'>>()).results;
+  return mem.closes.slice(0, 60).map(({ report_json, zpl, ...r }) => r);
+}
+
+export async function getClose(env: Env, id: number): Promise<(Omit<DayCloseRow, 'report_json'> & { report: any }) | null> {
+  const row = env.DB ? (await env.DB.prepare('SELECT * FROM day_closes WHERE id = ?1').bind(id).first<DayCloseRow>()) ?? null : mem.closes.find((c) => c.id === id) ?? null;
+  if (!row) return null;
+  const { report_json, ...rest } = row;
+  return { ...rest, report: JSON.parse(report_json) };
+}
 
 // ---- carrier invoice audits ----------------------------------------------------------------------
 export interface InvoiceRow { id: number; carrier: string; label: string; uploaded_at: string; uploaded_by: string; line_count: number; billed_total: number; expected_total: number; flagged_total: number }

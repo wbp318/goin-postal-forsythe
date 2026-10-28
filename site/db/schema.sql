@@ -200,3 +200,18 @@ CREATE TABLE IF NOT EXISTS invoice_lines (
   note TEXT
 );
 CREATE INDEX IF NOT EXISTS invoice_lines_invoice ON invoice_lines(invoice_id, status);
+
+-- End-of-day closes: the frozen figures for a day, with who closed it and their note.
+CREATE TABLE IF NOT EXISTS day_closes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  day TEXT NOT NULL,                   -- YYYY-MM-DD, shop local
+  closed_at TEXT NOT NULL,
+  closed_by TEXT NOT NULL,
+  note TEXT,
+  pos_expected REAL NOT NULL,
+  stripe_expected REAL NOT NULL,
+  labels INTEGER NOT NULL,
+  report_json TEXT NOT NULL,
+  zpl TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS day_closes_day ON day_closes(day);

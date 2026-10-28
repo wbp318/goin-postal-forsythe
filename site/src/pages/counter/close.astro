@@ -1,0 +1,141 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+
+// Staff page: end-of-day close. The day's figures from PeterShip's records, what the POS should
+// show for the counter-paid part, refunds still owed, what is left open. A manager or owner closes
+// the day, which freezes the numbers with their name and a note, and prints the Z-report.
+const today = new Date().toISOString().slice(0, 10);
+---
+<Base title="Counter · End of day">
+  <section class="hero noprint">
+    <h1 data-i18n="st.z.h1">End of day</h1>
+    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/close" data-i18n="st.nav.close">End of day</a> · <a href="/counter/invoices" data-i18n="st.nav.invoices">Invoices</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a> · <a href="/counter/staff" data-i18n="st.nav.staff">Staff</a></p>
+    <p class="lead" data-i18n="st.z.lead">What PeterShip did today, what the POS drawer should show for the counter-paid part, which refunds are still owed, and what is left open. Close the day to freeze the numbers under your name and print the Z-report.</p>
+  </section>
+
+  <div class="card noprint">
+    <p class="btnrow">
+      <label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
+      <label><span data-i18n="st.z.day">Day</span> <input id="day" type="date" value={today} max={today} /></label>
+      <button class="btn" id="load" data-i18n="st.z.show">Show the day</button>
+    </p>
+    <p id="msg" role="alert"></p>
+  </div>
+
+  <div id="out" class="hidden">
+    <div class="grid">
+      <div class="card"><h3 data-i18n="st.z.pos">POS should show</h3><p class="big" id="z-pos"></p><p class="muted" data-i18n="st.z.pos.note">Counter-paid labels and extras, less counter refunds owed today</p></div>
+      <div class="card"><h3 data-i18n="st.z.stripe">Paid online (Stripe)</h3><p class="big" id="z-stripe"></p></div>
+      <div class="card"><h3 data-i18n="st.z.labels">Labels sold</h3><p class="big" id="z-labels"></p><p class="muted" id="z-labels-n"></p></div>
+      <div class="card"><h3 data-i18n="st.z.refunds">Refunds owed</h3><p class="big" id="z-refunds"></p><p class="muted" id="z-refunds-n"></p></div>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <h3 data-i18n="st.z.sales">Sales</h3>
+        <table class="list" id="sales"><tbody></tbody></table>
+      </div>
+      <div class="card">
+        <h3 data-i18n="st.z.counter">Counter</h3>
+        <table class="list" id="counter"><tbody></tbody></table>
+      </div>
+      <div class="card">
+        <h3 data-i18n="st.z.refundlist">Refunds to make</h3>
+        <table class="list" id="refundtable"><thead><tr><th data-i18n="st.q.th.code">Code</th><th data-i18n="st.z.th.paidvia">Paid via</th><th data-i18n="st.i.th.billed">Amount</th><th data-i18n="st.q.th.when">When</th></tr></thead><tbody></tbody></table>
+        <p id="norefunds" class="muted hidden" data-i18n="st.z.norefunds">None.</p>
+      </div>
+    </div>
+    <div class="card noprint">
+      <label><span data-i18n="st.z.note">Note for the close (cash over or short, anything odd)</span> <input id="note" maxlength="300" /></label>
+      <p class="btnrow">
+        <label class="check"><input id="print" type="checkbox" checked /> <span data-i18n="st.z.print">Print the Z-report at the counter</span></label>
+        <button class="btn" id="close" data-i18n="st.z.close">Close the day</button>
+        <button class="btn kraft" id="printpage" data-i18n="st.r.printpage">Print this page</button>
+      </p>
+      <p id="closed" class="muted"></p>
+    </div>
+  </div>
+
+  <div class="card noprint" id="pastwrap">
+    <h3 data-i18n="st.z.past">Past closes</h3>
+    <table class="list" id="past"><thead><tr><th data-i18n="st.z.day">Day</th><th data-i18n="st.z.closedat">Closed</th><th data-i18n="st.s.th.who">Who</th><th data-i18n="st.z.pos">POS should show</th><th data-i18n="st.z.note.short">Note</th><th></th></tr></thead><tbody></tbody></table>
+    <p id="pastempty" class="muted hidden" data-i18n="st.z.none">No days closed yet.</p>
+  </div>
+
+  <style>@media print { .noprint, header, footer, nav { display: none !important; } }</style>
+
+  <script>
+    import { t, tf } from '../../i18n';
+    const $ = (id: string) => document.getElementById(id)!;
+    const pin = () => ($('pin') as HTMLInputElement).value;
+    const msg = $('msg');
+    const usd = (n: number) => n.toLocaleString(undefined, { style: 'currency', currency: 'USD' });
+    const fmt = (iso: string) => new Date(iso).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    const tz = () => -new Date().getTimezoneOffset(); // minutes east of UTC; the shop tablet is on Central time
+    let report: any = null;
+    async function api(extra: Record<string, unknown>) {
+      const res = await fetch('/api/close', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin(), day: ($('day') as HTMLInputElement).value, tz: tz(), ...extra }) });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error);
+      return j;
+    }
+    const rows = (tbody: HTMLElement, data: [string, string][]) => { tbody.innerHTML = ''; for (const [k, v] of data) { const tr = document.createElement('tr'); for (const c of [k, v]) { const td = document.createElement('td'); td.textContent = c; tr.appendChild(td); } tbody.appendChild(tr); } };
+    function render(r: any) {
+      report = r;
+      $('z-pos').textContent = usd(r.pos_expected); $('z-stripe').textContent = usd(r.stripe_expected);
+      $('z-labels').textContent = usd(r.labels.revenue + r.addons.revenue); $('z-labels-n').textContent = tf('st.z.labels.n', { n: r.labels.count, addons: usd(r.addons.revenue) });
+      const owed = r.refunds_owed.reduce((a: number, x: any) => a + x.amount, 0);
+      $('z-refunds').textContent = usd(owed); $('z-refunds-n').textContent = tf('st.z.refunds.n', { n: r.refunds_owed.length });
+      rows($('sales').querySelector('tbody')!, [
+        [t('st.z.r.labels'), `${r.labels.count} · ${usd(r.labels.revenue)}`], [t('st.z.r.addons'), `${r.addons.lines} · ${usd(r.addons.revenue)}`],
+        [t('st.z.r.cost'), usd(r.labels.cost)], [t('st.z.r.margin'), usd(r.labels.revenue + r.addons.revenue - r.labels.cost)],
+        [t('st.z.r.pos'), usd(r.paid.pos)], [t('st.z.r.stripe'), usd(r.paid.stripe)],
+      ]);
+      rows($('counter').querySelector('tbody')!, [
+        [t('st.z.r.walkups'), String(r.walkups)], [t('st.z.r.returns'), String(r.returns)], [t('st.z.r.voided'), String(r.voided.length)], [t('st.z.r.cancelled'), String(r.cancelled)],
+        [t('st.z.r.dropoffs'), tf('st.z.r.dropoffs.v', { a: r.dropoffs.accepted, h: r.dropoffs.handed, w: r.dropoffs.waiting })],
+        [t('st.z.r.open'), String(r.open_quotes)], [t('st.z.r.exceptions'), String(r.exceptions)],
+      ]);
+      const rb = $('refundtable').querySelector('tbody')!; rb.innerHTML = '';
+      for (const x of r.refunds_owed) { const tr = document.createElement('tr'); for (const c of [x.id, x.paid_via === 'pos' ? t('st.z.via.pos') : t('st.z.via.stripe'), usd(x.amount), fmt(x.voided_at)]) { const td = document.createElement('td'); td.textContent = c; tr.appendChild(td); } rb.appendChild(tr); }
+      $('norefunds').classList.toggle('hidden', !!r.refunds_owed.length);
+      $('out').classList.remove('hidden');
+    }
+    async function load() {
+      msg.textContent = ''; $('closed').textContent = '';
+      if (!pin()) { msg.className = 'err'; msg.textContent = t('st.pinfirst'); return; }
+      try { const j = await api({ action: 'figures' }); render(j.report); loadPast(); }
+      catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    }
+    async function loadPast() {
+      try {
+        const { closes } = await api({ action: 'list' });
+        const body = $('past').querySelector('tbody')!; body.innerHTML = '';
+        for (const c of closes) {
+          const tr = document.createElement('tr');
+          for (const v of [c.day, fmt(c.closed_at), c.closed_by, usd(c.pos_expected), c.note ?? '']) { const td = document.createElement('td'); td.textContent = v; tr.appendChild(td); }
+          const td = document.createElement('td');
+          const b1 = document.createElement('button'); b1.type = 'button'; b1.className = 'btn small'; b1.textContent = t('st.open'); b1.addEventListener('click', async () => { try { const full = await api({ action: 'get', id: c.id }); ($('day') as HTMLInputElement).value = c.day; render(full.report); $('closed').textContent = tf('st.z.closedby', { name: c.closed_by, when: fmt(c.closed_at) }); window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; } });
+          const b2 = document.createElement('button'); b2.type = 'button'; b2.className = 'btn small kraft'; b2.textContent = t('st.d.printagain'); b2.addEventListener('click', async () => { try { const j = await api({ action: 'zpl', id: c.id }); msg.className = ''; msg.textContent = j.agent ? t('st.r.sent') : t('st.r.queuednoagent'); } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; } });
+          td.append(b1, ' ', b2); tr.appendChild(td); body.appendChild(tr);
+        }
+        $('pastempty').classList.toggle('hidden', !!closes.length);
+      } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    }
+    $('load').addEventListener('click', load);
+    $('pin').addEventListener('change', load);
+    $('day').addEventListener('change', () => { if (pin()) load(); });
+    $('printpage').addEventListener('click', () => window.print());
+    $('close').addEventListener('click', async () => {
+      if (!report) return;
+      if (!window.confirm(tf('st.z.confirm', { day: report.day, pos: usd(report.pos_expected) }))) return;
+      try {
+        const j = await api({ action: 'close', note: ($('note') as HTMLInputElement).value, print: ($('print') as HTMLInputElement).checked });
+        render(j.report);
+        msg.className = ''; msg.textContent = j.printed ? (j.agent ? t('st.z.closed.printed') : t('st.z.closed.noagent')) : t('st.z.closed.ok');
+        loadPast();
+      } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    });
+    document.addEventListener('langchange', () => { if (report) render(report); if (pin()) loadPast(); });
+  </script>
+</Base>
