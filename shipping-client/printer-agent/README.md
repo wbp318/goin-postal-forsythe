@@ -56,7 +56,7 @@ Only outbound requests from the shop. No port forwarding, no printer drivers in 
 | `key` | The same long random string set as `PRINTER_KEY` on the website (`npx wrangler secret put PRINTER_KEY`, or `.dev.vars` locally) |
 | `printer` | Which queue this PC serves. `counter` unless there is a second station |
 | `zebra.host` | The label printer's IP address if it is on the network (print a config label from the printer to find it). Port 9100 |
-| `zebra.share` | Or, for a USB Zebra plugged into this PC: share the printer in Windows Settings and put `\\\\THIS-PC\\Zebra` here |
+| `zebra.share` | Or, for a USB Zebra plugged into this PC: share the printer in Windows Settings and put `\\\\THIS-PC\\Zebra` here. On a Mac, the CUPS queue name of the USB printer (`lpstat -p` lists them); the agent sends raw bytes with `lp -o raw` |
 | `pdf.spool` | Folder for downloaded PDF labels. Defaults to `spool` next to the agent |
 | `pdf.app` | Leave blank to print PDFs with Windows' default PDF app. Or a path to SumatraPDF for silent printing |
 | `track_poll_minutes` | How often the agent asks the site to refresh tracking for open shipments. 10 by default, 0 to turn it off |

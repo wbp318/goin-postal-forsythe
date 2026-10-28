@@ -223,7 +223,8 @@ site/
     counter/                    staff, PIN: queue, customers, accounts, dropoff, exceptions, reports, close, invoices, rules, staff, [code]
     api/                        the JSON endpoints every page calls (table in site/README.md)
 shipping-client/
-  printer-agent/                the counter PC program, its own README
+  printer-agent/                the counter PC program, its own README, plus Windows and macOS installers
+  counter-pc/                   the plan for the counter machines: Windows 11 now, Mac minis next, the POS question
   costs/                        what Cloudflare and the carriers charge us
   for-other-stores/             the plan for running it for other Goin' Postal stores
 ```

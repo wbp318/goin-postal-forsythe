@@ -48,11 +48,13 @@ function raw(bytes, target) {
     });
   }
   if (target.share) {
-    // Windows: copy the raw file to a shared printer, e.g. \\COUNTER-PC\Zebra. Share the printer once in Settings.
     mkdirSync(cfg.pdf.spool, { recursive: true });
     const tmp = join(cfg.pdf.spool, `raw-${Date.now()}.prn`);
     writeFileSync(tmp, bytes);
-    return run('cmd', ['/c', 'copy', '/b', tmp, target.share]);
+    // Windows: copy the raw file to a shared printer, e.g. \\COUNTER-PC\Zebra. Share the printer once in Settings.
+    if (process.platform === 'win32') return run('cmd', ['/c', 'copy', '/b', tmp, target.share]);
+    // macOS and Linux: "share" is the CUPS queue name of a USB printer; send the bytes untouched.
+    return run('lp', ['-d', target.share, '-o', 'raw', tmp]);
   }
   throw new Error('no printer configured: set zebra.host (network) or zebra.share (Windows shared printer)');
 }
