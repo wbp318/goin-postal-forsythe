@@ -89,6 +89,52 @@ const mem = {
   seq: 1,
 };
 
+// ---- Export (T10) --------------------------------------------------------------------------------
+/** Every table in the schema, in schema order. The allow-list for the export; nothing else can be named. */
+export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys'] as const;
+export type ExportTable = typeof EXPORT_TABLES[number];
+const memTable = (name: ExportTable): unknown[] => {
+  switch (name) {
+    case 'customers': return [...mem.customers.values()];
+    case 'shipments': return [...mem.shipments.values()];
+    case 'tracking_events': return [...mem.events.entries()].flatMap(([shipment_id, evs]) => (evs as any[]).map((e) => ({ shipment_id, ...e })));
+    case 'dropoffs': return [...mem.dropoffs.values()];
+    case 'retail_rules': return mem.rules ? [mem.rules] : [];
+    case 'staff': return mem.staff;
+    case 'print_queue': return [...mem.jobs.values()];
+    case 'shipment_contacts': return [...mem.contacts.entries()].map(([shipment_id, c]) => ({ shipment_id, ...(c as object) }));
+    case 'quotes': return [...mem.quotes.values()];
+    case 'addons': return mem.addons;
+    case 'order_addons': return mem.orderAddons;
+    case 'audit_log': return mem.audit;
+    case 'invoices': return mem.invoices;
+    case 'invoice_lines': return mem.invoiceLines;
+    case 'day_closes': return mem.closes;
+    case 'accounts': return mem.accounts;
+    case 'account_statements': return mem.statements;
+    case 'shipment_billing': return [...mem.billing.entries()].map(([shipment_id, b]) => ({ shipment_id, ...b }));
+    case 'notes': return mem.notes;
+    case 'print_failures': return [...mem.printFailures.values()];
+    case 'api_keys': return mem.apiKeys;
+    default: return [];
+  }
+};
+/** All rows of one table, oldest first. Secrets never leave: PIN hashes, key hashes and webhook secrets are blanked. */
+export async function exportTable(env: Env, name: ExportTable): Promise<Record<string, unknown>[]> {
+  if (!(EXPORT_TABLES as readonly string[]).includes(name)) throw new Error(`No such table: ${name}`);
+  const rows = env.DB ? (await env.DB.prepare(`SELECT * FROM ${name}`).all<Record<string, unknown>>()).results : (memTable(name) as Record<string, unknown>[]).map((r) => ({ ...r }));
+  for (const r of rows) for (const k of ['pin_hash', 'key_hash', 'webhook_secret']) if (k in r) r[k] = '';
+  return rows;
+}
+/** Row counts for every table, for the export page. */
+export async function exportCounts(env: Env): Promise<Record<string, number>> {
+  const out: Record<string, number> = {};
+  for (const t of EXPORT_TABLES) {
+    out[t] = env.DB ? ((await env.DB.prepare(`SELECT COUNT(*) AS n FROM ${t}`).first<{ n: number }>())?.n ?? 0) : memTable(t).length;
+  }
+  return out;
+}
+
 // ---- API keys (public API) -----------------------------------------------------------------------
 export interface ApiKeyRow { id: number; account_id: number; label: string; prefix: string; key_hash: string; webhook_url: string | null; webhook_secret: string | null; active: number; created_at: string; last_used_at: string | null }
 

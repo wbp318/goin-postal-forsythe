@@ -76,6 +76,19 @@ export async function saveOrder(env: Env, order: Order) {
   await upsertQuote(env, order).catch((e) => console.error('queue mirror failed', e));
 }
 
+/** Every order still in KV (orders expire after 90 days; the quotes table keeps the queue view longer). For the export. */
+export async function listAllOrders(env: Env): Promise<Order[]> {
+  if (!env.ORDERS) return [...memory.entries()].filter(([k]) => k.startsWith('order:')).map(([, v]) => JSON.parse(v) as Order);
+  const out: Order[] = [];
+  let cursor: string | undefined;
+  do {
+    const page = await env.ORDERS.list({ prefix: 'order:', cursor, limit: 1000 });
+    for (const k of page.keys) { const raw = await env.ORDERS.get(k.name); if (raw) out.push(JSON.parse(raw) as Order); }
+    cursor = page.list_complete ? undefined : page.cursor;
+  } while (cursor);
+  return out;
+}
+
 export async function getOrder(env: Env, id: string): Promise<Order | null> {
   const raw = await kv(env).get(KEY(id.toUpperCase()));
   return raw ? (JSON.parse(raw) as Order) : null;
