@@ -187,7 +187,29 @@ If you only read three files, read `types.ts` (the shapes), `engine.ts` (how a q
 
 ### 4. Run it on your own computer
 
-You need Node.js 22 or newer and Git. The root README's first section shows how to install both. Then:
+You need Node.js 22 or newer and Git. The root README's first section shows how to install both, with the exact commands for Windows and Mac. Check they are there before going on: open a terminal (below) and type `node -v` and `git --version`; each should print a version number.
+
+**Open a terminal and go to the folder you want the code in.** A terminal always has a "current folder", and `git clone` puts the code inside whatever folder you are in at that moment. So the first job is to get to a sensible place, like the Desktop. `cd` means "change directory", `pwd` prints where you are, and `ls` lists what is there, on both systems.
+
+*Windows.* Press the Start key, type `PowerShell`, press Enter. A blue or black window opens, usually starting in `C:\Users\YourName`. Go to the Desktop and confirm:
+
+```
+cd $HOME\Desktop
+pwd
+```
+
+It should print something like `C:\Users\Peter\Desktop`. If you would rather keep code elsewhere, make a folder first: `mkdir $HOME\Code` then `cd $HOME\Code`. If OneDrive moved your Desktop, `cd $HOME\Desktop` still works because `$HOME` follows it; if it says the path does not exist, try `cd $HOME\OneDrive\Desktop`. Spaces in a folder name need quotes: `cd "C:\Users\Rin Ho\Desktop"`.
+
+*Mac.* Open Finder, go to Applications, Utilities, Terminal, or press Command and Space, type `Terminal`, press Enter. It starts in your home folder, `/Users/yourname`. Go to the Desktop and confirm:
+
+```
+cd ~/Desktop
+pwd
+```
+
+It should print `/Users/peter/Desktop` or similar. `~` is short for your home folder on a Mac.
+
+**Now get the code and start it.** The same six lines work on both systems, in that terminal, in that folder:
 
 ```
 git clone https://github.com/wbp318/goin-postal-forsythe.git
@@ -198,7 +220,9 @@ npm run db:local
 npm run dev
 ```
 
-On Windows PowerShell, `cp` works; if it complains use `Copy-Item .dev.vars.example .dev.vars`.
+The first line creates a folder named `goin-postal-forsythe` inside the folder you were in (so on the Desktop, you will see it appear there). The second line moves into its `site` subfolder, which is where every later command runs. If `git clone` says the folder already exists, you cloned before; just `cd goin-postal-forsythe/site` and run `git pull` to get the latest. On Windows PowerShell, `cp` works; if it complains use `Copy-Item .dev.vars.example .dev.vars`. On Windows a backslash works in place of the forward slash in `goin-postal-forsythe/site`.
+
+**Coming back later.** Open a terminal, `cd` to where the folder is (`cd $HOME\Desktop\goin-postal-forsythe\site` on Windows, `cd ~/Desktop/goin-postal-forsythe/site` on a Mac), then `git pull` to pick up changes and `npm run dev` to start. If you are ever lost, `pwd` says where you are and `cd ..` goes up one folder.
 
 What each line does:
 
