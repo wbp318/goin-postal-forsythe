@@ -33,6 +33,9 @@ jobs:
       - name: Type-check every page, API and library file
         working-directory: site
         run: npm run check
+      - name: Run the unit tests
+        working-directory: site
+        run: npm run test:unit
       - name: Build the site the way Cloudflare does
         working-directory: site
         run: npm run build

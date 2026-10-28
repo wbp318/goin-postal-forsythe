@@ -41,7 +41,7 @@ export function closeEscpos(c: CloseReport, closedBy: string, note: string): str
     { t: store.name, bold: true, center: true }, { t: `END OF DAY ${c.day}`, bold: true, center: true, wide: true }, { t: `Closed by ${closedBy}`, center: true }, { t: '' },
     { t: `Labels sold ${c.labels.count}` }, { t: `Label sales ${money(c.labels.revenue)}` }, { t: `Add-ons and insurance ${money(c.addons.revenue)}` }, { t: `Carrier cost ${money(c.labels.cost)}` }, { t: `Margin on labels ${money(c.labels.revenue - c.labels.cost)}` }, { t: '' },
     { t: `Paid at the counter (POS) ${money(c.paid.pos)}`, bold: true }, { t: `Paid online (Stripe) ${money(c.paid.stripe)}` }, { t: `Billed to accounts ${money(c.paid.account ?? 0)}` }, { t: `Voided today ${c.voided.length}, refunds owed ${money(owed)}` },
-    { t: `POS should show: ${money(c.pos_expected)}`, bold: true, wide: true }, { t: '' },
+    { t: `POS should show: ${money(c.pos_expected)}`, bold: true }, { t: '' }, // bold, not wide: wide wraps at 16 columns and would split the number
     { t: `Drop-offs accepted ${c.dropoffs.accepted}, handed ${c.dropoffs.handed}, still here ${c.dropoffs.waiting}` }, { t: `Quotes open ${c.open_quotes}, exceptions ${c.exceptions}` }, { t: `Walk-ups ${c.walkups}, returns ${c.returns}, cancelled ${c.cancelled}` },
     ...c.refunds_owed.slice(0, 8).map((r) => ({ t: `Refund ${r.id} ${money(r.amount)} via ${r.paid_via}` })),
     ...(note ? [{ t: '' }, { t: `Note: ${note}` }] : []), { t: '' }, { t: 'PeterShip Z-report', center: true },
