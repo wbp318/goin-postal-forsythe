@@ -170,9 +170,9 @@ import { store } from '../../data/store';
               const j = await api('/api/counter', { order: q.id, action: 'email', email });
               msg.textContent = j.mock ? tf('st.q.emaillogged', { id: q.id, email: j.email }) : tf('st.q.emailed', { id: q.id, email: j.email });
             }));
-            act.appendChild(button(t('st.void'), 'kraft', async () => { if (!window.confirm(tf('st.q.confirm.void', { id: q.id }))) return; await api('/api/counter', { order: q.id, action: 'void' }); await load(); }));
+            act.appendChild(button(t('st.void'), 'kraft', async () => { const reason = window.prompt(tf('st.q.confirm.void', { id: q.id }) + '\n' + t('st.n.whyvoid')); if (!reason || !reason.trim()) return; await api('/api/counter', { order: q.id, action: 'void', reason }); await load(); }));
           }
-          if (q.status === 'reserved' || q.status === 'awaiting_payment') act.appendChild(button(t('st.cancel'), 'kraft', async () => { if (!window.confirm(tf('st.q.confirm.cancel', { id: q.id }))) return; await api('/api/counter', { order: q.id, action: 'cancel' }); await load(); }));
+          if (q.status === 'reserved' || q.status === 'awaiting_payment') act.appendChild(button(t('st.cancel'), 'kraft', async () => { const reason = window.prompt(tf('st.q.confirm.cancel', { id: q.id }) + '\n' + t('st.n.whycancel')); if (!reason || !reason.trim()) return; await api('/api/counter', { order: q.id, action: 'cancel', reason }); await load(); }));
           tr.appendChild(act);
           body.appendChild(tr);
         }

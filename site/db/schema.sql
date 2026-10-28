@@ -245,3 +245,14 @@ CREATE TABLE IF NOT EXISTS shipment_billing (
   statement_id INTEGER REFERENCES account_statements(id)
 );
 CREATE INDEX IF NOT EXISTS shipment_billing_account ON shipment_billing(account_id, statement_id);
+
+-- Free-text notes on a customer or an order ("always wants signature", "fragile pottery"), with who wrote them.
+CREATE TABLE IF NOT EXISTS notes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  kind TEXT NOT NULL,                  -- customer, order
+  target TEXT NOT NULL,                -- customer id or GP code
+  note TEXT NOT NULL,
+  by_name TEXT NOT NULL,
+  at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS notes_target ON notes(kind, target, id);

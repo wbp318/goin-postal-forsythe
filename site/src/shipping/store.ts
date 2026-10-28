@@ -82,8 +82,28 @@ const mem = {
   accounts: [] as AccountRow[],
   statements: [] as StatementRow[],
   billing: new Map<string, { account_id: number; statement_id: number | null }>(),
+  notes: [] as NoteRow[],
   seq: 1,
 };
+
+// ---- notes --------------------------------------------------------------------------------------
+export interface NoteRow { id: number; kind: 'customer' | 'order'; target: string; note: string; by_name: string; at: string }
+
+export async function listNotes(env: Env, kind: NoteRow['kind'], target: string): Promise<NoteRow[]> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM notes WHERE kind = ?1 AND target = ?2 ORDER BY id DESC LIMIT 100').bind(kind, target).all<NoteRow>()).results;
+  return mem.notes.filter((n) => n.kind === kind && n.target === target).sort((a, b) => b.id - a.id);
+}
+
+export async function addNote(env: Env, n: { kind: NoteRow['kind']; target: string; note: string; by_name: string }): Promise<NoteRow> {
+  const row = { ...n, at: now() };
+  if (env.DB) {
+    const r = await env.DB.prepare('INSERT INTO notes (kind, target, note, by_name, at) VALUES (?1, ?2, ?3, ?4, ?5) RETURNING id').bind(row.kind, row.target, row.note, row.by_name, row.at).first<{ id: number }>();
+    return { id: r!.id, ...row };
+  }
+  const full = { id: mem.seq++, ...row };
+  mem.notes.push(full);
+  return full;
+}
 
 // ---- business accounts -------------------------------------------------------------------------
 export interface AccountRow { id: number; customer_id: string; business_name: string; discount_percent: number; notes: string | null; active: number; created_at: string }

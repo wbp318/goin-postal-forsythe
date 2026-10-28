@@ -23,7 +23,9 @@ export interface Order {
   emailed_at?: string;           // when the label was last emailed from the counter
   staff?: string;         // walk-ups: who typed it in
   voided_at?: string;
+  void_reason?: string;   // required when staff void (T3); goes to the audit log too
   cancelled_at?: string;
+  cancel_reason?: string;
   origin: Address;
   destination: Address;
   parcel: Parcel;

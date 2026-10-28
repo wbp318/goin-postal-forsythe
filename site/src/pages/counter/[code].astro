@@ -3,10 +3,12 @@ export const prerender = false;
 import Base from '../../layouts/Base.astro';
 import { env } from '../../lib/env';
 import { getOrder, orderTotal } from '../../lib/orders';
+import { listNotes } from '../../shipping/store';
 
 // Staff page. Opened by scanning the customer's QR code. Buying or marking printed needs the PIN.
 const order = await getOrder(env, Astro.params.code ?? '');
 if (!order) return new Response('No such order', { status: 404 });
+const notes = await listNotes(env, 'order', order.id);
 ---
 <Base title={`Counter · ${order.id}`}>
   <section class="hero">
@@ -39,10 +41,16 @@ if (!order) return new Response('No such order', { status: 404 });
       {(order.status === 'awaiting_payment' || order.status === 'reserved') && <p><button class="btn small" data-action="cancel" data-confirm="st.confirm.cancel" data-i18n="st.cancelquote">Cancel quote</button></p>}
       <p class="staff-nav">{order.label?.tracking_number && <><a href={`/track?q=${order.id}`} data-i18n="st.o.tracking">Tracking</a> · </>}<a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/accounts" data-i18n="st.nav.accounts">Accounts</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/close" data-i18n="st.nav.close">End of day</a> · <a href="/counter/invoices" data-i18n="st.nav.invoices">Invoices</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a> · <a href="/counter/staff" data-i18n="st.nav.staff">Staff</a></p>
       {order.status === 'printed' && <p><span data-i18n="st.o.printedat">Printed</span> {order.printed_at}.</p>}
-      {order.status === 'voided' && <p><span data-i18n="st.o.voidedat">Label voided</span> {order.voided_at}. <span data-i18n="st.o.refund">Refund the customer by hand if they paid.</span></p>}
-      {order.status === 'cancelled' && <p><span data-i18n="st.o.cancelledat">Quote cancelled</span> {order.cancelled_at}. <span data-i18n="st.o.nothingbought">Nothing was bought.</span></p>}
+      {order.status === 'voided' && <p><span data-i18n="st.o.voidedat">Label voided</span> {order.voided_at}{order.void_reason ? `: ${order.void_reason}` : ''}. <span data-i18n="st.o.refund">Refund the customer by hand if they paid.</span></p>}
+      {order.status === 'cancelled' && <p><span data-i18n="st.o.cancelledat">Quote cancelled</span> {order.cancelled_at}{order.cancel_reason ? `: ${order.cancel_reason}` : ''}. <span data-i18n="st.o.nothingbought">Nothing was bought.</span></p>}
       {order.status === 'awaiting_payment' && <p data-i18n="st.o.notpaid">Not paid online yet. Ask the customer to finish payment, or quote it again here and ring it up on the POS.</p>}
       <p id="msg"></p>
+    </div>
+    <div class="card">
+      <h3 data-i18n="st.n.h3">Notes</h3>
+      <ol class="timeline" id="notes">{notes.map((n) => <li><time>{n.at.slice(0, 16).replace('T', ' ')} · {n.by_name}</time><span>{n.note}</span></li>)}</ol>
+      {!notes.length && <p class="muted" id="nonotes" data-i18n="st.n.none">No notes yet.</p>}
+      <p><input id="note" maxlength="500" data-i18n-ph="st.n.ph" placeholder="Fragile pottery, call before delivery…" /> <button class="btn small kraft" data-addnote data-i18n="st.n.add">Add note</button></p>
     </div>
   </div>
 
@@ -50,12 +58,23 @@ if (!order) return new Response('No such order', { status: 404 });
     const msg = document.getElementById('msg');
     document.querySelectorAll('[data-action]').forEach((b) => b.addEventListener('click', async () => {
       const pin = document.getElementById('pin').value;
-      if (b.dataset.confirm && !window.confirm(window.t(b.dataset.confirm))) return;
+      let reason = '';
+      if (b.dataset.action === 'void' || b.dataset.action === 'cancel') { reason = window.prompt(window.t(b.dataset.action === 'void' ? 'st.n.whyvoid' : 'st.n.whycancel')) || ''; if (!reason.trim()) return; }
+      else if (b.dataset.confirm && !window.confirm(window.t(b.dataset.confirm))) return;
       b.disabled = true;
-      const res = await fetch('/api/counter', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order: id, pin, action: b.dataset.action }) });
+      const res = await fetch('/api/counter', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order: id, pin, action: b.dataset.action, reason }) });
       const j = await res.json();
       if (!res.ok) { msg.textContent = j.error; b.disabled = false; return; }
       location.reload();
+    }));
+    document.querySelectorAll('[data-addnote]').forEach((b) => b.addEventListener('click', async () => {
+      const pin = document.getElementById('pin').value;
+      const note = document.getElementById('note').value;
+      const res = await fetch('/api/notes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin, action: 'add', kind: 'order', target: id, note }) });
+      const j = await res.json();
+      if (!res.ok) { msg.textContent = j.error; return; }
+      const li = document.createElement('li'); const tm = document.createElement('time'); tm.textContent = `${j.note.at.slice(0, 16).replace('T', ' ')} · ${j.note.by_name}`; const sp = document.createElement('span'); sp.textContent = j.note.note; li.append(tm, sp);
+      document.getElementById('notes').prepend(li); document.getElementById('note').value = ''; const nn = document.getElementById('nonotes'); if (nn) nn.remove();
     }));
     document.querySelectorAll('[data-email]').forEach((b) => b.addEventListener('click', async () => {
       const pin = document.getElementById('pin').value;

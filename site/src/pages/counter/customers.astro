@@ -41,6 +41,12 @@ import Base from '../../layouts/Base.astro';
         <p id="dflags" class="muted"></p>
       </div>
       <div class="card">
+        <h3 data-i18n="st.n.h3">Notes</h3>
+        <ol class="timeline" id="cnotes"></ol>
+        <p class="muted hidden" id="cnonotes" data-i18n="st.n.none">No notes yet.</p>
+        <p><input id="cnote" maxlength="500" data-i18n-ph="st.n.ph" placeholder="Fragile pottery, call before delivery…" /> <button type="button" class="btn small kraft" id="caddnote" data-i18n="st.n.add">Add note</button></p>
+      </div>
+      <div class="card">
         <h3 data-i18n="st.c.addresses">Addresses</h3>
         <p class="muted" data-i18n="st.c.addresses.lead">Most recent first. Ship here again fills the walk-up form in the queue.</p>
         <ol class="timeline" id="addresses"></ol>
@@ -130,10 +136,24 @@ import Base from '../../layouts/Base.astro';
           li.querySelectorAll('span')[0].textContent = [d.line_1, d.line_2, `${d.city}, ${d.state} ${d.postal_code}`, d.country_alpha2 !== 'US' ? d.country_alpha2 : ''].filter(Boolean).join(', ');
           addr.appendChild(li);
         }
+        currentCustomer = id;
+        await loadNotes();
         detail.classList.remove('hidden');
         detail.scrollIntoView({ behavior: 'smooth' });
       } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
     }
+    let currentCustomer: string | null = null;
+    async function notesApi(body: Record<string, unknown>) {
+      const res = await fetch('/api/notes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin(), kind: 'customer', target: currentCustomer, ...body }) });
+      const j = await res.json(); if (!res.ok) throw new Error(j.error); return j;
+    }
+    async function loadNotes() {
+      const { notes } = await notesApi({ action: 'list' });
+      const ol = $('cnotes'); ol.innerHTML = '';
+      for (const n of notes) { const li = document.createElement('li'); const tm = document.createElement('time'); tm.textContent = `${fmt(n.at)} · ${n.by_name}`; const sp = document.createElement('span'); sp.textContent = n.note; li.append(tm, sp); ol.appendChild(li); }
+      $('cnonotes').classList.toggle('hidden', !!notes.length);
+    }
+    $('caddnote').addEventListener('click', async () => { try { await notesApi({ action: 'add', note: ($('cnote') as HTMLInputElement).value }); ($('cnote') as HTMLInputElement).value = ''; await loadNotes(); } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; } });
 
     $('export').addEventListener('click', async () => {
       if (!pin()) { msg.className = 'err'; msg.textContent = t('st.pinfirst'); return; }

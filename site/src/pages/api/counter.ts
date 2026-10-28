@@ -16,6 +16,7 @@ import { store } from '../../data/store';
 // action "printed": mark the label as printed in the shop.
 // action "void": the label was bought but the package is not going; void it with the carrier.
 // action "cancel": drop a quote that never got a label (customer changed their mind, or never paid).
+// Both void and cancel need a "reason" in the body; it is saved on the order and in the audit log.
 // action "bill": the order belongs to a business account; buy the label now and put it on the next statement.
 // action "email": send the label and tracking number to an address, for returns and for anyone who
 //                 wants to print at home. Body may carry "email" to set or change the order's address.
@@ -42,11 +43,13 @@ export const POST: APIRoute = async ({ request }) => {
       await logAudit(env, user, 'label.printed', order.id);
       return json({ status: 'printed' });
     }
+    const reason = String(b.reason ?? '').trim().slice(0, 200);
+    if ((b.action === 'void' || b.action === 'cancel') && !reason) return json({ error: 'A reason is needed' }, 400);
     if (b.action === 'void' && (order.status === 'labeled' || order.status === 'printed') && order.label) {
       await voidLabel(env, order.label.id);
-      await saveOrder(env, { ...order, status: 'voided', voided_at: new Date().toISOString() });
+      await saveOrder(env, { ...order, status: 'voided', voided_at: new Date().toISOString(), void_reason: reason });
       await setShipmentStatus(env, order.id, 'voided');
-      await logAudit(env, user, 'label.void', order.id, `${order.rate.carrier} ${order.label.tracking_number ?? ''}, paid $${(order.total ?? order.rate.total_charge).toFixed(2)} via ${order.paid_at ? (order.international || order.source === 'counter' ? 'POS' : 'Stripe') : 'nothing'}`);
+      await logAudit(env, user, 'label.void', order.id, `${reason}. ${order.rate.carrier} ${order.label.tracking_number ?? ''}, paid $${(order.total ?? order.rate.total_charge).toFixed(2)} via ${order.paid_at ? (order.international || order.source === 'counter' ? 'POS' : 'Stripe') : 'nothing'}`);
       return json({ status: 'voided' });
     }
     if (b.action === 'email' && order.label) {
@@ -78,8 +81,8 @@ export const POST: APIRoute = async ({ request }) => {
       return json({ ok: true, email, mock });
     }
     if (b.action === 'cancel' && (order.status === 'awaiting_payment' || order.status === 'reserved')) {
-      await saveOrder(env, { ...order, status: 'cancelled', cancelled_at: new Date().toISOString() });
-      await logAudit(env, user, 'quote.cancel', order.id);
+      await saveOrder(env, { ...order, status: 'cancelled', cancelled_at: new Date().toISOString(), cancel_reason: reason });
+      await logAudit(env, user, 'quote.cancel', order.id, reason);
       return json({ status: 'cancelled' });
     }
     return json({ error: `Cannot ${b.action} an order that is ${order.status}` }, 400);
