@@ -1,0 +1,12 @@
+{
+  "petership_url": "https://goinpostalforsythe.com",
+  "petership_key": "psk_paste_the_key_here",
+  "shop": "your-shop.myshopify.com",
+  "shopify_token": "shpat_paste_the_admin_api_token_here",
+  "service": "cheapest",
+  "default_parcel": { "length_in": 10, "width_in": 8, "height_in": 4, "min_weight_lb": 0.5 },
+  "products": { "EXAMPLE-SKU": { "length_in": 6, "width_in": 6, "height_in": 6, "weight_lb": 1.2 } },
+  "insure_over_usd": 100,
+  "tag": "petership",
+  "dry_run": true
+}

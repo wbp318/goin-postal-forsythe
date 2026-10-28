@@ -73,6 +73,18 @@ const thisMonth = new Date().toISOString().slice(0, 7);
       <p id="nounbilled" class="muted hidden" data-i18n="st.b.nounbilled">Nothing unbilled.</p>
     </div>
     <div class="card">
+      <h3 data-i18n="st.k2.h3">API keys</h3>
+      <p class="muted" data-i18n="st.k2.lead">For the account's own software, a Shopify or Etsy shop: it quotes and buys labels through /api/v1 and the labels land on this account's statement. The key is shown once; copy it then. A webhook address receives tracking changes, signed.</p>
+      <table class="list" id="keys"><thead><tr><th data-i18n="st.k2.th.label">Label</th><th data-i18n="st.k2.th.prefix">Starts with</th><th data-i18n="st.k2.th.webhook">Webhook</th><th data-i18n="st.k2.th.lastused">Last used</th><th data-i18n="st.u.th.active">Active</th><th></th></tr></thead><tbody></tbody></table>
+      <p class="btnrow">
+        <label><span data-i18n="st.k2.th.label">Label</span> <input id="keylabel" maxlength="40" placeholder="Shopify" /></label>
+        <label><span data-i18n="st.k2.webhookurl">Webhook address (optional, https)</span> <input id="keyhook" maxlength="300" placeholder="https://example.com/petership" /></label>
+        <button class="btn small" id="addkey" data-i18n="st.k2.add">Make a key</button>
+      </p>
+      <p id="newkey" class="card hidden"></p>
+      <p class="muted"><a href="https://github.com/wbp318/goin-postal-forsythe/blob/main/shipping-client/api/README.md" target="_blank" rel="noopener" data-i18n="st.k2.docs">API reference and the Shopify connector</a></p>
+    </div>
+    <div class="card">
       <h3 data-i18n="st.b.statements">Statements</h3>
       <table class="list" id="statements"><thead><tr><th data-i18n="st.b.period">Month</th><th data-i18n="st.b.issued">Issued</th><th data-i18n="st.i.th.billed">Amount</th><th data-i18n="st.q.th.status">Status</th><th></th></tr></thead><tbody></tbody></table>
       <p id="nostatements" class="muted hidden" data-i18n="st.b.nostatements">No statements yet.</p>
@@ -132,6 +144,14 @@ const thisMonth = new Date().toISOString().slice(0, 7);
           sb.appendChild(tr);
         }
         $('nostatements').classList.toggle('hidden', !!j.statements.length);
+        const kb = $('keys').querySelector('tbody')!; kb.innerHTML = '';
+        for (const k of j.keys ?? []) {
+          const tr = document.createElement('tr'); if (!k.active) tr.style.opacity = '.55';
+          cell(tr, k.label); cell(tr, k.prefix + '…'); cell(tr, k.webhook_url ?? ''); cell(tr, k.last_used_at ? fmt(k.last_used_at) : t('st.k2.never')); cell(tr, k.active ? t('st.s.yes') : t('st.s.no'));
+          const td = cell(tr, '');
+          if (k.active) { const b = document.createElement('button'); b.className = 'btn small kraft'; b.textContent = t('st.k2.revoke'); b.addEventListener('click', async () => { if (!window.confirm(tf('st.k2.confirm', { label: k.label }))) return; try { await api({ action: 'revokekey', id, key_id: k.id }); open(id); } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; } }); td.appendChild(b); }
+          kb.appendChild(tr);
+        }
         $('detail').classList.remove('hidden'); $('detail').scrollIntoView({ behavior: 'smooth' });
       } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
     }
@@ -145,6 +165,16 @@ const thisMonth = new Date().toISOString().slice(0, 7);
       if (!window.confirm(tf('st.b.confirm', { name: current.account.business_name, period }))) return;
       try { const j = await api({ action: 'statement', id: current.account.id, period }); msg.className = ''; msg.textContent = tf('st.b.issued.msg', { total: usd(j.statement.total), email: j.emailed ? t('st.b.emailed') : t('st.b.noemail'), stripe: j.stripe ? t('st.b.stripeyes') : t('st.b.stripeno') }); open(current.account.id); load(); }
       catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    });
+    $('addkey').addEventListener('click', async () => {
+      if (!current) return;
+      try {
+        const j = await api({ action: 'addkey', id: current.account.id, label: ($('keylabel') as HTMLInputElement).value, webhook_url: ($('keyhook') as HTMLInputElement).value });
+        const el = $('newkey'); el.classList.remove('hidden');
+        el.textContent = tf('st.k2.shown', { key: j.key }) + (j.webhook_secret ? ' ' + tf('st.k2.secret', { secret: j.webhook_secret }) : '');
+        ($('keylabel') as HTMLInputElement).value = ''; ($('keyhook') as HTMLInputElement).value = '';
+        open(current.account.id);
+      } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
     });
     // customer search for the add form
     let timer: any = null;

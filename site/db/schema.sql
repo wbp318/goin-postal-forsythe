@@ -265,3 +265,18 @@ CREATE TABLE IF NOT EXISTS print_failures (
   tries INTEGER NOT NULL DEFAULT 0,
   at TEXT NOT NULL
 );
+
+-- API keys for business accounts (the public API under /api/v1). The key itself is shown once and kept hashed.
+CREATE TABLE IF NOT EXISTS api_keys (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  account_id INTEGER NOT NULL REFERENCES accounts(id),
+  label TEXT NOT NULL,                 -- "Shopify", "warehouse laptop"
+  prefix TEXT NOT NULL,                -- first characters, to tell keys apart on the page
+  key_hash TEXT NOT NULL UNIQUE,
+  webhook_url TEXT,
+  webhook_secret TEXT,
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL,
+  last_used_at TEXT
+);
+CREATE INDEX IF NOT EXISTS api_keys_account ON api_keys(account_id, active);

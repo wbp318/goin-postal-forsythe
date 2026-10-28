@@ -85,8 +85,51 @@ const mem = {
   notes: [] as NoteRow[],
   printFailures: new Map<number, PrintFailure>(),
   heartbeats: new Map<string, AgentHeartbeat>(),
+  apiKeys: [] as ApiKeyRow[],
   seq: 1,
 };
+
+// ---- API keys (public API) -----------------------------------------------------------------------
+export interface ApiKeyRow { id: number; account_id: number; label: string; prefix: string; key_hash: string; webhook_url: string | null; webhook_secret: string | null; active: number; created_at: string; last_used_at: string | null }
+
+export async function addApiKey(env: Env, k: { account_id: number; label: string; prefix: string; key_hash: string; webhook_url: string | null; webhook_secret: string | null }): Promise<ApiKeyRow> {
+  const row = { ...k, active: 1, created_at: now(), last_used_at: null };
+  if (env.DB) {
+    const r = await env.DB.prepare('INSERT INTO api_keys (account_id, label, prefix, key_hash, webhook_url, webhook_secret, active, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, 1, ?7) RETURNING id').bind(row.account_id, row.label, row.prefix, row.key_hash, row.webhook_url, row.webhook_secret, row.created_at).first<{ id: number }>();
+    return { id: r!.id, ...row };
+  }
+  const full = { id: mem.seq++, ...row };
+  mem.apiKeys.push(full);
+  return full;
+}
+export async function listApiKeys(env: Env, accountId: number): Promise<Omit<ApiKeyRow, 'key_hash' | 'webhook_secret'>[]> {
+  const strip = ({ key_hash, webhook_secret, ...r }: ApiKeyRow) => r;
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM api_keys WHERE account_id = ?1 ORDER BY id DESC').bind(accountId).all<ApiKeyRow>()).results.map(strip);
+  return mem.apiKeys.filter((k) => k.account_id === accountId).map(strip).reverse();
+}
+export async function findApiKeyByHash(env: Env, hash: string): Promise<ApiKeyRow | null> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM api_keys WHERE key_hash = ?1').bind(hash).first<ApiKeyRow>()) ?? null;
+  return mem.apiKeys.find((k) => k.key_hash === hash) ?? null;
+}
+export async function touchApiKey(env: Env, id: number) {
+  if (env.DB) { await env.DB.prepare('UPDATE api_keys SET last_used_at = ?2 WHERE id = ?1').bind(id, now()).run(); return; }
+  const k = mem.apiKeys.find((x) => x.id === id); if (k) k.last_used_at = now();
+}
+export async function revokeApiKey(env: Env, accountId: number, id: number): Promise<boolean> {
+  if (env.DB) { const r = await env.DB.prepare('UPDATE api_keys SET active = 0 WHERE id = ?1 AND account_id = ?2 AND active = 1').bind(id, accountId).run(); return (r.meta.changes ?? 0) > 0; }
+  const k = mem.apiKeys.find((x) => x.id === id && x.account_id === accountId && x.active); if (!k) return false; k.active = 0; return true;
+}
+/** Keys with a webhook on the account a shipment is billed to. */
+export async function listWebhookKeys(env: Env, shipmentId: string): Promise<ApiKeyRow[]> {
+  if (env.DB) return (await env.DB.prepare('SELECT k.* FROM api_keys k JOIN shipment_billing b ON b.account_id = k.account_id WHERE b.shipment_id = ?1 AND k.active = 1 AND k.webhook_url IS NOT NULL').bind(shipmentId).all<ApiKeyRow>()).results;
+  const b = mem.billing.get(shipmentId); if (!b) return [];
+  return mem.apiKeys.filter((k) => k.account_id === b.account_id && k.active && k.webhook_url);
+}
+/** Shipments billed to an account, newest first, optionally only those created since an ISO time. */
+export async function shipmentsForAccount(env: Env, accountId: number, since?: string): Promise<ShipmentRow[]> {
+  if (env.DB) return (await env.DB.prepare(`SELECT s.* FROM shipments s JOIN shipment_billing b ON b.shipment_id = s.id WHERE b.account_id = ?1 ${since ? 'AND s.created_at >= ?2' : ''} ORDER BY s.created_at DESC LIMIT 500`).bind(...(since ? [accountId, since] : [accountId])).all<ShipmentRow>()).results;
+  return [...mem.billing].filter(([, b]) => b.account_id === accountId).map(([id]) => mem.shipments.get(id)!).filter((s) => s && (!since || s.created_at >= since)).sort((a, b) => b.created_at.localeCompare(a.created_at));
+}
 
 // ---- printer agent: failures and heartbeat -----------------------------------------------------
 export interface PrintFailure { job_id: number; error: string | null; tries: number; at: string; kind?: string; shipment_id?: string | null; queued_at?: string }

@@ -5,6 +5,7 @@
 import { track } from './engine';
 import { openShipments, addTrackingEvents, touchShipment } from './store';
 import { notifyEvents } from './notify';
+import { deliverWebhooks } from '../lib/apikeys';
 
 export const REFRESH_AFTER_MS = 15 * 60_000;
 
@@ -24,6 +25,7 @@ export async function pollTracking(env: Env, limit = 50): Promise<PollResult> {
         out.updated++;
         const sent = await notifyEvents(env, s, added).catch((e) => { out.errors.push({ id: s.id, message: `notify: ${e.message}` }); return []; });
         out.notified += sent.length;
+        await deliverWebhooks(env, s, added).catch((e) => out.errors.push({ id: s.id, message: `webhook: ${e.message}` }));
       }
       await touchShipment(env, s.id);
     } catch (e: any) {

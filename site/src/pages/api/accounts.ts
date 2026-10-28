@@ -3,7 +3,8 @@ import type { APIRoute } from 'astro';
 import { env } from '../../lib/env';
 import { json } from '../../lib/validate';
 import { authenticate, CAN } from '../../lib/auth';
-import { listAccounts, getAccount, addAccount, updateAccount, accountOpenShipments, saveStatement, listStatements, markStatementPaid, getCustomer, searchCustomers, upsertCustomer, logAudit } from '../../shipping/store';
+import { listAccounts, getAccount, addAccount, updateAccount, accountOpenShipments, saveStatement, listStatements, markStatementPaid, getCustomer, searchCustomers, upsertCustomer, logAudit, addApiKey, listApiKeys, revokeApiKey } from '../../shipping/store';
+import { newApiKey, newWebhookSecret } from '../../lib/apikeys';
 import { createInvoice } from '../../lib/stripe';
 import { sendEmail } from '../../shipping/notify';
 import { store } from '../../data/store';
@@ -26,7 +27,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (b.action === 'get') {
       const a = await getAccount(env, Number(b.id));
       if (!a) return json({ error: 'No such account' }, 404);
-      return json({ account: a, customer: await getCustomer(env, a.customer_id), unbilled: await accountOpenShipments(env, a), statements: await listStatements(env, a.id) });
+      return json({ account: a, customer: await getCustomer(env, a.customer_id), unbilled: await accountOpenShipments(env, a), statements: await listStatements(env, a.id), keys: await listApiKeys(env, a.id) });
     }
     if (!CAN.audit(user)) return json({ error: 'Business accounts are managed by managers and owners' }, 403);
     if (b.action === 'add') {
@@ -86,8 +87,27 @@ export const POST: APIRoute = async ({ request }) => {
       return json({ ok: true });
     }
     if (b.action === 'customers') return json(await searchCustomers(env, String(b.q ?? '')));
+    if (b.action === 'addkey') {
+      const a = await getAccount(env, Number(b.id));
+      if (!a) return json({ error: 'No such account' }, 404);
+      const label = String(b.label ?? '').trim().slice(0, 40) || 'API key';
+      const webhook_url = String(b.webhook_url ?? '').trim().slice(0, 300) || null;
+      if (webhook_url && !/^https:\/\//.test(webhook_url)) throw new Error('The webhook address must start with https://');
+      const k = await newApiKey();
+      const secret = webhook_url ? newWebhookSecret() : null;
+      const row = await addApiKey(env, { account_id: a.id, label, prefix: k.prefix, key_hash: k.hash, webhook_url, webhook_secret: secret });
+      await logAudit(env, user, 'account.apikey.add', String(a.id), `${a.business_name}: ${label}${webhook_url ? ', webhook' : ''}`);
+      // The plain key and the webhook secret are shown this once and never again.
+      return json({ ok: true, key: k.plain, webhook_secret: secret, id: row.id, keys: await listApiKeys(env, a.id) });
+    }
+    if (b.action === 'revokekey') {
+      const ok = await revokeApiKey(env, Number(b.id), Number(b.key_id));
+      if (!ok) return json({ error: 'No such key' }, 404);
+      await logAudit(env, user, 'account.apikey.revoke', String(b.id), `key ${b.key_id}`);
+      return json({ ok: true, keys: await listApiKeys(env, Number(b.id)) });
+    }
     return json({ error: 'Unknown action' }, 400);
   } catch (e: any) {
-    return json({ error: e.message }, /needed|must be|already has|Nothing to bill|Period/.test(e.message ?? '') ? 400 : 500);
+    return json({ error: e.message }, /needed|must be|already has|Nothing to bill|Period|https/.test(e.message ?? '') ? 400 : 500);
   }
 };
