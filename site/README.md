@@ -132,7 +132,7 @@ Every service, its price, and monthly estimates at three volumes are in [`costs/
 
 ## Languages
 
-Every customer page can be read in 13 languages from the picker in the header: English, Spanish as spoken in the Dominican Republic, Vietnamese, Lao, Khmer (Cambodian), Korean, Mandarin (Simplified Chinese), Cantonese (Traditional Chinese), Japanese, Thai, Brazilian Portuguese, Dutch and Afrikaans. The choice is remembered on the device and the first visit follows the browser's language.
+Every page, customer and staff, can be read in 14 languages from the picker in the header: English, Spanish as spoken in the Dominican Republic, Vietnamese, Lao, Khmer (Cambodian), Korean, Mandarin (Simplified Chinese), Cantonese (Traditional Chinese), Japanese, Thai, Brazilian Portuguese, Dutch, Afrikaans and French as spoken in Quebec. The choice is remembered on the device and the first visit follows the browser's language.
 
 ```mermaid
 flowchart LR
@@ -143,7 +143,7 @@ flowchart LR
   J["Page scripts call t('key')<br/>for strings they build"] --> B
 ```
 
-Pages are built once in English. In the browser, every element tagged `data-i18n="key"` gets its text swapped from `src/i18n/strings.ts`, and page scripts call `t('key')` for the strings they build themselves, such as the Pay button and the rate list. Adding a language is one new column in that file plus one entry in `LANGS`. Adding a string is one new row. The translations were written by the AI assistant and should be checked by native speakers (issue 10). Staff counter pages stay in English.
+Pages are built once in English. In the browser, every element tagged `data-i18n="key"` gets its text swapped from `src/i18n/strings.ts` (customer strings) and `src/i18n/staff.ts`, `staff2.ts`, `staff3.ts` (the `st.` keys for the counter pages), and page scripts call `t('key')` for the strings they build themselves, or `tf('key', { id })` when the string has a slot. Adding a language is one new column in each file plus one entry in `LANGS`. Adding a string is one new row. The staff tables re-render on the `langchange` event, so switching the picker mid-shift changes the queue in place. Printed receipts, the thermal label and the label email stay in English because they leave the building. The translations were written by the AI assistant and should be checked by native speakers (issue 10).
 
 ## Business card designer
 

@@ -2,7 +2,17 @@
 
 Working list for the Forsythe store's marketing kit. Updated as each item is finished.
 
-_Last updated: Oct 26, 2026_
+_Last updated: Oct 28, 2026_
+
+## Where this is all going
+
+Three goals sit above every item in this file. They are why the detail matters.
+
+| Goal | What it means for the work |
+|---|---|
+| **PeterShip becomes the best shipping client on the market, and is sold to a company like Auctane or Shopify.** | Auctane owns ShipStation, ShipEngine, Stamps.com and Packlink; Shopify ships through Shopify Shipping and bought Deliverr. Either buys software that already runs in real stores, with real volume, clean data and no vendor lock-in. So PeterShip is built to be owned outright (no Easyship dependency once the carriers are live), to run multi-store from day one in its design, to keep every shipment in a database we control, and to be documented well enough that an acquirer's engineers can read it in a weekend. Every feature is judged against ShipStation, Pirate Ship, Rate Pro and PostalMate, and should beat them, not match them. |
+| **Goin' Postal Forsythe becomes the model store for every other Goin' Postal.** | Everything here is written so another franchisee could copy it: the ad kit, the website, the counter screens, the printer agent, the go-live list. The for-other-stores plan prices it per store. GP Brands' answer on running outside Rate Pro decides how fast; the work does not wait for it. |
+| **A second store in West Carroll Parish, Louisiana.** | Oak Grove is the parish seat (about 1,500 people, roughly 10,000 in the parish), 45 minutes from Monroe, with no branded pack-and-ship store; the nearest UPS Store and the Forsythe store are both in Monroe. The research method in `research/` (1-mile and 5-mile competitor radius, carrier counters, daytime population, rent) gets applied to Oak Grove, Epps, Forest, Kilbourne and Pioneer as item 51, with the same ranked table the state files use. William lives next door in East Carroll Parish, so site visits are cheap. |
 
 ## Status
 
@@ -76,7 +86,8 @@ New ideas for the Forsythe store itself, not just its ads. Each one is something
 | 44f | Phase 6: switch over | Run beside Easyship a month, compare, turn Easyship off | ⏳ Not started |
 | 43 | Prices match the counter | Retail rules mirrored from GP Rate Pro sit between carrier cost and the price shown. Vendor names hidden from customers. Edited at `/counter/rules` since v1.24.0, so the numbers can be typed in from Rate Pro's screens without a deploy | ⏸ Screen built; waiting on the numbers from Rate Pro ([issue 11](https://github.com/wbp318/goin-postal-forsythe/issues/11)) |
 | 42 | Easy to read for older customers | Larger type, big tap targets, underlined links, thick focus ring, text size switch (5 steps) and high contrast switch (on by default) remembered per device. No features removed | ✅ Done |
-| 41 | Site in 13 languages | Header picker: English, Dominican Spanish, Vietnamese, Lao, Khmer, Korean, Mandarin, Cantonese, Japanese, Thai, Brazilian Portuguese, Dutch, Afrikaans. Remembered per device | ✅ Built. Needs native-speaker review ([issue 10](https://github.com/wbp318/goin-postal-forsythe/issues/10)) |
+| 41 | Site in 14 languages | Header picker: English, Dominican Spanish, Vietnamese, Lao, Khmer, Korean, Mandarin, Cantonese, Japanese, Thai, Brazilian Portuguese, Dutch, Afrikaans and, since Oct 28, Quebec French. Remembered per device. Since v1.27.0 the staff counter pages switch too | ✅ Built. Needs native-speaker review ([issue 10](https://github.com/wbp318/goin-postal-forsythe/issues/10)) |
+| 51 | West Carroll Parish store site research | The `research/` method applied to Oak Grove, Epps, Forest, Kilbourne and Pioneer: competitor radius, carrier counters, daytime population, rent, a ranked table and a map, for the second store | ⏳ Not started |
 | 40 | Business card designer | A Vistaprint-style editor inside the website: gallery of 12 layouts in 12 colors, click text on the card to edit, drag, resize, add text and logos, front and back, undo, pay by card on Stripe when ordering, pick up in the shop. Built in the browser with no outside design service | ✅ Built. Card prices are placeholders ([issue 9](https://github.com/wbp318/goin-postal-forsythe/issues/9)) |
 
 ## Round 3: where to start
@@ -267,12 +278,12 @@ What gets built next, in order. None of it needs carrier keys.
 | N3 | Retail rules editor (#44b, #43) | Markup rules moved from `ratepro.json` into the `retail_rules` table with a staff screen to edit them, so Rin's prices change without a deploy | ✅ Done Oct 28, v1.24.1 |
 | N4 | Drop-off receipt printing (#44e) | Receipt through the print queue when a drop-off is captured | ✅ Done Oct 28, v1.25.0 |
 | N5 | Returns at the counter (#44e) | A return label for a package coming back to a business customer or to us: quote with the store as destination, pay on the POS, print or email the label | ✅ Done Oct 28, v1.26.0 |
-| N7 | Staff pages in every language (#41, #44e) | The header language picker on every `/counter/` page, same languages as the website plus Quebec French, which is added to the website too | ⏳ Next |
-| N6 | Insurance and packaging add-ons (#44e, #45) | Declared value and carrier insurance on the quote, plus boxes and packing as line items, so the online total and the POS total match | ⏳ After N7 |
+| N7 | Staff pages in every language (#41, #44e) | The header language picker on every `/counter/` page, same languages as the website plus Quebec French, which is added to the website too | ✅ Done Oct 28, v1.27.0 |
+| N6 | Insurance and packaging add-ons (#44e, #45) | Declared value and carrier insurance on the quote, plus boxes and packing as line items, so the online total and the POS total match | ⏳ Next |
 
 ```mermaid
 flowchart LR
-  N1["N1 Quote queue ✅"] --> N2["N2 Customer lookup ✅"] --> N3["N3 Retail rules editor ✅"] --> N4["N4 Drop-off receipt ✅"] --> N5["N5 Returns ✅"] --> N7["N7 Staff pages in 14 languages"] --> N6["N6 Insurance and add-ons"]
+  N1["N1 Quote queue ✅"] --> N2["N2 Customer lookup ✅"] --> N3["N3 Retail rules editor ✅"] --> N4["N4 Drop-off receipt ✅"] --> N5["N5 Returns ✅"] --> N7["N7 Staff pages in 14 languages ✅"] --> N6["N6 Insurance and add-ons"]
   N3 -.->|"after the export, issue 11"| R["#43 prices match Rate Pro"]
   classDef store fill:#f2b705,stroke:#3b2c00,color:#3b2c00
   classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
@@ -342,3 +353,4 @@ flowchart LR
 - **Oct 28:** N3 done, v1.24.0 and v1.24.1. `/counter/rules`: the markup rules live in the `retail_rules` table and are edited by the owners with a preview against a real quote; the JSON file is only the starting point. Rate cache now stores cost, so a save shows on the next quote. Optional `OWNER_PIN`. Also: a chart legend before the first Mermaid chart in every README, and the PeterShip guide's clone section now walks through reaching the right folder on Windows and Mac. Next is N4, drop-off receipt printing.
 - **Oct 28:** N4 done, v1.25.0. Drop-off receipts: a 4 by 6 slip with the tracking barcode through the print queue when a drop-off is scanned, a text copy to the customer's mobile, Print again and Text again, and a browser-printable copy at `/counter/receipt/ID`. The first next-up table is complete; N5 returns and N6 insurance and add-ons added.
 - **Oct 28:** N5 done, v1.26.0. Return mode on the walk-up form: sender's address typed in, package comes to the store or another address, paid on the POS, Email label sends the label and instructions to the sender. Email label on every bought label. N7 added next: the language picker on the staff pages, with Quebec French added everywhere.
+- **Oct 28:** N7 done, v1.27.0. Quebec French is the 14th language on every customer page, and all nine staff counter pages now follow the header picker too: about 290 staff strings in 14 languages in `site/src/i18n/staff*.ts`, dynamic messages through `t()` and `tf()`, tables re-render on a language change. Printed receipts and the label email stay in English. Goals section added at the top of this file (sell PeterShip to an Auctane or a Shopify, Forsythe as the model Goin' Postal, a second store in West Carroll Parish); item 51 added for the West Carroll site research. LICENSE now states the repository start date, October 12, 2026. The engine now treats Easyship strictly as a bridge, and every README has a chart legend.

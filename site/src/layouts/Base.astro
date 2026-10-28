@@ -50,7 +50,8 @@ const { title, description = "Shipping, packing, mailboxes and printing at 1800 
       </div>
     </footer>
     <script>
-      import { apply, setLang, type Lang } from '../i18n';
+      import { apply, setLang, t, tf, type Lang } from '../i18n';
+      (window as any).t = t; (window as any).tf = tf; // for the inline scripts on the order pages
       apply();
       // Text size and contrast, remembered on this device.
       const root = document.documentElement;

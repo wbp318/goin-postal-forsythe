@@ -11,32 +11,32 @@ if (!order) return new Response('No such order', { status: 404 });
 <Base title={`Counter · ${order.id}`}>
   <section class="hero">
     <h1>{order.id}</h1>
-    <p class="lead">Status: <strong>{order.status.replace('_', ' ')}</strong> · {order.international ? 'International, ring up on the POS' : order.source === 'counter' ? 'Walk-up, ring up on the POS' : 'Domestic, paid online'}{order.name ? ` · ${order.name}` : ''}</p>
+    <p class="lead"><span data-i18n="st.o.status">Status:</span> <strong data-i18n={`st.status.${order.status}`}>{order.status.replace('_', ' ')}</strong> · <span data-i18n={order.international ? 'st.o.intl' : order.source === 'counter' ? 'st.o.walkup' : 'st.o.domestic'}>{order.international ? 'International, ring up on the POS' : order.source === 'counter' ? 'Walk-up, ring up on the POS' : 'Domestic, paid online'}</span>{order.name ? ` · ${order.name}` : ''}</p>
   </section>
 
   <div class="grid">
     <div class="card">
       <h3>{order.rate.service} · ${order.rate.total_charge.toFixed(2)}</h3>
-      {order.kind === 'return' && <p><strong>Return label.</strong> From {order.origin.contact_name}, {order.origin.city}, {order.origin.state} {order.origin.postal_code}. Email it to the sender below.</p>}
-      <p><strong>To:</strong> {order.destination.contact_name}<br/>{order.destination.line_1}{order.destination.line_2 ? `, ${order.destination.line_2}` : ''}<br/>{order.destination.city}, {order.destination.state} {order.destination.postal_code} {order.destination.country_alpha2}</p>
-      <p><strong>Parcel:</strong> {order.parcel.weight_lb} lb · {order.parcel.length_in}×{order.parcel.width_in}×{order.parcel.height_in} in · {order.parcel.description || 'no description'} · ${order.parcel.value_usd}</p>
-      <p><strong>Customer:</strong> {order.email}</p>
+      {order.kind === 'return' && <p><strong data-i18n="st.o.return">Return label.</strong> <span data-i18n="st.o.return.from">From</span> {order.origin.contact_name}, {order.origin.city}, {order.origin.state} {order.origin.postal_code}. <span data-i18n="st.o.return.email">Email it to the sender below.</span></p>}
+      <p><strong data-i18n="st.o.to">To:</strong> {order.destination.contact_name}<br/>{order.destination.line_1}{order.destination.line_2 ? `, ${order.destination.line_2}` : ''}<br/>{order.destination.city}, {order.destination.state} {order.destination.postal_code} {order.destination.country_alpha2}</p>
+      <p><strong data-i18n="st.o.parcel">Parcel:</strong> {order.parcel.weight_lb} lb · {order.parcel.length_in}×{order.parcel.width_in}×{order.parcel.height_in} in · {order.parcel.description ? order.parcel.description : <span data-i18n="st.o.nodesc">no description</span>} · ${order.parcel.value_usd}</p>
+      <p><strong data-i18n="st.o.customer">Customer:</strong> {order.email}</p>
     </div>
 
     <div class="card">
-      <label>Staff PIN <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
-      {order.status === 'reserved' && <p><button class="btn" data-action="paid">Rung up on the POS. Buy label</button></p>}
-      {order.label?.label_url && <p><a class="btn" href={order.label.label_url} target="_blank" rel="noopener">Open label to print</a></p>}
-      {order.label && <p><button class="btn" data-print="counter">Print at the counter</button> <span class="muted">sends it to the label printer</span></p>}
-      {order.label && <p><label>Email the label to <input id="email" type="email" value={order.email} placeholder="name@example.com" /></label> <button class="btn kraft" data-email>Email label</button>{order.emailed_at && <span class="muted"> last sent {order.emailed_at}</span>}</p>}
-      {order.status === 'labeled' && <p><button class="btn kraft" data-action="printed">Mark printed</button></p>}
-      {(order.status === 'labeled' || order.status === 'printed') && <p><button class="btn small" data-action="void" data-confirm="Void this label with the carrier? If the customer paid, refund them on the POS or in Stripe by hand.">Void label</button></p>}
-      {(order.status === 'awaiting_payment' || order.status === 'reserved') && <p><button class="btn small" data-action="cancel" data-confirm="Drop this quote? Nothing has been bought.">Cancel quote</button></p>}
-      <p class="staff-nav">{order.label?.tracking_number && <><a href={`/track?q=${order.id}`}>Tracking</a> · </>}<a href="/counter/queue">Queue</a> · <a href="/counter/customers">Customers</a> · <a href="/counter/dropoff">Drop-offs</a> · <a href="/counter/exceptions">Exceptions</a> · <a href="/counter/reports">Reports</a> · <a href="/counter/rules">Prices</a></p>
-      {order.status === 'printed' && <p>Printed {order.printed_at}.</p>}
-      {order.status === 'voided' && <p>Label voided {order.voided_at}. Refund the customer by hand if they paid.</p>}
-      {order.status === 'cancelled' && <p>Quote cancelled {order.cancelled_at}. Nothing was bought.</p>}
-      {order.status === 'awaiting_payment' && <p>Not paid online yet. Ask the customer to finish payment, or quote it again here and ring it up on the POS.</p>}
+      <label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
+      {order.status === 'reserved' && <p><button class="btn" data-action="paid" data-i18n="st.buy.long">Rung up on the POS. Buy label</button></p>}
+      {order.label?.label_url && <p><a class="btn" href={order.label.label_url} target="_blank" rel="noopener" data-i18n="st.openlabel">Open label to print</a></p>}
+      {order.label && <p><button class="btn" data-print="counter" data-i18n="st.print">Print at the counter</button> <span class="muted" data-i18n="st.sendsprinter">sends it to the label printer</span></p>}
+      {order.label && <p><label><span data-i18n="st.emailto">Email the label to</span> <input id="email" type="email" value={order.email} placeholder="name@example.com" /></label> <button class="btn kraft" data-email data-i18n="st.emaillabel">Email label</button>{order.emailed_at && <span class="muted"> <span data-i18n="st.lastsent">last sent</span> {order.emailed_at}</span>}</p>}
+      {order.status === 'labeled' && <p><button class="btn kraft" data-action="printed" data-i18n="st.printed">Mark printed</button></p>}
+      {(order.status === 'labeled' || order.status === 'printed') && <p><button class="btn small" data-action="void" data-confirm="st.confirm.void" data-i18n="st.voidlabel">Void label</button></p>}
+      {(order.status === 'awaiting_payment' || order.status === 'reserved') && <p><button class="btn small" data-action="cancel" data-confirm="st.confirm.cancel" data-i18n="st.cancelquote">Cancel quote</button></p>}
+      <p class="staff-nav">{order.label?.tracking_number && <><a href={`/track?q=${order.id}`} data-i18n="st.o.tracking">Tracking</a> · </>}<a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a></p>
+      {order.status === 'printed' && <p><span data-i18n="st.o.printedat">Printed</span> {order.printed_at}.</p>}
+      {order.status === 'voided' && <p><span data-i18n="st.o.voidedat">Label voided</span> {order.voided_at}. <span data-i18n="st.o.refund">Refund the customer by hand if they paid.</span></p>}
+      {order.status === 'cancelled' && <p><span data-i18n="st.o.cancelledat">Quote cancelled</span> {order.cancelled_at}. <span data-i18n="st.o.nothingbought">Nothing was bought.</span></p>}
+      {order.status === 'awaiting_payment' && <p data-i18n="st.o.notpaid">Not paid online yet. Ask the customer to finish payment, or quote it again here and ring it up on the POS.</p>}
       <p id="msg"></p>
     </div>
   </div>
@@ -45,7 +45,7 @@ if (!order) return new Response('No such order', { status: 404 });
     const msg = document.getElementById('msg');
     document.querySelectorAll('[data-action]').forEach((b) => b.addEventListener('click', async () => {
       const pin = document.getElementById('pin').value;
-      if (b.dataset.confirm && !window.confirm(b.dataset.confirm)) return;
+      if (b.dataset.confirm && !window.confirm(window.t(b.dataset.confirm))) return;
       b.disabled = true;
       const res = await fetch('/api/counter', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order: id, pin, action: b.dataset.action }) });
       const j = await res.json();
@@ -59,7 +59,7 @@ if (!order) return new Response('No such order', { status: 404 });
       const res = await fetch('/api/counter', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order: id, pin, action: 'email', email }) });
       const j = await res.json();
       b.disabled = false;
-      msg.textContent = res.ok ? (j.mock ? `Label email logged for ${j.email} (no Resend key yet).` : `Label emailed to ${j.email}.`) : j.error;
+      msg.textContent = res.ok ? window.tf(j.mock ? 'st.o.emaillogged' : 'st.o.emailed', { email: j.email }) : j.error;
     }));
     document.querySelectorAll('[data-print]').forEach((b) => b.addEventListener('click', async () => {
       const pin = document.getElementById('pin').value;
@@ -68,7 +68,7 @@ if (!order) return new Response('No such order', { status: 404 });
       const j = await res.json();
       b.disabled = false;
       if (!res.ok) { msg.textContent = j.error; return; }
-      msg.textContent = j.agent ? `Queued for the ${b.dataset.print} printer (${j.kind === 'label_zpl' ? 'thermal' : 'PDF'}).` : 'Queued, but no printer agent is set up yet. Use "Open label to print" for now.';
+      msg.textContent = j.agent ? window.tf('st.o.queuedkind', { printer: b.dataset.print, kind: j.kind === 'label_zpl' ? window.t('st.o.thermal') : 'PDF' }) : window.t('st.noagent');
     }));
   </script>
 </Base>

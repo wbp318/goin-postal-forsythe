@@ -8,29 +8,29 @@ import Base from '../../layouts/Base.astro';
 ---
 <Base title="Counter · Customers">
   <section class="hero">
-    <h1>Customers</h1>
-    <p class="staff-nav">Staff: <a href="/counter/queue">Queue</a> · <a href="/counter/customers">Customers</a> · <a href="/counter/dropoff">Drop-offs</a> · <a href="/counter/exceptions">Exceptions</a> · <a href="/counter/reports">Reports</a> · <a href="/counter/rules">Prices</a></p>
-    <p class="lead">Who has shipped with us. Search by name, phone or email, see their history and addresses, and ship to the same place again in two taps.</p>
+    <h1 data-i18n="st.c.h1">Customers</h1>
+    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a></p>
+    <p class="lead" data-i18n="st.c.lead">Who has shipped with us. Search by name, phone or email, see their history and addresses, and ship to the same place again in two taps.</p>
   </section>
 
   <div class="card">
     <form id="search" class="btnrow" autocomplete="off">
-      <label>Staff PIN <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
-      <label>Name, phone or email <input id="q" autofocus minlength="2" placeholder="Jane, 318 555, jane@" /></label>
-      <button class="btn" type="submit">Search</button>
-      <button class="btn kraft" type="button" id="export">Download CSV of everyone</button>
+      <label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
+      <label><span data-i18n="st.c.search.label">Name, phone or email</span> <input id="q" autofocus minlength="2" placeholder="Jane, 318 555, jane@" /></label>
+      <button class="btn" type="submit" data-i18n="st.c.search">Search</button>
+      <button class="btn kraft" type="button" id="export" data-i18n="st.c.export">Download CSV of everyone</button>
     </form>
     <p id="msg" role="alert"></p>
     <table class="list hidden" id="table">
-      <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Shipments</th><th>Last seen</th><th></th></tr></thead>
+      <thead><tr><th data-i18n="st.c.th.name">Name</th><th data-i18n="st.c.th.phone">Phone</th><th data-i18n="st.c.th.email">Email</th><th data-i18n="st.c.th.shipments">Shipments</th><th data-i18n="st.c.th.lastseen">Last seen</th><th></th></tr></thead>
       <tbody></tbody>
     </table>
     <div id="unlinkedwrap" class="hidden">
-      <h3>Walk-ups by that name with no phone or email</h3>
-      <p class="muted">These cannot be tied to one person, so they are listed as they were typed in.</p>
-      <table class="list" id="unlinked"><thead><tr><th>When</th><th>Code</th><th>Name</th><th>To</th><th>Service</th><th>Status</th></tr></thead><tbody></tbody></table>
+      <h3 data-i18n="st.c.unlinked.h3">Walk-ups by that name with no phone or email</h3>
+      <p class="muted" data-i18n="st.c.unlinked.lead">These cannot be tied to one person, so they are listed as they were typed in.</p>
+      <table class="list" id="unlinked"><thead><tr><th data-i18n="st.q.th.when">When</th><th data-i18n="st.q.th.code">Code</th><th data-i18n="st.c.th.name">Name</th><th data-i18n="st.q.th.to">To</th><th data-i18n="st.q.th.service">Service</th><th data-i18n="st.q.th.status">Status</th></tr></thead><tbody></tbody></table>
     </div>
-    <p id="empty" class="muted hidden">No one matches.</p>
+    <p id="empty" class="muted hidden" data-i18n="st.c.nomatch">No one matches.</p>
   </div>
 
   <div id="detail" class="hidden">
@@ -41,25 +41,26 @@ import Base from '../../layouts/Base.astro';
         <p id="dflags" class="muted"></p>
       </div>
       <div class="card">
-        <h3>Addresses</h3>
-        <p class="muted">Most recent first. Ship here again fills the walk-up form in the queue.</p>
+        <h3 data-i18n="st.c.addresses">Addresses</h3>
+        <p class="muted" data-i18n="st.c.addresses.lead">Most recent first. Ship here again fills the walk-up form in the queue.</p>
         <ol class="timeline" id="addresses"></ol>
       </div>
     </div>
     <div class="card">
-      <h3>Shipments</h3>
-      <table class="list" id="history"><thead><tr><th>When</th><th>Code</th><th>To</th><th>Service</th><th>Paid</th><th>Status</th><th></th></tr></thead><tbody></tbody></table>
+      <h3 data-i18n="st.c.shipments">Shipments</h3>
+      <table class="list" id="history"><thead><tr><th data-i18n="st.q.th.when">When</th><th data-i18n="st.q.th.code">Code</th><th data-i18n="st.q.th.to">To</th><th data-i18n="st.q.th.service">Service</th><th data-i18n="st.c.th.paid">Paid</th><th data-i18n="st.q.th.status">Status</th><th></th></tr></thead><tbody></tbody></table>
     </div>
   </div>
 
   <script>
+    import { t, tf } from '../../i18n';
     const $ = (id: string) => document.getElementById(id)!;
     const pin = () => ($('pin') as HTMLInputElement).value;
     const msg = $('msg');
     const table = $('table'), body = table.querySelector('tbody')!, empty = $('empty');
     const unlinkedWrap = $('unlinkedwrap'), unlinkedBody = $('unlinked').querySelector('tbody')!;
     const detail = $('detail'), hist = $('history').querySelector('tbody')!, addr = $('addresses');
-    const STATUS: Record<string, string> = { awaiting_payment: 'Not paid', reserved: 'Reserved', labeled: 'Label bought', printed: 'Printed', voided: 'Voided', cancelled: 'Cancelled', in_transit: 'In transit', out_for_delivery: 'Out for delivery', delivered: 'Delivered', exception: 'Problem', returned: 'Returned' };
+    const STATUS = (k: string) => t(`st.status.${k}`);
     const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '—');
     const tel = (p: string | null) => (p && p.length === 10 ? `(${p.slice(0, 3)}) ${p.slice(3, 6)}-${p.slice(6)}` : p ?? '');
     const cell = (tr: HTMLTableRowElement, text: string) => { const td = document.createElement('td'); td.textContent = text; tr.appendChild(td); return td; };
@@ -73,22 +74,22 @@ import Base from '../../layouts/Base.astro';
     $('search').addEventListener('submit', async (ev) => {
       ev.preventDefault();
       msg.textContent = ''; detail.classList.add('hidden');
-      if (!pin()) { msg.className = 'err'; msg.textContent = 'Enter the staff PIN first.'; return; }
+      if (!pin()) { msg.className = 'err'; msg.textContent = t('st.pinfirst'); return; }
       try {
         const { customers, unlinked } = await (await api({ action: 'search', q: ($('q') as HTMLInputElement).value })).json();
         body.innerHTML = '';
         for (const c of customers) {
           const tr = document.createElement('tr');
-          const n = cell(tr, c.name); if (c.returning) n.innerHTML += ' <strong class="muted">· returning</strong>';
+          const n = cell(tr, c.name); if (c.returning) { const b = document.createElement('strong'); b.className = 'muted'; b.textContent = ` · ${t('st.c.returning')}`; n.appendChild(b); }
           cell(tr, tel(c.phone)); cell(tr, c.email ?? ''); cell(tr, String(c.shipments)); cell(tr, fmt(c.last_seen_at));
-          const td = cell(tr, ''); const b = document.createElement('button'); b.className = 'btn small'; b.textContent = 'Open'; b.addEventListener('click', () => open(c.id)); td.appendChild(b);
+          const td = cell(tr, ''); const b = document.createElement('button'); b.className = 'btn small'; b.textContent = t('st.open'); b.addEventListener('click', () => open(c.id)); td.appendChild(b);
           body.appendChild(tr);
         }
         unlinkedBody.innerHTML = '';
         for (const q of unlinked) {
           const tr = document.createElement('tr');
           cell(tr, fmt(q.created_at)); const code = cell(tr, ''); code.innerHTML = `<a href="/counter/${q.id}"></a>`; code.querySelector('a')!.textContent = q.id;
-          cell(tr, q.customer_name ?? ''); cell(tr, q.destination); cell(tr, `${q.carrier} ${q.service} · $${Number(q.price).toFixed(2)}`); cell(tr, STATUS[q.status] ?? q.status);
+          cell(tr, q.customer_name ?? ''); cell(tr, q.destination); cell(tr, `${q.carrier} ${q.service} · $${Number(q.price).toFixed(2)}`); cell(tr, STATUS(q.status));
           unlinkedBody.appendChild(tr);
         }
         table.classList.toggle('hidden', !customers.length);
@@ -105,25 +106,26 @@ import Base from '../../layouts/Base.astro';
         $('dname').textContent = c.name;
         $('dcontact').textContent = [tel(c.phone), c.email].filter(Boolean).join(' · ');
         $('dflags').textContent = [
-          real.length > 1 ? `Returning customer, ${real.length} shipments` : real.length === 1 ? 'First shipment' : 'No shipments yet',
-          `first seen ${fmt(c.created_at)}`, `last seen ${fmt(c.last_seen_at)}`,
-          c.consent_sms ? 'texts OK' : 'no texts', c.consent_email ? 'email OK' : 'no email',
+          real.length > 1 ? tf('st.c.returningN', { n: real.length }) : real.length === 1 ? t('st.c.first') : t('st.c.none'),
+          `${t('st.c.firstseen')} ${fmt(c.created_at)}`, `${t('st.c.lastseen')} ${fmt(c.last_seen_at)}`,
+          c.consent_sms ? t('st.c.textsok') : t('st.c.notexts'), c.consent_email ? t('st.c.emailok') : t('st.c.noemail'),
         ].join(' · ');
         hist.innerHTML = '';
         for (const q of quotes) {
           const tr = document.createElement('tr');
           cell(tr, fmt(q.created_at)); const code = cell(tr, ''); code.innerHTML = `<a href="/counter/${q.id}"></a>`; code.querySelector('a')!.textContent = q.id;
           cell(tr, q.destination); cell(tr, `${q.carrier} ${q.service}`); cell(tr, `$${Number(q.price).toFixed(2)}`);
-          cell(tr, STATUS[q.shipment_status ?? q.status] ?? q.shipment_status ?? q.status);
-          const td = cell(tr, ''); td.innerHTML = q.tracking_number ? `<a href="/track?q=${q.id}">Track</a>` : '';
+          cell(tr, STATUS(q.shipment_status ?? q.status));
+          const td = cell(tr, ''); if (q.tracking_number) { td.innerHTML = `<a href="/track?q=${q.id}"></a>`; td.querySelector('a')!.textContent = t('st.track'); }
           hist.appendChild(tr);
         }
         addr.innerHTML = '';
         for (const a of addresses) {
           const d = a.to;
           const li = document.createElement('li');
-          li.innerHTML = `<time></time><strong></strong><span></span><span><a class="btn small" href="/counter/queue?from=${a.order}">Ship here again</a></span>`;
-          li.querySelector('time')!.textContent = `last used ${fmt(a.at)}`;
+          li.innerHTML = `<time></time><strong></strong><span></span><span><a class="btn small" href="/counter/queue?from=${a.order}"></a></span>`;
+          li.querySelector('a')!.textContent = t('st.c.shipagain');
+          li.querySelector('time')!.textContent = `${t('st.c.lastused')} ${fmt(a.at)}`;
           li.querySelector('strong')!.textContent = d.contact_name;
           li.querySelectorAll('span')[0].textContent = [d.line_1, d.line_2, `${d.city}, ${d.state} ${d.postal_code}`, d.country_alpha2 !== 'US' ? d.country_alpha2 : ''].filter(Boolean).join(', ');
           addr.appendChild(li);
@@ -134,7 +136,7 @@ import Base from '../../layouts/Base.astro';
     }
 
     $('export').addEventListener('click', async () => {
-      if (!pin()) { msg.className = 'err'; msg.textContent = 'Enter the staff PIN first.'; return; }
+      if (!pin()) { msg.className = 'err'; msg.textContent = t('st.pinfirst'); return; }
       try {
         const blob = await (await api({ action: 'export' })).blob();
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'forsythe-customers.csv'; a.click(); URL.revokeObjectURL(a.href);

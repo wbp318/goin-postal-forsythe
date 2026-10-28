@@ -12,20 +12,21 @@ if (!o) return new Response('No such order', { status: 404 });
 <Base title={`Counter · ${o.id}`}>
   <section class="hero">
     <h1>{o.id}</h1>
-    <p class="lead">Status: <strong>{o.status.replace('_', ' ')}</strong> · {o.quantity} cards · ${o.price.toFixed(2)} {o.status === 'awaiting_payment' ? 'NOT PAID, do not print' : 'paid online'}</p>
+    <p class="lead"><span data-i18n="st.o.status">Status:</span> <strong data-i18n={`st.status.${o.status}`}>{o.status.replace('_', ' ')}</strong> · {o.quantity} <span data-i18n="st.k.cards">cards</span> · ${o.price.toFixed(2)} <span data-i18n={o.status === 'awaiting_payment' ? 'st.k.notpaid' : 'st.k.paidonline'}>{o.status === 'awaiting_payment' ? 'NOT PAID, do not print' : 'paid online'}</span></p>
+    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a></p>
   </section>
   <div class="grid">
     <div>
       <div class="card-wrap" set:html={renderCard(o.design, 'front')} />
-      <div class="card-wrap" set:html={renderCard(o.design, 'back') || '<p class="muted">Blank back</p>'} />
+      <div class="card-wrap" set:html={renderCard(o.design, 'back') || '<p class="muted" data-i18n="st.k.blankback">Blank back</p>'} />
     </div>
     <div class="card">
-      <p><strong>Customer:</strong> {o.customer.name} · {o.customer.email} {o.customer.phone}</p>
-      {o.notes && <p><strong>Notes:</strong> {o.notes}</p>}
-      <p><a class="btn" href={`/counter/card/${o.id}/sheet`} target="_blank">Open print sheet (10 up, letter)</a></p>
-      <label>Staff PIN <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
-      {o.status === 'paid' && <p><button class="btn kraft" data-action="printed">Mark printed</button></p>}
-      {(o.status === 'paid' || o.status === 'printed') && <p><button class="btn" data-action="picked_up">Picked up</button></p>}
+      <p><strong data-i18n="st.o.customer">Customer:</strong> {o.customer.name} · {o.customer.email} {o.customer.phone}</p>
+      {o.notes && <p><strong data-i18n="st.k.notes">Notes:</strong> {o.notes}</p>}
+      <p><a class="btn" href={`/counter/card/${o.id}/sheet`} target="_blank" data-i18n="st.k.sheet">Open print sheet (10 up, letter)</a></p>
+      <label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
+      {o.status === 'paid' && <p><button class="btn kraft" data-action="printed" data-i18n="st.printed">Mark printed</button></p>}
+      {(o.status === 'paid' || o.status === 'printed') && <p><button class="btn" data-action="picked_up" data-i18n="st.k.pickedup">Picked up</button></p>}
       <p id="msg"></p>
     </div>
   </div>

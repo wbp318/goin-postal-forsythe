@@ -1,7 +1,10 @@
 // Browser-side language switching. Pages are built once in English; on load (and on every
 // change of the picker) every element tagged data-i18n="key" gets its text swapped, and
 // data-i18n-ph swaps a placeholder. Scripts call t('key') for strings they build themselves.
-import { STRINGS, LANGS, type Lang } from './strings';
+import { STRINGS as SITE, LANGS, type Lang } from './strings';
+import { STAFF } from './staff';
+
+const STRINGS = { ...SITE, ...STAFF };
 
 const KEY = 'gp-lang';
 export { LANGS };
@@ -25,12 +28,17 @@ export function t(key: string, lang: Lang = currentLang()): string {
   return row ? (row[lang] || row.en) : key;
 }
 
+/** t() with {name} slots filled in, for messages scripts build: tf('st.q.added', { id, price }). */
+export function tf(key: string, vars: Record<string, string | number>, lang: Lang = currentLang()): string {
+  return t(key, lang).replace(/\{(\w+)\}/g, (_, k) => (k in vars ? String(vars[k]) : `{${k}}`));
+}
+
 export function setLang(lang: Lang) {
   try { localStorage.setItem(KEY, lang); } catch {}
   apply(lang);
 }
 
-const HTML_LANG: Record<Lang, string> = { en: 'en', es: 'es-DO', vi: 'vi', lo: 'lo', km: 'km', ko: 'ko', zh: 'zh-Hans', yue: 'zh-Hant-HK', ja: 'ja', th: 'th', pt: 'pt-BR', nl: 'nl', af: 'af' };
+const HTML_LANG: Record<Lang, string> = { en: 'en', es: 'es-DO', vi: 'vi', lo: 'lo', km: 'km', ko: 'ko', zh: 'zh-Hans', yue: 'zh-Hant-HK', ja: 'ja', th: 'th', pt: 'pt-BR', nl: 'nl', af: 'af', fr: 'fr-CA' };
 
 export function apply(lang: Lang = currentLang(), root: ParentNode = document) {
   document.documentElement.lang = HTML_LANG[lang];

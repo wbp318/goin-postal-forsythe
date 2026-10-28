@@ -8,32 +8,33 @@ import Base from '../../layouts/Base.astro';
 ---
 <Base title="Counter · Exceptions">
   <section class="hero">
-    <h1>Exceptions</h1>
-    <p class="staff-nav">Staff: <a href="/counter/queue">Queue</a> · <a href="/counter/customers">Customers</a> · <a href="/counter/dropoff">Drop-offs</a> · <a href="/counter/exceptions">Exceptions</a> · <a href="/counter/reports">Reports</a> · <a href="/counter/rules">Prices</a></p>
-    <p class="lead">Shipments that are stuck, returned, flagged by the carrier, or never scanned after the label was bought. Call the customer before they call us.</p>
+    <h1 data-i18n="st.x.h1">Exceptions</h1>
+    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a></p>
+    <p class="lead" data-i18n="st.x.lead">Shipments that are stuck, returned, flagged by the carrier, or never scanned after the label was bought. Call the customer before they call us.</p>
   </section>
 
   <div class="card">
     <p class="btnrow">
-      <label>Staff PIN <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
-      <button class="btn" id="load">Show list</button>
-      <button class="btn kraft" id="poll">Check carriers now</button>
+      <label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
+      <button class="btn" id="load" data-i18n="st.x.showlist">Show list</button>
+      <button class="btn kraft" id="poll" data-i18n="st.x.check">Check carriers now</button>
     </p>
     <p id="msg" role="alert"></p>
     <table class="list hidden" id="table">
-      <thead><tr><th>Why</th><th>Order</th><th>Carrier</th><th>To</th><th>Last seen</th><th></th></tr></thead>
+      <thead><tr><th data-i18n="st.x.th.why">Why</th><th data-i18n="st.x.th.order">Order</th><th data-i18n="st.x.th.carrier">Carrier</th><th data-i18n="st.x.th.to">To</th><th data-i18n="st.x.th.lastseen">Last seen</th><th></th></tr></thead>
       <tbody></tbody>
     </table>
-    <p id="empty" class="muted hidden">Nothing needs attention.</p>
+    <p id="empty" class="muted hidden" data-i18n="st.x.nothing">Nothing needs attention.</p>
   </div>
 
   <script>
+    import { t, tf } from '../../i18n';
     const pin = () => (document.getElementById('pin') as HTMLInputElement).value;
     const msg = document.getElementById('msg')!;
     const table = document.getElementById('table')!;
     const body = table.querySelector('tbody')!;
     const empty = document.getElementById('empty')!;
-    const REASON: Record<string, string> = { exception: 'Carrier problem', returned: 'Returned to sender', stuck: 'Not moving', not_scanned: 'Never scanned' };
+    const REASON = (k: string) => t(`st.x.reason.${k}`);
     const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—');
 
     async function api(path: string, extra: Record<string, unknown> = {}) {
@@ -51,10 +52,10 @@ import Base from '../../layouts/Base.astro';
         for (const x of exceptions) {
           const tr = document.createElement('tr');
           tr.className = x.reason;
-          const cells = [`${REASON[x.reason]} · ${x.days}d`, x.id, `${x.carrier} ${x.service}`, x.to, `${fmt(x.last_event_at)} ${x.last_description ?? ''}`.trim()];
+          const cells = [`${REASON(x.reason)} · ${x.days}${t('st.d')}`, x.id, `${x.carrier} ${x.service}`, x.to, `${fmt(x.last_event_at)} ${x.last_description ?? ''}`.trim()];
           for (const c of cells) { const td = document.createElement('td'); td.textContent = c; tr.appendChild(td); }
           const td = document.createElement('td');
-          td.innerHTML = `<a href="/counter/${x.id}">Order</a> · <a href="/track?q=${x.id}">Track</a>`;
+          td.innerHTML = `<a href="/counter/${x.id}">${t('st.order')}</a> · <a href="/track?q=${x.id}">${t('st.track')}</a>`;
           tr.appendChild(td);
           body.appendChild(tr);
         }
@@ -64,12 +65,13 @@ import Base from '../../layouts/Base.astro';
     }
 
     document.getElementById('load')!.addEventListener('click', load);
+    document.addEventListener('langchange', () => { if (pin()) load(); });
     document.getElementById('poll')!.addEventListener('click', async (ev) => {
       const b = ev.currentTarget as HTMLButtonElement;
-      b.disabled = true; msg.className = ''; msg.textContent = 'Asking the carriers…';
+      b.disabled = true; msg.className = ''; msg.textContent = t('st.x.asking');
       try {
         const r = await api('/api/track-poll');
-        msg.textContent = `Checked ${r.checked}, ${r.updated} with news, ${r.skipped} without a tracking number${r.errors.length ? `, ${r.errors.length} carrier errors` : ''}.`;
+        msg.textContent = tf('st.x.result', { checked: r.checked, updated: r.updated, skipped: r.skipped }) + (r.errors.length ? tf('st.x.errors', { n: r.errors.length }) : '') + '.';
         await load();
       } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
       b.disabled = false;

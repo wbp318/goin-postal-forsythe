@@ -8,39 +8,40 @@ import Base from '../../layouts/Base.astro';
 ---
 <Base title="Counter · Drop-offs">
   <section class="hero">
-    <h1>Drop-offs</h1>
-    <p class="staff-nav">Staff: <a href="/counter/queue">Queue</a> · <a href="/counter/customers">Customers</a> · <a href="/counter/dropoff">Drop-offs</a> · <a href="/counter/exceptions">Exceptions</a> · <a href="/counter/reports">Reports</a> · <a href="/counter/rules">Prices</a></p>
-    <p class="lead">Scan the label's barcode, or type the tracking number. Each scan is recorded with the time, so a customer asking "did my package go out?" gets an answer.</p>
+    <h1 data-i18n="st.d.h1">Drop-offs</h1>
+    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a></p>
+    <p class="lead" data-i18n="st.d.lead">Scan the label's barcode, or type the tracking number. Each scan is recorded with the time, so a customer asking "did my package go out?" gets an answer.</p>
   </section>
 
   <div class="grid">
     <form id="accept" class="card" autocomplete="off">
-      <label>Staff PIN <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
-      <label>Barcode or tracking number <input name="barcode" required minlength="8" maxlength="40" autofocus autocapitalize="characters" placeholder="Scan here" /></label>
-      <label>Carrier <select name="carrier"><option value="">Guess from the barcode</option><option>USPS</option><option>UPS</option><option>FedEx</option><option>DHL</option><option>Amazon</option></select></label>
-      <label>Customer name (optional) <input name="customer_name" maxlength="60" /></label>
-      <label>Customer phone (optional) <input name="customer_phone" maxlength="20" inputmode="tel" /></label>
-      <label>Your name or initials <input name="staff" maxlength="20" /></label>
-      <label class="check"><input name="receipt" type="checkbox" checked /> Print a receipt at the counter</label>
-      <label class="check"><input name="text" type="checkbox" /> Text the receipt to the phone above</label>
-      <p class="btnrow"><button class="btn" type="submit">Accept drop-off</button></p>
+      <label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
+      <label><span data-i18n="st.d.barcode">Barcode or tracking number</span> <input name="barcode" required minlength="8" maxlength="40" autofocus autocapitalize="characters" placeholder="Scan here" data-i18n-ph="st.d.scanhere" /></label>
+      <label><span data-i18n="st.d.carrier">Carrier</span> <select name="carrier"><option value="" data-i18n="st.d.guess">Guess from the barcode</option><option>USPS</option><option>UPS</option><option>FedEx</option><option>DHL</option><option>Amazon</option></select></label>
+      <label><span data-i18n="st.d.custname">Customer name (optional)</span> <input name="customer_name" maxlength="60" /></label>
+      <label><span data-i18n="st.d.custphone">Customer phone (optional)</span> <input name="customer_phone" maxlength="20" inputmode="tel" /></label>
+      <label><span data-i18n="st.yourname">Your name or initials</span> <input name="staff" maxlength="20" /></label>
+      <label class="check"><input name="receipt" type="checkbox" checked /> <span data-i18n="st.d.receipt">Print a receipt at the counter</span></label>
+      <label class="check"><input name="text" type="checkbox" /> <span data-i18n="st.d.text">Text the receipt to the phone above</span></label>
+      <p class="btnrow"><button class="btn" type="submit" data-i18n="st.d.accept">Accept drop-off</button></p>
       <p id="msg" role="alert"></p>
     </form>
 
     <div class="card">
-      <h3>Recent</h3>
+      <h3 data-i18n="st.d.recent">Recent</h3>
       <p class="btnrow">
-        <button class="btn kraft" data-handed="USPS">USPS picked up</button>
-        <button class="btn kraft" data-handed="UPS">UPS picked up</button>
-        <button class="btn kraft" data-handed="FedEx">FedEx picked up</button>
-        <button class="btn kraft" data-handed="DHL">DHL picked up</button>
+        <button class="btn kraft" data-handed="USPS">USPS <span data-i18n="st.d.pickedup">picked up</span></button>
+        <button class="btn kraft" data-handed="UPS">UPS <span data-i18n="st.d.pickedup">picked up</span></button>
+        <button class="btn kraft" data-handed="FedEx">FedEx <span data-i18n="st.d.pickedup">picked up</span></button>
+        <button class="btn kraft" data-handed="DHL">DHL <span data-i18n="st.d.pickedup">picked up</span></button>
       </p>
-      <p class="muted">Tap a carrier when its driver leaves. Every drop-off for that carrier still at the counter is marked as handed over at that time.</p>
+      <p class="muted" data-i18n="st.d.pickedup.lead">Tap a carrier when its driver leaves. Every drop-off for that carrier still at the counter is marked as handed over at that time.</p>
       <ol class="timeline" id="recent"></ol>
     </div>
   </div>
 
   <script>
+    import { t, tf } from '../../i18n';
     const form = document.getElementById('accept') as HTMLFormElement;
     const msg = document.getElementById('msg')!;
     const pin = () => (document.getElementById('pin') as HTMLInputElement).value;
@@ -65,9 +66,9 @@ import Base from '../../layouts/Base.astro';
           const li = document.createElement('li');
           li.innerHTML = `<time>${fmt(d.accepted_at)}</time><strong></strong><span></span>`;
           li.querySelector('strong')!.textContent = `${d.carrier ?? '?'} ${d.barcode}`;
-          li.querySelector('span')!.textContent = [d.customer_name, d.handed_to_carrier_at ? `handed to carrier ${fmt(d.handed_to_carrier_at)}` : 'at the counter'].filter(Boolean).join(' · ');
+          li.querySelector('span')!.textContent = [d.customer_name, d.handed_to_carrier_at ? `${t('st.d.handed')} ${fmt(d.handed_to_carrier_at)}` : t('st.d.atcounter')].filter(Boolean).join(' · ');
           const acts = document.createElement('span');
-          acts.innerHTML = `<a href="/counter/receipt/${d.id}">Receipt</a> · <button type="button" class="btn small kraft" data-reprint="${d.id}">Print again</button>${d.customer_phone ? ` <button type="button" class="btn small kraft" data-retext="${d.id}">Text again</button>` : ''}`;
+          acts.innerHTML = `<a href="/counter/receipt/${d.id}">${t('st.d.receiptlink')}</a> · <button type="button" class="btn small kraft" data-reprint="${d.id}">${t('st.d.printagain')}</button>${d.customer_phone ? ` <button type="button" class="btn small kraft" data-retext="${d.id}">${t('st.d.textagain')}</button>` : ''}`;
           li.appendChild(acts);
           recent.appendChild(li);
         }
@@ -83,11 +84,11 @@ import Base from '../../layouts/Base.astro';
         beep(true);
         msg.className = '';
         const r = j.receipt ?? {};
-        const bits = [`Accepted ${j.dropoff.carrier ?? ''} ${j.dropoff.barcode}, receipt no. ${j.dropoff.id}`];
-        if (j.duplicate) bits.push('this barcode was scanned before');
-        if (r.printed) bits.push(r.agent ? 'receipt sent to the counter printer' : 'receipt queued, but no printer agent is set up; use the Receipt link to print from the browser');
-        if (r.texted) bits.push(r.text_mock ? 'text receipt logged (no Twilio key yet)' : 'text receipt sent');
-        if (r.error) bits.push(`receipt problem: ${r.error}`);
+        const bits = [tf('st.d.accepted', { carrier: j.dropoff.carrier ?? '', barcode: j.dropoff.barcode, id: j.dropoff.id })];
+        if (j.duplicate) bits.push(t('st.d.dup'));
+        if (r.printed) bits.push(r.agent ? t('st.d.rsent') : t('st.d.rqueued'));
+        if (r.texted) bits.push(r.text_mock ? t('st.d.tlogged') : t('st.d.tsent'));
+        if (r.error) bits.push(`${t('st.d.rproblem')} ${r.error}`);
         msg.textContent = bits.join(' · ');
         for (const n of ['barcode', 'customer_name', 'customer_phone']) field(n).value = '';
         field('text').checked = false;
@@ -96,7 +97,7 @@ import Base from '../../layouts/Base.astro';
       } catch (e: any) { beep(false); msg.className = 'err'; msg.textContent = e.message; }
     });
     document.querySelectorAll<HTMLButtonElement>('[data-handed]').forEach((b) => b.addEventListener('click', async () => {
-      try { const j = await api({ action: 'handed', carrier: b.dataset.handed }); msg.className = ''; msg.textContent = `${j.count} ${b.dataset.handed} drop-off(s) marked as picked up.`; refresh(); }
+      try { const j = await api({ action: 'handed', carrier: b.dataset.handed }); msg.className = ''; msg.textContent = tf('st.d.marked', { n: j.count, carrier: b.dataset.handed! }); refresh(); }
       catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
     }));
     recent.addEventListener('click', async (ev) => {
@@ -105,7 +106,7 @@ import Base from '../../layouts/Base.astro';
       b.disabled = true;
       try {
         const j = await api(b.dataset.reprint ? { action: 'receipt', id: b.dataset.reprint } : { action: 'text', id: b.dataset.retext });
-        msg.className = ''; msg.textContent = b.dataset.reprint ? (j.receipt.agent ? 'Receipt sent to the counter printer.' : 'Queued, but no printer agent is set up. Use the Receipt link to print from the browser.') : (j.receipt.text_mock ? 'Text receipt logged (no Twilio key yet).' : 'Text receipt sent.');
+        msg.className = ''; msg.textContent = b.dataset.reprint ? (j.receipt.agent ? t('st.d.sentprinter') : t('st.d.queuednoagent')) : (j.receipt.text_mock ? t('st.d.tlogged') : t('st.d.tsent'));
       } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
       b.disabled = false;
     });
@@ -114,5 +115,6 @@ import Base from '../../layouts/Base.astro';
     try { if (localStorage.getItem('dropoff_receipt') === 'off') rbox.checked = false; } catch {}
     rbox.addEventListener('change', () => { try { localStorage.setItem('dropoff_receipt', rbox.checked ? 'on' : 'off'); } catch {} });
     document.getElementById('pin')!.addEventListener('change', refresh);
+    document.addEventListener('langchange', () => { if (pin()) refresh(); });
   </script>
 </Base>

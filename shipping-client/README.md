@@ -73,7 +73,8 @@ flowchart LR
 | D1 schema: customers, shipments, tracking events, drop-offs, retail rules, staff, print queue | `site/db/schema.sql` | Applied locally by `npm run db:local`, in production by `npm run db:remote`. Orders stay in KV; shipments are mirrored into D1 |
 | Carrier keys and sandbox switches | `site/.dev.vars.example`, `site/wrangler.jsonc` | Done, all blank until issue 12 |
 | PeterShip store: shipments, tracking events, print queue, drop-offs in D1, with a memory fallback when no database is bound | `site/src/shipping/store.ts` | Done. Every bought label is recorded here as well as in KV |
-| Tracking: `track()` and `voidLabel()` routed by label id prefix, public page at `/track`, `GET /api/track` refreshes from the carrier when events are older than fifteen minutes | `site/src/pages/track/`, `site/src/pages/api/track.ts` | Done in mock mode. Linked from the done page, in all 13 languages |
+| Tracking: `track()` and `voidLabel()` routed by label id prefix, public page at `/track`, `GET /api/track` refreshes from the carrier when events are older than fifteen minutes | `site/src/pages/track/`, `site/src/pages/api/track.ts` | Done in mock mode. Linked from the done page, in all 14 languages |
+| Staff pages in 14 languages: the header picker on every `/counter/` page, the same languages as the website plus Quebec French, which was added to the website at the same time. About 290 staff strings, dynamic messages included; tables re-render when the language changes. Receipts and emails stay in English | `site/src/i18n/staff.ts`, `staff2.ts`, `staff3.ts` | Done. Native-speaker review wanted (issue 10) |
 | Print queue and printer agent: staff tap Print at the counter, a small Node program on the counter PC prints ZPL to a Zebra or a PDF through the OS | `POST /api/print`, [`printer-agent/`](printer-agent/README.md) | Done, untested against a real Zebra ([issue 5](https://github.com/wbp318/goin-postal-forsythe/issues/5)) |
 | Drop-off capture: scan a prepaid or return package's barcode, carrier guessed from the number, "carrier picked up" marks the day's hand-over | `/counter/dropoff`, `POST /api/dropoff` | Done |
 | Tracking poll: refreshes every open shipment older than fifteen minutes from its carrier adapter. Run by the printer agent every ten minutes while the shop PC is on, by a scheduled GitHub Action every thirty minutes, or by staff on demand | `site/src/shipping/poll.ts`, `POST /api/track-poll`, `.github/workflows/track-poll.yml` | Done in mock mode |
@@ -195,7 +196,7 @@ site/
     easyship.ts                 the raw Easyship HTTP client and the mock rates and label
   src/pages/
     ship/                       customer: quote form, done page with QR code
-    track/                      customer: tracking page, 13 languages
+    track/                      customer: tracking page, 14 languages
     counter/                    staff, PIN: queue, customers, dropoff, exceptions, reports, rules, [code]
     api/                        the JSON endpoints every page calls (table in site/README.md)
 shipping-client/
@@ -278,7 +279,7 @@ A walk-up with no phone and no email cannot be tied to a person (two John Smiths
 
 **5f. Drop-offs.** Open `/counter/dropoff`. Type a tracking number (a UPS one starts with `1Z`, 18 characters; a USPS one is 22 digits starting with 9) and Accept. The carrier is guessed from the number's shape. Leave **Print a receipt** ticked and a 4 by 6 slip with the barcode comes out of the counter printer as soon as you accept (in mock mode it is queued and the message says no agent is running; the Receipt link under the entry shows the same slip for the browser). Tick **Text the receipt** when the customer typed a mobile number and they get it as a message too; until the Twilio keys are set it is written to the terminal instead. Each recent entry has Print again and Text again. At the end of the day press the carrier's **picked up** button and every drop-off for that carrier is stamped as handed over. When a customer calls saying their return never moved, this page and their receipt are the answer to "did you really drop it here?"
 
-**5g. Tracking.** Open `/track?q=GP-XXXXXX` with the code from 5b or 5c after its label was bought. In mock mode a fake sequence of scans advances once an hour so the page has something to show. Customers get this link on the done page in all 13 languages.
+**5g. Tracking.** Open `/track?q=GP-XXXXXX` with the code from 5b or 5c after its label was bought. In mock mode a fake sequence of scans advances once an hour so the page has something to show. Customers get this link on the done page in all 14 languages. The staff pages follow the same picker, so a counter worker who prefers Spanish or Vietnamese sees the queue in it.
 
 **5h. Exceptions.** Open `/counter/exceptions`. It lists anything a human should look at: carrier exceptions, returns to sender, labels bought three days ago and never scanned, no movement for a week. Nothing will be there on a fresh install. **Check carriers now** runs the tracking refresh on demand.
 
@@ -415,7 +416,8 @@ Comments at the top of each file say what it is for and who calls it. The site R
 | Own retail pricing | Rate Pro's markup rules live in our file, not in a vendor's screens. Online and counter always agree. |
 | Own the data | Every shipment, customer and drop-off in our database, exportable, for the reports in agenda item 36. |
 | One screen at the counter | Staff quote, print, capture drop-offs and look up customers in one app instead of Rate Pro plus a browser. |
-| Franchise angle | Built once for Forsythe, it could run for other Goin' Postal stores on a per-store basis. GP Brands may or may not allow it; that is a question for them. |
+| Franchise angle | Built once for Forsythe, it could run for other Goin' Postal stores on a per-store basis. GP Brands may or may not allow it; that is a question for them. Forsythe is meant to be the model store the others copy. |
+| The end goal | PeterShip is being built to be the best shipping client on the market and, in time, to be sold to a company like Auctane (ShipStation, ShipEngine, Stamps.com) or Shopify. That is why it owns its data, depends on no middleman once the carriers are live, is designed multi-store, and is documented to this depth: an acquirer's engineers should be able to read it in a weekend. See the goals table at the top of [`AGENDA.md`](../AGENDA.md). |
 
 What it does not replace: the Goin' Postal POS. In-person money still runs there. Stripe still takes online cards.
 
@@ -533,7 +535,7 @@ flowchart TB
 
 ### Phase 0: already built
 
-Website, 13 languages, Stripe Checkout, orders in KV, done page with QR and pickup code, counter page with PIN, print sheet pattern, the `quote()` and `buyLabel()` seams, and the Rate Pro markup rules file. Everything below plugs into these.
+Website, 14 languages, Stripe Checkout, orders in KV, done page with QR and pickup code, counter page with PIN, print sheet pattern, the `quote()` and `buyLabel()` seams, and the Rate Pro markup rules file. Everything below plugs into these.
 
 ### Phase 1: carrier access (owners, 1 to 3 weeks of waiting)
 
@@ -566,7 +568,7 @@ Nothing can be tested until each one lands. They can be requested in parallel on
 
 - [ ] Register carrier webhooks where offered. Waits on keys.
 - [x] Poll: `/api/track-poll` from the printer agent every ten minutes and a GitHub Action every thirty, events stored per shipment.
-- [x] Tracking page `/track`, same look as the done page, 13 languages, no login.
+- [x] Tracking page `/track`, same look as the done page, 14 languages, no login.
 - [x] Email and text updates: in transit, out for delivery, delivered, exception, returned, once per status. Resend for email, Twilio for text, logged until the keys exist. Opt-in box on the ship form.
 - [x] Exceptions list for staff at `/counter/exceptions`: carrier exceptions, returns, never scanned, not moving.
 

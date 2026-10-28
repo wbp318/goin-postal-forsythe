@@ -8,16 +8,16 @@ import Base from '../../layouts/Base.astro';
 ---
 <Base title="Counter · Prices">
   <section class="hero">
-    <h1>Prices</h1>
-    <p class="staff-nav">Staff: <a href="/counter/queue">Queue</a> · <a href="/counter/customers">Customers</a> · <a href="/counter/dropoff">Drop-offs</a> · <a href="/counter/exceptions">Exceptions</a> · <a href="/counter/reports">Reports</a> · <a href="/counter/rules">Prices</a></p>
-    <p class="lead">What we add on top of what the carrier charges us. These rules set the price every customer sees, on the website and in the walk-up queue. Copy them from Rate Pro so the two always agree.</p>
+    <h1 data-i18n="st.u.h1">Prices</h1>
+    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a></p>
+    <p class="lead" data-i18n="st.u.lead">What we add on top of what the carrier charges us. These rules set the price every customer sees, on the website and in the walk-up queue. Copy them from Rate Pro so the two always agree.</p>
   </section>
 
   <div class="card">
     <p class="btnrow">
-      <label>PIN <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
-      <button class="btn" id="load">Show rules</button>
-      <button class="btn kraft" id="fromfile">Load the file's rules</button>
+      <label><span data-i18n="st.pinonly">PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
+      <button class="btn" id="load" data-i18n="st.u.show">Show rules</button>
+      <button class="btn kraft" id="fromfile" data-i18n="st.u.fromfile">Load the file's rules</button>
     </p>
     <p id="source" class="muted"></p>
     <p id="msg" role="alert"></p>
@@ -25,56 +25,57 @@ import Base from '../../layouts/Base.astro';
 
   <form id="rules" class="ship-form hidden" autocomplete="off">
     <fieldset>
-      <legend>Switches</legend>
-      <label class="check"><input name="enabled" type="checkbox" /> Rules are on. Off means customers pay exactly the carrier's cost (how the site runs today)</label>
-      <label class="check"><input name="round_to_99" type="checkbox" /> Round every price up to the next .99</label>
+      <legend data-i18n="st.u.switches">Switches</legend>
+      <label class="check"><input name="enabled" type="checkbox" /> <span data-i18n="st.u.enabled">Rules are on. Off means customers pay exactly the carrier's cost (how the site runs today)</span></label>
+      <label class="check"><input name="round_to_99" type="checkbox" /> <span data-i18n="st.u.round99">Round every price up to the next .99</span></label>
     </fieldset>
 
     <fieldset>
-      <legend>How a rule works</legend>
-      <p class="muted">Price = cost + cost × percent ÷ 100 + flat fee. Or set a fixed price and the cost is ignored. A service row beats its carrier's row, which beats Default. Untick Active to keep a row without using it. Example: cost $9.65 with 25% and $1.50 flat is $13.56, or $13.99 with rounding on.</p>
+      <legend data-i18n="st.u.how">How a rule works</legend>
+      <p class="muted" data-i18n="st.u.how.lead">Price = cost + cost × percent ÷ 100 + flat fee. Or set a fixed price and the cost is ignored. A service row beats its carrier's row, which beats Default. Untick Active to keep a row without using it. Example: cost $9.65 with 25% and $1.50 flat is $13.56, or $13.99 with rounding on.</p>
     </fieldset>
 
     <fieldset>
-      <legend>Default and carriers</legend>
+      <legend data-i18n="st.u.defcar">Default and carriers</legend>
       <table class="list" id="carriers">
-        <thead><tr><th>Applies to</th><th>Percent</th><th>Flat fee $</th><th>Fixed price $</th><th>Active</th></tr></thead>
+        <thead><tr><th data-i18n="st.u.th.applies">Applies to</th><th data-i18n="st.u.th.percent">Percent</th><th data-i18n="st.u.th.flat">Flat fee $</th><th data-i18n="st.u.th.fixed">Fixed price $</th><th data-i18n="st.u.th.active">Active</th></tr></thead>
         <tbody></tbody>
       </table>
     </fieldset>
 
     <fieldset>
-      <legend>Services</legend>
-      <p class="muted">Exact service names as they appear on the Ship page: USPS Ground Advantage, USPS Priority Mail, UPS Ground, FedEx Home Delivery, DHL Express Worldwide, and so on.</p>
+      <legend data-i18n="st.u.services">Services</legend>
+      <p class="muted" data-i18n="st.u.services.lead">Exact service names as they appear on the Ship page: USPS Ground Advantage, USPS Priority Mail, UPS Ground, FedEx Home Delivery, DHL Express Worldwide, and so on.</p>
       <table class="list" id="services">
-        <thead><tr><th>Service name</th><th>Percent</th><th>Flat fee $</th><th>Fixed price $</th><th>Active</th><th></th></tr></thead>
+        <thead><tr><th data-i18n="st.u.th.servicename">Service name</th><th data-i18n="st.u.th.percent">Percent</th><th data-i18n="st.u.th.flat">Flat fee $</th><th data-i18n="st.u.th.fixed">Fixed price $</th><th data-i18n="st.u.th.active">Active</th><th></th></tr></thead>
         <tbody></tbody>
       </table>
-      <p class="btnrow"><button class="btn small kraft" type="button" id="addservice">Add a service row</button></p>
+      <p class="btnrow"><button class="btn small kraft" type="button" id="addservice" data-i18n="st.u.addservice">Add a service row</button></p>
     </fieldset>
 
     <fieldset>
-      <legend>Preview before saving</legend>
+      <legend data-i18n="st.u.preview.legend">Preview before saving</legend>
       <p class="btnrow">
-        <label>Sample box to ZIP <input name="zip" value="75201" inputmode="numeric" maxlength="5" /></label>
-        <label>Weight lb <input name="weight_lb" type="number" step="0.1" value="2" min="0.1" max="150" /></label>
+        <label><span data-i18n="st.u.zip">Sample box to ZIP</span> <input name="zip" value="75201" inputmode="numeric" maxlength="5" /></label>
+        <label><span data-i18n="st.u.weight">Weight lb</span> <input name="weight_lb" type="number" step="0.1" value="2" min="0.1" max="150" /></label>
         <label>L <input name="length_in" type="number" value="10" min="1" /></label>
         <label>W <input name="width_in" type="number" value="8" min="1" /></label>
         <label>H <input name="height_in" type="number" value="4" min="1" /></label>
-        <button class="btn kraft" type="button" id="preview">Preview</button>
+        <button class="btn kraft" type="button" id="preview" data-i18n="st.u.preview">Preview</button>
       </p>
-      <p id="demo" class="muted hidden">Demo costs: live carrier costs appear once the store's carrier accounts are connected. The arithmetic is the same.</p>
+      <p id="demo" class="muted hidden" data-i18n="st.u.demo">Demo costs: live carrier costs appear once the store's carrier accounts are connected. The arithmetic is the same.</p>
       <table class="list hidden" id="previewtable">
-        <thead><tr><th>Carrier</th><th>Service</th><th>Carrier cost</th><th>Price now</th><th>Price after save</th><th>Margin after</th></tr></thead>
+        <thead><tr><th data-i18n="st.u.th.carrier">Carrier</th><th data-i18n="st.u.th.service">Service</th><th data-i18n="st.u.th.cost">Carrier cost</th><th data-i18n="st.u.th.now">Price now</th><th data-i18n="st.u.th.after">Price after save</th><th data-i18n="st.u.th.marginafter">Margin after</th></tr></thead>
         <tbody></tbody>
       </table>
     </fieldset>
 
-    <p class="btnrow"><button class="btn" type="submit" id="save">Save rules</button> <span id="savenote" class="muted"></span></p>
+    <p class="btnrow"><button class="btn" type="submit" id="save" data-i18n="st.u.save">Save rules</button> <span id="savenote" class="muted"></span></p>
     <p id="ferr" class="err" hidden></p>
   </form>
 
   <script>
+    import { t, tf } from '../../i18n';
     const $ = (id: string) => document.getElementById(id)!;
     const pin = () => ($('pin') as HTMLInputElement).value;
     const msg = $('msg'), source = $('source'), form = $('rules') as HTMLFormElement, ferr = $('ferr');
@@ -102,7 +103,7 @@ import Base from '../../layouts/Base.astro';
       const tr = document.createElement('tr'); tr.dataset.scope = 'service';
       const td = document.createElement('td'); td.innerHTML = '<input data-field="match" maxlength="60" placeholder="USPS Priority Mail" />'; (td.firstChild as HTMLInputElement).value = r?.match ?? ''; tr.appendChild(td);
       tr.appendChild(numCell('percent', r?.percent ?? null, '0.5')); tr.appendChild(numCell('flat', r?.flat ?? null)); tr.appendChild(numCell('price', r?.price ?? null)); tr.appendChild(checkCell(r ? !!r.active : true));
-      const x = document.createElement('td'); x.innerHTML = '<button type="button" class="btn small kraft">Remove</button>'; x.querySelector('button')!.addEventListener('click', () => tr.remove()); tr.appendChild(x);
+      const x = document.createElement('td'); x.innerHTML = '<button type="button" class="btn small kraft"></button>'; x.querySelector('button')!.textContent = t('st.u.remove'); x.querySelector('button')!.addEventListener('click', () => tr.remove()); tr.appendChild(x);
       return tr;
     }
 
@@ -111,12 +112,12 @@ import Base from '../../layouts/Base.astro';
       (form.elements.namedItem('round_to_99') as HTMLInputElement).checked = !!c.round_to_99;
       carriersBody.innerHTML = ''; servicesBody.innerHTML = '';
       const find = (scope: string, match: string | null) => c.rules.find((r: any) => r.scope === scope && (scope === 'default' || (r.match ?? '').toLowerCase() === (match ?? '').toLowerCase()));
-      carriersBody.appendChild(fixedRow('Default (everything not listed below)', 'default', null, find('default', null)));
+      carriersBody.appendChild(fixedRow(t('st.u.default'), 'default', null, find('default', null)));
       for (const k of CARRIERS) carriersBody.appendChild(fixedRow(k, 'carrier', k, find('carrier', k)));
       for (const r of c.rules.filter((r: any) => r.scope === 'service')) servicesBody.appendChild(serviceRow(r));
       form.classList.remove('hidden');
       $('save').toggleAttribute('disabled', !owner);
-      $('savenote').textContent = owner ? '' : 'Viewing only: saving needs the owner PIN.';
+      $('savenote').textContent = owner ? '' : t('st.u.viewonly');
     }
 
     function collect() {
@@ -136,19 +137,19 @@ import Base from '../../layouts/Base.astro';
 
     async function load() {
       msg.textContent = ''; ferr.hidden = true;
-      if (!pin()) { msg.className = 'err'; msg.textContent = 'Enter the PIN first.'; return; }
+      if (!pin()) { msg.className = 'err'; msg.textContent = t('st.u.enterpin'); return; }
       try {
         const c = await api({ action: 'get' });
         owner = c.owner;
         source.textContent = c.source === 'table'
-          ? `Rules in force come from the database, last saved ${new Date(c.updated_at).toLocaleString()}. ${c.enabled ? 'They are ON.' : 'They are OFF: customers pay carrier cost.'}`
-          : 'Nothing has been saved yet. The rules shown are the ones in the code\'s ratepro.json file; the first Save moves them into the database.';
+          ? `${tf('st.u.src.table', { when: new Date(c.updated_at).toLocaleString() })} ${c.enabled ? t('st.u.on') : t('st.u.off')}`
+          : t('st.u.src.file');
         render(c);
       } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
     }
     $('load').addEventListener('click', load);
     $('pin').addEventListener('change', load);
-    $('fromfile').addEventListener('click', async () => { try { render(await api({ action: 'file' })); msg.className = ''; msg.textContent = 'Loaded the file\'s rules into the form. Nothing is saved until you press Save.'; } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; } });
+    $('fromfile').addEventListener('click', async () => { try { render(await api({ action: 'file' })); msg.className = ''; msg.textContent = t('st.u.loadedfile'); } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; } });
     $('addservice').addEventListener('click', () => { servicesBody.appendChild(serviceRow(null)); (servicesBody.lastElementChild!.querySelector('input') as HTMLInputElement).focus(); });
 
     $('preview').addEventListener('click', async () => {
@@ -170,11 +171,11 @@ import Base from '../../layouts/Base.astro';
     form.addEventListener('submit', async (ev) => {
       ev.preventDefault(); ferr.hidden = true;
       const draft = collect();
-      if (!window.confirm(`Save these rules? Every quote from now on, online and at the counter, uses them${draft.enabled ? '' : ' (and they are switched OFF, so customers pay carrier cost)'}.`)) return;
+      if (!window.confirm(`${t('st.u.confirm')}${draft.enabled ? '' : t('st.u.confirm.off')}.`)) return;
       try {
         const c = await api({ action: 'save', ...draft });
-        msg.className = ''; msg.textContent = `Saved. ${c.enabled ? 'Rules are on.' : 'Rules are off.'}`;
-        source.textContent = `Rules in force come from the database, last saved ${new Date(c.updated_at).toLocaleString()}.`;
+        msg.className = ''; msg.textContent = `${t('st.u.saved')} ${c.enabled ? t('st.u.rulesOn') : t('st.u.rulesOff')}`;
+        source.textContent = tf('st.u.src.table', { when: new Date(c.updated_at).toLocaleString() });
         render(c);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } catch (e: any) { ferr.textContent = e.message; ferr.hidden = false; }

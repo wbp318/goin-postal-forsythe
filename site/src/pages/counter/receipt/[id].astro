@@ -12,13 +12,13 @@ if (!Number.isInteger(id) || id < 1) return new Response('No such receipt', { st
 ---
 <Base title={`Counter · Receipt ${id}`}>
   <section class="hero noprint">
-    <h1>Drop-off receipt {id}</h1>
-    <p class="staff-nav">Staff: <a href="/counter/queue">Queue</a> · <a href="/counter/customers">Customers</a> · <a href="/counter/dropoff">Drop-offs</a> · <a href="/counter/exceptions">Exceptions</a> · <a href="/counter/reports">Reports</a> · <a href="/counter/rules">Prices</a></p>
+    <h1><span data-i18n="st.r.h1">Drop-off receipt</span> {id}</h1>
+    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a></p>
     <p class="btnrow">
-      <label>Staff PIN <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
-      <button class="btn" id="load">Show</button>
-      <button class="btn kraft hidden" id="print">Print this page</button>
-      <button class="btn kraft hidden" id="thermal">Print at the counter</button>
+      <label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
+      <button class="btn" id="load" data-i18n="st.show">Show</button>
+      <button class="btn kraft hidden" id="print" data-i18n="st.r.printpage">Print this page</button>
+      <button class="btn kraft hidden" id="thermal" data-i18n="st.print">Print at the counter</button>
     </p>
     <p id="msg" role="alert"></p>
   </section>
@@ -26,12 +26,12 @@ if (!Number.isInteger(id) || id < 1) return new Response('No such receipt', { st
   <div id="slip" class="card slip hidden">
     <h2>{store.name}</h2>
     <p class="muted">{store.address}<br/>{store.phone}</p>
-    <h3>DROP-OFF RECEIPT</h3>
+    <h3 data-i18n="st.r.title">DROP-OFF RECEIPT</h3>
     <p id="meta"></p>
-    <p class="muted">Tracking number</p>
+    <p class="muted" data-i18n="st.r.tracking">Tracking number</p>
     <p id="code" class="code"></p>
-    <p>We handed this package to the carrier named above on their next pickup. Track it on the carrier's website with the number above. Keep this receipt until it is delivered.</p>
-    <p class="muted">Questions: {store.phone}. Bring this receipt or the number.</p>
+    <p data-i18n="st.r.body">We handed this package to the carrier named above on their next pickup. Track it on the carrier's website with the number above. Keep this receipt until it is delivered.</p>
+    <p class="muted"><span data-i18n="st.r.questions">Questions:</span> {store.phone}. <span data-i18n="st.r.bring">Bring this receipt or the number.</span></p>
   </div>
 
   <style>
@@ -57,7 +57,8 @@ if (!Number.isInteger(id) || id < 1) return new Response('No such receipt', { st
       try {
         const { dropoff: d } = await api({ action: 'get', id });
         $('meta').innerHTML = '';
-        for (const line of [`Received ${fmt(d.accepted_at)}`, `Carrier: ${d.carrier ?? 'to be confirmed'}`, `Receipt no. ${d.id}`, d.customer_name ? `From: ${d.customer_name}` : '', d.accepted_by ? `Accepted by: ${d.accepted_by}` : '']) {
+        const t = window.t;
+        for (const line of [`${t('st.r.received')} ${fmt(d.accepted_at)}`, `${t('st.r.carrier')} ${d.carrier ?? '?'}`, `${t('st.r.no')} ${d.id}`, d.customer_name ? `${t('st.r.from')} ${d.customer_name}` : '', d.accepted_by ? `${t('st.r.acceptedby')} ${d.accepted_by}` : '']) {
           if (!line) continue;
           const s = document.createElement('span'); s.textContent = line; $('meta').appendChild(s); $('meta').appendChild(document.createElement('br'));
         }
@@ -68,6 +69,6 @@ if (!Number.isInteger(id) || id < 1) return new Response('No such receipt', { st
     $('load').addEventListener('click', load);
     $('pin').addEventListener('change', load);
     $('print').addEventListener('click', () => window.print());
-    $('thermal').addEventListener('click', async () => { try { const j = await api({ action: 'receipt', id }); msg.className = ''; msg.textContent = j.receipt.agent ? 'Sent to the counter printer.' : 'Queued, but no printer agent is set up. Use Print this page.'; } catch (e) { msg.className = 'err'; msg.textContent = e.message; } });
+    $('thermal').addEventListener('click', async () => { try { const j = await api({ action: 'receipt', id }); msg.className = ''; msg.textContent = j.receipt.agent ? window.t('st.r.sent') : window.t('st.r.queuednoagent'); } catch (e) { msg.className = 'err'; msg.textContent = e.message; } });
   </script>
 </Base>

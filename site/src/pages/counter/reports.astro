@@ -10,68 +10,69 @@ const monthStart = today.slice(0, 8) + '01';
 ---
 <Base title="Counter · Reports">
   <section class="hero">
-    <h1>Reports</h1>
-    <p class="staff-nav">Staff: <a href="/counter/queue">Queue</a> · <a href="/counter/customers">Customers</a> · <a href="/counter/dropoff">Drop-offs</a> · <a href="/counter/exceptions">Exceptions</a> · <a href="/counter/reports">Reports</a> · <a href="/counter/rules">Prices</a></p>
-    <p class="lead">What shipped, what it cost, what we kept. From PeterShip's records: labels bought through the website and the counter. In-store POS sales are not here.</p>
+    <h1 data-i18n="st.p.h1">Reports</h1>
+    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a></p>
+    <p class="lead" data-i18n="st.p.lead">What shipped, what it cost, what we kept. From PeterShip's records: labels bought through the website and the counter. In-store POS sales are not here.</p>
   </section>
 
   <form id="range" class="card">
     <div class="row">
-      <label>Staff PIN <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
-      <label>From <input name="from" type="date" value={monthStart} max={today} /></label>
-      <label>To <input name="to" type="date" value={today} max={today} /></label>
+      <label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
+      <label><span data-i18n="st.p.from">From</span> <input name="from" type="date" value={monthStart} max={today} /></label>
+      <label><span data-i18n="st.p.to">To</span> <input name="to" type="date" value={today} max={today} /></label>
     </div>
     <p class="btnrow">
-      <button class="btn" type="submit">Run report</button>
-      <button class="btn kraft" type="button" data-preset="today">Today</button>
-      <button class="btn kraft" type="button" data-preset="week">Last 7 days</button>
-      <button class="btn kraft" type="button" data-preset="month">This month</button>
-      <button class="btn kraft" type="button" id="csv">Download CSV</button>
+      <button class="btn" type="submit" data-i18n="st.p.run">Run report</button>
+      <button class="btn kraft" type="button" data-preset="today" data-i18n="st.p.today">Today</button>
+      <button class="btn kraft" type="button" data-preset="week" data-i18n="st.p.week">Last 7 days</button>
+      <button class="btn kraft" type="button" data-preset="month" data-i18n="st.p.month">This month</button>
+      <button class="btn kraft" type="button" id="csv" data-i18n="st.p.csv">Download CSV</button>
     </p>
     <p id="msg" role="alert"></p>
   </form>
 
   <div id="out" class="hidden">
     <div class="grid">
-      <div class="card"><h3>Shipments</h3><p class="big" id="t-ship"></p></div>
-      <div class="card"><h3>Customers paid</h3><p class="big" id="t-rev"></p></div>
-      <div class="card"><h3>Carriers charged</h3><p class="big" id="t-cost"></p></div>
-      <div class="card"><h3>Margin</h3><p class="big" id="t-margin"></p><p class="muted" id="t-pct"></p></div>
+      <div class="card"><h3 data-i18n="st.p.shipments">Shipments</h3><p class="big" id="t-ship"></p></div>
+      <div class="card"><h3 data-i18n="st.p.paid">Customers paid</h3><p class="big" id="t-rev"></p></div>
+      <div class="card"><h3 data-i18n="st.p.cost">Carriers charged</h3><p class="big" id="t-cost"></p></div>
+      <div class="card"><h3 data-i18n="st.p.margin">Margin</h3><p class="big" id="t-margin"></p><p class="muted" id="t-pct"></p></div>
     </div>
 
     <div class="grid">
       <div class="card">
-        <h3>By day</h3>
-        <table class="list"><thead><tr><th>Day</th><th>Ships</th><th>Paid</th><th>Cost</th><th>Margin</th></tr></thead><tbody id="by-day"></tbody></table>
+        <h3 data-i18n="st.p.byday">By day</h3>
+        <table class="list"><thead><tr><th data-i18n="st.p.th.day">Day</th><th data-i18n="st.p.th.ships">Ships</th><th data-i18n="st.p.th.paid">Paid</th><th data-i18n="st.p.th.cost">Cost</th><th data-i18n="st.p.th.margin">Margin</th></tr></thead><tbody id="by-day"></tbody></table>
       </div>
       <div class="card">
-        <h3>By carrier</h3>
-        <table class="list"><thead><tr><th>Carrier</th><th>Ships</th><th>Paid</th><th>Cost</th><th>Margin</th></tr></thead><tbody id="by-carrier"></tbody></table>
-        <h3>By service</h3>
-        <table class="list"><thead><tr><th>Service</th><th>Ships</th><th>Paid</th><th>Margin</th></tr></thead><tbody id="by-service"></tbody></table>
+        <h3 data-i18n="st.p.bycarrier">By carrier</h3>
+        <table class="list"><thead><tr><th data-i18n="st.u.th.carrier">Carrier</th><th data-i18n="st.p.th.ships">Ships</th><th data-i18n="st.p.th.paid">Paid</th><th data-i18n="st.p.th.cost">Cost</th><th data-i18n="st.p.th.margin">Margin</th></tr></thead><tbody id="by-carrier"></tbody></table>
+        <h3 data-i18n="st.p.byservice">By service</h3>
+        <table class="list"><thead><tr><th data-i18n="st.u.th.service">Service</th><th data-i18n="st.p.th.ships">Ships</th><th data-i18n="st.p.th.paid">Paid</th><th data-i18n="st.p.th.margin">Margin</th></tr></thead><tbody id="by-service"></tbody></table>
       </div>
     </div>
 
     <div class="grid">
       <div class="card">
-        <h3>Busiest hours</h3>
-        <p class="muted">When labels were bought, shop local time.</p>
+        <h3 data-i18n="st.p.hours">Busiest hours</h3>
+        <p class="muted" data-i18n="st.p.hours.lead">When labels were bought, shop local time.</p>
         <div class="bars" id="by-hour"></div>
-        <h3>Busiest days</h3>
+        <h3 data-i18n="st.p.days">Busiest days</h3>
         <div class="bars" id="by-weekday"></div>
       </div>
       <div class="card">
-        <h3>Customers</h3>
+        <h3 data-i18n="st.p.customers">Customers</h3>
         <p id="returning"></p>
-        <h3>Drop-offs accepted</h3>
-        <table class="list"><thead><tr><th>Carrier</th><th>Packages</th></tr></thead><tbody id="dropoffs"></tbody></table>
-        <h3>Where shipments stand</h3>
-        <table class="list"><thead><tr><th>Status</th><th>Shipments</th></tr></thead><tbody id="status"></tbody></table>
+        <h3 data-i18n="st.p.dropoffs">Drop-offs accepted</h3>
+        <table class="list"><thead><tr><th data-i18n="st.u.th.carrier">Carrier</th><th data-i18n="st.p.th.packages">Packages</th></tr></thead><tbody id="dropoffs"></tbody></table>
+        <h3 data-i18n="st.p.stand">Where shipments stand</h3>
+        <table class="list"><thead><tr><th data-i18n="st.p.th.status">Status</th><th data-i18n="st.p.shipments">Shipments</th></tr></thead><tbody id="status"></tbody></table>
       </div>
     </div>
   </div>
 
   <script>
+    import { t, tf } from '../../i18n';
     const form = document.getElementById('range') as HTMLFormElement;
     const msg = document.getElementById('msg')!;
     const out = document.getElementById('out')!;
@@ -84,7 +85,7 @@ const monthStart = today.slice(0, 8) + '01';
     function rows(tbody: HTMLElement, data: unknown[][]) {
       tbody.innerHTML = '';
       for (const r of data) { const tr = document.createElement('tr'); for (const c of r) { const td = document.createElement('td'); td.textContent = String(c); tr.appendChild(td); } tbody.appendChild(tr); }
-      if (!data.length) { const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = 5; td.className = 'muted'; td.textContent = 'Nothing in this range'; tr.appendChild(td); tbody.appendChild(tr); }
+      if (!data.length) { const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = 5; td.className = 'muted'; td.textContent = t('st.p.nothing'); tr.appendChild(td); tbody.appendChild(tr); }
     }
     function bars(el: HTMLElement, data: { label: string; n: number }[]) {
       const max = Math.max(1, ...data.map((d) => d.n));
@@ -106,7 +107,7 @@ const monthStart = today.slice(0, 8) + '01';
       $('t-rev').textContent = usd(r.total.revenue);
       $('t-cost').textContent = usd(r.total.cost);
       $('t-margin').textContent = usd(r.total.margin);
-      $('t-pct').textContent = r.total.revenue ? `${Math.round((r.total.margin / r.total.revenue) * 100)}% of what customers paid` : '';
+      $('t-pct').textContent = r.total.revenue ? `${Math.round((r.total.margin / r.total.revenue) * 100)}${t('st.p.pct')}` : '';
       rows($('by-day'), r.by_day.map((d: any) => [d.day, d.shipments, usd(d.revenue), usd(d.cost), usd(d.margin)]));
       rows($('by-carrier'), r.by_carrier.map((d: any) => [d.carrier, d.shipments, usd(d.revenue), usd(d.cost), usd(d.margin)]));
       rows($('by-service'), r.by_service.map((d: any) => [d.service, d.shipments, usd(d.revenue), usd(d.margin)]));
@@ -114,11 +115,11 @@ const monthStart = today.slice(0, 8) + '01';
       const offset = Math.round(new Date().getTimezoneOffset() / 60);
       const local = Array.from({ length: 24 }, (_, h) => ({ label: `${h % 12 || 12}${h < 12 ? 'am' : 'pm'}`, n: r.by_hour[(h + offset + 24) % 24].shipments }));
       bars($('by-hour'), local.filter((_, h) => h >= 7 && h <= 20));
-      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const days = t('st.p.wd').split(',');
       bars($('by-weekday'), r.by_weekday.map((d: any) => ({ label: days[d.weekday], n: d.shipments })));
-      $('returning').textContent = `${r.returning.customers} customers shipped in this range; ${r.returning.returning} had shipped with us before (${Math.round(r.returning.share * 100)}%).`;
+      $('returning').textContent = tf('st.p.returning', { c: r.returning.customers, r: r.returning.returning, p: Math.round(r.returning.share * 100) });
       rows($('dropoffs'), r.dropoffs.map((d: any) => [d.carrier, d.count]));
-      rows($('status'), r.status.map((d: any) => [d.status.replace(/_/g, ' '), d.shipments]));
+      rows($('status'), r.status.map((d: any) => [t(`st.status.${d.status}`), d.shipments]));
       out.classList.remove('hidden');
     }
 
