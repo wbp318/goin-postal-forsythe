@@ -1,0 +1,144 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+
+// Staff page: customer lookup. Type any part of a name, an email or a phone number; pick the person;
+// see every shipment they have made, their address book, and whether they are a returning customer.
+// "Ship here again" opens the queue with the walk-up form already filled in from that order.
+---
+<Base title="Counter · Customers">
+  <section class="hero">
+    <h1>Customers</h1>
+    <p class="staff-nav">Staff: <a href="/counter/queue">Queue</a> · <a href="/counter/customers">Customers</a> · <a href="/counter/dropoff">Drop-offs</a> · <a href="/counter/exceptions">Exceptions</a> · <a href="/counter/reports">Reports</a></p>
+    <p class="lead">Who has shipped with us. Search by name, phone or email, see their history and addresses, and ship to the same place again in two taps.</p>
+  </section>
+
+  <div class="card">
+    <form id="search" class="btnrow" autocomplete="off">
+      <label>Staff PIN <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
+      <label>Name, phone or email <input id="q" autofocus minlength="2" placeholder="Jane, 318 555, jane@" /></label>
+      <button class="btn" type="submit">Search</button>
+      <button class="btn kraft" type="button" id="export">Download CSV of everyone</button>
+    </form>
+    <p id="msg" role="alert"></p>
+    <table class="list hidden" id="table">
+      <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Shipments</th><th>Last seen</th><th></th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div id="unlinkedwrap" class="hidden">
+      <h3>Walk-ups by that name with no phone or email</h3>
+      <p class="muted">These cannot be tied to one person, so they are listed as they were typed in.</p>
+      <table class="list" id="unlinked"><thead><tr><th>When</th><th>Code</th><th>Name</th><th>To</th><th>Service</th><th>Status</th></tr></thead><tbody></tbody></table>
+    </div>
+    <p id="empty" class="muted hidden">No one matches.</p>
+  </div>
+
+  <div id="detail" class="hidden">
+    <div class="grid">
+      <div class="card">
+        <h3 id="dname"></h3>
+        <p id="dcontact"></p>
+        <p id="dflags" class="muted"></p>
+      </div>
+      <div class="card">
+        <h3>Addresses</h3>
+        <p class="muted">Most recent first. Ship here again fills the walk-up form in the queue.</p>
+        <ol class="timeline" id="addresses"></ol>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Shipments</h3>
+      <table class="list" id="history"><thead><tr><th>When</th><th>Code</th><th>To</th><th>Service</th><th>Paid</th><th>Status</th><th></th></tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id: string) => document.getElementById(id)!;
+    const pin = () => ($('pin') as HTMLInputElement).value;
+    const msg = $('msg');
+    const table = $('table'), body = table.querySelector('tbody')!, empty = $('empty');
+    const unlinkedWrap = $('unlinkedwrap'), unlinkedBody = $('unlinked').querySelector('tbody')!;
+    const detail = $('detail'), hist = $('history').querySelector('tbody')!, addr = $('addresses');
+    const STATUS: Record<string, string> = { awaiting_payment: 'Not paid', reserved: 'Reserved', labeled: 'Label bought', printed: 'Printed', voided: 'Voided', cancelled: 'Cancelled', in_transit: 'In transit', out_for_delivery: 'Out for delivery', delivered: 'Delivered', exception: 'Problem', returned: 'Returned' };
+    const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '—');
+    const tel = (p: string | null) => (p && p.length === 10 ? `(${p.slice(0, 3)}) ${p.slice(3, 6)}-${p.slice(6)}` : p ?? '');
+    const cell = (tr: HTMLTableRowElement, text: string) => { const td = document.createElement('td'); td.textContent = text; tr.appendChild(td); return td; };
+
+    async function api(extra: Record<string, unknown>) {
+      const res = await fetch('/api/customers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin(), ...extra }) });
+      if (!res.ok) throw new Error((await res.json()).error);
+      return res;
+    }
+
+    $('search').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      msg.textContent = ''; detail.classList.add('hidden');
+      if (!pin()) { msg.className = 'err'; msg.textContent = 'Enter the staff PIN first.'; return; }
+      try {
+        const { customers, unlinked } = await (await api({ action: 'search', q: ($('q') as HTMLInputElement).value })).json();
+        body.innerHTML = '';
+        for (const c of customers) {
+          const tr = document.createElement('tr');
+          const n = cell(tr, c.name); if (c.returning) n.innerHTML += ' <strong class="muted">· returning</strong>';
+          cell(tr, tel(c.phone)); cell(tr, c.email ?? ''); cell(tr, String(c.shipments)); cell(tr, fmt(c.last_seen_at));
+          const td = cell(tr, ''); const b = document.createElement('button'); b.className = 'btn small'; b.textContent = 'Open'; b.addEventListener('click', () => open(c.id)); td.appendChild(b);
+          body.appendChild(tr);
+        }
+        unlinkedBody.innerHTML = '';
+        for (const q of unlinked) {
+          const tr = document.createElement('tr');
+          cell(tr, fmt(q.created_at)); const code = cell(tr, ''); code.innerHTML = `<a href="/counter/${q.id}"></a>`; code.querySelector('a')!.textContent = q.id;
+          cell(tr, q.customer_name ?? ''); cell(tr, q.destination); cell(tr, `${q.carrier} ${q.service} · $${Number(q.price).toFixed(2)}`); cell(tr, STATUS[q.status] ?? q.status);
+          unlinkedBody.appendChild(tr);
+        }
+        table.classList.toggle('hidden', !customers.length);
+        unlinkedWrap.classList.toggle('hidden', !unlinked.length);
+        empty.classList.toggle('hidden', !!(customers.length || unlinked.length));
+        if (customers.length === 1 && !unlinked.length) open(customers[0].id);
+      } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    });
+
+    async function open(id: string) {
+      try {
+        const { customer: c, quotes, addresses } = await (await api({ action: 'get', id })).json();
+        const real = quotes.filter((q: any) => q.status !== 'cancelled' && q.status !== 'voided');
+        $('dname').textContent = c.name;
+        $('dcontact').textContent = [tel(c.phone), c.email].filter(Boolean).join(' · ');
+        $('dflags').textContent = [
+          real.length > 1 ? `Returning customer, ${real.length} shipments` : real.length === 1 ? 'First shipment' : 'No shipments yet',
+          `first seen ${fmt(c.created_at)}`, `last seen ${fmt(c.last_seen_at)}`,
+          c.consent_sms ? 'texts OK' : 'no texts', c.consent_email ? 'email OK' : 'no email',
+        ].join(' · ');
+        hist.innerHTML = '';
+        for (const q of quotes) {
+          const tr = document.createElement('tr');
+          cell(tr, fmt(q.created_at)); const code = cell(tr, ''); code.innerHTML = `<a href="/counter/${q.id}"></a>`; code.querySelector('a')!.textContent = q.id;
+          cell(tr, q.destination); cell(tr, `${q.carrier} ${q.service}`); cell(tr, `$${Number(q.price).toFixed(2)}`);
+          cell(tr, STATUS[q.shipment_status ?? q.status] ?? q.shipment_status ?? q.status);
+          const td = cell(tr, ''); td.innerHTML = q.tracking_number ? `<a href="/track?q=${q.id}">Track</a>` : '';
+          hist.appendChild(tr);
+        }
+        addr.innerHTML = '';
+        for (const a of addresses) {
+          const d = a.to;
+          const li = document.createElement('li');
+          li.innerHTML = `<time></time><strong></strong><span></span><span><a class="btn small" href="/counter/queue?from=${a.order}">Ship here again</a></span>`;
+          li.querySelector('time')!.textContent = `last used ${fmt(a.at)}`;
+          li.querySelector('strong')!.textContent = d.contact_name;
+          li.querySelectorAll('span')[0].textContent = [d.line_1, d.line_2, `${d.city}, ${d.state} ${d.postal_code}`, d.country_alpha2 !== 'US' ? d.country_alpha2 : ''].filter(Boolean).join(', ');
+          addr.appendChild(li);
+        }
+        detail.classList.remove('hidden');
+        detail.scrollIntoView({ behavior: 'smooth' });
+      } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    }
+
+    $('export').addEventListener('click', async () => {
+      if (!pin()) { msg.className = 'err'; msg.textContent = 'Enter the staff PIN first.'; return; }
+      try {
+        const blob = await (await api({ action: 'export' })).blob();
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'forsythe-customers.csv'; a.click(); URL.revokeObjectURL(a.href);
+      } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    });
+  </script>
+</Base>

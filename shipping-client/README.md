@@ -2,7 +2,9 @@
 
 PeterShip is the store's own shipping client. A plan for replacing Easyship with software the store owns: rating, labels, tracking, drop-offs and reports for USPS, UPS, FedEx and DHL, built on the same Cloudflare stack as the website. The same thing ShippingEasy, Easyship and GP Rate Pro do, but ours. PeterShip is proprietary, see [LICENSE](LICENSE); it is not under the repository's Apache license.
 
-Item 44 in [`AGENDA.md`](../AGENDA.md) tracks it. Everything that can be built without carrier keys is built and running in mock mode: the rating engine (Phase 2), the print queue and printer agent (Phase 3), tracking, poll, exceptions and customer updates (Phase 4), and drop-off capture, reports and the quote queue (Phase 5). Releases v1.16.0 through v1.22.0, October 21 to 28, 2026. See [What is built so far](#what-is-built-so-far). What remains waits on the owners' carrier accounts (Phase 1).
+Item 44 in [`AGENDA.md`](../AGENDA.md) tracks it. Everything that can be built without carrier keys is built and running in mock mode: the rating engine (Phase 2), the print queue and printer agent (Phase 3), tracking, poll, exceptions and customer updates (Phase 4), and drop-off capture, reports, the quote queue and customer lookup (Phase 5). Releases v1.16.0 through v1.23.0, October 21 to 28, 2026. See [What is built so far](#what-is-built-so-far). What remains waits on the owners' carrier accounts (Phase 1).
+
+New to this? [The long version](#the-long-version-how-petership-works-and-how-to-run-it) further down explains every word, every file, how to run it on your own computer, a screen-by-screen test script, what happens to one shipment from quote to delivery, and the go-live list in order. It is written for Peter, Rin and William and assumes none of this has been seen before.
 
 ## What is built so far
 
@@ -51,6 +53,7 @@ flowchart LR
 | Exceptions list for staff: carrier exceptions, returns to sender, labels not scanned after three days, no movement for seven days, with Check carriers now | `/counter/exceptions`, `POST /api/exceptions` | Done |
 | Reports for staff: shipments, what customers paid, what carriers charged and the margin, by day, carrier and service; busiest hours and weekdays; returning customers; drop-offs by carrier; CSV of every shipment for reconciling the carrier invoice | `/counter/reports`, `POST /api/reports`, `store.report()` | Done. Margin reads zero in mock mode because the fallback adapter reports its price as the cost |
 | Quote queue for the counter: every online reservation and every walk-up on one screen, oldest first, waiting time in red after twenty minutes, with buy, print, mark printed, void and cancel. Walk-ups are typed in on the same page and quoted by the same engine as the website, so counter and site prices agree. A `quotes` table mirrors every order save, since KV cannot be listed cheaply | `/counter/queue`, `POST /api/queue`, `quotes` table | Done |
+| Customer lookup: search by any part of a name, an email or phone digits; every shipment newest first with tracking status; address book from past orders with Ship here again, which fills the walk-up form; returning badge after two shipments; CSV of everyone keyed by phone for the Coupon Counter. A `customers` row is created or refreshed on every order save, matched on email, else mobile; walk-ups with neither stay unlinked and are found by name | `/counter/customers`, `POST /api/customers`, `customers` table, `shipments.customer_id` | Done |
 | Void and cancel: a bought label is voided with its carrier (Easyship cancel, USPS, UPS, FedEx, DHL void routed by label id) and the shipment marked voided so it leaves the reports; an unbought quote is cancelled | `POST /api/counter` `void` and `cancel` | Done in mock mode |
 | Customer updates: email through Resend and text through Twilio when a shipment is first scanned, out for delivery, delivered, in trouble or returned. One message per status. Opt-in box and mobile number on the ship form. Staff email on exceptions | `site/src/shipping/notify.ts`, `shipment_contacts` and `notifications` tables | Done, logs instead of sending until the Resend and Twilio keys are set |
 
@@ -68,6 +71,8 @@ flowchart LR
   NO --> CU["Customer"]:::you
   EX["Staff tablet<br/>/counter/exceptions"]:::you --> D1
   RP["Staff tablet<br/>/counter/reports<br/>margin, hours, CSV"]:::you --> D1
+  CU["Staff tablet<br/>/counter/customers<br/>search, history, ship again"]:::you --> CA["/api/customers"]:::local --> D1
+  CU -.->|"?from=GP-XXXXXX"| QU
   QU["Staff tablet<br/>/counter/queue<br/>walk-ups, buy, void"]:::you --> QA["/api/queue, /api/counter"]:::local --> D1
   QA --> KV
   K["Staff tablet<br/>/counter/GP-XXXXXX<br/>Print at the counter"]:::you --> PQ["/api/print"]:::local --> D1
@@ -80,6 +85,224 @@ flowchart LR
 ```
 
 **Next:** the owners open the four developer accounts (issue 12). The first sandbox call to each carrier will need field adjustments; that is expected and is why the adapters are isolated. Then the parity test. Meanwhile the printer agent can be tried against the shop's thermal printer with `node agent.mjs --test` (issue 5). Customer updates need a Resend account (free) and, for texts, a Twilio number (decision 4 for Rin). Carrier webhooks, customs forms and manifests wait on the keys.
+
+## The long version: how PeterShip works and how to run it
+
+This section is for Peter, Rin and William. It assumes you can read code but have not built a shipping system or a Cloudflare site before. It goes slowly on purpose. Skip what you already know; nothing later depends on reading it all in order.
+
+### 1. The idea in one paragraph
+
+A shipping client is the software between a person with a box and the carriers. It asks each carrier "what would you charge to take this box from here to there?", shows the answers, lets someone pick one, pays the carrier, gets a label back, prints it, and then watches the tracking number until the box is delivered. Easyship, ShippingEasy, Pirate Ship and GP Rate Pro are all this. PeterShip is the same thing, written by us, running on the same Cloudflare account as the store website, with the store's own records in the store's own database. The website's Ship page is its customer face; the `/counter/` pages are its staff face.
+
+### 2. Words you will meet
+
+| Word | What it means here |
+|---|---|
+| **Rate** or **quote** | One carrier's price for one box to one address with one service, for example "USPS Ground Advantage, $9.65, 2 to 5 days". A quote request returns several rates. |
+| **Service** | The carrier's product name: Ground Advantage, Priority Mail, UPS Ground, FedEx Home Delivery, DHL Express Worldwide. |
+| **Label** | The 4 by 6 inch sticker with the barcode. Buying a label is paying the carrier. Every label has a **tracking number**. |
+| **Void** | Cancelling a bought label so the carrier refunds the postage. Only possible before the package is scanned. |
+| **ZPL** | Zebra Programming Language, the plain-text format thermal label printers understand. Carriers can send the label as ZPL or as a PDF. |
+| **Billable weight** | Carriers charge by the greater of actual weight and **dimensional weight** (length times width times height divided by a carrier-specific number). Big light boxes cost more than they weigh. |
+| **Retail rules** or **markup** | What the store adds on top of the carrier's cost. Cost is what the carrier bills us; **price** is what the customer pays. The difference is the margin. |
+| **Adapter** or **provider** | One file per carrier that translates between our shapes and that carrier's API. Swap or fix one without touching the others. |
+| **Mock mode** | How everything runs today. With no carrier keys, the Easyship adapter invents plausible rates and a fake label, so every screen can be tested without spending money. |
+| **Worker** | Cloudflare's name for a small program that runs on their servers in response to a web request. The whole site, PeterShip included, is one Worker. |
+| **KV** | Cloudflare's key-value store. Orders live here under the key `order:GP-XXXXXX`. Fast to read one, awkward to list many. |
+| **D1** | Cloudflare's SQL database (SQLite). PeterShip's own tables live here: shipments, tracking events, customers, quotes, drop-offs, print queue. Easy to list and report on. |
+| **Secret** | A password or API key. Never in the code. Locally in `site/.dev.vars`, in production set with `npx wrangler secret put NAME`. |
+| **PIN** | The one shared staff password for every `/counter/` page, set as the secret `COUNTER_PIN`. Per-person logins are a later phase. |
+| **Printer agent** | A small Node program on the counter PC that watches the print queue and sends labels to the Zebra. |
+| **Drop-off** | A package a customer brings in that already has a label (an Amazon return, a prepaid label). We do not sell anything; we scan it so there is a record it was handed to us. |
+| **Manifest** or **SCAN form** | One barcode the carrier driver scans to accept every package of the day at once. Waits on carrier keys. |
+
+### 3. Where everything lives
+
+Everything is inside `site/`, because PeterShip is part of the website's Worker. Nothing runs anywhere else except the printer agent on the counter PC.
+
+```
+site/
+  db/schema.sql                 the D1 tables. Re-runnable: every statement is CREATE IF NOT EXISTS
+  wrangler.jsonc                Cloudflare bindings: the KV namespace and the D1 database
+  .dev.vars.example             every secret and switch, with comments. Copy to .dev.vars locally
+  src/data/store.ts             the shop: name, address, hours, the ship-from address
+  src/data/ratepro.json         the retail rules (markup). Off until the Rate Pro export (issue 11)
+  src/shipping/                 PeterShip proper
+    types.ts                    the shared shapes: Address, Parcel, Rate, Label, TrackingEvent, Provider
+    dim.ts                      billable weight: dimensional divisors, rounding, oversize checks
+    http.ts                     OAuth tokens cached in KV, JSON calls with the carrier's name on errors
+    engine.ts                   the rating engine: ask every configured carrier at once, cache, sort,
+                                apply retail rules; route buy, void and track to the right adapter
+    providers/usps.ts           one adapter per carrier, each the same shape (Provider in types.ts)
+    providers/ups.ts
+    providers/fedex.ts
+    providers/dhl.ts
+    providers/easyship.ts       the fallback that covers all four with one account, and mock mode
+    store.ts                    every read and write to D1, with an in-memory copy when D1 is absent
+    poll.ts                     refresh tracking for open shipments and send customer updates
+    notify.ts                   email (Resend) and text (Twilio) templates and sending
+  src/lib/
+    orders.ts                   the Order record in KV and its statuses
+    quote.ts                    thin wrapper: pages call quote(), quote() calls the engine
+    fulfil.ts                   "the money arrived, buy the label now", shared by Stripe and the POS step
+    validate.ts                 turn form input into a clean Address and Parcel, or a clear error
+    stripe.ts                   Stripe Checkout for online card payments
+    easyship.ts                 the raw Easyship HTTP client and the mock rates and label
+  src/pages/
+    ship/                       customer: quote form, done page with QR code
+    track/                      customer: tracking page, 13 languages
+    counter/                    staff, PIN: queue, customers, dropoff, exceptions, reports, [code]
+    api/                        the JSON endpoints every page calls (table in site/README.md)
+shipping-client/
+  printer-agent/                the counter PC program, its own README
+  costs/                        what Cloudflare and the carriers charge us
+  for-other-stores/             the plan for running it for other Goin' Postal stores
+```
+
+If you only read three files, read `types.ts` (the shapes), `engine.ts` (how a quote happens) and `store.ts` (what we remember).
+
+### 4. Run it on your own computer
+
+You need Node.js 22 or newer and Git. The root README's first section shows how to install both. Then:
+
+```
+git clone https://github.com/wbp318/goin-postal-forsythe.git
+cd goin-postal-forsythe/site
+npm install
+cp .dev.vars.example .dev.vars
+npm run db:local
+npm run dev
+```
+
+On Windows PowerShell, `cp` works; if it complains use `Copy-Item .dev.vars.example .dev.vars`.
+
+What each line does:
+
+| Command | What happens | What you should see |
+|---|---|---|
+| `npm install` | Downloads Astro, the Cloudflare adapter, Stripe's library and the QR code library into `node_modules/`. Once per computer, and again after a big update. | A minute of scrolling, then `added N packages`. |
+| `cp .dev.vars.example .dev.vars` | Makes your local secrets file. The example has `COUNTER_PIN=1234` and everything else blank, which is mock mode. `.dev.vars` is ignored by Git so you cannot commit it by accident. | Nothing printed. |
+| `npm run db:local` | Creates PeterShip's tables in a local SQLite file under `.wrangler/`. Run it again after any change to `schema.sql`; it is safe to repeat. | A JSON blob ending in `"success": true`. |
+| `npm run dev` | Starts the website on your computer. Leave the window open. | `astro v7 ready` and `Local http://localhost:4321/`. |
+
+Open http://localhost:4321 in a browser. The PIN for every staff page is **1234**.
+
+If `npm run dev` says something about `D1_ERROR: no such table`, you skipped `npm run db:local`. If it says a port is in use, run `npm run dev -- --port 4399` and use that number instead.
+
+### 5. Walk through every screen
+
+Do these in order the first time; each one leaves something for the next to find. Everything is fake: no money moves and no label is real.
+
+**5a. A customer quotes and reserves online.** Open `/ship`. Fill in any US address, weight 2 lb, 10 by 8 by 4 inches, Get rates. Five demo rates appear with a note saying they are demo rates. Pick one, type an email, Continue. In mock mode Stripe is skipped and you land on the done page with a pickup code like `GP-7K3M9Q` and a QR code. Now go back, do it again with Canada as the country: the button reads Reserve, and the done page says the order is reserved for payment at the counter. That reserved order is what the queue is for.
+
+**5b. The queue.** Open `/counter/queue`, PIN 1234, Show queue. The Canadian reservation is listed with how long it has been waiting. This is the screen the tablet should sit on all day. Press **Rung up. Buy label** on it (pretending the POS took the money): the status changes to Label bought and three buttons appear. **Print at the counter** puts it in the print queue for the printer agent. **Mark printed** finishes it. **Void** cancels the label with the carrier and asks you to confirm first; the order then shows under Finished in the last day as Voided.
+
+**5c. A walk-up.** Still on `/counter/queue`, scroll down to Walk-up. This is the form for a person standing at the counter. Type their name and mobile number, the recipient, the box. Get rates, pick one, Add to queue. The new row appears at the top of the queue in a few seconds with your initials on it, and the price is exactly what the website would have quoted, because it is the same code. Ring it up on the POS, press Buy label, print.
+
+**5d. Customers.** Open `/counter/customers`, PIN, type part of the name or phone number you used in 5c. One row comes back with the number of shipments and a returning badge once they have two. Open shows contact details, every shipment with its status, and the address book. **Ship here again** jumps to the queue with the walk-up form already filled in from that earlier order; check the weight and size, Get rates, done. **Download CSV of everyone** gives a spreadsheet keyed by phone number, the same key the Coupon Counter uses, so the owners can see who is a regular.
+
+A walk-up with no phone and no email cannot be tied to a person (two John Smiths must not merge), so those appear in a separate list under the search results, found by name only.
+
+**5e. The order page.** Any `GP-` code opens `/counter/GP-XXXXXX`. This is what scanning the customer's QR code opens on the tablet. It has the same buttons as the queue row plus Open label to print, for a browser print when the agent is not running.
+
+**5f. Drop-offs.** Open `/counter/dropoff`. Type a tracking number (a UPS one starts with `1Z`, 18 characters; a USPS one is 22 digits starting with 9) and Accept. The carrier is guessed from the number's shape. At the end of the day press the carrier's **picked up** button and every drop-off for that carrier is stamped as handed over. When a customer calls saying their return never moved, this page is the answer to "did you really drop it here?"
+
+**5g. Tracking.** Open `/track?q=GP-XXXXXX` with the code from 5b or 5c after its label was bought. In mock mode a fake sequence of scans advances once an hour so the page has something to show. Customers get this link on the done page in all 13 languages.
+
+**5h. Exceptions.** Open `/counter/exceptions`. It lists anything a human should look at: carrier exceptions, returns to sender, labels bought three days ago and never scanned, no movement for a week. Nothing will be there on a fresh install. **Check carriers now** runs the tracking refresh on demand.
+
+**5i. Reports.** Open `/counter/reports`, pick today. Shipments, what customers paid, what carriers charged, margin, by day, carrier and service; busiest hours and weekdays; returning customers; drop-offs; and a CSV of every shipment for reconciling the carrier's invoice. In mock mode the margin is zero because the fake adapter reports its price as its cost.
+
+**5j. The printer agent.** Read `shipping-client/printer-agent/README.md`. In short: copy the folder to the counter PC, put the site address and the `PRINTER_KEY` in its JSON file, `node agent.mjs --test` prints a test label, `node agent.mjs` leaves it running. It polls the print queue every three seconds and refreshes tracking every ten minutes. Nothing inbound reaches the shop; the agent only makes outbound requests.
+
+### 6. What happens to one shipment, start to finish
+
+```mermaid
+stateDiagram-v2
+  [*] --> awaiting_payment: domestic, online, Stripe opened
+  [*] --> reserved: international online, or any walk-up
+  awaiting_payment --> labeled: Stripe webhook, fulfil()
+  reserved --> labeled: staff press Buy label after the POS, fulfil()
+  awaiting_payment --> cancelled: staff Cancel
+  reserved --> cancelled: staff Cancel
+  labeled --> printed: Mark printed, or the agent prints it
+  labeled --> voided: staff Void
+  printed --> voided: staff Void
+  printed --> in_transit: carrier scan, via poll
+  in_transit --> out_for_delivery
+  out_for_delivery --> delivered
+  in_transit --> exception: carrier problem, staff emailed
+  exception --> returned
+  delivered --> [*]
+```
+
+The first six states live on the **order** in KV (`src/lib/orders.ts`). From `labeled` on, the **shipment** row in D1 carries the carrier states, written by the tracking poll. The order page, the queue and the customer page show whichever is further along.
+
+`fulfil()` in `src/lib/fulfil.ts` is the one place a label is bought. Stripe's webhook calls it when a card clears; the counter calls it when staff press Buy label. It buys through the engine, saves the label on the order, writes the shipment row, the first tracking event and the customer's contact details, all in that order, and is safe to call twice.
+
+### 7. How a quote happens, in detail
+
+1. The page sends the destination and parcel to `POST /api/rates`.
+2. `validate.ts` cleans them: two-letter state, weight between 0.1 and 150 lb, dimensions between 1 and 108 inches, or a plain-English error.
+3. `engine.getQuotes()` looks at which adapters are **configured**, meaning their keys are present. Today that is only Easyship, which is always configured so mock mode works.
+4. It computes the billable weight per carrier (`dim.ts`) and asks every configured adapter at the same time, with a five-minute cache keyed on the whole request so repeated quotes for the same box are free.
+5. Any carrier that errors is logged and skipped; the customer sees the carriers that answered. Easyship fills in any carrier that has no direct adapter yet.
+6. The retail rules in `ratepro.json` turn each cost into a price. A service rule beats a carrier rule, which beats the default. With `enabled: false` (today) price equals cost.
+7. The rates are sorted by price. The customer sees carrier, service, price and days. Cost and which adapter answered stay on the server.
+8. When the customer picks one, `POST /api/orders` quotes **again** on the server and only accepts the rate if it is still there at that price. Nothing the browser sends about money is trusted.
+
+### 8. Going live, in order
+
+This is the owners' list. Each step is independent; stop anywhere and the site keeps working at the previous level.
+
+1. **Cloudflare account** (free). Create the KV namespace and D1 database and paste their ids into `wrangler.jsonc`:
+   ```
+   npx wrangler login
+   npx wrangler kv namespace create ORDERS
+   npx wrangler d1 create goin-postal
+   npm run db:remote
+   ```
+2. **Secrets.** For each: `npx wrangler secret put NAME` and paste the value when asked. Start with `COUNTER_PIN` (pick something longer than 1234) and `PRINTER_KEY` (any long random string). Set `SITE_URL` in `wrangler.jsonc` to the real domain.
+3. **Deploy.** In the Cloudflare dashboard, Workers, connect the GitHub repo, root directory `site`, build command `npm run build`. Every push to `main` deploys. The site is now live in mock mode, which is fine for the counter pages, the queue, drop-offs and customers; only rates and labels are fake.
+4. **Easyship** (fast). One account covers all four carriers through a middleman. Dashboard, APIs and Webhooks, Create API Connection, version 2024-09, the three scopes in `site/README.md`. `npx wrangler secret put EASYSHIP_TOKEN` with the `prod_` token. Rates and labels are now real. This is the fallback forever, so it is worth doing first.
+5. **Stripe.** Live secret key and a webhook for `checkout.session.completed` pointed at `/api/stripe-webhook`. Online card payments are now real.
+6. **Printer agent** on the counter PC with the same `PRINTER_KEY`. Print at the counter now reaches the Zebra.
+7. **Customer updates.** A free Resend account and a verified sending domain for email; a Twilio number for texts. Without them the messages are written to the log instead of sent.
+8. **Direct carriers** (the slow part, issue 12). One developer account per carrier in the store's name. As each one's keys go in, its adapter switches on by itself and takes over its own carrier; Easyship keeps the rest. Expect the first sandbox call to each to need field fixes; that is why each adapter is one file. Then run the parity endpoint (`POST /api/compare`) on a handful of real boxes to see every provider side by side before trusting it.
+9. **Retail rules.** Export the markups from GP Rate Pro (issue 11) into `ratepro.json` and set `enabled: true`. Online and counter prices now match. The next-up table has a staff screen for editing these without a deploy.
+10. **Switch over.** Run beside Easyship a month, compare the reports, then stop paying Easyship's per-label fee.
+
+### 9. Everyday operations
+
+| Need | Do |
+|---|---|
+| Look at the database in production | `npx wrangler d1 execute goin-postal --remote --command "SELECT id, status, price FROM shipments ORDER BY created_at DESC LIMIT 20"`. Add `--local` instead of `--remote` for your computer's copy. Any SQL works; it is SQLite. |
+| Change the PIN | `npx wrangler secret put COUNTER_PIN`. Takes effect on the next request. |
+| Add a table or column | Add it to `schema.sql` as a new `CREATE TABLE IF NOT EXISTS` (new tables, not new columns on old ones, so the file stays re-runnable), then `npm run db:local` and `npm run db:remote`. |
+| Change a price rule | Edit `ratepro.json`, push. Until the rules editor in the next-up table exists, this is a deploy. |
+| See why a carrier call failed | Cloudflare dashboard, the Worker, Logs. Every carrier error is logged with the carrier's name in front. Customers never see it. |
+| Refund a voided label | By hand: Stripe dashboard for online orders, the POS for counter ones. The order page reminds you. |
+| Tracking is stale | The printer agent refreshes every ten minutes while the PC is on; a GitHub Action every thirty minutes otherwise; Check carriers now on the exceptions page right now. |
+| Test a new change without touching the live site | `npm run dev` on your computer uses its own local KV and D1 under `.wrangler/`. Nothing you do there reaches production. |
+
+### 10. How to read the code
+
+Every API file in `src/pages/api/` has the same shape: read the JSON body, check the PIN, do one thing per `action`, return JSON or an error with a plain sentence. Every page in `src/pages/counter/` has the same shape: a PIN box, a form or a button, a `<script>` that calls one API and fills a table. Every `store.ts` function has an `if (env.DB)` branch for D1 and an `else` branch for memory, doing the same thing both ways. Every adapter implements the `Provider` interface from `types.ts`: `configured`, `rates`, `buyLabel`, and optionally `voidLabel` and `track`. Once you have read one of each you have read them all.
+
+Comments at the top of each file say what it is for and who calls it. The site README has the full table of pages and endpoints. The agenda's next-up table says what is being built next and in what order.
+
+### 11. When something goes wrong
+
+| What you see | What it means |
+|---|---|
+| `Wrong PIN` on every staff page | `COUNTER_PIN` is blank or different. Locally check `.dev.vars`; in production `npx wrangler secret put COUNTER_PIN`. |
+| `D1_ERROR: no such table` | Run `npm run db:local` (or `db:remote`). Also after pulling a change to `schema.sql`. |
+| `Demo rates` note on the Ship page | No `EASYSHIP_TOKEN` and no carrier keys. Expected until step 4 above. |
+| `That rate is no longer available` | More than five minutes passed between quoting and buying, or the carrier changed its price. Quote again. |
+| `easyship labels cannot be voided` or similar | A label bought before this version. Void it in the Easyship dashboard. |
+| Queued, but no printer agent is set up yet | `PRINTER_KEY` is not set on the site, or the agent is not running. Use Open label to print meanwhile. |
+| Margin reads zero in reports | Mock mode: the fake adapter's cost equals its price. Real carriers report real cost. |
+| An order is missing from the queue | Orders from before v1.22.0 were never mirrored into the `quotes` table. They still open at `/counter/GP-XXXXXX`. |
 
 ## Why build it
 
@@ -197,7 +420,7 @@ flowchart TB
   P2["2 · Rating engine<br/>engine, five adapters, dim weight,<br/>cache, parity endpoint<br/>✅ built, untested live"]:::local --> P3
   P3["3 · Labels<br/>print queue, printer agent, void ✅<br/>customs, manifests ⏸ keys"]:::local --> P4
   P4["4 · Tracking<br/>page, poll, exceptions,<br/>email and text ✅<br/>webhooks ⏸ keys"]:::local --> P5
-  P5["5 · Counter app<br/>drop-offs, reports, queue ✅<br/>customers, returns ⏳"]:::local --> P6
+  P5["5 · Counter app<br/>drop-offs, reports, queue, customers ✅<br/>returns, insurance ⏳"]:::local --> P6
   P6["6 · Switch over<br/>run beside Easyship for<br/>a month, then turn it off"]:::you --> P7
   P7["7 · Later<br/>business accounts, CSV batch,<br/>Shopify and Etsy, multi-store"]:::cloud
   classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00

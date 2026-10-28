@@ -9,7 +9,7 @@ import Base from '../../layouts/Base.astro';
 <Base title="Counter · Queue">
   <section class="hero">
     <h1>Queue</h1>
-    <p class="staff-nav">Staff: <a href="/counter/queue">Queue</a> · <a href="/counter/dropoff">Drop-offs</a> · <a href="/counter/exceptions">Exceptions</a> · <a href="/counter/reports">Reports</a></p>
+    <p class="staff-nav">Staff: <a href="/counter/queue">Queue</a> · <a href="/counter/customers">Customers</a> · <a href="/counter/dropoff">Drop-offs</a> · <a href="/counter/exceptions">Exceptions</a> · <a href="/counter/reports">Reports</a></p>
     <p class="lead">Who is waiting on a label. Online reservations show up here by themselves; type a walk-up in below. Oldest first.</p>
   </section>
 
@@ -190,5 +190,22 @@ import Base from '../../layouts/Base.astro';
       } catch (e: any) { werr.textContent = e.message; werr.hidden = false; addBtn.disabled = false; }
     });
     $('clear').addEventListener('click', () => { f.reset(); results.hidden = true; werr.hidden = true; });
+
+    // ?from=GP-CODE: "ship here again" from the customer page. Fills the form once the PIN is entered.
+    const from = new URLSearchParams(location.search).get('from');
+    async function prefill() {
+      if (!from || !pin()) return;
+      try {
+        const o = await api('/api/queue', { action: 'order', order: from });
+        const set = (n: string, v: unknown) => { const el = f.elements.namedItem(n) as HTMLInputElement | null; if (el && v != null && v !== '') el.value = String(v); };
+        set('name', o.name); set('email', o.email); set('phone', o.phone); (f.elements.namedItem('sms') as HTMLInputElement).checked = !!o.sms;
+        for (const k of ['contact_name', 'line_1', 'line_2', 'city', 'state', 'postal_code', 'country_alpha2']) set(k, o.destination[k]);
+        for (const k of ['weight_lb', 'length_in', 'width_in', 'height_in', 'description', 'value_usd']) set(k, o.parcel[k]);
+        msg.className = ''; msg.textContent = `Walk-up form filled from ${from}. Check the weight and size, then Get rates.`;
+        f.scrollIntoView({ behavior: 'smooth' });
+      } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    }
+    $('pin').addEventListener('change', prefill);
+    if (from) { msg.className = ''; msg.textContent = `Enter the PIN to fill the walk-up form from ${from}.`; }
   </script>
 </Base>

@@ -7,6 +7,7 @@ import type { Order } from '../lib/orders';
 
 export interface ShipmentRow {
   id: string;
+  customer_id?: string | null;
   carrier: string;
   service: string;
   rate_id: string;
@@ -69,8 +70,119 @@ const mem = {
   jobs: [] as PrintJob[],
   dropoffs: [] as Dropoff[],
   quotes: new Map<string, QuoteRow>(),
+  customers: new Map<string, CustomerRow>(),
   seq: 1,
 };
+
+// ---- customers --------------------------------------------------------------------------------
+// One row per person we can tell apart: matched on email, else on mobile number. A walk-up who gave
+// neither gets no customer row (two "John Smith"s must not merge); they are still found by name
+// through the quotes table. Written on every order save, read by /counter/customers.
+export interface CustomerRow {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  consent_sms: number;
+  consent_email: number;
+  signup_code: string | null;
+  created_at: string;
+  last_seen_at: string | null;
+}
+
+/** Digits only, US country code dropped, so 318-555-0100, (318) 555-0100 and +13185550100 all match. */
+export function normalizePhone(p: string | null | undefined): string | null {
+  const d = (p ?? '').replace(/\D/g, '');
+  if (d.length < 10) return null;
+  return d.length === 11 && d.startsWith('1') ? d.slice(1) : d;
+}
+const normEmail = (e: string | null | undefined) => (e ?? '').trim().toLowerCase() || null;
+
+function newCustomerId() {
+  const bytes = crypto.getRandomValues(new Uint8Array(5));
+  return 'C-' + Array.from(bytes, (b) => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 32]).join('');
+}
+
+export async function findCustomer(env: Env, email: string | null, phone: string | null): Promise<CustomerRow | null> {
+  if (!email && !phone) return null;
+  if (env.DB) {
+    return (await env.DB.prepare('SELECT * FROM customers WHERE (?1 IS NOT NULL AND email = ?1) OR (?2 IS NOT NULL AND phone = ?2) ORDER BY last_seen_at DESC LIMIT 1').bind(email, phone).first<CustomerRow>()) ?? null;
+  }
+  return [...mem.customers.values()].find((c) => (email && c.email === email) || (phone && c.phone === phone)) ?? null;
+}
+
+/** Create or refresh the customer for an order. Returns the id, or null when there is nothing to match on. */
+export async function upsertCustomer(env: Env, c: { name: string; email?: string | null; phone?: string | null; sms?: boolean }): Promise<string | null> {
+  const email = normEmail(c.email), phone = normalizePhone(c.phone);
+  if (!email && !phone) return null;
+  const t = now();
+  const existing = await findCustomer(env, email, phone);
+  const row: CustomerRow = existing
+    ? { ...existing, name: c.name.trim() || existing.name, email: existing.email ?? email, phone: existing.phone ?? phone, consent_sms: existing.consent_sms || (c.sms && phone ? 1 : 0), consent_email: existing.consent_email || (email ? 1 : 0), last_seen_at: t }
+    : { id: newCustomerId(), name: c.name.trim() || 'Customer', email, phone, consent_sms: c.sms && phone ? 1 : 0, consent_email: email ? 1 : 0, signup_code: null, created_at: t, last_seen_at: t };
+  if (env.DB) {
+    await env.DB.prepare('INSERT OR REPLACE INTO customers (id, name, email, phone, consent_sms, consent_email, signup_code, created_at, last_seen_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)')
+      .bind(row.id, row.name, row.email, row.phone, row.consent_sms, row.consent_email, row.signup_code, row.created_at, row.last_seen_at).run();
+  } else {
+    mem.customers.set(row.id, row);
+  }
+  return row.id;
+}
+
+export interface CustomerHit extends CustomerRow { shipments: number; first_at: string | null; returning: boolean }
+
+/** Search by any part of the name, the email, or the digits of a phone number. */
+export async function searchCustomers(env: Env, q: string, limit = 50): Promise<{ customers: CustomerHit[]; unlinked: QuoteRow[] }> {
+  const term = q.trim();
+  if (!term) return { customers: [], unlinked: [] };
+  const digits = term.replace(/\D/g, '');
+  const like = `%${term.toLowerCase()}%`;
+  let rows: CustomerRow[];
+  let unlinked: QuoteRow[];
+  if (env.DB) {
+    // Fewer than three digits would match everyone, so the phone clause then gets a pattern no phone has.
+    rows = (await env.DB.prepare(`SELECT * FROM customers WHERE LOWER(name) LIKE ?1 OR email LIKE ?1 OR phone LIKE ?2 ORDER BY last_seen_at DESC LIMIT ${limit}`).bind(like, digits.length >= 3 ? `%${digits}%` : 'x').all<CustomerRow>()).results;
+    unlinked = (await env.DB.prepare(`SELECT * FROM quotes WHERE email IS NULL AND phone IS NULL AND LOWER(customer_name) LIKE ?1 ORDER BY created_at DESC LIMIT 20`).bind(like).all<QuoteRow>()).results;
+  } else {
+    rows = [...mem.customers.values()].filter((c) => c.name.toLowerCase().includes(term.toLowerCase()) || (c.email ?? '').includes(term.toLowerCase()) || (digits.length >= 3 && (c.phone ?? '').includes(digits)))
+      .sort((a, b) => (b.last_seen_at ?? '').localeCompare(a.last_seen_at ?? '')).slice(0, limit);
+    unlinked = [...mem.quotes.values()].filter((x) => !x.email && !x.phone && (x.customer_name ?? '').toLowerCase().includes(term.toLowerCase())).sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 20);
+  }
+  const customers = await Promise.all(rows.map(async (c) => {
+    const h = await customerQuotes(env, c);
+    const real = h.filter((x) => x.status !== 'cancelled' && x.status !== 'voided');
+    return { ...c, shipments: real.length, first_at: real.length ? real[real.length - 1].created_at : null, returning: real.length > 1 };
+  }));
+  return { customers, unlinked };
+}
+
+/** Every quote that belongs to this customer, newest first, with the shipment's tracking status when a label was bought. */
+export async function customerQuotes(env: Env, c: CustomerRow): Promise<(QuoteRow & { shipment_status: string | null; tracking_number: string | null })[]> {
+  if (env.DB) {
+    return (await env.DB.prepare(
+      `SELECT q.*, s.status AS shipment_status, s.tracking_number FROM quotes q LEFT JOIN shipments s ON s.id = q.id
+       WHERE (?1 IS NOT NULL AND LOWER(q.email) = ?1) OR (?2 IS NOT NULL AND q.phone = ?2) ORDER BY q.created_at DESC LIMIT 200`).bind(c.email, c.phone).all<QuoteRow & { shipment_status: string | null; tracking_number: string | null }>()).results;
+  }
+  return [...mem.quotes.values()].filter((q) => (c.email && (q.email ?? '').toLowerCase() === c.email) || (c.phone && q.phone === c.phone))
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    .map((q) => ({ ...q, shipment_status: mem.shipments.get(q.id)?.status ?? null, tracking_number: mem.shipments.get(q.id)?.tracking_number ?? null }));
+}
+
+export async function getCustomer(env: Env, id: string): Promise<CustomerRow | null> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM customers WHERE id = ?1').bind(id).first<CustomerRow>()) ?? null;
+  return mem.customers.get(id) ?? null;
+}
+
+/** Everyone, for the CSV the owners paste next to the Coupon Counter: phone first, since that is what it keys on. */
+export async function allCustomers(env: Env): Promise<CustomerHit[]> {
+  const rows: CustomerRow[] = env.DB
+    ? (await env.DB.prepare('SELECT * FROM customers ORDER BY last_seen_at DESC LIMIT 5000').all<CustomerRow>()).results
+    : [...mem.customers.values()].sort((a, b) => (b.last_seen_at ?? '').localeCompare(a.last_seen_at ?? ''));
+  return Promise.all(rows.map(async (c) => {
+    const real = (await customerQuotes(env, c)).filter((x) => x.status !== 'cancelled' && x.status !== 'voided');
+    return { ...c, shipments: real.length, first_at: real.length ? real[real.length - 1].created_at : null, returning: real.length > 1 };
+  }));
+}
 
 // ---- counter queue ----------------------------------------------------------------------------
 // One row per order, written on every saveOrder(). The queue page lists these oldest first; the order
@@ -98,7 +210,7 @@ export async function upsertQuote(env: Env, order: Order) {
   const d = order.destination;
   const row: QuoteRow = {
     id: order.id, source: order.source ?? 'online', status: order.status,
-    customer_name: order.name?.trim() || d.contact_name || null, email: order.email || null, phone: order.phone || null,
+    customer_name: order.name?.trim() || d.contact_name || null, email: normEmail(order.email), phone: normalizePhone(order.phone),
     carrier: order.rate.carrier, service: order.rate.service, price: order.rate.total_charge,
     destination: `${d.contact_name}, ${d.city}, ${d.state} ${d.postal_code}${d.country_alpha2 !== 'US' ? ` ${d.country_alpha2}` : ''}`.replace(/\s+/g, ' ').trim(),
     international: order.international ? 1 : 0, staff: order.staff?.trim() || null,
@@ -112,6 +224,7 @@ export async function upsertQuote(env: Env, order: Order) {
   } else {
     mem.quotes.set(row.id, row);
   }
+  await upsertCustomer(env, { name: row.customer_name ?? '', email: row.email, phone: row.phone, sms: order.sms });
   return row;
 }
 
@@ -134,8 +247,9 @@ export async function listQueue(env: Env): Promise<{ open: QuoteRow[]; done: Quo
 // ---- shipments --------------------------------------------------------------------------------
 export async function recordShipment(env: Env, order: Order, label: Label, paidVia: 'stripe' | 'pos' | 'mock') {
   const t = now();
+  const customer = await findCustomer(env, normEmail(order.email), normalizePhone(order.phone));
   const row: ShipmentRow = {
-    id: order.id,
+    id: order.id, customer_id: customer?.id ?? null,
     carrier: order.rate.carrier, service: order.rate.service, rate_id: order.rate.id, provider: order.rate.id.split(':')[0],
     origin_json: JSON.stringify(order.origin), destination_json: JSON.stringify(order.destination), parcel_json: JSON.stringify(order.parcel),
     billable_weight_lb: order.rate.billable_weight_lb ?? null,
@@ -144,9 +258,9 @@ export async function recordShipment(env: Env, order: Order, label: Label, paidV
   };
   if (env.DB) {
     await env.DB.prepare(
-      `INSERT OR REPLACE INTO shipments (id, carrier, service, rate_id, provider, origin_json, destination_json, parcel_json, billable_weight_lb, cost, price, tax, paid_via, tracking_number, label_id, status, created_at, updated_at)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)`,
-    ).bind(row.id, row.carrier, row.service, row.rate_id, row.provider, row.origin_json, row.destination_json, row.parcel_json, row.billable_weight_lb, row.cost, row.price, row.tax, row.paid_via, row.tracking_number, row.label_id, row.status, row.created_at, row.updated_at).run();
+      `INSERT OR REPLACE INTO shipments (id, customer_id, carrier, service, rate_id, provider, origin_json, destination_json, parcel_json, billable_weight_lb, cost, price, tax, paid_via, tracking_number, label_id, status, created_at, updated_at)
+       VALUES (?1, ?19, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)`,
+    ).bind(row.id, row.carrier, row.service, row.rate_id, row.provider, row.origin_json, row.destination_json, row.parcel_json, row.billable_weight_lb, row.cost, row.price, row.tax, row.paid_via, row.tracking_number, row.label_id, row.status, row.created_at, row.updated_at, row.customer_id).run();
   } else {
     mem.shipments.set(row.id, row);
   }

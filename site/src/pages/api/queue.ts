@@ -2,12 +2,13 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { env } from '../../lib/env';
 import { quote } from '../../lib/quote';
-import { newOrderId, saveOrder, type Order } from '../../lib/orders';
+import { newOrderId, saveOrder, getOrder, type Order } from '../../lib/orders';
 import { parseAddress, parseParcel, json } from '../../lib/validate';
 import { listQueue } from '../../shipping/store';
 import { store } from '../../data/store';
 
 // The counter queue, from /counter/queue. Staff PIN required.
+//  order:  one order's customer, destination and parcel, to prefill the walk-up form.
 //  list:   every quote not yet printed, oldest first, plus what was finished or dropped in the last day.
 //  create: a walk-up. Staff typed the address and parcel in and picked a rate; the order is saved as
 //          "reserved", the same state an international online order lands in, so the existing
@@ -18,6 +19,12 @@ export const POST: APIRoute = async ({ request }) => {
   if (!env.COUNTER_PIN || String(b.pin) !== env.COUNTER_PIN) return json({ error: 'Wrong PIN' }, 403);
   try {
     if (b.action === 'list') return json(await listQueue(env));
+    if (b.action === 'order') {
+      // Prefill a walk-up from an earlier order ("ship here again" on the customer page).
+      const o = await getOrder(env, String(b.order ?? ''));
+      if (!o) return json({ error: 'No such order' }, 404);
+      return json({ name: o.name ?? '', email: o.email, phone: o.phone ?? '', sms: !!o.sms, destination: o.destination, parcel: o.parcel });
+    }
     if (b.action === 'create') {
       const destination = parseAddress(b.destination);
       const parcel = parseParcel(b.parcel);
