@@ -3,7 +3,7 @@ import Base from '../layouts/Base.astro';
 import StoreInfo from '../components/StoreInfo.astro';
 import { store } from '../data/store';
 ---
-<Base title="Goin' Postal Forsythe">
+<Base title={store.name}>
   <section class="hero">
     <h1 data-i18n="home.h1">Ship it, pack it, print it. One stop on Forsythe.</h1>
     <p class="lead" data-i18n="home.lead">Your neighborhood shipping store at 1800 Forsythe Ave in Monroe. Every major carrier, honest rates, and people who pack it right.</p>
@@ -25,8 +25,8 @@ import { store } from '../data/store';
     <div class="grid">
       <StoreInfo />
       <div class="card">
-        <iframe title="Map to Goin' Postal Forsythe" width="100%" height="280" style="border:0;border-radius:8px" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
-          src="https://www.google.com/maps?q=1800+Forsythe+Ave+Ste+2,+Monroe,+LA+71201&output=embed"></iframe>
+        <iframe title={`Map to ${store.name}`} width="100%" height="280" style="border:0;border-radius:8px" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+          src={`https://www.google.com/maps?q=${encodeURIComponent(store.address)}&output=embed`}></iframe>
       </div>
     </div>
   </section>

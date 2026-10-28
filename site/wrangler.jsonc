@@ -17,6 +17,19 @@
     { "binding": "DB", "database_name": "goin-postal", "database_id": "REPLACE_WITH_D1_ID" }
   ],
   "vars": {
+    "STORE_ID": "forsythe",
     "SITE_URL": "http://localhost:4321"
+  },
+  // A second store is the same code with its own storage, secrets and facts. Add a block here per store
+  // (scripts/new-store.py prints the commands) and deploy it with `--env <slug>`, or give that store its
+  // own Cloudflare project pointing at this repo with these values set in the dashboard. The store's
+  // name, address, hours and ship-from address come from the STORE_JSON secret (site/stores/<slug>.json).
+  "env": {
+    "west-carroll": {
+      "name": "goin-postal-west-carroll",
+      "kv_namespaces": [{ "binding": "ORDERS", "id": "REPLACE_WITH_THAT_STORES_KV_ID" }],
+      "d1_databases": [{ "binding": "DB", "database_name": "goin-postal-west-carroll", "database_id": "REPLACE_WITH_THAT_STORES_D1_ID" }],
+      "vars": { "STORE_ID": "west-carroll", "SITE_URL": "https://REPLACE.goinpostal.site" }
+    }
   }
 }

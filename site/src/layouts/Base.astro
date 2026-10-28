@@ -1,8 +1,11 @@
 ---
 import '../styles/global.css';
 import { LANGS } from '../i18n/strings';
+import { store } from '../data/store';
 interface Props { title: string; description?: string }
-const { title, description = "Shipping, packing, mailboxes and printing at 1800 Forsythe Ave Ste 2, Monroe, Louisiana." } = Astro.props;
+const { title, description = `Shipping, packing, mailboxes and printing at ${store.address}.` } = Astro.props;
+// The brand reads "Goin' Postal" plus the store's own word: Forsythe, Oak Grove.
+const brandRest = store.name.replace(/^Goin' Postal\s*/i, '') || store.name;
 ---
 <!doctype html>
 <html lang="en">
@@ -17,7 +20,7 @@ const { title, description = "Shipping, packing, mailboxes and printing at 1800 
     <a class="skip" href="#main" data-i18n="a11y.skip">Skip to content</a>
     <header class="top">
       <div class="wrap">
-        <a class="brand" href="/">Goin' Postal <span>Forsythe</span></a>
+        <a class="brand" href="/">Goin' Postal <span>{brandRest}</span></a>
         <nav>
           <a href="/ship" data-i18n="nav.ship">Ship</a>
           <a href="/track" data-i18n="nav.track">Track</a>
@@ -45,7 +48,7 @@ const { title, description = "Shipping, packing, mailboxes and printing at 1800 
     </main>
     <footer>
       <div class="wrap">
-        Goin' Postal Forsythe · 1800 Forsythe Ave Ste 2 · Monroe, LA 71201.
+        {store.name} · {store.address}.
         <span data-i18n="footer">Goin' Postal's name and logo belong to GP Brands. Independently owned and operated.</span>
       </div>
     </footer>

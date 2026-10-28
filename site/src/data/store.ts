@@ -1,5 +1,24 @@
-// Single place for store facts. Items marked TODO are for the owners to confirm.
-export const store = {
+// Single place for store facts. The values below are the Forsythe store, the first one. A second
+// store runs the same code with its own facts: a JSON file in site/stores/<slug>.json, set on that
+// store's deployment as the STORE_JSON secret (scripts/new-store.py prints the commands). Anything
+// the JSON leaves out keeps the default below, so a new store only has to say what differs.
+// Items marked TODO are for the owners to confirm.
+import { env as cfEnv } from 'cloudflare:workers';
+
+export interface StoreFacts {
+  id: string;                 // short slug, used in logs and the Z-report: forsythe, west-carroll
+  name: string;
+  address: string;
+  phone: string;
+  email: string;
+  origin: { contact_name: string; company_name: string; contact_phone: string; contact_email: string; line_1: string; line_2?: string; city: string; state: string; postal_code: string; country_alpha2: string };
+  formEndpoint: string;
+  hours: { days: string; key: string; open: string; openKey?: string }[];
+  services: { key: string; name: string; blurb: string }[];
+}
+
+export const defaults: StoreFacts = {
+  id: 'forsythe',
   name: "Goin' Postal Forsythe",
   address: "1800 Forsythe Ave Ste 2, Monroe, LA 71201",
   phone: "(318) 000-0000", // TODO: real store number
@@ -31,3 +50,21 @@ export const store = {
     { key: "shred", name: "Shredding", blurb: "Drop off a bag or a box. Secure, by the pound." },
   ],
 };
+
+/** The defaults with a store's own facts laid over them. Top-level fields replace; `origin` merges field by field; lists replace whole. */
+export function mergeStore(base: StoreFacts, over: Partial<StoreFacts> | null | undefined): StoreFacts {
+  if (!over || typeof over !== 'object') return base;
+  return { ...base, ...over, origin: { ...base.origin, ...(over.origin ?? {}) } };
+}
+
+function overrideFromEnv(): Partial<StoreFacts> | null {
+  try {
+    const raw = (cfEnv as unknown as { STORE_JSON?: string } | undefined)?.STORE_JSON;
+    return raw ? (JSON.parse(raw) as Partial<StoreFacts>) : null;
+  } catch (e) {
+    console.error('STORE_JSON is not valid JSON; using the default store facts', e);
+    return null;
+  }
+}
+
+export const store: StoreFacts = mergeStore(defaults, overrideFromEnv());

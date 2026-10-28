@@ -1,9 +1,10 @@
 ---
+import { store } from '../../data/store';
 import Base from '../../layouts/Base.astro';
 import { TEMPLATES, PALETTES, QUANTITIES, PRICES, FONT_NAMES } from '../../lib/cards';
 const cancelled = Astro.url.searchParams.get('cancelled');
 ---
-<Base title="Design business cards · Goin' Postal Forsythe" description="Design your own business cards in the browser like Vistaprint, pay online, and pick them up at Goin' Postal Forsythe.">
+<Base title={`Design business cards · ${store.name}`} description="Design your own business cards in the browser like Vistaprint, pay online, and pick them up at Goin' Postal Forsythe.">
   <section class="hero">
     <h1 data-i18n="cards.h1">Design your business cards</h1>
     <p class="lead" data-i18n="cards.lead">Pick a design, then click any text on the card to change it. Drag things where you want them. Pay online, pick up in the shop.</p>

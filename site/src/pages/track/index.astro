@@ -1,4 +1,5 @@
 ---
+import { store } from '../../data/store';
 export const prerender = false;
 import Base from '../../layouts/Base.astro';
 
@@ -6,7 +7,7 @@ import Base from '../../layouts/Base.astro';
 // the carrier tracking number; /track?q=... fills it in so the done page and emails can link straight here.
 const q = Astro.url.searchParams.get('q') ?? '';
 ---
-<Base title="Track a package · Goin' Postal Forsythe" description="Track a package shipped from Goin' Postal Forsythe with your pickup code or tracking number.">
+<Base title={`Track a package · ${store.name}`} description={`Track a package shipped from ${store.name} with your pickup code or tracking number.`}>
   <section class="hero">
     <h1 data-i18n="track.title">Track a package</h1>
     <p class="lead" data-i18n="track.lead">Type the pickup code from your order page, or the carrier tracking number from your label.</p>

@@ -1,6 +1,9 @@
 # Copy to .dev.vars for local development. Leave a value blank to run that piece in mock mode.
 # Nothing in this file is ever committed.
 
+# Run as another store: paste that store's facts (site/stores/<slug>.json) on one line. Blank = Forsythe.
+STORE_JSON=
+
 # Staff PIN for the counter pages and the parity endpoint.
 COUNTER_PIN=1234
 # Optional owner PIN. When set, only it can save price rules at /counter/rules; staff can still view them.

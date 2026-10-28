@@ -3,7 +3,7 @@ import Base from '../layouts/Base.astro';
 import StoreInfo from '../components/StoreInfo.astro';
 import { store } from '../data/store';
 ---
-<Base title="Contact · Goin' Postal Forsythe">
+<Base title={`Contact · ${store.name}`}>
   <section class="hero">
     <h1 data-i18n="contact.h1">Ask for a quote</h1>
     <p class="lead" data-i18n="contact.lead">Tell us what you're shipping and where. We'll reply with carrier options and a price.</p>

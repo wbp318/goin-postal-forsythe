@@ -349,3 +349,25 @@ The three sentences for the pitch: it runs in a browser on whatever you have. It
 - FedEx Authorized ShipCenter requirements, including an approved automated shipping system: [FASC new store training](https://www.fedex.com/content/dam/fedex/us-united-states/shipping/upload/FASC_New_Store_Training_General.pdf); [RSA FedEx program page](https://www.rscentral.org/Programs/FedEx).
 - CMRA rules: [USPS Federal Register notice on the CMRA registry, December 2022](https://govinfo.gov/content/pkg/FR-2022-12-23/pdf/2022-28026.pdf).
 - Internal: [PeterShip plan](../README.md), [what it saves](../costs/README.md), [monetization plan](../../monetization/README.md), [site costs](../../site/costs/README.md).
+
+## How a second store is stood up today (v1.39.0)
+
+The first form of multi-store shipped on October 28, 2026: one deployment per store, same code. It is what the West Carroll store, or the first other Goin' Postal, would use now.
+
+```mermaid
+flowchart LR
+  R["This repo, one codebase"]:::local --> F["Forsythe deployment<br/>its KV, D1, secrets<br/>facts: defaults"]:::local
+  R --> W["West Carroll deployment<br/>its KV, D1, secrets<br/>facts: STORE_JSON from stores/west-carroll.json"]:::local
+  R --> O["Another store<br/>same again"]:::local
+  S["scripts/new-store.py"]:::local -->|writes the facts file,<br/>prints the commands| W
+  classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
+  classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
+  classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
+```
+
+1. `python scripts/new-store.py <slug> --name --address --phone --email --site` writes `site/stores/<slug>.json`.
+2. A Cloudflare project (or a `wrangler.jsonc` environment) for that store with its own KV namespace and D1 database; `db/schema.sql` run against it.
+3. Secrets on that deployment: `STORE_JSON` (the facts file), a starting `COUNTER_PIN`, `PRINTER_KEY`, and the carrier, Stripe, Resend and Twilio keys as that store signs up.
+4. Push to main; the project builds it. Prices, add-ons, staff and accounts are set on that store's counter pages and live in its database.
+
+What this form does not give: one screen across stores (a franchisor dashboard), shared customers, or shared staff. That is the second form, a shared database with a store column on every table and a store picker for owners of more than one, priced in the table above and sensible only once a second store exists to test it against.

@@ -1,8 +1,9 @@
 ---
+import { store } from '../../data/store';
 import Base from '../../layouts/Base.astro';
 const cancelled = Astro.url.searchParams.get('cancelled');
 ---
-<Base title="Ship a package · Goin' Postal Forsythe" description="Compare USPS, UPS, FedEx and DHL rates and buy a label online. Print at home or show a QR code at the counter.">
+<Base title={`Ship a package · ${store.name}`} description="Compare USPS, UPS, FedEx and DHL rates and buy a label online. Print at home or show a QR code at the counter.">
   <section class="hero">
     <h1 data-i18n="ship.h1">Ship a package</h1>
     <p class="lead" data-i18n="ship.lead">Compare USPS, UPS, FedEx and DHL in one place. Pay online and print at home, or show us the QR code and we print it at the counter.</p>
