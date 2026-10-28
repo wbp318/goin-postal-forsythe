@@ -8,6 +8,7 @@ interface Env {
   DB?: D1Database;
   SITE_URL: string;
   COUNTER_PIN?: string;
+  OWNER_PIN?: string;         // optional second PIN that alone may save price rules; blank means COUNTER_PIN may
   PRINTER_KEY?: string;       // shared secret the counter printer agent sends to /api/print
   // Customer updates. Blank means log instead of send.
   RESEND_API_KEY?: string; MAIL_FROM?: string; STAFF_EMAIL?: string;

@@ -68,6 +68,7 @@ flowchart LR
 | `/counter/card/CODE/sheet` | staff | Print-ready 10-up US letter sheet, fronts then mirrored backs |
 | `/counter/queue` | staff | The quote queue: every quote reserved online and every walk-up staff typed in, oldest first, with Buy label, Print at the counter, Mark printed, Void and Cancel on one screen. Walk-up form quotes with the same engine as the website. Refreshes itself every thirty seconds. PIN |
 | `/counter/customers` | staff | Customer lookup: search by name, phone or email; shipment history with tracking status; address book with Ship here again (fills the walk-up form); returning badge; CSV of everyone keyed by phone. PIN |
+| `/counter/rules` | owner | Price rules: on/off, round to .99, default, per-carrier and per-service percent, flat fee or fixed price. Preview shows carrier cost, price now and price after for a sample box. Saved to D1 and used by the next quote, no deploy. Staff PIN views; `OWNER_PIN`, when set, is needed to save |
 | `/counter/CODE` | staff | Order details. For international and walk-ups: ring up on the POS, then press the button to buy the label. Print at the counter (queues for the printer agent), mark printed, void the label, cancel an unbought quote. Needs the PIN |
 | `/counter/dropoff` | staff | Drop-off capture: scan a prepaid or return package's barcode, record it with the time, mark a carrier's pickup. PIN |
 | `/counter/reports` | staff | Shipments, paid, cost and margin by day, carrier and service; busiest hours and days; returning customers; drop-offs; CSV download for reconciling the carrier invoice. PIN |
@@ -78,6 +79,7 @@ flowchart LR
 | `POST /api/stripe-webhook` | Stripe | `checkout.session.completed` buys the label for a `GP-` order or marks a `CD-` card order paid |
 | `POST /api/counter` | staff pages | `paid` (buy the label after the POS), `printed`, `void` (cancels the label with the carrier) and `cancel` (drops a quote with no label) actions, PIN |
 | `POST /api/queue` | staff page | `list` (open quotes oldest first, plus the last day's finished ones), `create` (a walk-up: re-quoted on the server, saved as reserved) and `order` (one order's details to prefill the walk-up form), PIN |
+| `POST /api/rules` | owner page | `get` (rules in force and their source), `file` (the JSON file's rules), `preview` (a draft applied to a real quote, nothing stored) and `save` (replace all, validated). Staff PIN, or `OWNER_PIN` to save |
 | `POST /api/customers` | staff page | `search` (name, email or phone digits; also unlinked walk-ups by name), `get` (customer, every quote, address book) and `export` (CSV), PIN |
 | `GET /api/track?q=` | site | Public: shipment status and events by pickup code or tracking number, refreshed from the carrier when older than fifteen minutes |
 | `POST /api/print` | staff page, printer agent | `queue` (PIN) puts a label in the print queue; `GET` and `done` (header `X-Printer-Key`) are what the counter PC's [printer agent](../shipping-client/printer-agent/README.md) calls |
@@ -97,12 +99,12 @@ Customers see one retail price per service and never a vendor name. Behind that:
 flowchart LR
   A["Address + parcel"] --> Q["quote() in src/lib/quote.ts"]
   Q --> C["Carrier cost<br/>PeterShip engine: direct adapters<br/>when keyed, Easyship fills<br/>USPS, UPS, FedEx, DHL"]
-  C --> P["Retail rules<br/>src/data/ratepro.json<br/>mirrored from GP Rate Pro"]
+  C --> P["Retail rules<br/>retail_rules table, edited at /counter/rules<br/>mirrored from GP Rate Pro"]
   P --> R["Price the customer sees<br/>same as the counter"]
 ```
 
 - **Cost** comes from PeterShip's rating engine in `src/shipping/`: direct USPS, UPS, FedEx and DHL adapters that each switch on when their keys are present, with the store's Easyship account filling in any carrier that has no keys yet. Today no direct keys are set, so Easyship answers for all four in one call. See [`shipping-client/README.md`](../shipping-client/README.md). The provider name appears nowhere a customer can see: not in page text, the demo note, the demo label, or the API response.
-- **Price** is cost plus the store's retail rules in `src/data/ratepro.json`, which mirror GP Rate Pro, the system the shop quotes with at the counter. Rules are percent over cost plus a flat fee, per carrier or per service, or a fixed price per service, with optional rounding to .99. A service rule beats a carrier rule, which beats the default. With `enabled: false` cost passes through unchanged.
+- **Price** is cost plus the store's retail rules, which mirror GP Rate Pro, the system the shop quotes with at the counter. The owners edit them at `/counter/rules`; they are stored in the `retail_rules` table and `src/data/ratepro.json` is only the starting point until the first save. Rules are percent over cost plus a flat fee, per carrier or per service, or a fixed price per service, with optional rounding to .99. A service rule beats a carrier rule, which beats the default. With the switch off cost passes through unchanged. The five-minute rate cache stores cost, not price, so a saved change shows on the next quote.
 - **Wiring Rate Pro itself:** if GP Brands or the vendor provides an export or an API (issue 11), it plugs in at `src/lib/pricing.ts`, the one place that turns cost into price. Nothing else changes.
 
 ## Easy to read for older customers

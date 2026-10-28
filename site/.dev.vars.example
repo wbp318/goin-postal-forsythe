@@ -3,6 +3,8 @@
 
 # Staff PIN for the counter pages and the parity endpoint.
 COUNTER_PIN=1234
+# Optional owner PIN. When set, only it can save price rules at /counter/rules; staff can still view them.
+OWNER_PIN=
 
 # Shared secret for the counter printer agent (shipping-client/printer-agent). Any long random string.
 PRINTER_KEY=change-me

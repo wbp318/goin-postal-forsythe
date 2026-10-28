@@ -71,8 +71,69 @@ const mem = {
   dropoffs: [] as Dropoff[],
   quotes: new Map<string, QuoteRow>(),
   customers: new Map<string, CustomerRow>(),
+  rules: [] as { id: number; scope: string; match: string | null; percent: number | null; flat: number | null; price: number | null; active: number; updated_at: string }[],
   seq: 1,
 };
+
+// ---- retail rules -----------------------------------------------------------------------------
+// The markup between carrier cost and the price customers see, editable at /counter/rules without a
+// deploy. Rows: scope "default" (one), "carrier" (match USPS, UPS, FedEx, DHL) or "service" (match the
+// exact service name). The two switches live as rows too, scope "setting", match "enabled" or
+// "round_to_99", so the table needs no second table and no new columns. Until the first save the
+// table is empty and pricing.ts falls back to src/data/ratepro.json.
+export interface RuleRow {
+  id?: number;
+  scope: 'default' | 'carrier' | 'service';
+  match: string | null;
+  percent: number | null;
+  flat: number | null;
+  price: number | null;
+  active: number;
+}
+export interface RulesConfig { enabled: boolean; round_to_99: boolean; rules: RuleRow[]; updated_at: string | null }
+
+interface RawRuleRow { id: number; scope: string; match: string | null; percent: number | null; flat: number | null; price: number | null; active: number; updated_at: string }
+
+let rulesCache: { at: number; value: RulesConfig | null } | null = null;
+const RULES_TTL = 60_000; // a saved change reaches every running copy of the site within a minute
+
+/** The saved rules, or null when nothing has been saved yet. Cached for a minute per running instance. */
+export async function loadRules(env: Env, fresh = false): Promise<RulesConfig | null> {
+  if (!fresh && rulesCache && Date.now() - rulesCache.at < RULES_TTL) return rulesCache.value;
+  let rows: RawRuleRow[];
+  if (env.DB) rows = (await env.DB.prepare('SELECT * FROM retail_rules ORDER BY id').all<RawRuleRow>()).results;
+  else rows = mem.rules;
+  let value: RulesConfig | null = null;
+  if (rows.length) {
+    const setting = (k: string) => rows.find((r) => r.scope === 'setting' && r.match === k);
+    value = {
+      enabled: !!setting('enabled')?.active,
+      round_to_99: !!setting('round_to_99')?.active,
+      rules: rows.filter((r) => r.scope !== 'setting').map(({ id, scope, match, percent, flat, price, active }) => ({ id, scope: scope as RuleRow['scope'], match, percent, flat, price, active })),
+      updated_at: rows.map((r) => r.updated_at).sort().pop() ?? null,
+    };
+  }
+  rulesCache = { at: Date.now(), value };
+  return value;
+}
+
+/** Replace every rule at once. The editor always sends the whole table, so there is no partial state. */
+export async function saveRules(env: Env, c: { enabled: boolean; round_to_99: boolean; rules: RuleRow[] }): Promise<RulesConfig> {
+  const t = now();
+  const rows: Omit<RawRuleRow, 'id'>[] = [
+    { scope: 'setting', match: 'enabled', percent: null, flat: null, price: null, active: c.enabled ? 1 : 0, updated_at: t },
+    { scope: 'setting', match: 'round_to_99', percent: null, flat: null, price: null, active: c.round_to_99 ? 1 : 0, updated_at: t },
+    ...c.rules.map((r) => ({ scope: r.scope, match: r.match, percent: r.percent, flat: r.flat, price: r.price, active: r.active ? 1 : 0, updated_at: t })),
+  ];
+  if (env.DB) {
+    const ins = env.DB.prepare('INSERT INTO retail_rules (scope, match, percent, flat, price, active, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)');
+    await env.DB.batch([env.DB.prepare('DELETE FROM retail_rules'), ...rows.map((r) => ins.bind(r.scope, r.match, r.percent, r.flat, r.price, r.active, r.updated_at))]);
+  } else {
+    mem.rules = rows.map((r, i) => ({ id: i + 1, ...r }));
+  }
+  rulesCache = null;
+  return (await loadRules(env, true))!;
+}
 
 // ---- customers --------------------------------------------------------------------------------
 // One row per person we can tell apart: matched on email, else on mobile number. A walk-up who gave

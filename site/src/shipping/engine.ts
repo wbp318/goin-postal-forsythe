@@ -30,9 +30,13 @@ export interface QuoteResult { rates: Rate[]; demo: boolean; errors: { carrier: 
 export async function getQuotes(env: Env, origin: Address, destination: Address, parcel: Parcel): Promise<QuoteResult> {
   const oversize = lengthPlusGirth(parcel) > 130;
   const key = cacheKey(origin, destination, parcel);
+  // The cache holds carrier cost, not price, so a rule change at /counter/rules shows at once.
   if (env.ORDERS) {
     const hit = await env.ORDERS.get(key);
-    if (hit) return { ...(JSON.parse(hit) as QuoteResult), oversize };
+    if (hit) {
+      const cached = JSON.parse(hit) as QuoteResult;
+      return { ...cached, rates: (await retail(env, cached.rates)).sort((a, b) => a.total_charge - b.total_charge), oversize };
+    }
   }
 
   const { direct, fallback } = activeProviders(env);
@@ -47,11 +51,10 @@ export async function getQuotes(env: Env, origin: Address, destination: Address,
     rates = rates.concat(fill.filter((r) => missing.includes(r.carrier)));
   }
 
-  rates = retail(rates).sort((a, b) => a.total_charge - b.total_charge);
   const demo = direct.length === 0 && !env.EASYSHIP_TOKEN;
-  const out: QuoteResult = { rates, demo, errors, oversize };
-  if (env.ORDERS && rates.length) await env.ORDERS.put(key, JSON.stringify(out), { expirationTtl: CACHE_TTL });
-  return out;
+  if (env.ORDERS && rates.length) await env.ORDERS.put(key, JSON.stringify({ rates, demo, errors, oversize }), { expirationTtl: CACHE_TTL });
+  const priced = (await retail(env, rates)).sort((a, b) => a.total_charge - b.total_charge);
+  return { rates: priced, demo, errors, oversize };
 }
 
 /** Routes a label purchase to whichever adapter produced the rate id. */

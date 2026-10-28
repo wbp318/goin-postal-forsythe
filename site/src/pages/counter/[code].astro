@@ -30,7 +30,7 @@ if (!order) return new Response('No such order', { status: 404 });
       {order.status === 'labeled' && <p><button class="btn kraft" data-action="printed">Mark printed</button></p>}
       {(order.status === 'labeled' || order.status === 'printed') && <p><button class="btn small" data-action="void" data-confirm="Void this label with the carrier? If the customer paid, refund them on the POS or in Stripe by hand.">Void label</button></p>}
       {(order.status === 'awaiting_payment' || order.status === 'reserved') && <p><button class="btn small" data-action="cancel" data-confirm="Drop this quote? Nothing has been bought.">Cancel quote</button></p>}
-      <p class="staff-nav">{order.label?.tracking_number && <><a href={`/track?q=${order.id}`}>Tracking</a> · </>}<a href="/counter/queue">Queue</a> · <a href="/counter/customers">Customers</a> · <a href="/counter/dropoff">Drop-offs</a> · <a href="/counter/exceptions">Exceptions</a> · <a href="/counter/reports">Reports</a></p>
+      <p class="staff-nav">{order.label?.tracking_number && <><a href={`/track?q=${order.id}`}>Tracking</a> · </>}<a href="/counter/queue">Queue</a> · <a href="/counter/customers">Customers</a> · <a href="/counter/dropoff">Drop-offs</a> · <a href="/counter/exceptions">Exceptions</a> · <a href="/counter/reports">Reports</a> · <a href="/counter/rules">Prices</a></p>
       {order.status === 'printed' && <p>Printed {order.printed_at}.</p>}
       {order.status === 'voided' && <p>Label voided {order.voided_at}. Refund the customer by hand if they paid.</p>}
       {order.status === 'cancelled' && <p>Quote cancelled {order.cancelled_at}. Nothing was bought.</p>}
