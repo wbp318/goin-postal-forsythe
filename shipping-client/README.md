@@ -2,7 +2,7 @@
 
 PeterShip is the store's own shipping client. A plan for replacing Easyship with software the store owns: rating, labels, tracking, drop-offs and reports for USPS, UPS, FedEx and DHL, built on the same Cloudflare stack as the website. The same thing ShippingEasy, Easyship and GP Rate Pro do, but ours. PeterShip is proprietary, see [LICENSE](LICENSE); it is not under the repository's Apache license.
 
-Item 44 in [`AGENDA.md`](../AGENDA.md) tracks it. Everything that can be built without carrier keys is built and running in mock mode: the rating engine (Phase 2), the print queue and printer agent (Phase 3), tracking, poll, exceptions and customer updates (Phase 4), and drop-off capture, reports, the quote queue, customer lookup and the price rules editor (Phase 5). Releases v1.16.0 through v1.24.1, October 21 to 28, 2026. See [What is built so far](#what-is-built-so-far). What remains waits on the owners' carrier accounts (Phase 1).
+Item 44 in [`AGENDA.md`](../AGENDA.md) tracks it. Everything that can be built without carrier keys is built and running in mock mode: the rating engine (Phase 2), the print queue and printer agent (Phase 3), tracking, poll, exceptions and customer updates (Phase 4), and drop-off capture, reports, the quote queue, customer lookup, the price rules editor and drop-off receipts (Phase 5). Releases v1.16.0 through v1.25.0, October 21 to 28, 2026. See [What is built so far](#what-is-built-so-far). What remains waits on the owners' carrier accounts (Phase 1).
 
 New to this? [The long version](#the-long-version-how-petership-works-and-how-to-run-it) further down explains every word, every file, how to run it on your own computer, a screen-by-screen test script, what happens to one shipment from quote to delivery, and the go-live list in order. It is written for Peter, Rin and William and assumes none of this has been seen before.
 
@@ -77,6 +77,7 @@ flowchart LR
 | Exceptions list for staff: carrier exceptions, returns to sender, labels not scanned after three days, no movement for seven days, with Check carriers now | `/counter/exceptions`, `POST /api/exceptions` | Done |
 | Reports for staff: shipments, what customers paid, what carriers charged and the margin, by day, carrier and service; busiest hours and weekdays; returning customers; drop-offs by carrier; CSV of every shipment for reconciling the carrier invoice | `/counter/reports`, `POST /api/reports`, `store.report()` | Done. Margin reads zero in mock mode because the fallback adapter reports its price as the cost |
 | Quote queue for the counter: every online reservation and every walk-up on one screen, oldest first, waiting time in red after twenty minutes, with buy, print, mark printed, void and cancel. Walk-ups are typed in on the same page and quoted by the same engine as the website, so counter and site prices agree. A `quotes` table mirrors every order save, since KV cannot be listed cheaply | `/counter/queue`, `POST /api/queue`, `quotes` table | Done |
+| Drop-off receipts: when a drop-off is scanned a 4 by 6 receipt goes to the counter printer through the print queue (store name, time, carrier, receipt number, customer, who accepted it, the tracking barcode in Code 128, and what to do next), and, if the customer gave a mobile number, the same receipt as a text. Print again and Text again on every recent drop-off, and a browser-printable copy at `/counter/receipt/ID` for when the agent is not running | `src/shipping/receipt.ts`, `/api/dropoff` `receipt` and `text`, `/counter/receipt/[id]` | Done. Texts log until the Twilio keys are set |
 | Price rules editor: the markup between carrier cost and customer price, edited by the owners at `/counter/rules` and stored in the `retail_rules` table; the JSON file is only the starting point. On/off and round-to-.99 switches, a Default row, a row per carrier, any number of service rows, each percent plus flat fee or a fixed price. Preview applies a draft to a real quote for a sample box and shows cost, price now and price after, before anything is saved. The rate cache stores cost, so a save shows on the very next quote online and at the counter. Optional `OWNER_PIN` so staff can view but only the owner can save | `/counter/rules`, `POST /api/rules`, `src/lib/pricing.ts` | Done. Numbers still to be copied from Rate Pro (issue 11) |
 | Customer lookup: search by any part of a name, an email or phone digits; every shipment newest first with tracking status; address book from past orders with Ship here again, which fills the walk-up form; returning badge after two shipments; CSV of everyone keyed by phone for the Coupon Counter. A `customers` row is created or refreshed on every order save, matched on email, else mobile; walk-ups with neither stay unlinked and are found by name | `/counter/customers`, `POST /api/customers`, `customers` table, `shipments.customer_id` | Done |
 | Void and cancel: a bought label is voided with its carrier (Easyship cancel, USPS, UPS, FedEx, DHL void routed by label id) and the shipment marked voided so it leaves the reports; an unbought quote is cancelled | `POST /api/counter` `void` and `cancel` | Done in mock mode |
@@ -106,6 +107,8 @@ flowchart LR
   AG["printer-agent/agent.mjs<br/>counter PC, polls"]:::local --> PQ
   AG --> Z["Zebra, ZPL over TCP 9100<br/>or PDF via the OS"]:::local
   DO["Staff tablet<br/>/counter/dropoff<br/>scan barcode"]:::you --> DA["/api/dropoff"]:::local --> D1
+  DA -->|receipt ZPL| PQ
+  DA -.->|text, Twilio| CU
   classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
   classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
   classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
@@ -140,7 +143,7 @@ A shipping client is the software between a person with a box and the carriers. 
 | **Secret** | A password or API key. Never in the code. Locally in `site/.dev.vars`, in production set with `npx wrangler secret put NAME`. |
 | **PIN** | The one shared staff password for every `/counter/` page, set as the secret `COUNTER_PIN`. An optional second one, `OWNER_PIN`, is the only one that can save price rules. Per-person logins are a later phase. |
 | **Printer agent** | A small Node program on the counter PC that watches the print queue and sends labels to the Zebra. |
-| **Drop-off** | A package a customer brings in that already has a label (an Amazon return, a prepaid label). We do not sell anything; we scan it so there is a record it was handed to us. |
+| **Drop-off** | A package a customer brings in that already has a label (an Amazon return, a prepaid label). We do not sell anything; we scan it so there is a record it was handed to us, and the customer leaves with a receipt that says so. |
 | **Manifest** or **SCAN form** | One barcode the carrier driver scans to accept every package of the day at once. Waits on carrier keys. |
 
 ### 3. Where everything lives
@@ -168,6 +171,7 @@ site/
     store.ts                    every read and write to D1, with an in-memory copy when D1 is absent
     poll.ts                     refresh tracking for open shipments and send customer updates
     notify.ts                   email (Resend) and text (Twilio) templates and sending
+    receipt.ts                  the drop-off receipt, as ZPL for the Zebra and as one text message
   src/lib/
     orders.ts                   the Order record in KV and its statuses
     quote.ts                    thin wrapper: pages call quote(), quote() calls the engine
@@ -256,7 +260,7 @@ A walk-up with no phone and no email cannot be tied to a person (two John Smiths
 
 **5e. The order page.** Any `GP-` code opens `/counter/GP-XXXXXX`. This is what scanning the customer's QR code opens on the tablet. It has the same buttons as the queue row plus Open label to print, for a browser print when the agent is not running.
 
-**5f. Drop-offs.** Open `/counter/dropoff`. Type a tracking number (a UPS one starts with `1Z`, 18 characters; a USPS one is 22 digits starting with 9) and Accept. The carrier is guessed from the number's shape. At the end of the day press the carrier's **picked up** button and every drop-off for that carrier is stamped as handed over. When a customer calls saying their return never moved, this page is the answer to "did you really drop it here?"
+**5f. Drop-offs.** Open `/counter/dropoff`. Type a tracking number (a UPS one starts with `1Z`, 18 characters; a USPS one is 22 digits starting with 9) and Accept. The carrier is guessed from the number's shape. Leave **Print a receipt** ticked and a 4 by 6 slip with the barcode comes out of the counter printer as soon as you accept (in mock mode it is queued and the message says no agent is running; the Receipt link under the entry shows the same slip for the browser). Tick **Text the receipt** when the customer typed a mobile number and they get it as a message too; until the Twilio keys are set it is written to the terminal instead. Each recent entry has Print again and Text again. At the end of the day press the carrier's **picked up** button and every drop-off for that carrier is stamped as handed over. When a customer calls saying their return never moved, this page and their receipt are the answer to "did you really drop it here?"
 
 **5g. Tracking.** Open `/track?q=GP-XXXXXX` with the code from 5b or 5c after its label was bought. In mock mode a fake sequence of scans advances once an hour so the page has something to show. Customers get this link on the done page in all 13 languages.
 
@@ -503,7 +507,7 @@ flowchart TB
   P2["2 · Rating engine<br/>engine, five adapters, dim weight,<br/>cache, parity endpoint<br/>✅ built, untested live"]:::local --> P3
   P3["3 · Labels<br/>print queue, printer agent, void ✅<br/>customs, manifests ⏸ keys"]:::local --> P4
   P4["4 · Tracking<br/>page, poll, exceptions,<br/>email and text ✅<br/>webhooks ⏸ keys"]:::local --> P5
-  P5["5 · Counter app<br/>drop-offs, reports, queue,<br/>customers, prices ✅<br/>returns, insurance ⏳"]:::local --> P6
+  P5["5 · Counter app<br/>drop-offs and receipts, reports,<br/>queue, customers, prices ✅<br/>returns, insurance ⏳"]:::local --> P6
   P6["6 · Switch over<br/>run beside Easyship for<br/>a month, then turn it off"]:::you --> P7
   P7["7 · Later<br/>business accounts, CSV batch,<br/>Shopify and Etsy, multi-store"]:::cloud
   classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00

@@ -433,6 +433,11 @@ export async function recordDropoff(env: Env, d: { barcode: string; carrier?: st
   return full;
 }
 
+export async function getDropoff(env: Env, id: number): Promise<Dropoff | null> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM dropoffs WHERE id = ?1').bind(id).first<Dropoff>()) ?? null;
+  return mem.dropoffs.find((d) => d.id === id) ?? null;
+}
+
 export async function findDropoffs(env: Env, barcode: string): Promise<Dropoff[]> {
   const b = barcode.replace(/\s+/g, '').toUpperCase();
   if (env.DB) return (await env.DB.prepare('SELECT * FROM dropoffs WHERE barcode = ?1 ORDER BY id DESC').bind(b).all<Dropoff>()).results;

@@ -70,7 +70,8 @@ flowchart LR
 | `/counter/customers` | staff | Customer lookup: search by name, phone or email; shipment history with tracking status; address book with Ship here again (fills the walk-up form); returning badge; CSV of everyone keyed by phone. PIN |
 | `/counter/rules` | owner | Price rules: on/off, round to .99, default, per-carrier and per-service percent, flat fee or fixed price. Preview shows carrier cost, price now and price after for a sample box. Saved to D1 and used by the next quote, no deploy. Staff PIN views; `OWNER_PIN`, when set, is needed to save |
 | `/counter/CODE` | staff | Order details. For international and walk-ups: ring up on the POS, then press the button to buy the label. Print at the counter (queues for the printer agent), mark printed, void the label, cancel an unbought quote. Needs the PIN |
-| `/counter/dropoff` | staff | Drop-off capture: scan a prepaid or return package's barcode, record it with the time, mark a carrier's pickup. PIN |
+| `/counter/dropoff` | staff | Drop-off capture: scan a prepaid or return package's barcode, record it with the time, mark a carrier's pickup. Prints a receipt at the counter (ticked by default, remembered per tablet) and can text it to the customer; Print again and Text again on each recent row. PIN |
+| `/counter/receipt/ID` | staff | One drop-off receipt for printing from the browser or showing on the tablet, with Print at the counter. PIN |
 | `/counter/reports` | staff | Shipments, paid, cost and margin by day, carrier and service; busiest hours and days; returning customers; drop-offs; CSV download for reconciling the carrier invoice. PIN |
 | `/counter/exceptions` | staff | Shipments needing a human: carrier exceptions, returns, never scanned after three days, not moving for a week. Check carriers now runs the poll. PIN |
 | `POST /api/rates` | site | Rating engine: every configured carrier in parallel, Easyship fills gaps, retail rules, cached five minutes. Returns service, price and days only |
@@ -83,7 +84,7 @@ flowchart LR
 | `POST /api/customers` | staff page | `search` (name, email or phone digits; also unlinked walk-ups by name), `get` (customer, every quote, address book) and `export` (CSV), PIN |
 | `GET /api/track?q=` | site | Public: shipment status and events by pickup code or tracking number, refreshed from the carrier when older than fifteen minutes |
 | `POST /api/print` | staff page, printer agent | `queue` (PIN) puts a label in the print queue; `GET` and `done` (header `X-Printer-Key`) are what the counter PC's [printer agent](../shipping-client/printer-agent/README.md) calls |
-| `POST /api/dropoff` | staff page | `accept`, `lookup`, `recent`, `handed` actions, PIN |
+| `POST /api/dropoff` | staff page | `accept` (with `receipt` and `text` flags), `lookup`, `recent`, `handed`, `get`, `receipt` (re-queue the slip) and `text` (re-send it) actions, PIN |
 | `POST /api/track-poll` | printer agent, GitHub Action, staff page | Refreshes tracking for open shipments older than fifteen minutes and sends customer updates for anything new. `X-Printer-Key` header or PIN |
 | `POST /api/exceptions` | staff page | The exceptions list, PIN |
 | `POST /api/reports` | staff page | `from` and `to` days, up to a year; `format: "csv"` for the shipment rows. PIN |

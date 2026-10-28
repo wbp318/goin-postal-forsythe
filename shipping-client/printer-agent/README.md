@@ -77,7 +77,7 @@ Leave the window open. To start it with Windows, create a shortcut to `node C:\P
 ## How a label gets printed
 
 1. Staff open the order on the tablet (scan the customer's QR or go to `/counter/GP-XXXXXX`), type the PIN and tap **Print at the counter**.
-2. The website puts a job in the `print_queue` table: ZPL if the carrier returned it, otherwise the PDF URL.
+2. The website puts a job in the `print_queue` table: ZPL if the carrier returned it, otherwise the PDF URL. Drop-off receipts arrive the same way as 4 by 6 ZPL (kind `receipt`) and print on the Zebra unless a separate `receipt` printer is configured.
 3. The agent picks the job up within three seconds, prints it, and marks it done.
 4. If a job fails five times (printer off, out of labels) it is skipped with a message in the agent window, and the label can still be opened and printed from the counter page by hand.
 

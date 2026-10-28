@@ -10,7 +10,9 @@
 // Jobs come in three kinds:
 //   label_zpl  base64 ZPL          -> raw TCP to a networked Zebra (port 9100) or to a shared Windows printer
 //   label_pdf  a URL to a PDF      -> downloaded to the spool folder and printed with the default PDF app
-//   receipt    base64 ESC/POS      -> same path as ZPL, usually a different printer
+//   receipt    base64 raw bytes    -> the receipt printer if one is configured, else the Zebra. The site
+//                                     sends drop-off receipts as 4x6 ZPL, so the Zebra prints them as is;
+//                                     an ESC/POS receipt printer would need a different payload (later)
 // Anything the agent cannot print is left in the queue and logged, so nothing is silently lost.
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { createConnection } from 'node:net';

@@ -1,0 +1,73 @@
+---
+export const prerender = false;
+import Base from '../../../layouts/Base.astro';
+import { store } from '../../../data/store';
+
+// Staff page: one drop-off receipt, for printing from the browser when the printer agent is not
+// running, or for showing the customer on the tablet. Loads after the PIN so a guessed number shows
+// nothing. The thermal version (with a scannable barcode) goes through the print queue; this is the
+// same words on paper with the number in large type.
+const id = Number(Astro.params.id);
+if (!Number.isInteger(id) || id < 1) return new Response('No such receipt', { status: 404 });
+---
+<Base title={`Counter · Receipt ${id}`}>
+  <section class="hero noprint">
+    <h1>Drop-off receipt {id}</h1>
+    <p class="staff-nav">Staff: <a href="/counter/queue">Queue</a> · <a href="/counter/customers">Customers</a> · <a href="/counter/dropoff">Drop-offs</a> · <a href="/counter/exceptions">Exceptions</a> · <a href="/counter/reports">Reports</a> · <a href="/counter/rules">Prices</a></p>
+    <p class="btnrow">
+      <label>Staff PIN <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
+      <button class="btn" id="load">Show</button>
+      <button class="btn kraft hidden" id="print">Print this page</button>
+      <button class="btn kraft hidden" id="thermal">Print at the counter</button>
+    </p>
+    <p id="msg" role="alert"></p>
+  </section>
+
+  <div id="slip" class="card slip hidden">
+    <h2>{store.name}</h2>
+    <p class="muted">{store.address}<br/>{store.phone}</p>
+    <h3>DROP-OFF RECEIPT</h3>
+    <p id="meta"></p>
+    <p class="muted">Tracking number</p>
+    <p id="code" class="code"></p>
+    <p>We handed this package to the carrier named above on their next pickup. Track it on the carrier's website with the number above. Keep this receipt until it is delivered.</p>
+    <p class="muted">Questions: {store.phone}. Bring this receipt or the number.</p>
+  </div>
+
+  <style>
+    .slip { max-width: 28rem; margin: 24px auto; }
+    .slip h3 { font-size: 1.6rem; margin: 16px 0 8px; letter-spacing: .04em; }
+    .slip .code { font-family: ui-monospace, Consolas, monospace; font-size: 1.5rem; font-weight: 700; word-break: break-all; margin: 0 0 8px; }
+    @media print { .noprint, header, footer, nav { display: none !important; } .slip { border: none; box-shadow: none; margin: 0; max-width: none; } }
+  </style>
+
+  <script define:vars={{ id }}>
+    const $ = (i) => document.getElementById(i);
+    const pin = () => $('pin').value;
+    const msg = $('msg');
+    const fmt = (iso) => new Date(iso).toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+    async function api(body) {
+      const res = await fetch('/api/dropoff', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin(), ...body }) });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error);
+      return j;
+    }
+    async function load() {
+      msg.textContent = '';
+      try {
+        const { dropoff: d } = await api({ action: 'get', id });
+        $('meta').innerHTML = '';
+        for (const line of [`Received ${fmt(d.accepted_at)}`, `Carrier: ${d.carrier ?? 'to be confirmed'}`, `Receipt no. ${d.id}`, d.customer_name ? `From: ${d.customer_name}` : '', d.accepted_by ? `Accepted by: ${d.accepted_by}` : '']) {
+          if (!line) continue;
+          const s = document.createElement('span'); s.textContent = line; $('meta').appendChild(s); $('meta').appendChild(document.createElement('br'));
+        }
+        $('code').textContent = d.barcode;
+        $('slip').classList.remove('hidden'); $('print').classList.remove('hidden'); $('thermal').classList.remove('hidden');
+      } catch (e) { msg.className = 'err'; msg.textContent = e.message; }
+    }
+    $('load').addEventListener('click', load);
+    $('pin').addEventListener('change', load);
+    $('print').addEventListener('click', () => window.print());
+    $('thermal').addEventListener('click', async () => { try { const j = await api({ action: 'receipt', id }); msg.className = ''; msg.textContent = j.receipt.agent ? 'Sent to the counter printer.' : 'Queued, but no printer agent is set up. Use Print this page.'; } catch (e) { msg.className = 'err'; msg.textContent = e.message; } });
+  </script>
+</Base>

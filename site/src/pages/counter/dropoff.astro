@@ -21,6 +21,8 @@ import Base from '../../layouts/Base.astro';
       <label>Customer name (optional) <input name="customer_name" maxlength="60" /></label>
       <label>Customer phone (optional) <input name="customer_phone" maxlength="20" inputmode="tel" /></label>
       <label>Your name or initials <input name="staff" maxlength="20" /></label>
+      <label class="check"><input name="receipt" type="checkbox" checked /> Print a receipt at the counter</label>
+      <label class="check"><input name="text" type="checkbox" /> Text the receipt to the phone above</label>
       <p class="btnrow"><button class="btn" type="submit">Accept drop-off</button></p>
       <p id="msg" role="alert"></p>
     </form>
@@ -64,6 +66,9 @@ import Base from '../../layouts/Base.astro';
           li.innerHTML = `<time>${fmt(d.accepted_at)}</time><strong></strong><span></span>`;
           li.querySelector('strong')!.textContent = `${d.carrier ?? '?'} ${d.barcode}`;
           li.querySelector('span')!.textContent = [d.customer_name, d.handed_to_carrier_at ? `handed to carrier ${fmt(d.handed_to_carrier_at)}` : 'at the counter'].filter(Boolean).join(' · ');
+          const acts = document.createElement('span');
+          acts.innerHTML = `<a href="/counter/receipt/${d.id}">Receipt</a> · <button type="button" class="btn small kraft" data-reprint="${d.id}">Print again</button>${d.customer_phone ? ` <button type="button" class="btn small kraft" data-retext="${d.id}">Text again</button>` : ''}`;
+          li.appendChild(acts);
           recent.appendChild(li);
         }
       } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
@@ -77,8 +82,15 @@ import Base from '../../layouts/Base.astro';
         const j = await api({ action: 'accept', ...body });
         beep(true);
         msg.className = '';
-        msg.textContent = `Accepted ${j.dropoff.carrier ?? ''} ${j.dropoff.barcode}${j.duplicate ? ' (this barcode was scanned before)' : ''}`;
+        const r = j.receipt ?? {};
+        const bits = [`Accepted ${j.dropoff.carrier ?? ''} ${j.dropoff.barcode}, receipt no. ${j.dropoff.id}`];
+        if (j.duplicate) bits.push('this barcode was scanned before');
+        if (r.printed) bits.push(r.agent ? 'receipt sent to the counter printer' : 'receipt queued, but no printer agent is set up; use the Receipt link to print from the browser');
+        if (r.texted) bits.push(r.text_mock ? 'text receipt logged (no Twilio key yet)' : 'text receipt sent');
+        if (r.error) bits.push(`receipt problem: ${r.error}`);
+        msg.textContent = bits.join(' · ');
         for (const n of ['barcode', 'customer_name', 'customer_phone']) field(n).value = '';
+        field('text').checked = false;
         field('barcode').focus();
         refresh();
       } catch (e: any) { beep(false); msg.className = 'err'; msg.textContent = e.message; }
@@ -87,6 +99,20 @@ import Base from '../../layouts/Base.astro';
       try { const j = await api({ action: 'handed', carrier: b.dataset.handed }); msg.className = ''; msg.textContent = `${j.count} ${b.dataset.handed} drop-off(s) marked as picked up.`; refresh(); }
       catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
     }));
+    recent.addEventListener('click', async (ev) => {
+      const b = (ev.target as HTMLElement).closest<HTMLButtonElement>('[data-reprint],[data-retext]');
+      if (!b) return;
+      b.disabled = true;
+      try {
+        const j = await api(b.dataset.reprint ? { action: 'receipt', id: b.dataset.reprint } : { action: 'text', id: b.dataset.retext });
+        msg.className = ''; msg.textContent = b.dataset.reprint ? (j.receipt.agent ? 'Receipt sent to the counter printer.' : 'Queued, but no printer agent is set up. Use the Receipt link to print from the browser.') : (j.receipt.text_mock ? 'Text receipt logged (no Twilio key yet).' : 'Text receipt sent.');
+      } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+      b.disabled = false;
+    });
+    // Remember the receipt choice per tablet.
+    const rbox = field('receipt');
+    try { if (localStorage.getItem('dropoff_receipt') === 'off') rbox.checked = false; } catch {}
+    rbox.addEventListener('change', () => { try { localStorage.setItem('dropoff_receipt', rbox.checked ? 'on' : 'off'); } catch {} });
     document.getElementById('pin')!.addEventListener('change', refresh);
   </script>
 </Base>
