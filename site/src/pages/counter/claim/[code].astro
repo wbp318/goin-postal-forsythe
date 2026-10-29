@@ -1,0 +1,75 @@
+---
+export const prerender = false;
+import Base from '../../../layouts/Base.astro';
+import { env } from '../../../lib/env';
+import { getClaim, getShipment, REMIND_DAYS } from '../../../shipping/store';
+
+// Staff page for one claim: file it with the carrier, record the decision, refund the customer, close.
+const c = await getClaim(env, Astro.params.code ?? '');
+if (!c) return new Response('No such claim', { status: 404 });
+const s = await getShipment(env, c.shipment_id);
+const dest = s ? JSON.parse(s.destination_json) : null;
+const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '');
+const late = c.status === 'filed' && c.filed_at && Date.now() - Date.parse(c.filed_at) > REMIND_DAYS * 86_400_000;
+const open = c.status !== 'closed';
+---
+<Base title={`Counter · ${c.code}`}>
+  <section class="hero">
+    <h1>{c.code}</h1>
+    <p class="lead"><span data-i18n="st.o.status">Status:</span> <strong data-i18n={`st.c.status.${c.status}`}>{c.status}</strong> · <span data-i18n={`st.c.kind.${c.kind}`}>{c.kind.replace('_', ' ')}</span> · <a href={`/counter/${c.shipment_id}`}>{c.shipment_id}</a> {c.carrier} {c.tracking_number ?? ''}{late && <> · <strong class="late" data-i18n="st.c.callcarrier">Call the carrier: no answer after thirty days</strong></>}</p>
+    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/batch" data-i18n="st.nav.batch">Batch</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/accounts" data-i18n="st.nav.accounts">Accounts</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/mailboxes" data-i18n="st.nav.mailboxes">Mailboxes</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/claims" data-i18n="st.nav.claims">Claims</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/close" data-i18n="st.nav.close">End of day</a> · <a href="/counter/invoices" data-i18n="st.nav.invoices">Invoices</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a> · <a href="/counter/staff" data-i18n="st.nav.staff">Staff</a> · <a href="/counter/export" data-i18n="st.nav.export">Export</a></p>
+  </section>
+  <div class="grid">
+    <div class="card">
+      <p><strong data-i18n="st.o.customer">Customer:</strong> {c.customer_name ?? ''}{c.customer_email ? ` · ${c.customer_email}` : ''}{c.customer_phone ? ` · ${c.customer_phone}` : ''}</p>
+      {dest && <p><strong data-i18n="st.q.th.to">To</strong> {dest.contact_name}, {dest.city} {dest.state} {dest.postal_code}</p>}
+      <table class="list">
+        <tr><td data-i18n="st.c.declared">Declared value</td><td>${c.declared_usd.toFixed(2)} {c.insured ? <span data-i18n="st.c.insured">insured with us</span> : <span class="muted" data-i18n="st.c.notinsured">carrier cover only</span>}</td></tr>
+        <tr><td data-i18n="st.c.postage">Postage paid</td><td>${c.postage_usd.toFixed(2)}</td></tr>
+        <tr><td data-i18n="st.c.claimed.short">Claimed</td><td><strong>${c.claimed_usd.toFixed(2)}</strong></td></tr>
+        {c.carrier_claim_number && <tr><td data-i18n="st.c.carrierno">Carrier claim number</td><td>{c.carrier_claim_number} · {fmt(c.filed_at)}</td></tr>}
+        {c.decided_at && <tr><td data-i18n="st.c.decided">Decided</td><td>{fmt(c.decided_at)} · <span data-i18n="st.c.carrierpaid">carrier paid</span> ${(c.carrier_paid_usd ?? 0).toFixed(2)}</td></tr>}
+        {c.refunded_at && <tr><td data-i18n="st.c.refunded">Refunded</td><td>${(c.customer_refund_usd ?? 0).toFixed(2)} {c.refund_via} · {fmt(c.refunded_at)}{c.customer_notified_at && <> · <span data-i18n="st.c.emailed">customer emailed</span></>}</td></tr>}
+        {c.closed_at && <tr><td data-i18n="st.c.status.closed">closed</td><td>{fmt(c.closed_at)}</td></tr>}
+      </table>
+      <p class="muted"><span data-i18n="st.c.openedby">Opened by</span> {c.by_name}, {fmt(c.created_at)}</p>
+      {c.notes && <p><strong data-i18n="st.k.notes">Notes:</strong> <span style="white-space: pre-line">{c.notes}</span></p>}
+    </div>
+    <form class="card" id="acts" autocomplete="off">
+      <label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
+      {open && c.status === 'open' && <>
+        <p class="muted" data-i18n="st.c.file.lead">File it on the carrier's site (USPS: usps.com/help/claims; UPS and FedEx: the claims page of the account), then put their claim number here.</p>
+        <label><span data-i18n="st.c.carrierno">Carrier claim number</span> <input name="carrier_claim_number" maxlength="60" /></label>
+        <p><button class="btn" type="button" data-action="file" data-i18n="st.c.file">Filed with the carrier</button></p>
+      </>}
+      {open && c.status === 'filed' && <>
+        <label><span data-i18n="st.c.carrierpaid.amt">Amount the carrier paid $</span> <input name="carrier_paid_usd" type="number" step="0.01" min="0" value={c.claimed_usd} /></label>
+        <p class="btnrow"><button class="btn" type="button" data-action="decide" data-outcome="approved" data-i18n="st.c.approved">Approved</button> <button class="btn kraft" type="button" data-action="decide" data-outcome="denied" data-i18n="st.c.denied">Denied</button></p>
+      </>}
+      {open && (c.status === 'approved' || c.status === 'denied') && <>
+        <p class="muted" data-i18n="st.c.refund.lead">Refund the customer what we owe them: the carrier's payment, or our own insurance cover when the carrier denied it and the package was insured with us.</p>
+        <label><span data-i18n="st.c.refund.amt">Refund $</span> <input name="amount" type="number" step="0.01" min="0" value={c.carrier_paid_usd ?? c.claimed_usd} /></label>
+        <label><span data-i18n="st.c.refund.via">Refund via</span> <select name="via"><option value="pos">POS</option><option value="stripe">Stripe</option><option value="account_credit" data-i18n="st.c.via.credit">Account credit</option><option value="check" data-i18n="st.c.via.check">Check</option></select></label>
+        <label class="check"><input name="notify" type="checkbox" checked={!!c.customer_email} /> <span data-i18n="st.c.notify">Email the customer</span></label>
+        <label><span data-i18n="f.email">Email</span> <input name="email" type="email" value={c.customer_email ?? ''} /></label>
+        <p><button class="btn" type="button" data-action="refund" data-i18n="st.c.refund">Record the refund</button></p>
+      </>}
+      <label><span data-i18n="st.k.notes">Notes:</span> <textarea name="notes" rows="3" maxlength="500">{c.notes}</textarea></label>
+      <p><button class="btn kraft" type="button" data-action="note" data-i18n="st.m.savenote">Save notes</button></p>
+      {open && <p><button class="btn small" type="button" data-action="close" data-i18n="st.c.close">Close the claim</button></p>}
+      <p id="msg" role="alert"></p>
+    </form>
+  </div>
+  <style>.late { background: #fde68a; color: #3b2c00; padding: 2px 8px; border-radius: 6px; }</style>
+  <script define:vars={{ code: c.code }}>
+    const form = document.getElementById('acts'), msg = document.getElementById('msg');
+    form.querySelectorAll('[data-action]').forEach((b) => b.addEventListener('click', async () => {
+      b.disabled = true;
+      const d = Object.fromEntries(new FormData(form).entries());
+      const res = await fetch('/api/claims', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, pin: document.getElementById('pin').value, action: b.dataset.action, outcome: b.dataset.outcome, ...d, notify: d.notify === 'on' }) });
+      const j = await res.json();
+      if (!res.ok) { msg.className = 'err'; msg.textContent = j.error; b.disabled = false; return; }
+      location.reload();
+    }));
+  </script>
+</Base>

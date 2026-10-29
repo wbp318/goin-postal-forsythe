@@ -361,3 +361,35 @@ CREATE TABLE IF NOT EXISTS mailbox_notices (
   error TEXT
 );
 CREATE INDEX IF NOT EXISTS mailbox_notices_box ON mailbox_notices(mailbox_code, at);
+
+-- Claims (to-do T13): a package lost, damaged or short. open -> filed -> approved/denied -> refunded -> closed.
+CREATE TABLE IF NOT EXISTS claims (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT NOT NULL UNIQUE,           -- CL-XXXXXX
+  shipment_id TEXT NOT NULL REFERENCES shipments(id),
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  kind TEXT NOT NULL,                  -- lost, damaged, missing_contents
+  carrier TEXT NOT NULL,
+  tracking_number TEXT,
+  declared_usd REAL NOT NULL DEFAULT 0,
+  postage_usd REAL NOT NULL DEFAULT 0,
+  claimed_usd REAL NOT NULL DEFAULT 0,
+  insured INTEGER NOT NULL DEFAULT 0,  -- 1 when the customer bought our insurance
+  customer_name TEXT,
+  customer_email TEXT,
+  customer_phone TEXT,
+  status TEXT NOT NULL DEFAULT 'open', -- open, filed, approved, denied, refunded, closed
+  carrier_claim_number TEXT,
+  filed_at TEXT,
+  decided_at TEXT,
+  carrier_paid_usd REAL,
+  customer_refund_usd REAL,
+  refund_via TEXT,                     -- pos, stripe, account_credit, check
+  refunded_at TEXT,
+  customer_notified_at TEXT,
+  closed_at TEXT,
+  notes TEXT,
+  by_name TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS claims_status ON claims(status, filed_at);

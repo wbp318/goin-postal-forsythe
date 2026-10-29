@@ -92,6 +92,18 @@ export interface Mailbox {
   notes: string | null;
 }
 
+export interface ClaimRow {
+  id: number; code: string; shipment_id: string; created_at: string; updated_at: string;
+  kind: 'lost' | 'damaged' | 'missing_contents'; carrier: string; tracking_number: string | null;
+  declared_usd: number; postage_usd: number; claimed_usd: number; insured: number;
+  customer_name: string | null; customer_email: string | null; customer_phone: string | null;
+  status: 'open' | 'filed' | 'approved' | 'denied' | 'refunded' | 'closed';
+  carrier_claim_number: string | null; filed_at: string | null; decided_at: string | null; carrier_paid_usd: number | null;
+  customer_refund_usd: number | null; refund_via: string | null; refunded_at: string | null; customer_notified_at: string | null; closed_at: string | null;
+  notes: string | null; by_name: string;
+}
+/** Days after filing with the carrier before an unanswered claim is flagged. USPS and UPS usually answer inside this. */
+export const REMIND_DAYS = 30;
 export interface MailboxNotice { id: number; mailbox_code: string; kind: string; note: string | null; by_name: string; at: string; texted: number; emailed: number; error: string | null }
 
 /** Guess the carrier from a barcode or tracking number. Good enough for drop-offs; the carrier confirms on scan. */
@@ -117,6 +129,7 @@ const mem = {
   returns: [] as ReturnRequest[],
   mailboxes: [] as Mailbox[],
   mailboxNotices: [] as MailboxNotice[],
+  claims: [] as ClaimRow[],
   quotes: new Map<string, QuoteRow>(),
   customers: new Map<string, CustomerRow>(),
   rules: [] as { id: number; scope: string; match: string | null; percent: number | null; flat: number | null; price: number | null; active: number; updated_at: string }[],
@@ -140,7 +153,7 @@ const mem = {
 
 // ---- Export (T10) --------------------------------------------------------------------------------
 /** Every table in the schema, in schema order. The allow-list for the export; nothing else can be named. */
-export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'mailboxes', 'mailbox_notices'] as const;
+export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'mailboxes', 'mailbox_notices', 'claims'] as const;
 export type ExportTable = typeof EXPORT_TABLES[number];
 const memTable = (name: ExportTable): unknown[] => {
   switch (name) {
@@ -169,6 +182,7 @@ const memTable = (name: ExportTable): unknown[] => {
     case 'return_requests': return mem.returns;
     case 'mailboxes': return mem.mailboxes;
     case 'mailbox_notices': return mem.mailboxNotices;
+    case 'claims': return mem.claims;
     default: return [];
   }
 };
@@ -1138,6 +1152,44 @@ export async function updateMailbox(env: Env, code: string, patch: Partial<Omit<
   if (env.DB) await env.DB.prepare(`UPDATE mailboxes SET ${keys.map((k, i) => `${k} = ?${i + 2}`).join(', ')} WHERE code = ?1`).bind(m.code, ...keys.map((k) => patch[k] ?? null)).run();
   else Object.assign(m, Object.fromEntries(keys.map((k) => [k, patch[k] ?? null])));
   return { ...m, ...Object.fromEntries(keys.map((k) => [k, patch[k] ?? null])) } as Mailbox;
+}
+
+// ---- claims (to-do T13) ---------------------------------------------------------------------------
+const CL_COLS = ['code', 'shipment_id', 'created_at', 'updated_at', 'kind', 'carrier', 'tracking_number', 'declared_usd', 'postage_usd', 'claimed_usd', 'insured', 'customer_name', 'customer_email', 'customer_phone', 'status', 'carrier_claim_number', 'filed_at', 'decided_at', 'carrier_paid_usd', 'customer_refund_usd', 'refund_via', 'refunded_at', 'customer_notified_at', 'closed_at', 'notes', 'by_name'] as const;
+export function newClaimCode() {
+  const b = crypto.getRandomValues(new Uint8Array(6));
+  return 'CL-' + Array.from(b, (x) => RT_ALPHABET[x % RT_ALPHABET.length]).join('');
+}
+export async function createClaim(env: Env, c: Pick<ClaimRow, 'code' | 'shipment_id' | 'kind' | 'carrier' | 'tracking_number' | 'declared_usd' | 'postage_usd' | 'claimed_usd' | 'insured' | 'customer_name' | 'customer_email' | 'customer_phone' | 'notes' | 'by_name'>): Promise<ClaimRow> {
+  const t = now();
+  const row: Omit<ClaimRow, 'id'> = { ...c, created_at: t, updated_at: t, status: 'open', carrier_claim_number: null, filed_at: null, decided_at: null, carrier_paid_usd: null, customer_refund_usd: null, refund_via: null, refunded_at: null, customer_notified_at: null, closed_at: null };
+  if (env.DB) {
+    const r = await env.DB.prepare(`INSERT INTO claims (${CL_COLS.join(', ')}) VALUES (${CL_COLS.map((_, i) => `?${i + 1}`).join(', ')}) RETURNING id`).bind(...CL_COLS.map((k) => row[k])).first<{ id: number }>();
+    return { id: r!.id, ...row };
+  }
+  const full = { id: mem.seq++, ...row };
+  mem.claims.unshift(full);
+  return full;
+}
+export async function getClaim(env: Env, code: string): Promise<ClaimRow | null> {
+  const c = code.trim().toUpperCase();
+  if (!c) return null;
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM claims WHERE code = ?1').bind(c).first<ClaimRow>()) ?? null;
+  return mem.claims.find((x) => x.code === c) ?? null;
+}
+/** Open claims newest first; with all, closed ones too. */
+export async function listClaims(env: Env, all = false): Promise<ClaimRow[]> {
+  if (env.DB) return (await env.DB.prepare(`SELECT * FROM claims ${all ? '' : "WHERE status != 'closed'"} ORDER BY created_at DESC, id DESC`).all<ClaimRow>()).results;
+  return mem.claims.filter((x) => all || x.status !== 'closed').sort((a, b) => b.created_at.localeCompare(a.created_at) || b.id - a.id);
+}
+export async function updateClaim(env: Env, code: string, patch: Partial<Omit<ClaimRow, 'id' | 'code' | 'created_at'>>): Promise<ClaimRow | null> {
+  const c = await getClaim(env, code);
+  if (!c) return null;
+  const p = { ...patch, updated_at: now() };
+  const keys = (Object.keys(p) as (keyof typeof p)[]).filter((k) => (CL_COLS as readonly string[]).includes(k) && !['code', 'created_at'].includes(k));
+  if (env.DB) await env.DB.prepare(`UPDATE claims SET ${keys.map((k, i) => `${k} = ?${i + 2}`).join(', ')} WHERE code = ?1`).bind(c.code, ...keys.map((k) => p[k] ?? null)).run();
+  else Object.assign(c, Object.fromEntries(keys.map((k) => [k, p[k] ?? null])));
+  return { ...c, ...Object.fromEntries(keys.map((k) => [k, p[k] ?? null])) } as ClaimRow;
 }
 
 export async function addMailboxNotice(env: Env, n: Omit<MailboxNotice, 'id' | 'at'>): Promise<MailboxNotice> {

@@ -1,0 +1,70 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+
+// Staff page: claims (T13). Open a claim on a shipment that was lost, damaged or arrived short; the
+// list shows every open claim with its stage, and flags the ones filed with the carrier more than
+// thirty days ago with no answer, so somebody calls.
+const shipment = Astro.url.searchParams.get('shipment') ?? '';
+---
+<Base title="Counter · Claims">
+  <section class="hero">
+    <h1 data-i18n="st.c.h1">Claims</h1>
+    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/batch" data-i18n="st.nav.batch">Batch</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/accounts" data-i18n="st.nav.accounts">Accounts</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/mailboxes" data-i18n="st.nav.mailboxes">Mailboxes</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/claims" data-i18n="st.nav.claims">Claims</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/close" data-i18n="st.nav.close">End of day</a> · <a href="/counter/invoices" data-i18n="st.nav.invoices">Invoices</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a> · <a href="/counter/staff" data-i18n="st.nav.staff">Staff</a> · <a href="/counter/export" data-i18n="st.nav.export">Export</a></p>
+    <p class="lead" data-i18n="st.c.lead">A package lost, damaged or short. Open the claim here, file it with the carrier, record what they decide, refund the customer, close it. Anything filed and unanswered after thirty days turns yellow: call the carrier.</p>
+  </section>
+
+  <div class="grid">
+    <form id="open" class="card" autocomplete="off">
+      <h3 data-i18n="st.c.open">Open a claim</h3>
+      <label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
+      <label><span data-i18n="st.q.th.code">Code</span> <input name="shipment" value={shipment} placeholder="GP-XXXXXX" autocapitalize="characters" required /></label>
+      <label><span data-i18n="st.c.kind">What happened</span>
+        <select name="kind"><option value="lost" data-i18n="st.c.kind.lost">Lost</option><option value="damaged" data-i18n="st.c.kind.damaged">Damaged</option><option value="missing_contents" data-i18n="st.c.kind.missing_contents">Contents missing</option></select>
+      </label>
+      <label><span data-i18n="st.c.claimed">Amount claimed $ (blank: declared value plus postage)</span> <input name="claimed_usd" type="number" step="0.01" min="0" /></label>
+      <label><span data-i18n="st.k.notes">Notes:</span> <input name="notes" maxlength="500" /></label>
+      <p class="btnrow"><button class="btn" type="submit" data-i18n="st.c.open">Open a claim</button> <button class="btn kraft" type="button" id="load" data-i18n="st.show">Show</button></p>
+      <p id="msg" role="alert"></p>
+    </form>
+    <div class="card">
+      <label class="check"><input type="checkbox" id="all" /> <span data-i18n="st.c.showclosed">Show closed claims too</span></label>
+      <table class="list hidden" id="table"><thead><tr><th data-i18n="st.q.th.code">Code</th><th data-i18n="st.q.th.when">When</th><th data-i18n="st.c.th.shipment">Shipment</th><th data-i18n="st.c.kind">What happened</th><th data-i18n="st.o.status">Status:</th><th data-i18n="st.c.th.amount">Amount</th><th></th></tr></thead><tbody></tbody></table>
+      <p id="empty" class="muted hidden" data-i18n="st.c.none">No claims. Good.</p>
+    </div>
+  </div>
+  <style>.late td { background: #fde68a; }</style>
+  <script>
+    import { t, tf } from '../../i18n';
+    const $ = (id: string) => document.getElementById(id)!;
+    const form = $('open') as HTMLFormElement, msg = $('msg'), body = $('table').querySelector('tbody')!;
+    const pin = () => ($('pin') as HTMLInputElement).value;
+    async function api(b: Record<string, unknown>) {
+      const res = await fetch('/api/claims', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin(), ...b }) });
+      const j = await res.json(); if (!res.ok) throw new Error(j.error); return j;
+    }
+    const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '');
+    async function load() {
+      msg.textContent = '';
+      try {
+        const { claims, remind_days } = await api({ action: 'list', all: ($('all') as HTMLInputElement).checked });
+        body.innerHTML = '';
+        for (const c of claims) {
+          const tr = document.createElement('tr');
+          const late = c.status === 'filed' && c.filed_at && Date.now() - Date.parse(c.filed_at) > remind_days * 86_400_000;
+          if (late) tr.className = 'late';
+          tr.innerHTML = `<td><a href="/counter/claim/${c.code}">${c.code}</a></td><td>${fmt(c.created_at)}</td><td><a href="/counter/${c.shipment_id}">${c.shipment_id}</a> ${c.carrier}</td><td>${t('st.c.kind.' + c.kind)}</td><td>${t('st.c.status.' + c.status)}${late ? ' · ' + tf('st.c.late', { days: remind_days }) : ''}</td><td>$${Number(c.claimed_usd).toFixed(2)}</td><td>${c.customer_name ?? ''}</td>`;
+          body.appendChild(tr);
+        }
+        $('table').classList.toggle('hidden', !claims.length); $('empty').classList.toggle('hidden', !!claims.length);
+      } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    }
+    $('load').addEventListener('click', load); $('all').addEventListener('change', load);
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const d = Object.fromEntries(new FormData(form).entries());
+      try { const j = await api({ action: 'create', ...d }); location.href = `/counter/claim/${j.claim.code}`; }
+      catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    });
+  </script>
+</Base>
