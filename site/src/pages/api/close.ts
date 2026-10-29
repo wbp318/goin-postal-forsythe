@@ -3,13 +3,13 @@ import type { APIRoute } from 'astro';
 import { env } from '../../lib/env';
 import { json } from '../../lib/validate';
 import { authenticate, CAN } from '../../lib/auth';
-import { buildClose, closeZpl, closeEscpos } from '../../lib/close';
+import { buildClose, closeZpl, closeEscpos, drawerFigures } from '../../lib/close';
 import { saveClose, listCloses, getClose, queuePrint, logAudit } from '../../shipping/store';
 
 // End-of-day close, from /counter/close. Any staff member can look; closing the day needs a manager
 // or owner, so the frozen numbers carry a name that answers for them.
 //  figures: { day, tz } the day's figures, live.
-//  close:   { day, tz, note, print } freezes them with the name and the note; print: true also sends
+//  close:   { day, tz, note, print, drawer: { opening, counted, pos_cash, pos_card, paid_out, tips_cash, tips_card } } freezes them, with the cash count (T18), with the name and the note; print: true also sends
 //           the Z-report to the counter printer. A day can be closed again (a later close supersedes).
 //  list:    past closes, newest first.  get: { id } one close.  zpl: { id } its Z-report for reprinting.
 export const POST: APIRoute = async ({ request }) => {
@@ -24,6 +24,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (b.action === 'close') {
       if (!CAN.audit(user)) return json({ error: 'Closing the day needs a manager or owner' }, 403);
       const report = await buildClose(env, day, tz);
+      report.drawer = drawerFigures(b.drawer);
       const note = String(b.note ?? '').trim().slice(0, 300);
       const zpl = closeZpl(report, user.name, note);
       const saved = await saveClose(env, { day, closed_by: user.name, note, report, zpl });
@@ -31,7 +32,7 @@ export const POST: APIRoute = async ({ request }) => {
       if (b.print) printed = env.RECEIPT_FORMAT === 'escpos'
         ? await queuePrint(env, { shipment_id: null, kind: 'receipt_escpos', payload: btoa(closeEscpos(report, user.name, note)), printer: 'counter' })
         : await queuePrint(env, { shipment_id: null, kind: 'receipt', payload: btoa(unescape(encodeURIComponent(zpl))), printer: 'counter' });
-      await logAudit(env, user, 'day.close', day, `POS ${report.pos_expected.toFixed(2)}, Stripe ${report.stripe_expected.toFixed(2)}, ${report.labels.count} labels, ${report.voided.length} voids${note ? `, note: ${note.slice(0, 60)}` : ''}`);
+      await logAudit(env, user, 'day.close', day, `POS ${report.pos_expected.toFixed(2)}, Stripe ${report.stripe_expected.toFixed(2)}, ${report.labels.count} labels, ${report.voided.length} voids${report.drawer ? `, drawer ${report.drawer.over_short >= 0 ? 'over' : 'short'} ${Math.abs(report.drawer.over_short).toFixed(2)}, tips ${report.drawer.tips.toFixed(2)}` : ''}${note ? `, note: ${note.slice(0, 60)}` : ''}`);
       return json({ ok: true, id: saved.id, report, printed, agent: !!env.PRINTER_KEY });
     }
     if (b.action === 'list') return json({ closes: await listCloses(env) });

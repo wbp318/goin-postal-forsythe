@@ -45,6 +45,23 @@ const today = new Date().toISOString().slice(0, 10);
         <p id="norefunds" class="muted hidden" data-i18n="st.z.norefunds">None.</p>
       </div>
     </div>
+    <div class="card" id="drawer">
+      <h3 data-i18n="st.z.drawer">Cash drawer</h3>
+      <p class="muted" data-i18n="st.z.drawer.lead">From the POS end-of-day report and the count. Expected = opening + POS cash − paid out + cash tips. Card tips are listed, not subtracted: pay them out or put them on payroll, the owners' call.</p>
+      <div class="row">
+        <label><span data-i18n="st.z.d.opening">Opening float $</span> <input id="d-opening" type="number" step="0.01" min="0" value="200" /></label>
+        <label><span data-i18n="st.z.d.poscash">POS cash sales $</span> <input id="d-pos-cash" type="number" step="0.01" min="0" /></label>
+        <label><span data-i18n="st.z.d.poscard">POS card sales $</span> <input id="d-pos-card" type="number" step="0.01" min="0" /></label>
+        <label><span data-i18n="st.z.d.paidout">Paid out of the drawer $</span> <input id="d-paid-out" type="number" step="0.01" min="0" value="0" /></label>
+      </div>
+      <div class="row">
+        <label><span data-i18n="st.z.d.tipscash">Cash tips $</span> <input id="d-tips-cash" type="number" step="0.01" min="0" value="0" /></label>
+        <label><span data-i18n="st.z.d.tipscard">Card tips $</span> <input id="d-tips-card" type="number" step="0.01" min="0" value="0" /></label>
+        <label><span data-i18n="st.z.d.counted">Cash counted $</span> <input id="d-counted" type="number" step="0.01" min="0" /></label>
+      </div>
+      <p class="big" id="d-result"></p>
+      <p class="muted" id="d-detail"></p>
+    </div>
     <div class="card noprint">
       <label><span data-i18n="st.z.note">Note for the close (cash over or short, anything odd)</span> <input id="note" maxlength="300" /></label>
       <p class="btnrow">
@@ -101,6 +118,24 @@ const today = new Date().toISOString().slice(0, 10);
       $('norefunds').classList.toggle('hidden', !!r.refunds_owed.length);
       $('out').classList.remove('hidden');
     }
+    // Cash drawer (T18): live over/short as the numbers are typed; sent with the close and frozen in the report.
+    const dv = (id: string) => Number(($(id) as HTMLInputElement).value) || 0;
+    const drawerInput = () => ({ opening: dv('d-opening'), counted: dv('d-counted'), pos_cash: dv('d-pos-cash'), pos_card: dv('d-pos-card'), paid_out: dv('d-paid-out'), tips_cash: dv('d-tips-cash'), tips_card: dv('d-tips-card') });
+    function drawerLive() {
+      const d = drawerInput();
+      const expected = d.opening + d.pos_cash - d.paid_out + d.tips_cash;
+      const os = d.counted - expected;
+      if (!d.counted && !d.pos_cash) { $('d-result').textContent = ''; $('d-detail').textContent = ''; return; }
+      $('d-result').textContent = `${os >= 0 ? t('st.z.d.over') : t('st.z.d.short')} ${usd(Math.abs(os))}`;
+      $('d-result').className = 'big' + (Math.abs(os) > 5 ? ' err' : '');
+      $('d-detail').textContent = tf('st.z.d.detail', { expected: usd(expected), counted: usd(d.counted), tips: usd(d.tips_cash + d.tips_card), deposit: usd(Math.max(0, d.counted - d.opening)) });
+    }
+    $('drawer').addEventListener('input', drawerLive);
+    function renderDrawer(d: any) {
+      if (!d) return;
+      for (const [id, k] of [['d-opening', 'opening'], ['d-counted', 'counted'], ['d-pos-cash', 'pos_cash'], ['d-pos-card', 'pos_card'], ['d-paid-out', 'paid_out'], ['d-tips-cash', 'tips_cash'], ['d-tips-card', 'tips_card']]) ($(id) as HTMLInputElement).value = String(d[k] ?? 0);
+      drawerLive();
+    }
     async function load() {
       msg.textContent = ''; $('closed').textContent = '';
       if (!pin()) { msg.className = 'err'; msg.textContent = t('st.pinfirst'); return; }
@@ -115,7 +150,7 @@ const today = new Date().toISOString().slice(0, 10);
           const tr = document.createElement('tr');
           for (const v of [c.day, fmt(c.closed_at), c.closed_by, usd(c.pos_expected), c.note ?? '']) { const td = document.createElement('td'); td.textContent = v; tr.appendChild(td); }
           const td = document.createElement('td');
-          const b1 = document.createElement('button'); b1.type = 'button'; b1.className = 'btn small'; b1.textContent = t('st.open'); b1.addEventListener('click', async () => { try { const full = await api({ action: 'get', id: c.id }); ($('day') as HTMLInputElement).value = c.day; render(full.report); $('closed').textContent = tf('st.z.closedby', { name: c.closed_by, when: fmt(c.closed_at) }); window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; } });
+          const b1 = document.createElement('button'); b1.type = 'button'; b1.className = 'btn small'; b1.textContent = t('st.open'); b1.addEventListener('click', async () => { try { const full = await api({ action: 'get', id: c.id }); ($('day') as HTMLInputElement).value = c.day; render(full.report); renderDrawer(full.report.drawer); $('closed').textContent = tf('st.z.closedby', { name: c.closed_by, when: fmt(c.closed_at) }); window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; } });
           const b2 = document.createElement('button'); b2.type = 'button'; b2.className = 'btn small kraft'; b2.textContent = t('st.d.printagain'); b2.addEventListener('click', async () => { try { const j = await api({ action: 'zpl', id: c.id }); msg.className = ''; msg.textContent = j.agent ? t('st.r.sent') : t('st.r.queuednoagent'); } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; } });
           td.append(b1, ' ', b2); tr.appendChild(td); body.appendChild(tr);
         }
@@ -130,7 +165,7 @@ const today = new Date().toISOString().slice(0, 10);
       if (!report) return;
       if (!window.confirm(tf('st.z.confirm', { day: report.day, pos: usd(report.pos_expected) }))) return;
       try {
-        const j = await api({ action: 'close', note: ($('note') as HTMLInputElement).value, print: ($('print') as HTMLInputElement).checked });
+        const j = await api({ action: 'close', note: ($('note') as HTMLInputElement).value, print: ($('print') as HTMLInputElement).checked, drawer: drawerInput() });
         render(j.report);
         msg.className = ''; msg.textContent = j.printed ? (j.agent ? t('st.z.closed.printed') : t('st.z.closed.noagent')) : t('st.z.closed.ok');
         loadPast();

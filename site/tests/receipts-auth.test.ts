@@ -1,7 +1,7 @@
 // Printed slips and who may do what.
 import { describe, it, expect } from 'vitest';
 import { dropoffReceiptZpl, dropoffReceiptText, dropoffReceiptEscpos, escpos } from '../src/shipping/receipt';
-import { closeZpl, closeEscpos } from '../src/lib/close';
+import { closeZpl, closeEscpos, drawerFigures } from '../src/lib/close';
 import { hashPin, authenticate, validPin, CAN, atLeast } from '../src/lib/auth';
 import { addStaff } from '../src/shipping/store';
 
@@ -59,5 +59,24 @@ describe('auth', () => {
     expect(CAN.audit(u!)).toBe(true);
     expect(CAN.prices(u!)).toBe(false);
     expect(atLeast(u!, 'counter')).toBe(true);
+  });
+});
+
+describe('cash drawer (T18)', () => {
+  it('works out expected, over or short, tips and the deposit, and is absent when nothing was typed', () => {
+    const d = drawerFigures({ opening: 200, counted: 612.5, pos_cash: 400, pos_card: 950, paid_out: 12.5, tips_cash: 20, tips_card: 35 })!;
+    expect(d.expected).toBe(607.5);
+    expect(d.over_short).toBe(5);
+    expect(d.tips).toBe(55);
+    expect(d.deposit).toBe(412.5);
+    expect(drawerFigures({ opening: 200, counted: 190, pos_cash: 0, pos_card: 0, paid_out: 0, tips_cash: 0, tips_card: 0 })?.over_short).toBe(-10);
+    expect(drawerFigures({})).toBeUndefined();
+    expect(drawerFigures(null)).toBeUndefined();
+    expect(drawerFigures({ opening: 'x' as any, counted: 100 })?.expected).toBe(0);
+  });
+  it('prints the drawer on both Z-reports', () => {
+    const report: any = { day: '2026-10-29', labels: { count: 1, revenue: 20, cost: 10 }, addons: { revenue: 0 }, paid: { pos: 20, stripe: 0, account: 0 }, voided: [], pos_expected: 20, stripe_expected: 0, refunds_owed: [], dropoffs: { accepted: 0, handed: 0, waiting: 0 }, open_quotes: 0, exceptions: 0, walkups: 0, returns: 0, cancelled: 0, drawer: drawerFigures({ opening: 200, counted: 195, pos_cash: 0, pos_card: 0, paid_out: 0, tips_cash: 0, tips_card: 0 }) };
+    expect(closeZpl(report, 'Rin', '')).toMatch(/SHORT \$5.00/);
+    expect(closeEscpos(report, 'Rin', '')).toContain('SHORT $5.00');
   });
 });
