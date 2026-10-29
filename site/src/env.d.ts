@@ -15,6 +15,7 @@ interface Env {
   STORE_ID?: string;          // short slug of this deployment's store: forsythe, west-carroll
   STORE_JSON?: string;        // this store's facts (site/stores/<slug>.json) for a second store; blank keeps the Forsythe defaults
   COUNTER_PIN?: string;
+  SESSION_SECRET?: string;    // signs customer login cookies (T20); any long random string. Without it the dev server uses a fixed one
   OWNER_PIN?: string;         // optional second PIN that alone may save price rules; blank means COUNTER_PIN may
   PRINTER_KEY?: string;       // shared secret the counter printer agent sends to /api/print
   RECEIPT_FORMAT?: string;    // "escpos" when the shop has a till-roll receipt printer; blank prints receipts as 4x6 ZPL on the Zebra

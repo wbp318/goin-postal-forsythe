@@ -36,7 +36,9 @@ flowchart TD
   L -->|no| R{"Needed inside<br/>a week?"}
   R -->|yes| A["Atomic Ink<br/>West Monroe, same week"]:::cloud
   R -->|no| E{"Embroidery, caps<br/>or polos?"}
-  E -->|yes| A
+  E -->|yes| EM{"Weekend Press has<br/>the embroidery machine?"}
+  EM -->|yes| W
+  EM -->|not yet| A
   E -->|no| N{"Fewer than the<br/>screen-print minimum<br/>(usually 12)?"}
   N -->|yes| K["K3 Monograms<br/>or Weekend Press DTF,<br/>ask"]:::cloud
   N -->|no| W["Weekend Press<br/>Lake Providence, the default"]:::cloud
@@ -50,9 +52,21 @@ In words:
 
 1. **Weekend Press by default.** Friends, a reseller relationship both sides want, and the owner's commute from East Carroll carries the goods for free. Agree a wholesale rate card, a proof turnaround (two business days) and a print turnaround (seven to ten business days) once, then every order follows it.
 2. **Tommy's Tees** when the design carries Louisiana Tech marks (licensing), when the run is big or Weekend Press is booked, or when the customer is in Ruston anyway.
-3. **Atomic Ink** when the customer needs it this week, wants embroidery, or wants to handle blanks before deciding. Four miles away; the margin is lower but the sale is saved.
+3. **Atomic Ink** when the customer needs it this week, wants embroidery before Weekend Press has its machine, or wants to handle blanks before deciding. Four miles away; the margin is lower but the sale is saved.
 4. **Under the minimum** (a dozen is the usual floor for screen printing): K3 for monogram-style work, or ask Weekend Press whether they do DTF or heat transfer for a six-shirt family reunion. That is the first question for them.
 5. **Arkansas customers** go to Art Attack in El Dorado once there are any; until then it is a name in the file.
+
+## Hats and embroidery
+
+What the owners know as of October 29: Weekend Press is considering a one-head or two-head embroidery machine for their shop, and today they outsource hats (to whom is not known). Whether Tommy's Tees prints or embroiders hats is not known either. Atomic Ink lists embroidery.
+
+What that changes:
+
+- **Until Weekend Press has a machine**, embroidery (caps, polos, jackets, left-chest logos) goes to Atomic Ink in West Monroe, and hats through Weekend Press carry a second markup from whoever they outsource to. For a hat order the store should ask Weekend Press who prints them and what the lead time is, because the answer decides whether hats are worth selling before the machine arrives.
+- **Once Weekend Press has a one-head machine**, they can do about 60 to 100 left-chest logos a day; a two-head roughly doubles it. That covers every embroidery order the store is likely to bring (a dozen caps, a few polos), so embroidery moves to Weekend Press by default and the routing chart's "embroidery, caps or polos" branch points at Weekend Press, with Atomic Ink kept for a rush. A screen printer who adds embroidery also keeps the whole order in one place when a team wants shirts and caps together.
+- **Digitizing** (turning a logo into stitches) is a one-time fee per design, usually $15 to $50 outsourced; the store should price it as a line on the first order and keep the file, so repeat orders carry no setup.
+
+Two questions for the next visit to Lake Providence: who does their hats now, and when does the machine arrive. One for Tommy's Tees: do you do hats and embroidery at all.
 
 ## Money
 
@@ -94,8 +108,9 @@ flowchart LR
 ## Decisions for Rin
 
 1. Ask Weekend Press for a wholesale rate card, their minimum, whether they do DTF for small runs, and proof and print turnarounds. That one conversation sets the whole price sheet.
-2. Ask Tommy's Tees the same, plus whether their Louisiana Tech license covers shirts a reseller sells.
+2. Ask Tommy's Tees the same, plus whether their Louisiana Tech license covers shirts a reseller sells, and whether they do hats and embroidery.
 3. The store's markup: 30 percent, 40 percent, or the local retail price whatever the cost?
 4. Deposit rule: half at proof approval, or full payment up front for first-time customers?
+5. Hats: sell them now through Weekend Press's outsourcer (ask who, and the lead time), or wait for their embroidery machine?
 
 Sources: [Weekend Press on Facebook](https://www.facebook.com/weekendpress.la/), [Weekend Press shop](https://weekendpress.shop/), [BayouLife, Revitalizing Lake Providence](https://bayoulifemag.com/revitalizing-lake-providence/), [Lincoln Parish Journal, McLeroy's shirts at Tommy's Tees](https://lincolnparishjournal.com/2024/12/12/grab-em-while-you-can-mcleroys-shirts-still-available-at-tommys-tees/), [Louisiana Tech licensed vendors](https://brand.latech.edu/licensing/vendors/), [BBB, Monroe t-shirts](https://www.bbb.org/us/la/monroe/category/t-shirts), [screenprinting.com shop directory](https://www.screenprinting.com/tools/screen-printing-shops/locations/dead-on-signs-and-graphics), [Printable Press screen printing pricing guide](https://www.printablepress.com/screen-printing-pricing-guide/), [a shop rate card, 12 to 23 pieces](https://cdn.shopify.com/s/files/1/0193/6983/files/GHO_Shirt_Print_Pricing_-_2019_Final.pdf?32), [Thrive wholesale screen printing](https://thrivescreenprinting.com/wholesale-screen-printing).

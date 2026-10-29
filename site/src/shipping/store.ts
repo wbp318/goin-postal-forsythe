@@ -92,6 +92,7 @@ export interface Mailbox {
   notes: string | null;
 }
 
+export interface CustomerAddress { id: number; customer_id: string; label: string; address_json: string; created_at: string }
 export interface PhotoRow { id: string; shipment_id: string; content_type: string; bytes: number; caption: string | null; by_name: string; at: string }
 export interface PickupRow {
   id: number; code: string; account_id: number; account_name: string; created_at: string; scheduled_date: string; window: 'morning' | 'afternoon';
@@ -138,6 +139,7 @@ const mem = {
   claims: [] as ClaimRow[],
   pickups: [] as PickupRow[],
   photos: [] as PhotoRow[],
+  customerAddresses: [] as CustomerAddress[],
   quotes: new Map<string, QuoteRow>(),
   customers: new Map<string, CustomerRow>(),
   rules: [] as { id: number; scope: string; match: string | null; percent: number | null; flat: number | null; price: number | null; active: number; updated_at: string }[],
@@ -161,7 +163,7 @@ const mem = {
 
 // ---- Export (T10) --------------------------------------------------------------------------------
 /** Every table in the schema, in schema order. The allow-list for the export; nothing else can be named. */
-export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'mailboxes', 'mailbox_notices', 'claims', 'pickups', 'shipment_photos'] as const;
+export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'mailboxes', 'mailbox_notices', 'claims', 'pickups', 'shipment_photos', 'customer_addresses'] as const;
 export type ExportTable = typeof EXPORT_TABLES[number];
 const memTable = (name: ExportTable): unknown[] => {
   switch (name) {
@@ -193,6 +195,7 @@ const memTable = (name: ExportTable): unknown[] => {
     case 'claims': return mem.claims;
     case 'pickups': return mem.pickups;
     case 'shipment_photos': return mem.photos;
+    case 'customer_addresses': return mem.customerAddresses;
     default: return [];
   }
 };
@@ -1162,6 +1165,28 @@ export async function updateMailbox(env: Env, code: string, patch: Partial<Omit<
   if (env.DB) await env.DB.prepare(`UPDATE mailboxes SET ${keys.map((k, i) => `${k} = ?${i + 2}`).join(', ')} WHERE code = ?1`).bind(m.code, ...keys.map((k) => patch[k] ?? null)).run();
   else Object.assign(m, Object.fromEntries(keys.map((k) => [k, patch[k] ?? null])));
   return { ...m, ...Object.fromEntries(keys.map((k) => [k, patch[k] ?? null])) } as Mailbox;
+}
+
+// ---- customer accounts online (to-do T20) ---------------------------------------------------------
+export async function setCustomerName(env: Env, id: string, name: string, phone: string | null) {
+  if (env.DB) { await env.DB.prepare('UPDATE customers SET name = ?2, phone = COALESCE(?3, phone) WHERE id = ?1').bind(id, name, phone).run(); return; }
+  const c = mem.customers.get(id); if (c) { c.name = name; if (phone) c.phone = phone; }
+}
+export async function saveCustomerAddress(env: Env, a: { customer_id: string; label: string; address_json: string }): Promise<CustomerAddress> {
+  const row = { ...a, created_at: now() };
+  if (env.DB) { const r = await env.DB.prepare('INSERT INTO customer_addresses (customer_id, label, address_json, created_at) VALUES (?1, ?2, ?3, ?4) RETURNING id').bind(row.customer_id, row.label, row.address_json, row.created_at).first<{ id: number }>(); return { id: r!.id, ...row }; }
+  const full = { id: mem.seq++, ...row }; mem.customerAddresses.push(full); return full;
+}
+export async function listCustomerAddresses(env: Env, customerId: string): Promise<CustomerAddress[]> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM customer_addresses WHERE customer_id = ?1 ORDER BY id').bind(customerId).all<CustomerAddress>()).results;
+  return mem.customerAddresses.filter((a) => a.customer_id === customerId);
+}
+export async function getCustomerAddress(env: Env, customerId: string, id: number): Promise<CustomerAddress | null> {
+  return (await listCustomerAddresses(env, customerId)).find((a) => a.id === id) ?? null;
+}
+export async function deleteCustomerAddress(env: Env, customerId: string, id: number): Promise<boolean> {
+  if (env.DB) return ((await env.DB.prepare('DELETE FROM customer_addresses WHERE id = ?1 AND customer_id = ?2').bind(id, customerId).run()).meta.changes ?? 0) > 0;
+  const n = mem.customerAddresses.length; mem.customerAddresses = mem.customerAddresses.filter((a) => !(a.id === id && a.customer_id === customerId)); return mem.customerAddresses.length < n;
 }
 
 // ---- intake photos (to-do T17): the rows; the bytes are in lib/photos.ts -----------------------------

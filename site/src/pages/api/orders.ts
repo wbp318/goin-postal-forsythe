@@ -4,6 +4,8 @@ import { env } from '../../lib/env';
 import { quote } from '../../lib/quote';
 import { newOrderId, saveOrder, type Order } from '../../lib/orders';
 import { createCheckout } from '../../lib/stripe';
+import { readSession } from '../../lib/session';
+import { saveCustomerAddress, listCustomerAddresses } from '../../shipping/store';
 import { parseAddress, parseParcel, json } from '../../lib/validate';
 import { store } from '../../data/store';
 import { effectiveAddons, priceExtras, onlineFee, salesTax, taxableExtras, textUpdatesPrice, TEXT_UPDATES } from '../../lib/addons';
@@ -51,6 +53,15 @@ export const POST: APIRoute = async ({ request }) => {
       account_name: account?.business_name, discount_percent: account?.discount_percent || undefined,
     };
     await saveOrder(env, order);
+    // A signed-in customer (T20) can keep the address for next time; duplicates are skipped.
+    if (b.save_address === true) {
+      const cid = await readSession(env, request.headers.get('cookie'));
+      if (cid) {
+        const key = (d: any) => `${d.contact_name}|${d.line_1}|${d.line_2 ?? ''}|${d.postal_code}`.toLowerCase().replace(/\s+/g, ' ');
+        const have = (await listCustomerAddresses(env, cid)).some((a) => key(JSON.parse(a.address_json)) === key(destination));
+        if (!have) await saveCustomerAddress(env, { customer_id: cid, label: destination.contact_name, address_json: JSON.stringify(destination) });
+      }
+    }
 
     if (international) return json({ order_id: order.id, next: `/ship/done?order=${order.id}` });
     const url = await createCheckout(env, order);

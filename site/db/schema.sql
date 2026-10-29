@@ -429,3 +429,13 @@ CREATE TABLE IF NOT EXISTS shipment_photos (
   at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS shipment_photos_shipment ON shipment_photos(shipment_id, at);
+
+-- Customer accounts online (to-do T20): saved addresses. Login tokens live in KV, sessions in a signed cookie.
+CREATE TABLE IF NOT EXISTS customer_addresses (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id TEXT NOT NULL REFERENCES customers(id),
+  label TEXT NOT NULL,
+  address_json TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS customer_addresses_customer ON customer_addresses(customer_id);

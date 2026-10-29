@@ -1,0 +1,105 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+import { store } from '../../data/store';
+import { env } from '../../lib/env';
+import { consumeLoginToken, readSession, signSession, sessionCookie } from '../../lib/session';
+import { findCustomer, getCustomer, customerQuotes, listCustomerAddresses } from '../../shipping/store';
+
+// Customer account (T20): sign in by magic link, see saved addresses and past orders, ship again.
+const token = Astro.url.searchParams.get('token');
+if (token) {
+  const email = await consumeLoginToken(env, token);
+  const c = email ? await findCustomer(env, email, null) : null;
+  if (c) {
+    Astro.cookies; // Astro needs the cookies API touched before set-cookie on a redirect in some adapters
+    return new Response(null, { status: 302, headers: { Location: '/account', 'Set-Cookie': sessionCookie(await signSession(env, c.id), Astro.url.protocol === 'https:') } });
+  }
+  return Astro.redirect('/account?expired=1');
+}
+const id = await readSession(env, Astro.request.headers.get('cookie'));
+const me = id ? await getCustomer(env, id) : null;
+const expired = Astro.url.searchParams.get('expired');
+const quotes = me ? (await customerQuotes(env, me)).slice(0, 30) : [];
+const saved = me ? await listCustomerAddresses(env, me.id) : [];
+const fmt = (iso: string) => iso.slice(0, 10);
+---
+<Base title={`Your account · ${store.name}`} description="Sign in with your email, keep your addresses, see your orders, ship again in two clicks.">
+  <section class="hero">
+    <h1 data-i18n="acct.h1">{me ? 'Your account' : 'Sign in'}</h1>
+    <p class="lead" data-i18n={me ? 'acct.lead.in' : 'acct.lead'}>{me ? 'Your addresses and orders. Ship again in two clicks.' : 'No password. Type your email and we send a link that signs you in.'}</p>
+    {expired && <p class="card" data-i18n="acct.expired">That link has expired or was already used. Ask for a new one.</p>}
+  </section>
+  {!me ? (
+    <div class="grid">
+      <form id="login" class="card">
+        <label><span data-i18n="f.email">Email</span> <input name="email" type="email" required autocomplete="email" /></label>
+        <button class="btn" type="submit" data-i18n="acct.send">Email me a sign-in link</button>
+        <p id="msg" role="alert"></p>
+      </form>
+      <div class="card">
+        <h3 data-i18n="acct.why">What an account is for</h3>
+        <ul>
+          <li data-i18n="acct.why1">Your addresses, saved, so the next label is two clicks.</li>
+          <li data-i18n="acct.why2">Every order you made here, with tracking.</li>
+          <li data-i18n="acct.why3">The same email you already use at the counter. Nothing to set up.</li>
+        </ul>
+      </div>
+    </div>
+  ) : (
+    <div class="grid">
+      <div class="card">
+        <h3 data-i18n="acct.you">You</h3>
+        <form id="namef">
+          <label><span data-i18n="f.name">Name</span> <input name="name" value={me.name} maxlength="60" required /></label>
+          <label><span data-i18n="f.email">Email</span> <input value={me.email ?? ''} disabled /></label>
+          <label><span data-i18n="f.phone">Phone</span> <input name="phone" type="tel" value={me.phone ?? ''} maxlength="20" /></label>
+          <p class="btnrow"><button class="btn small" type="submit" data-i18n="acct.save">Save</button> <button class="btn small kraft" type="button" id="logout" data-i18n="acct.logout">Sign out</button></p>
+        </form>
+        <h3 data-i18n="acct.addresses">Saved addresses</h3>
+        <ul id="addrs">{saved.map((a) => { const d = JSON.parse(a.address_json); return <li data-id={a.id}><strong>{a.label}</strong>: {d.contact_name}, {d.line_1}{d.line_2 ? ` ${d.line_2}` : ''}, {d.city} {d.state} {d.postal_code} · <a href={`/ship?to=${a.id}`} data-i18n="acct.shipto">Ship to this address</a> · <button type="button" class="btn small" data-del={a.id}>×</button></li>; })}</ul>
+        {!saved.length && <p class="muted" data-i18n="acct.noaddr">None yet. Tick "save this address" when you ship, or add one here.</p>}
+        <form id="addf" class="ship-form">
+          <div class="row">
+            <label><span data-i18n="acct.label">Label</span> <input name="label" maxlength="40" placeholder="Mom" /></label>
+            <label><span data-i18n="ship.recipient">Recipient name</span> <input name="contact_name" required /></label>
+          </div>
+          <div class="row">
+            <label><span data-i18n="ship.street">Street address</span> <input name="line_1" required maxlength="35" /></label>
+            <label><span data-i18n="ship.apt">Apt, suite (optional)</span> <input name="line_2" maxlength="35" /></label>
+          </div>
+          <div class="row">
+            <label><span data-i18n="ship.city">City</span> <input name="city" required /></label>
+            <label><span data-i18n="ship.state">State</span> <input name="state" maxlength="2" required /></label>
+            <label><span data-i18n="ship.zip">ZIP / postal code</span> <input name="postal_code" required /></label>
+          </div>
+          <p><button class="btn small" type="submit" data-i18n="acct.addaddr">Add address</button></p>
+        </form>
+        <p id="msg" role="alert"></p>
+      </div>
+      <div class="card">
+        <h3 data-i18n="acct.orders">Your orders</h3>
+        {!quotes.length && <p class="muted" data-i18n="acct.noorders">No orders yet under this email.</p>}
+        <table class="list">{quotes.map((q) => <tr><td>{fmt(q.created_at)}</td><td><a href={q.shipment_status ? `/track?q=${q.id}` : `/ship/done?order=${q.id}`}>{q.id}</a></td><td>{q.carrier} {q.service}</td><td>{q.destination}</td><td>${Number(q.price).toFixed(2)}</td><td>{q.shipment_status ?? q.status}</td></tr>)}</table>
+      </div>
+    </div>
+  )}
+  <script>
+    const $ = (id: string) => document.getElementById(id);
+    const msg = () => $('msg')!;
+    async function api(body: Record<string, unknown>) {
+      const res = await fetch('/api/account', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const j = await res.json(); if (!res.ok) throw new Error(j.error); return j;
+    }
+    $('login')?.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const email = (document.querySelector('#login [name=email]') as HTMLInputElement).value;
+      try { const j = await api({ action: 'login', email }); msg().className = ''; msg().textContent = 'Check your email for the link.'; if (j.mock_link) { const a = document.createElement('a'); a.href = j.mock_link; a.textContent = ' (dev: open it)'; msg().appendChild(a); } }
+      catch (e: any) { msg().className = 'err'; msg().textContent = e.message; }
+    });
+    $('logout')?.addEventListener('click', async () => { await api({ action: 'logout' }); location.href = '/account'; });
+    $('namef')?.addEventListener('submit', async (ev) => { ev.preventDefault(); const d = Object.fromEntries(new FormData(ev.target as HTMLFormElement).entries()); try { await api({ action: 'name', ...d }); msg().className = ''; msg().textContent = 'Saved.'; } catch (e: any) { msg().className = 'err'; msg().textContent = e.message; } });
+    $('addf')?.addEventListener('submit', async (ev) => { ev.preventDefault(); const d = Object.fromEntries(new FormData(ev.target as HTMLFormElement).entries()) as Record<string, string>; try { await api({ action: 'save_address', label: d.label, address: { contact_name: d.contact_name, line_1: d.line_1, line_2: d.line_2, city: d.city, state: d.state, postal_code: d.postal_code } }); location.reload(); } catch (e: any) { msg().className = 'err'; msg().textContent = e.message; } });
+    document.querySelectorAll<HTMLButtonElement>('[data-del]').forEach((b) => b.addEventListener('click', async () => { try { await api({ action: 'delete_address', id: b.dataset.del }); b.closest('li')!.remove(); } catch (e: any) { msg().className = 'err'; msg().textContent = e.message; } }));
+  </script>
+</Base>
