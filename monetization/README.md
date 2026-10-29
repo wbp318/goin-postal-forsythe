@@ -90,9 +90,9 @@ These are the big ones and the ones that need GP Brands' blessing. They turn For
 
 x402 is the HTTP payment protocol under the Linux Foundation that lets AI agents pay a website per request in USDC, with no account or card form. The store's rate quotes, labels, tracking and card renders can sit behind it in a day with Cloudflare's template, at a tenth of a cent per payment instead of Stripe's 30 cents plus 2.9%. Expect small money in 2027 and a head start when agents begin shipping parcels for people. The full plan, with prices per endpoint, fees against Stripe, revenue stages, the accounting and refund rules, and how it adds a zero-commitment tier to PeterShip for other stores, is in [`x402/README.md`](x402/README.md).
 
-## A side idea: a Vice City shipping company in GTA roleplay
+## A Vice City shipping company on GTA 6
 
-A roleplay server where players run a pack-and-ship business out of Vice City on PeterShip's real rating engine, as a brand and recruiting play budgeted like a billboard. GTA 6 arrives on consoles November 19, 2026 with no PC or server platform announced, so it would start on FiveM for GTA V and port later. About $60 to $150 a month to run, money back only through Tebex under Rockstar's rules, parody name until GP Brands says otherwise. The plan is in [`vice-city-rp/README.md`](vice-city-rp/README.md).
+A roleplay server, on GTA 6 only, where players run a pack-and-ship business out of Vice City on PeterShip's real rating engine. GTA 6 arrives on consoles November 19, 2026 with no PC version or server platform announced, so the plan is what to build now without a server: the design document, a browser prototype of the counter and packing game, the PeterShip bridge with one money table, assets, a Discord and waiting list, and the paperwork, ready for the day Rockstar opens the door. Without a real-money economy it is a brand and recruiting play budgeted like a billboard; with the rumored GTA 6 creator economy it becomes a business inside the game. Parody name until GP Brands says otherwise. The plan is in [`vice-city-rp/README.md`](vice-city-rp/README.md).
 
 ## How the multi-store versions run on Cloudflare
 
