@@ -67,7 +67,7 @@ flowchart LR
 | **Routes** | Vans in the city, boats to the islands, a Cessna to the far airfield. Dispatch board, fuel, maintenance. | The GTA part. Driving with cargo that can break. |
 | **Risk** | Storms close the airfield, a rival crew hijacks a van, customs holds an international box, a fragile parcel takes damage from bad driving. | Insurance becomes a real decision. Claims are roleplay. |
 | **Company** | Payroll, vans, a second location, mailbox rentals as passive income, contracts from in-game businesses, a reputation score. | The tycoon loop. Rival companies on the same server. |
-| **Economy** | In-game dollars only. Parcel fees, mailbox rent, contracts, insurance premiums. No real money anywhere in the loop. | Keeps it inside Rockstar's rules. |
+| **Economy** | In-game dollars only on the GTA V server. Parcel fees, mailbox rent, contracts, insurance premiums. No real money anywhere in the loop. | Keeps it inside Rockstar's rules today. If GTA 6 brings the rumored real-money creator economy, this is the part that changes; see below. |
 
 The real store appears as the counter design, the uniforms, the box art, a parody name on the sign and a code on the receipt.
 
@@ -81,7 +81,25 @@ The real store appears as the counter design, the uniforms, the box art, a parod
 | **Software testing** | Thousands of players hammering the rating engine in mock mode find edge cases no parity test will. |
 | **A real-world code** | A code on the in-game receipt gives 10% off at the real counter. The Coupon Counter tracks it like any placement. |
 
-What it is not: income. Rockstar's rules allow Tebex sales of cosmetics, queue priority and supporter roles, which on a mid-sized server covers hosting and little more.
+What it is not, today: income. Rockstar's rules allow Tebex sales of cosmetics, queue priority and supporter roles, which on a mid-sized server covers hosting and little more. The one thing that could change that is the next section.
+
+## The rumored real-money economy in GTA 6
+
+At some point GTA 6 is rumored to carry an in-game economy with real money in it: a creator platform in the style of Roblox or Fortnite Creative, where people who build experiences inside the game are paid a share of what players spend, and possibly in-game currency that can be cashed out. None of this is confirmed by Rockstar. The reports since 2025 have come from analysts and leaks, and Rockstar's own words so far are the September 2026 modding guidelines, which point the other way for GTA V. Treat it as a rumor with a real chance of being true, because Take-Two has said in earnings calls that it watches the creator economies closely and GTA Online already sells Shark Cards.
+
+If it lands, the shipping company stops being a billboard and becomes a business inside the game:
+
+| What changes | How it would work | What it is worth |
+|---|---|---|
+| **Players pay real money to use our counter** | A parcel costs in-game currency that was bought with dollars; the creator share of that spend is paid to the company that runs the experience | Roblox pays creators about 29 cents on the dollar after its cut and the app stores'; Fortnite's engagement payouts have put some creators past a million dollars a year. A popular job experience in GTA 6 could pay for a real counter employee |
+| **The in-game business earns a wage** | Players who work the Vice City counter earn in-game currency with a cash-out path, so being good at the job pays | Recruiting becomes real: the best counter players are paid while they learn the trade, and the real store hires from them |
+| **Real goods inside the game** | A player ships a real gift from the game to a real address, paid with the game's wallet, fulfilled by PeterShip at the Forsythe counter through the same API an agent uses | New; nobody has done it. The first real pack-and-ship inside a game world is a story on its own |
+| **Mailbox rent and insurance as real revenue** | The tycoon loop's passive income becomes a creator payout | Recurring, like the real mailbox line |
+
+What it would take beyond the GTA V build: a Rockstar creator account under whatever program they open, their revenue-share terms and payout rules read with a lawyer, a tax treatment for creator income to the LLC, age rules for anything that pays players, and a hard line that real money never buys an advantage in the roleplay itself, only the experience and the goods. The parody-name question becomes bigger, because a real business inside the game is a trademark use GP Brands would have to approve outright.
+
+How to hold it: build the GTA V server as planned, in-game dollars only, so the systems, the community and the counter design exist the day Rockstar opens a program. Then port. If the rumor never comes true, nothing was spent on it.
+
 
 ## Name and rules
 
@@ -157,6 +175,8 @@ Measured the same way as every other placement, through the Coupon Counter: the 
 
 ## Risks
 
+- **The real-money economy stays a rumor.** Then the server is a marketing placement measured against a billboard, as costed above. Nothing in the build depends on it.
+
 - **GTA 6 never gets servers.** Then this is a GTA V project, which is where RP lives today anyway.
 - **Rockstar's rules change.** They rewrote the license in January 2026 and the guidelines in September 2026. Read both before spending, and keep all money on Tebex.
 - **Trademark.** Parody name in game, real name only on the website and Discord, and GP Brands' permission for even that.
@@ -169,6 +189,7 @@ Measured the same way as every other placement, through the Coupon Counter: the 
 1. Is this worth a billboard's budget and someone's evenings? If not, the page stays here as an idea.
 2. Which parody name, and will GP Brands allow the real store to be credited on the server website.
 3. Who on the team would admin it.
+4. If Rockstar opens a paid creator program for GTA 6, whether the shipping company goes in as a real business under the LLC, which needs GP Brands' answer on the name and a lawyer's read of the program terms.
 
 ## Sources
 
