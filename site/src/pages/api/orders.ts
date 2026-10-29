@@ -6,7 +6,7 @@ import { newOrderId, saveOrder, type Order } from '../../lib/orders';
 import { createCheckout } from '../../lib/stripe';
 import { parseAddress, parseParcel, json } from '../../lib/validate';
 import { store } from '../../data/store';
-import { effectiveAddons, priceExtras, onlineFee, textUpdatesPrice, TEXT_UPDATES } from '../../lib/addons';
+import { effectiveAddons, priceExtras, onlineFee, salesTax, taxableExtras, textUpdatesPrice, TEXT_UPDATES } from '../../lib/addons';
 import { accountForContact } from '../../shipping/store';
 import { checkAddress } from '../../lib/address';
 
@@ -40,13 +40,14 @@ export const POST: APIRoute = async ({ request }) => {
     if (sms && textUpdatesPrice(cfg) != null) picks.push({ code: TEXT_UPDATES, qty: 1 });
     const extras = priceExtras(cfg, picks, parcel.value_usd, b.insure === true || b.insure === 'on');
     const subtotal = Math.round((rate.total_charge + extras.extras_total) * 100) / 100;
+    const tax = salesTax(cfg, taxableExtras(extras));
     const fee = international ? undefined : onlineFee(cfg, subtotal);
     const order: Order = {
       id: newOrderId(),
       status: international ? 'reserved' : 'awaiting_payment',
       created_at: new Date().toISOString(),
       email, phone: sms ? phone : undefined, sms, origin, destination, parcel, rate, international,
-      addons: extras.addons.length ? extras.addons : undefined, insurance: extras.insurance, fee, total: Math.round((subtotal + (fee?.amount ?? 0)) * 100) / 100,
+      addons: extras.addons.length ? extras.addons : undefined, insurance: extras.insurance, tax, fee, total: Math.round((subtotal + (tax?.amount ?? 0) + (fee?.amount ?? 0)) * 100) / 100,
       account_name: account?.business_name, discount_percent: account?.discount_percent || undefined,
     };
     await saveOrder(env, order);

@@ -148,7 +148,7 @@ flowchart LR
 ## Rules and risks
 
 - **Franchise agreement first.** Selling software to other franchisees, and even charging online fees, may be covered by the Goin' Postal franchise agreement. Read it, then ask GP Brands. Issue 11 already opens that conversation.
-- **Sales tax.** Printed products and boxes are taxable goods in Louisiana; postage is not. Stripe Tax can calculate it for about half a percent per transaction, or the store's accountant sets the rate in the order code. Needed before the first paid card order ships.
+- **Sales tax.** ✅ Built Oct 29, v1.45.0. Printed products and boxes are taxable goods in Louisiana; postage is not. The Monroe combined rate (10.99%: state 5% plus local 5.99%, per Avalara and Taxwire for 2026; other lookups say 11.9% or 12.99%, so the accountant confirms) is a setting beside the online fee at Staff → Prices and applies to cards plus options and to box and packing add-ons, never to postage, insurance, services or the fee. Stripe Tax stays an option later if the rate work gets tiresome.
 - **Refunds.** Stripe keeps its fee on refunds. Write the refund rule on the done page before taking money (issue 8).
 - **Support.** Every store that pays for the software will call when a label fails. Price that in, or keep it to a handful of stores the owners know.
 - **Keep money separate.** In-person payments stay on the Goin' Postal POS. Online money is Stripe. Platform fees from other stores would be a third stream through Stripe Connect. Do not mix them in the books.

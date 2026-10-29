@@ -1,6 +1,6 @@
 // Insurance and add-on pricing: always on the server, from the catalog.
 import { describe, it, expect } from 'vitest';
-import { onlineFee, textUpdatesPrice, TEXT_UPDATES, addonsFromFile, insuranceFee, priceExtras, extrasOffer } from '../src/lib/addons';
+import { onlineFee, salesTax, taxableExtras, textUpdatesPrice, TEXT_UPDATES, addonsFromFile, insuranceFee, priceExtras, extrasOffer } from '../src/lib/addons';
 
 const cfg = addonsFromFile();
 
@@ -53,5 +53,25 @@ describe('extrasOffer', () => {
     const x = priceExtras(cfg, [{ code: TEXT_UPDATES, qty: 1 }], 10, false);
     expect(x.extras_total).toBe(0.5);
     expect(textUpdatesPrice({ ...cfg, items: cfg.items.filter((i) => i.code !== TEXT_UPDATES) })).toBeNull();
+  });
+});
+
+describe('sales tax', () => {
+  it('seeds the Monroe combined rate and taxes only boxes and packing', () => {
+    expect(cfg.sales_tax.percent).toBe(10.99);
+    const x = priceExtras(cfg, [{ code: 'box-m', qty: 1 }, { code: 'pack', qty: 1 }, { code: 'signature', qty: 1 }, { code: TEXT_UPDATES, qty: 1 }], 650, true);
+    expect(taxableExtras(x)).toBe(9.99); // 3.99 box + 6 packing; signature, text and insurance are not goods
+    expect(salesTax(cfg, taxableExtras(x))).toEqual({ percent: 10.99, amount: 1.1 });
+  });
+  it('is nothing at a zero rate or with nothing taxable', () => {
+    expect(salesTax({ ...cfg, sales_tax: { percent: 0 } }, 50)).toBeUndefined();
+    expect(salesTax(cfg, 0)).toBeUndefined();
+    expect(taxableExtras(priceExtras(cfg, [{ code: 'signature', qty: 2 }], 10, false))).toBe(0);
+  });
+  it('taxes a card order on the cards plus the options', () => {
+    expect(salesTax(cfg, 67.99)).toEqual({ percent: 10.99, amount: 7.47 });
+  });
+  it('hands the page the rate', () => {
+    expect(extrasOffer(cfg, 10).sales_tax).toEqual({ percent: 10.99 });
   });
 });

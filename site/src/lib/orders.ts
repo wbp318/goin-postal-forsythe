@@ -41,6 +41,8 @@ export interface Order {
   insurance?: { declared_usd: number; fee: number };
   // Online convenience fee (monetization plan): percent of label plus extras, plus a flat amount. Online orders only.
   fee?: { percent: number; flat: number; amount: number };
+  // Sales tax on the taxable extras (boxes, packing) at the store's rate. Never on postage or insurance.
+  tax?: { percent: number; amount: number };
   total?: number;
   // Business accounts (T1): the discount already taken off rate.total_charge, and the account a
   // counter order is billed to instead of being paid at the POS.

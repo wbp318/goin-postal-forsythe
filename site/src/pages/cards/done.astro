@@ -9,8 +9,8 @@ import { store } from '../../data/store';
 
 const order = await getCardOrder(env, Astro.url.searchParams.get('order') ?? '');
 if (!order) return new Response('No such order', { status: 404 });
-// The lines under the card price, each with its translation key: the paid options, then the online fee.
-const extras = [...(order.options ?? []).map((o) => ({ key: `cards.opt.${o.code}`, label: o.name, amount: o.price })), ...(order.fee ? [{ key: 'done.fee', label: 'Online fee', amount: order.fee.amount }] : [])];
+// The lines under the card price, each with its translation key: the paid options, sales tax, then the online fee.
+const extras = [...(order.options ?? []).map((o) => ({ key: `cards.opt.${o.code}`, label: o.name, amount: o.price })), ...(order.tax ? [{ key: 'done.tax', label: 'Sales tax', amount: order.tax.amount }] : []), ...(order.fee ? [{ key: 'done.fee', label: 'Online fee', amount: order.fee.amount }] : [])];
 const qr = await QRCode.toString(`${env.SITE_URL}/counter/card/${order.id}`, { type: 'svg', margin: 1, width: 200 });
 ---
 <Base title={`Cards ${order.id} · ${store.name}`}>

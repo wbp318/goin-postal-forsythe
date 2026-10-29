@@ -1,6 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
-import { effectiveAddons, onlineFee } from '../../lib/addons';
+import { effectiveAddons, onlineFee, salesTax } from '../../lib/addons';
 import { env } from '../../lib/env';
 import { authenticate } from '../../lib/auth';
 import { logAudit } from '../../shipping/store';
@@ -16,6 +16,7 @@ export const POST: APIRoute = async ({ request }) => {
     const quantity = Number(b.quantity);
     if (!PRICES[quantity]) throw new Error('Pick a quantity');
     const priced = priceCards(quantity, b.options);
+    const cfg = await effectiveAddons(env);
     const name = String(b.customer?.name ?? '').trim();
     const email = String(b.customer?.email ?? '').trim();
     const phone = String(b.customer?.phone ?? '').trim();
@@ -29,11 +30,12 @@ export const POST: APIRoute = async ({ request }) => {
       quantity,
       price: priced.price,
       options: priced.options,
-      fee: onlineFee(await effectiveAddons(env), priced.subtotal),
+      tax: salesTax(cfg, priced.subtotal),
+      fee: onlineFee(cfg, priced.subtotal),
       design: sanitizeDesign(b.design),
       notes: String(b.notes ?? '').slice(0, 300),
     };
-    order.total = Math.round((priced.subtotal + (order.fee?.amount ?? 0)) * 100) / 100;
+    order.total = Math.round((priced.subtotal + (order.tax?.amount ?? 0) + (order.fee?.amount ?? 0)) * 100) / 100;
     await saveCardOrder(env, order);
     const url = await createCardCheckout(env, order);
     return json({ order_id: order.id, next: url });

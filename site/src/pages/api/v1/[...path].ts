@@ -5,7 +5,7 @@ import { json, parseAddress, parseParcel } from '../../../lib/validate';
 import { quote } from '../../../lib/quote';
 import { newOrderId, saveOrder, getOrder, type Order } from '../../../lib/orders';
 import { fulfil } from '../../../lib/fulfil';
-import { effectiveAddons, priceExtras } from '../../../lib/addons';
+import { effectiveAddons, priceExtras, salesTax, taxableExtras } from '../../../lib/addons';
 import { checkAddress } from '../../../lib/address';
 import { authenticateApi } from '../../../lib/apikeys';
 import { voidLabel } from '../../../shipping/engine';
@@ -61,11 +61,13 @@ export const ALL: APIRoute = async ({ request, params }) => {
       if (!found) return json({ error: 'rate_id is not one of the rates for this parcel; call /rates first' }, 400);
       const d = account.discount_percent || 0;
       const rate = d ? { ...found, total_charge: Math.round(found.total_charge * (1 - d / 100) * 100) / 100 } : found;
-      const extras = priceExtras(await effectiveAddons(env), body.addons, parcel.value_usd, body.insure === true);
+      const cfg = await effectiveAddons(env);
+      const extras = priceExtras(cfg, body.addons, parcel.value_usd, body.insure === true);
+      const tax = salesTax(cfg, taxableExtras(extras));
       const order: Order = {
         id: newOrderId(), status: 'reserved', created_at: new Date().toISOString(), email: String(body.email ?? '').trim(), name: account.business_name,
         source: 'counter', staff: `API:${key.label}`.slice(0, 20), origin: store.origin, destination: to, parcel, rate, international: to.country_alpha2 !== 'US', kind: 'ship',
-        addons: extras.addons.length ? extras.addons : undefined, insurance: extras.insurance, total: Math.round((rate.total_charge + extras.extras_total) * 100) / 100,
+        addons: extras.addons.length ? extras.addons : undefined, insurance: extras.insurance, tax, total: Math.round((rate.total_charge + extras.extras_total + (tax?.amount ?? 0)) * 100) / 100,
         account_id: account.id, account_name: account.business_name, discount_percent: d || undefined,
       };
       if (order.international) return json({ error: 'International shipments need customs paperwork; bring them to the counter for now' }, 400);

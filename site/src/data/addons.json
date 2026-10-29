@@ -1,5 +1,5 @@
 {
-  "_comment": "Starting add-on prices and insurance terms. The live ones are edited at /counter/rules (Add-ons and insurance) and stored in the addons table; this file only seeds a fresh install. TODO owners: real box costs and the insurance terms from the carrier contracts (issue 9). online_fee is the convenience line on every online label and card order (covers Stripe's 2.9% + 30c); percent of the subtotal plus a flat amount, 3.5% to start, Rin's number to change at /counter/rules.",
+  "_comment": "Starting add-on prices and insurance terms. The live ones are edited at /counter/rules (Add-ons and insurance) and stored in the addons table; this file only seeds a fresh install. TODO owners: real box costs and the insurance terms from the carrier contracts (issue 9). online_fee is the convenience line on every online label and card order (covers Stripe's 2.9% + 30c); percent of the subtotal plus a flat amount, 3.5% to start, Rin's number to change at /counter/rules. sales_tax is the Monroe combined rate on taxable goods.",
   "insurance": {
     "included_usd": 100,
     "per_100_usd": 1.25,
@@ -53,5 +53,9 @@
   "online_fee": {
     "percent": 3.5,
     "flat": 0
+  },
+  "sales_tax": {
+    "percent": 10.99,
+    "_comment": "Louisiana state 5% plus Monroe local 5.99% (Avalara and Taxwire, Oct 2026). Taxes boxes, packing and printed cards; never postage, insurance, signature, text updates or the online fee. TODO owners: the accountant confirms the rate (agenda item 50); change it at /counter/rules."
   }
 }

@@ -7,17 +7,20 @@ import { loadAddons, type AddonRow } from '../shipping/store';
 
 export interface Insurance { included_usd: number; per_100_usd: number; minimum_usd: number; max_declared_usd: number }
 export interface OnlineFee { percent: number; flat: number }
-export interface AddonsConfig { insurance: Insurance; online_fee: OnlineFee; items: AddonRow[]; updated_at: string | null }
+export interface SalesTax { percent: number }
+export interface AddonsConfig { insurance: Insurance; online_fee: OnlineFee; sales_tax: SalesTax; items: AddonRow[]; updated_at: string | null }
 /** The code of the text-updates add-on; ticking "text me" on the ship page adds it. */
 export const TEXT_UPDATES = 'text-updates';
-export interface AddonLine { code: string; name: string; qty: number; unit_price: number; total: number }
+export interface AddonLine { code: string; kind?: AddonRow['kind']; name: string; qty: number; unit_price: number; total: number }
+/** Add-on kinds Louisiana taxes as goods: boxes and packing. Services (signature, text updates), insurance and postage are not taxed. */
+export const TAXABLE_KINDS: AddonRow['kind'][] = ['box', 'packing'];
 export interface Extras { addons: AddonLine[]; insurance?: { declared_usd: number; fee: number }; extras_total: number }
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
 export function addonsFromFile(): AddonsConfig {
-  const f = fileAddons as { insurance: Insurance; online_fee?: OnlineFee; items: { code: string; kind: string; name: string; price: number }[] };
-  return { insurance: { ...f.insurance }, online_fee: { percent: f.online_fee?.percent ?? 0, flat: f.online_fee?.flat ?? 0 }, items: f.items.map((i, sort) => ({ code: i.code, kind: i.kind as AddonRow['kind'], name: i.name, price: i.price, active: 1, sort })), updated_at: null };
+  const f = fileAddons as { insurance: Insurance; online_fee?: OnlineFee; sales_tax?: SalesTax; items: { code: string; kind: string; name: string; price: number }[] };
+  return { insurance: { ...f.insurance }, online_fee: { percent: f.online_fee?.percent ?? 0, flat: f.online_fee?.flat ?? 0 }, sales_tax: { percent: f.sales_tax?.percent ?? 0 }, items: f.items.map((i, sort) => ({ code: i.code, kind: i.kind as AddonRow['kind'], name: i.name, price: i.price, active: 1, sort })), updated_at: null };
 }
 
 /** The catalog in force: the table if anything was ever saved there, else the file. */
@@ -41,7 +44,7 @@ export function priceExtras(cfg: AddonsConfig, picks: { code: string; qty: numbe
     const item = cfg.items.find((i) => i.active && i.code === String(p.code));
     const qty = Math.min(20, Math.max(0, Math.floor(Number(p.qty) || 0)));
     if (!item || !qty) continue;
-    addons.push({ code: item.code, name: item.name, qty, unit_price: item.price, total: round2(item.price * qty) });
+    addons.push({ code: item.code, kind: item.kind, name: item.name, qty, unit_price: item.price, total: round2(item.price * qty) });
   }
   const ins = insure ? insuranceFee(cfg.insurance, declared) : null;
   const insurance = ins && ins.fee > 0 ? { declared_usd: ins.declared_usd, fee: ins.fee } : undefined;
@@ -56,6 +59,17 @@ export function onlineFee(cfg: AddonsConfig, subtotal: number): { percent: numbe
   const amount = round2(Math.max(0, subtotal) * percent / 100 + flat);
   return amount > 0 ? { percent, flat, amount } : undefined;
 }
+/** Sales tax on a taxable amount at the configured rate, rounded to the cent. Nothing when the rate is zero or nothing is taxable. */
+export function salesTax(cfg: AddonsConfig, taxable: number): { percent: number; amount: number } | undefined {
+  const percent = cfg.sales_tax?.percent ?? 0;
+  if (!percent || taxable <= 0) return undefined;
+  const amount = round2(taxable * percent / 100);
+  return amount > 0 ? { percent, amount } : undefined;
+}
+/** The taxable part of a shipment's extras: boxes and packing. Postage, insurance and services are never taxed. */
+export function taxableExtras(extras: Extras): number {
+  return round2(extras.addons.filter((l) => l.kind && TAXABLE_KINDS.includes(l.kind)).reduce((a, l) => a + l.total, 0));
+}
 /** The text-updates add-on's price when it is in the catalog and active. */
 export function textUpdatesPrice(cfg: AddonsConfig): number | null {
   const i = cfg.items.find((x) => x.active && x.code === TEXT_UPDATES);
@@ -69,6 +83,7 @@ export function extrasOffer(cfg: AddonsConfig, declared: number) {
     insurance: { ...ins, included_usd: cfg.insurance.included_usd, max_declared_usd: cfg.insurance.max_declared_usd },
     addons: cfg.items.filter((i) => i.active).sort((a, b) => a.sort - b.sort).map(({ code, kind, name, price }) => ({ code, kind, name, price })),
     online_fee: cfg.online_fee,
+    sales_tax: cfg.sales_tax,
     text_updates_price: textUpdatesPrice(cfg),
   };
 }

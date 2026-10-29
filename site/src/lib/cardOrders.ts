@@ -10,8 +10,9 @@ export interface CardOrder {
   quantity: number;
   price: number;          // the cards
   options?: CardOptionLine[]; // paid upsells: stock, finish, corners, rush (older orders have none)
+  tax?: { percent: number; amount: number }; // sales tax on the cards and options (printed goods are taxable)
   fee?: { percent: number; flat: number; amount: number }; // online convenience fee
-  total?: number;         // price plus options plus fee; older orders have only price
+  total?: number;         // price plus options plus tax plus fee; older orders have only price
   design: Design;
   notes: string;
 }

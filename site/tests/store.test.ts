@@ -88,10 +88,11 @@ describe('staff, audit, rules, add-ons, notes, printer', () => {
     const saved = await store.saveRules(env, { enabled: true, round_to_99: false, rules: [{ scope: 'default', match: null, percent: 20, flat: 1, price: null, active: 1 }] });
     expect(saved.enabled).toBe(true);
     expect(saved.rules[0]).toMatchObject({ scope: 'default', percent: 20 });
-    const a = await store.saveAddons(env, { insurance: { included_usd: 100, per_100_usd: 1, minimum_usd: 2, max_declared_usd: 5000 }, online_fee: { percent: 2, flat: 0.25 }, items: [{ code: 'box-s', kind: 'box', name: 'Small box', price: 2.99, active: 1, sort: 0 }] });
+    const a = await store.saveAddons(env, { insurance: { included_usd: 100, per_100_usd: 1, minimum_usd: 2, max_declared_usd: 5000 }, online_fee: { percent: 2, flat: 0.25 }, sales_tax: { percent: 9.5 }, items: [{ code: 'box-s', kind: 'box', name: 'Small box', price: 2.99, active: 1, sort: 0 }] });
     expect(a.items[0].price).toBe(2.99);
     expect((await store.loadAddons(env, true))?.insurance.per_100_usd).toBe(1);
     expect((await store.loadAddons(env, true))?.online_fee).toEqual({ percent: 2, flat: 0.25 });
+    expect((await store.loadAddons(env, true))?.sales_tax).toEqual({ percent: 9.5 });
   });
   it('notes, print failures and the heartbeat', async () => {
     await store.addNote(env, { kind: 'order', target: 'GP-N1', note: 'Fragile', by_name: 'Sam' });
