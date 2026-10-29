@@ -75,7 +75,7 @@ Every marketplace above sells its own labels at commercial rates (eBay, Etsy, Sh
 | Step | What | Effort | Needs |
 |---|---|---|---|
 | 1 ✅ v1.62.1 | eBay, Square, WooCommerce and Amazon order exports read by the batch importer, so any seller on those platforms ships a stack today by CSV | Done | Nothing |
-| 2 | Square connector (seller token, orders poll, tracking push), the easiest live one | 2 days | A Square seller to test with |
+| 2 ✅ v1.64.0 | Square connector (seller token, orders poll, tracking push), the easiest live one | Done: `shipping-client/square-connector/` | A Square seller to test with |
 | 3 | eBay connector (developer account, OAuth, Sell Fulfillment API) | A week | eBay developer program approval in the company's name (the LLC, item 57) |
 | 4 | Etsy connector (OAuth, app approval) | 3 days once approved | Etsy app approval |
 | 5 ✅ v1.63.0 | Inventory and the pick list: `products`, receiving, stock per order | Done | A first fulfillment customer to use it |
