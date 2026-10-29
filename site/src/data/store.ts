@@ -16,6 +16,8 @@ export interface StoreFacts {
   reviewUrl?: string;         // the Google Business Profile review link (issue 7); the delivered email asks for a review when set
   hours: { days: string; key: string; open: string; openKey?: string }[];
   services: { key: string; name: string; blurb: string; link?: string }[];
+  // Other stores the same owner runs, each on its own deployment (T8). The counter pages show a switcher when this is set (T23).
+  siblings?: { id: string; name: string; url: string }[];
 }
 
 export const defaults: StoreFacts = {

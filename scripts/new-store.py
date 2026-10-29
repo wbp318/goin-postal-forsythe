@@ -45,6 +45,8 @@ def main() -> int:
         'id': a.slug, 'name': a.name, 'address': a.address, 'phone': a.phone, 'email': a.email,
         'origin': { 'contact_name': a.name, 'company_name': a.name, 'contact_phone': e164, 'contact_email': a.email, 'line_1': line1, 'city': city, 'state': state, 'postal_code': zip_, 'country_alpha2': 'US' },
         'formEndpoint': 'https://formspree.io/f/REPLACE_ME',
+        # The switcher on the counter pages (T23): this store sees Forsythe; add this store to Forsythe's STORE_JSON siblings too.
+        'siblings': [{ 'id': 'forsythe', 'name': "Goin' Postal Forsythe", 'url': 'https://goinpostalforsythe.com' }],
     }
     STORES.mkdir(exist_ok=True)
     out = STORES / f'{a.slug}.json'
@@ -67,6 +69,7 @@ def main() -> int:
     print('4. Deploy by pushing to main (the Cloudflare project builds it), open the site, type the PIN on /counter/queue.')
     print('   Prices, add-ons, staff and accounts are set on the counter pages; they live in this store\'s own database.\n')
     print(f'Locally: put STORE_JSON=<the json on one line> in site/.dev.vars to run `npm run dev` as {a.name}.')
+    print(f'\nSwitcher: stores/{a.slug}.json lists Forsythe under "siblings". Add {{"id": "{a.slug}", "name": "{a.name}", "url": "{a.site}"}} to Forsythe\'s siblings (its STORE_JSON secret, or src/data/store.ts) so both counters show the other.')
     return 0
 
 

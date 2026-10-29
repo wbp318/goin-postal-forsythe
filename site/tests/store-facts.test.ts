@@ -18,3 +18,11 @@ describe('store facts', () => {
     expect(mergeStore(defaults, 'nope' as any)).toBe(defaults);
   });
 });
+
+describe('siblings (T23)', () => {
+  it('a store with siblings keeps them as a whole list; a store without has none', () => {
+    const m = mergeStore(defaults, { siblings: [{ id: 'west-carroll', name: 'Oak Grove', url: 'https://example.com' }] });
+    expect(m.siblings?.map((s) => s.id)).toEqual(['west-carroll']);
+    expect(mergeStore(defaults, {}).siblings).toBeUndefined();
+  });
+});

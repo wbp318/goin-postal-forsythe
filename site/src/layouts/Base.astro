@@ -31,6 +31,12 @@ const brandRest = store.name.replace(/^Goin' Postal\s*/i, '') || store.name;
           <a href="/#hours" data-i18n="nav.hours">Hours</a>
           <a href="/contact" data-i18n="nav.contact">Contact</a>
           <a href="/account" data-i18n="nav.account">Account</a>
+          {Astro.url.pathname.startsWith('/counter') && store.siblings && store.siblings.length > 0 && (
+            <select id="storeSwitch" aria-label="Store" title="Store">
+              <option value="">{store.name}</option>
+              {store.siblings.map((s) => <option value={s.url}>{s.name}</option>)}
+            </select>
+          )}
           <select id="lang" aria-label="Language" title="Language">
             {LANGS.map((l) => <option value={l.code}>{l.name}</option>)}
           </select>
@@ -74,6 +80,11 @@ const brandRest = store.name.replace(/^Goin' Postal\s*/i, '') || store.name;
       document.querySelectorAll<HTMLElement>('.size[data-size]').forEach((b) => b.addEventListener('click', () => size(b.dataset.size!)));
       document.getElementById('contrast')!.addEventListener('click', () => contrast(root.dataset.contrast !== 'high'));
       document.getElementById('lang')!.addEventListener('change', (e) => setLang((e.target as HTMLSelectElement).value as Lang));
+    </script>
+      <script>
+      // Store switcher (T23): the same counter page on the other store's deployment.
+      const sw = document.getElementById('storeSwitch') as HTMLSelectElement | null;
+      sw?.addEventListener('change', () => { if (sw.value) location.href = sw.value.replace(/\/$/, '') + location.pathname; });
     </script>
   </body>
 </html>
