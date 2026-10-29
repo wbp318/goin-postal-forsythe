@@ -920,7 +920,7 @@ Every way the store can earn from what it runs on Cloudflare, ranked by effort a
 
 **Switched on October 28, 2026 (v1.43.0):** the online convenience fee (3.5% to start, Rin's number at Staff → Prices) and text updates as a 50-cent add-on, the two quickest rows of the plan. 
 
-**October 29, 2026:** card designer upsells (v1.44.0: thick or linen stock, gloss or soft-touch finish, rounded corners, rush pickup, each a priced Stripe line), sales tax (v1.45.0: the Monroe combined rate, 10.99% until the accountant confirms, on boxes, packing and printed cards, never on postage, insurance or the online fee, set at Staff → Prices beside the fee) and the returns drop-off form (v1.46.0: `/returns`, "I'm bringing a return", label printed from a phone for $2 and a box for $2, paid at the counter; the counter's drop-off page lists who is coming and fills the scan form from their QR), and mailbox subscriptions online (v1.47.0: `/mailbox`, three sizes, monthly or yearly at 12 for the price of 10, Stripe Checkout in subscription mode so renewals run themselves, the box number given at the counter only after Form 1583 and two IDs are recorded). Still to do from the fast rows: the business-accounts one-page offer.
+**October 29, 2026:** card designer upsells (v1.44.0: thick or linen stock, gloss or soft-touch finish, rounded corners, rush pickup, each a priced Stripe line), sales tax (v1.45.0: the Monroe combined rate, 10.99% until the accountant confirms, on boxes, packing and printed cards, never on postage, insurance or the online fee, set at Staff → Prices beside the fee) and the returns drop-off form (v1.46.0: `/returns`, "I'm bringing a return", label printed from a phone for $2 and a box for $2, paid at the counter; the counter's drop-off page lists who is coming and fills the scan form from their QR), and mailbox subscriptions online (v1.47.0: `/mailbox`, three sizes, monthly or yearly at 12 for the price of 10, Stripe Checkout in subscription mode so renewals run themselves, the box number given at the counter only after Form 1583 and two IDs are recorded). The business-accounts one-page offer (v1.48.0) is `designs/business-accounts-offer.svg`, with a PNG and a print PDF. That closes the tabled batch.
 
 **Selling PeterShip to other stores.** The full plan is in [`shipping-client/for-other-stores/README.md`](shipping-client/for-other-stores/README.md). There are roughly 10,000 pack-and-ship counters in the US outside The UPS Store, most running PostalMate at $85 to $125 a month or ShipRite at a $1,000 license plus $3,200 to $5,700 of hardware, both Windows programs from the 2000s; the one modern rival, PostalPoint, takes 10% of shipping profit. PeterShip would sell flat at $49, $79 and $129 a month, browser-based on any device. Before a stranger's store can run on it, it needs a counter till on Stripe Terminal, a mailbox manager with Form 1583 and the quarterly CMRA upload, a packaging estimator, QuickBooks export, a services catalog, multi-store tenancy and FedEx Compatible and UPS Ready certification, about four months of build after the Forsythe switch-over. Features none of the incumbents have: customer pre-ship by QR code, the store's whole website and counter in 14 languages, branded tracking texts, a live margin dashboard, an AI packing advisor and help chat, built-in carrier invoice audit, mailbox scanning, review requests after delivery and an anonymous price benchmark. Revenue after costs runs about $2,000 a month at 25 Goin' Postal stores, $4,500 at 100 independents and $22,600 at 400 stores if a franchisor signs. First paying stores about September 2027, gated on GP Brands' answer and carrier certification.
 
@@ -1006,12 +1006,13 @@ flowchart LR
   D --> D7["game-day-social.svg"]
   D --> D8["scoreboard-spot.svg"]
   D --> D9["counter-flyer.svg"]
+  D --> D12["business-accounts-offer.svg"]
   D --> D10["school ads:<br/>neville-jr-high-*, st-frederick-*"]
   D --> D11["holiday-deadlines.svg"]
   D --> GD["game-day/<br/>one post per home game"]
   D --> PN["promo-night/<br/>handout, table sign, post"]
   D --> P["png/<br/>one PNG per design,<br/>for WhatsApp and texts"]
-  D --> F["pdf/counter-flyer.pdf<br/>print-ready"]
+  D --> F["pdf/<br/>counter-flyer.pdf,<br/>business-accounts-offer.pdf"]
   R --> S["scripts/<br/>export and checks"]
   R --> W[".github/workflows/ci.yml"]
 ```
@@ -1023,7 +1024,7 @@ Each design comes in three formats:
 | Format | Folder | Use it for |
 |---|---|---|
 | **PNG** | `designs/png/` | WhatsApp, texts, email, Facebook, Instagram |
-| **PDF** | `designs/pdf/` | Printing the counter flyer (8.5 × 11 in, fonts embedded) |
+| **PDF** | `designs/pdf/` | Printing the counter flyer and the business-accounts offer (8.5 × 11 in, fonts embedded) |
 | **SVG** | `designs/` | The editable source for a designer, sign shop or printer |
 
 Windows opens `.svg` files in the web browser, and WhatsApp won't send them as pictures. Send the PNG instead.
@@ -1062,6 +1063,7 @@ Run the same check locally with `python scripts/check_designs.py`.
 | `designs/game-day-social.svg` | Instagram / Facebook | 1080 × 1350 |
 | `designs/scoreboard-spot.svg` | Football LED video board | 16:9 |
 | `designs/counter-flyer.svg` | Store counter handout, with a directions QR | 8.5 × 11 in |
+| `designs/business-accounts-offer.svg` | Small-business accounts one-page offer (item 28): lower rates, one monthly statement, drop and go, code BIZ10, blanks for the discount and the rep, directions QR | 8.5 × 11 in |
 | `designs/neville-jr-high-fence-banner.svg` | Neville Junior High fence | 8 ft × 3 ft vinyl |
 | `designs/neville-jr-high-program-ad.svg` | Neville Junior High program or flyer, code NJH10 | 7.5 × 5 in |
 | `designs/st-frederick-fence-banner.svg` | St. Frederick fence | 8 ft × 3 ft vinyl |

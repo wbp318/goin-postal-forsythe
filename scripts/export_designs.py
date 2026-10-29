@@ -19,7 +19,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DESIGNS = ROOT / "designs"
-PRINT_PDFS = {"counter-flyer.svg": ("8.5in", "11in")}
+PRINT_PDFS = {"counter-flyer.svg": ("8.5in", "11in"), "business-accounts-offer.svg": ("8.5in", "11in")}
 
 CANDIDATES = [
     os.environ.get("BROWSER", ""),

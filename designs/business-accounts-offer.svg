@@ -1,0 +1,96 @@
+<svg text-rendering="geometricPrecision" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1700 2200" width="1700" height="2200">
+  <title>Goin' Postal Forsythe - small-business accounts offer (8.5 x 11 in)</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&amp;family=IBM+Plex+Sans:wght@400;600&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap');
+    .d8 { font-family: 'Barlow Condensed', 'Arial Narrow', 'Avenir Next Condensed', Impact, sans-serif; font-weight: 800; text-transform: uppercase; }
+    .d6 { font-family: 'Barlow Condensed', 'Arial Narrow', 'Avenir Next Condensed', Impact, sans-serif; font-weight: 600; text-transform: uppercase; }
+    .sans { font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif; font-weight: 400; }
+    .sans6 { font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif; font-weight: 600; }
+    .mono { font-family: 'IBM Plex Mono', Consolas, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace; font-weight: 500; letter-spacing: 3px; }
+  </style>
+
+  <!-- Navy ground, white shipping label, same sheet as the counter flyer -->
+  <rect x="0" y="0" width="1700" height="2200" fill="#0f1d3a"/>
+  <rect x="70" y="70" width="1560" height="2060" fill="#ffffff"/>
+  <rect x="90" y="90" width="1520" height="2020" fill="none" stroke="#17202d" stroke-width="6"/>
+
+  <!-- Packing tape across the top-left corner -->
+  <polygon points="20,250 250,20 340,110 110,340" fill="#b98a55" fill-opacity="0.92"/>
+  <polygon points="20,250 250,20 258,28 28,258" fill="#9a7142" fill-opacity="0.9"/>
+  <polygon points="102,332 332,102 340,110 110,340" fill="#9a7142" fill-opacity="0.9"/>
+
+  <!-- Row 1: FROM -->
+  <text x="380" y="160" class="mono" font-size="26" fill="#1d4ed8">FROM</text>
+  <text x="380" y="228" class="sans6" font-size="54" fill="#17202d">Goin' Postal · Forsythe</text>
+  <text x="380" y="288" class="sans" font-size="38" fill="#17202d">Forsythe Ave &amp; N 18th St · Monroe, LA</text>
+  <rect x="1190" y="120" width="380" height="190" fill="#ffffff" stroke="#17202d" stroke-width="3" stroke-dasharray="14 10"/>
+  <text x="1380" y="224" class="mono" font-size="24" fill="#17202d" text-anchor="middle">OFFICIAL LOGO</text>
+  <rect x="90" y="340" width="1520" height="8" fill="#17202d"/>
+
+  <!-- Row 2: headline -->
+  <text x="130" y="410" class="mono" font-size="26" fill="#1d4ed8">TO · LOCAL SHOPS, SELLERS AND CONTRACTORS</text>
+  <text x="124" y="640" class="d8" font-size="250" fill="#17202d" textLength="1000" lengthAdjust="spacingAndGlyphs">YOUR BUSINESS</text>
+  <text x="124" y="880" class="d8" font-size="250" fill="#17202d" textLength="900" lengthAdjust="spacingAndGlyphs">SHIPS HERE.</text>
+
+  <!-- Routing block: the account -->
+  <rect x="1190" y="390" width="380" height="490" fill="#0f1d3a"/>
+  <text x="1220" y="450" class="mono" font-size="24" fill="#f2b705">ROUTE · ACCOUNT</text>
+  <text x="1220" y="570" class="d8" font-size="104" fill="#ffffff" textLength="320" lengthAdjust="spacingAndGlyphs">OPEN</text>
+  <text x="1220" y="680" class="d8" font-size="104" fill="#f2b705" textLength="320" lengthAdjust="spacingAndGlyphs">ONE</text>
+  <text x="1220" y="790" class="d8" font-size="104" fill="#ffffff" textLength="320" lengthAdjust="spacingAndGlyphs">TODAY</text>
+  <text x="1220" y="846" class="sans" font-size="30" fill="#ffffff">Five minutes, in person.</text>
+
+  <!-- Yellow band: the promise -->
+  <rect x="90" y="920" width="1520" height="250" fill="#f2b705"/>
+  <text x="124" y="1130" class="d8" font-size="230" fill="#3b2c00" textLength="760" lengthAdjust="spacingAndGlyphs">ONE INVOICE.</text>
+  <text x="1570" y="1040" class="d6" font-size="60" fill="#3b2c00" text-anchor="end">EVERY LABEL, ONCE A MONTH.</text>
+  <text x="1570" y="1110" class="d6" font-size="60" fill="#3b2c00" text-anchor="end">NO CARD AT THE COUNTER.</text>
+
+  <!-- Row 3: three things an account gets -->
+  <rect x="90" y="1170" width="1520" height="8" fill="#17202d"/>
+  <rect x="596" y="1178" width="4" height="420" fill="#17202d"/>
+  <rect x="1104" y="1178" width="4" height="420" fill="#17202d"/>
+
+  <text x="130" y="1250" class="mono" font-size="24" fill="#1d4ed8">YOU GET</text>
+  <text x="130" y="1350" class="d8" font-size="96" fill="#17202d" textLength="420" lengthAdjust="spacingAndGlyphs">LOWER RATES</text>
+  <text x="130" y="1430" class="sans6" font-size="36" fill="#17202d">Below walk-in prices,</text>
+  <text x="130" y="1478" class="sans6" font-size="36" fill="#17202d">on every carrier</text>
+  <text x="130" y="1540" class="sans" font-size="32" fill="#5a6573">Locked to your account</text>
+
+  <text x="636" y="1250" class="mono" font-size="24" fill="#1d4ed8">YOU GET</text>
+  <text x="636" y="1350" class="d8" font-size="96" fill="#17202d" textLength="420" lengthAdjust="spacingAndGlyphs">ONE STATEMENT</text>
+  <text x="636" y="1430" class="sans" font-size="36" fill="#17202d">Every shipment listed,</text>
+  <text x="636" y="1478" class="sans" font-size="36" fill="#17202d">one payment a month</text>
+  <text x="636" y="1540" class="sans" font-size="32" fill="#5a6573">Card, check or bank, your call</text>
+
+  <text x="1144" y="1250" class="mono" font-size="24" fill="#1d4ed8">YOU GET</text>
+  <text x="1144" y="1350" class="d8" font-size="96" fill="#17202d" textLength="420" lengthAdjust="spacingAndGlyphs">DROP AND GO</text>
+  <text x="1144" y="1430" class="sans" font-size="36" fill="#17202d">Bring the stack, we scan</text>
+  <text x="1144" y="1478" class="sans" font-size="36" fill="#17202d">each one, you get a receipt</text>
+  <text x="1144" y="1540" class="sans" font-size="32" fill="#5a6573">Ask about scheduled pickup</text>
+
+  <!-- Row 4: who, and the code -->
+  <rect x="90" y="1598" width="1520" height="8" fill="#17202d"/>
+  <text x="130" y="1676" class="mono" font-size="24" fill="#1d4ed8">MADE FOR</text>
+  <text x="130" y="1780" class="d8" font-size="84" fill="#0f1d3a" textLength="1300" lengthAdjust="spacingAndGlyphs">ETSY AND EBAY SELLERS <tspan fill="#f2b705">·</tspan> CONTRACTORS <tspan fill="#f2b705">·</tspan> OFFICES</text>
+  <text x="130" y="1836" class="sans" font-size="30" fill="#17202d">Five or more a week? This is for you.</text>
+  <text x="130" y="1876" class="sans" font-size="30" fill="#5a6573">Online too: the discount applies on our website with your account email.</text>
+
+  <!-- Row 5: the offer, fill-in fields and the directions QR -->
+  <rect x="90" y="1890" width="1520" height="8" fill="#17202d"/>
+  <text x="130" y="1966" class="mono" font-size="24" fill="#1d4ed8">SAY THE CODE</text>
+  <text x="130" y="2062" class="d8" font-size="96" fill="#17202d">BIZ10</text>
+  <text x="420" y="2010" class="sans6" font-size="34" fill="#17202d">10% off your first</text>
+  <text x="420" y="2056" class="sans6" font-size="34" fill="#17202d">month of labels</text>
+  <text x="760" y="1966" class="mono" font-size="22" fill="#1d4ed8">DISCOUNT</text>
+  <rect x="760" y="2050" width="130" height="3" fill="#17202d"/>
+  <text x="898" y="2050" class="sans6" font-size="40" fill="#17202d">%</text>
+  <text x="980" y="1966" class="mono" font-size="22" fill="#1d4ed8">YOUR REP</text>
+  <rect x="980" y="2050" width="180" height="3" fill="#17202d"/>
+  <g id="qr-directions">
+    <rect x="1196" y="1910" width="192" height="192" fill="#ffffff"/>
+    <path transform="translate(1196 1910) scale(5.1892)" fill="#17202d" shape-rendering="crispEdges" d="M2,2h1v1h-1zM3,2h1v1h-1zM4,2h1v1h-1zM5,2h1v1h-1zM6,2h1v1h-1zM7,2h1v1h-1zM8,2h1v1h-1zM11,2h1v1h-1zM12,2h1v1h-1zM14,2h1v1h-1zM15,2h1v1h-1zM17,2h1v1h-1zM19,2h1v1h-1zM20,2h1v1h-1zM21,2h1v1h-1zM24,2h1v1h-1zM25,2h1v1h-1zM28,2h1v1h-1zM29,2h1v1h-1zM30,2h1v1h-1zM31,2h1v1h-1zM32,2h1v1h-1zM33,2h1v1h-1zM34,2h1v1h-1zM2,3h1v1h-1zM8,3h1v1h-1zM11,3h1v1h-1zM12,3h1v1h-1zM14,3h1v1h-1zM15,3h1v1h-1zM16,3h1v1h-1zM17,3h1v1h-1zM20,3h1v1h-1zM22,3h1v1h-1zM23,3h1v1h-1zM25,3h1v1h-1zM28,3h1v1h-1zM34,3h1v1h-1zM2,4h1v1h-1zM4,4h1v1h-1zM5,4h1v1h-1zM6,4h1v1h-1zM8,4h1v1h-1zM11,4h1v1h-1zM13,4h1v1h-1zM14,4h1v1h-1zM15,4h1v1h-1zM17,4h1v1h-1zM19,4h1v1h-1zM20,4h1v1h-1zM21,4h1v1h-1zM24,4h1v1h-1zM28,4h1v1h-1zM30,4h1v1h-1zM31,4h1v1h-1zM32,4h1v1h-1zM34,4h1v1h-1zM2,5h1v1h-1zM4,5h1v1h-1zM5,5h1v1h-1zM6,5h1v1h-1zM8,5h1v1h-1zM13,5h1v1h-1zM14,5h1v1h-1zM15,5h1v1h-1zM16,5h1v1h-1zM20,5h1v1h-1zM21,5h1v1h-1zM24,5h1v1h-1zM26,5h1v1h-1zM28,5h1v1h-1zM30,5h1v1h-1zM31,5h1v1h-1zM32,5h1v1h-1zM34,5h1v1h-1zM2,6h1v1h-1zM4,6h1v1h-1zM5,6h1v1h-1zM6,6h1v1h-1zM8,6h1v1h-1zM15,6h1v1h-1zM16,6h1v1h-1zM19,6h1v1h-1zM25,6h1v1h-1zM28,6h1v1h-1zM30,6h1v1h-1zM31,6h1v1h-1zM32,6h1v1h-1zM34,6h1v1h-1zM2,7h1v1h-1zM8,7h1v1h-1zM10,7h1v1h-1zM12,7h1v1h-1zM13,7h1v1h-1zM14,7h1v1h-1zM16,7h1v1h-1zM17,7h1v1h-1zM19,7h1v1h-1zM20,7h1v1h-1zM21,7h1v1h-1zM24,7h1v1h-1zM28,7h1v1h-1zM34,7h1v1h-1zM2,8h1v1h-1zM3,8h1v1h-1zM4,8h1v1h-1zM5,8h1v1h-1zM6,8h1v1h-1zM7,8h1v1h-1zM8,8h1v1h-1zM10,8h1v1h-1zM12,8h1v1h-1zM14,8h1v1h-1zM16,8h1v1h-1zM18,8h1v1h-1zM20,8h1v1h-1zM22,8h1v1h-1zM24,8h1v1h-1zM26,8h1v1h-1zM28,8h1v1h-1zM29,8h1v1h-1zM30,8h1v1h-1zM31,8h1v1h-1zM32,8h1v1h-1zM33,8h1v1h-1zM34,8h1v1h-1zM11,9h1v1h-1zM13,9h1v1h-1zM17,9h1v1h-1zM18,9h1v1h-1zM19,9h1v1h-1zM20,9h1v1h-1zM21,9h1v1h-1zM22,9h1v1h-1zM23,9h1v1h-1zM25,9h1v1h-1zM2,10h1v1h-1zM5,10h1v1h-1zM7,10h1v1h-1zM8,10h1v1h-1zM10,10h1v1h-1zM13,10h1v1h-1zM14,10h1v1h-1zM15,10h1v1h-1zM16,10h1v1h-1zM18,10h1v1h-1zM21,10h1v1h-1zM23,10h1v1h-1zM26,10h1v1h-1zM27,10h1v1h-1zM29,10h1v1h-1zM2,11h1v1h-1zM4,11h1v1h-1zM5,11h1v1h-1zM6,11h1v1h-1zM10,11h1v1h-1zM12,11h1v1h-1zM13,11h1v1h-1zM14,11h1v1h-1zM15,11h1v1h-1zM16,11h1v1h-1zM18,11h1v1h-1zM19,11h1v1h-1zM22,11h1v1h-1zM27,11h1v1h-1zM28,11h1v1h-1zM29,11h1v1h-1zM33,11h1v1h-1zM34,11h1v1h-1zM4,12h1v1h-1zM5,12h1v1h-1zM6,12h1v1h-1zM7,12h1v1h-1zM8,12h1v1h-1zM11,12h1v1h-1zM12,12h1v1h-1zM13,12h1v1h-1zM15,12h1v1h-1zM16,12h1v1h-1zM19,12h1v1h-1zM20,12h1v1h-1zM21,12h1v1h-1zM22,12h1v1h-1zM28,12h1v1h-1zM29,12h1v1h-1zM30,12h1v1h-1zM32,12h1v1h-1zM34,12h1v1h-1zM2,13h1v1h-1zM4,13h1v1h-1zM6,13h1v1h-1zM11,13h1v1h-1zM12,13h1v1h-1zM13,13h1v1h-1zM14,13h1v1h-1zM15,13h1v1h-1zM18,13h1v1h-1zM23,13h1v1h-1zM25,13h1v1h-1zM27,13h1v1h-1zM30,13h1v1h-1zM31,13h1v1h-1zM33,13h1v1h-1zM34,13h1v1h-1zM2,14h1v1h-1zM3,14h1v1h-1zM4,14h1v1h-1zM6,14h1v1h-1zM7,14h1v1h-1zM8,14h1v1h-1zM11,14h1v1h-1zM12,14h1v1h-1zM14,14h1v1h-1zM16,14h1v1h-1zM18,14h1v1h-1zM19,14h1v1h-1zM21,14h1v1h-1zM22,14h1v1h-1zM23,14h1v1h-1zM24,14h1v1h-1zM28,14h1v1h-1zM29,14h1v1h-1zM31,14h1v1h-1zM33,14h1v1h-1zM34,14h1v1h-1zM2,15h1v1h-1zM4,15h1v1h-1zM7,15h1v1h-1zM10,15h1v1h-1zM11,15h1v1h-1zM14,15h1v1h-1zM15,15h1v1h-1zM16,15h1v1h-1zM17,15h1v1h-1zM18,15h1v1h-1zM21,15h1v1h-1zM22,15h1v1h-1zM24,15h1v1h-1zM28,15h1v1h-1zM29,15h1v1h-1zM30,15h1v1h-1zM31,15h1v1h-1zM32,15h1v1h-1zM33,15h1v1h-1zM34,15h1v1h-1zM3,16h1v1h-1zM4,16h1v1h-1zM8,16h1v1h-1zM13,16h1v1h-1zM16,16h1v1h-1zM19,16h1v1h-1zM22,16h1v1h-1zM23,16h1v1h-1zM25,16h1v1h-1zM27,16h1v1h-1zM28,16h1v1h-1zM31,16h1v1h-1zM32,16h1v1h-1zM33,16h1v1h-1zM2,17h1v1h-1zM3,17h1v1h-1zM4,17h1v1h-1zM6,17h1v1h-1zM7,17h1v1h-1zM9,17h1v1h-1zM10,17h1v1h-1zM11,17h1v1h-1zM16,17h1v1h-1zM17,17h1v1h-1zM19,17h1v1h-1zM20,17h1v1h-1zM21,17h1v1h-1zM22,17h1v1h-1zM23,17h1v1h-1zM24,17h1v1h-1zM25,17h1v1h-1zM28,17h1v1h-1zM29,17h1v1h-1zM33,17h1v1h-1zM2,18h1v1h-1zM4,18h1v1h-1zM6,18h1v1h-1zM8,18h1v1h-1zM9,18h1v1h-1zM10,18h1v1h-1zM11,18h1v1h-1zM13,18h1v1h-1zM19,18h1v1h-1zM20,18h1v1h-1zM22,18h1v1h-1zM23,18h1v1h-1zM24,18h1v1h-1zM28,18h1v1h-1zM30,18h1v1h-1zM33,18h1v1h-1zM2,19h1v1h-1zM3,19h1v1h-1zM7,19h1v1h-1zM9,19h1v1h-1zM10,19h1v1h-1zM11,19h1v1h-1zM13,19h1v1h-1zM14,19h1v1h-1zM17,19h1v1h-1zM18,19h1v1h-1zM19,19h1v1h-1zM22,19h1v1h-1zM25,19h1v1h-1zM26,19h1v1h-1zM27,19h1v1h-1zM29,19h1v1h-1zM31,19h1v1h-1zM2,20h1v1h-1zM4,20h1v1h-1zM6,20h1v1h-1zM7,20h1v1h-1zM8,20h1v1h-1zM10,20h1v1h-1zM12,20h1v1h-1zM14,20h1v1h-1zM15,20h1v1h-1zM19,20h1v1h-1zM23,20h1v1h-1zM24,20h1v1h-1zM26,20h1v1h-1zM32,20h1v1h-1zM33,20h1v1h-1zM34,20h1v1h-1zM4,21h1v1h-1zM5,21h1v1h-1zM6,21h1v1h-1zM9,21h1v1h-1zM11,21h1v1h-1zM12,21h1v1h-1zM13,21h1v1h-1zM14,21h1v1h-1zM17,21h1v1h-1zM19,21h1v1h-1zM20,21h1v1h-1zM22,21h1v1h-1zM23,21h1v1h-1zM25,21h1v1h-1zM27,21h1v1h-1zM28,21h1v1h-1zM29,21h1v1h-1zM33,21h1v1h-1zM2,22h1v1h-1zM3,22h1v1h-1zM4,22h1v1h-1zM7,22h1v1h-1zM8,22h1v1h-1zM12,22h1v1h-1zM13,22h1v1h-1zM17,22h1v1h-1zM18,22h1v1h-1zM25,22h1v1h-1zM27,22h1v1h-1zM29,22h1v1h-1zM34,22h1v1h-1zM4,23h1v1h-1zM6,23h1v1h-1zM10,23h1v1h-1zM12,23h1v1h-1zM13,23h1v1h-1zM14,23h1v1h-1zM15,23h1v1h-1zM17,23h1v1h-1zM18,23h1v1h-1zM21,23h1v1h-1zM22,23h1v1h-1zM24,23h1v1h-1zM27,23h1v1h-1zM29,23h1v1h-1zM33,23h1v1h-1zM34,23h1v1h-1zM2,24h1v1h-1zM3,24h1v1h-1zM4,24h1v1h-1zM5,24h1v1h-1zM7,24h1v1h-1zM8,24h1v1h-1zM11,24h1v1h-1zM13,24h1v1h-1zM19,24h1v1h-1zM21,24h1v1h-1zM23,24h1v1h-1zM24,24h1v1h-1zM29,24h1v1h-1zM31,24h1v1h-1zM32,24h1v1h-1zM34,24h1v1h-1zM3,25h1v1h-1zM4,25h1v1h-1zM5,25h1v1h-1zM10,25h1v1h-1zM12,25h1v1h-1zM14,25h1v1h-1zM16,25h1v1h-1zM17,25h1v1h-1zM18,25h1v1h-1zM20,25h1v1h-1zM22,25h1v1h-1zM23,25h1v1h-1zM24,25h1v1h-1zM25,25h1v1h-1zM28,25h1v1h-1zM2,26h1v1h-1zM4,26h1v1h-1zM6,26h1v1h-1zM7,26h1v1h-1zM8,26h1v1h-1zM11,26h1v1h-1zM12,26h1v1h-1zM13,26h1v1h-1zM14,26h1v1h-1zM17,26h1v1h-1zM19,26h1v1h-1zM20,26h1v1h-1zM21,26h1v1h-1zM22,26h1v1h-1zM23,26h1v1h-1zM25,26h1v1h-1zM26,26h1v1h-1zM27,26h1v1h-1zM28,26h1v1h-1zM29,26h1v1h-1zM30,26h1v1h-1zM10,27h1v1h-1zM12,27h1v1h-1zM14,27h1v1h-1zM15,27h1v1h-1zM18,27h1v1h-1zM19,27h1v1h-1zM20,27h1v1h-1zM21,27h1v1h-1zM22,27h1v1h-1zM23,27h1v1h-1zM24,27h1v1h-1zM26,27h1v1h-1zM30,27h1v1h-1zM31,27h1v1h-1zM33,27h1v1h-1zM34,27h1v1h-1zM2,28h1v1h-1zM3,28h1v1h-1zM4,28h1v1h-1zM5,28h1v1h-1zM6,28h1v1h-1zM7,28h1v1h-1zM8,28h1v1h-1zM11,28h1v1h-1zM19,28h1v1h-1zM23,28h1v1h-1zM24,28h1v1h-1zM26,28h1v1h-1zM28,28h1v1h-1zM30,28h1v1h-1zM31,28h1v1h-1zM32,28h1v1h-1zM33,28h1v1h-1zM2,29h1v1h-1zM8,29h1v1h-1zM10,29h1v1h-1zM14,29h1v1h-1zM15,29h1v1h-1zM16,29h1v1h-1zM17,29h1v1h-1zM19,29h1v1h-1zM20,29h1v1h-1zM21,29h1v1h-1zM22,29h1v1h-1zM23,29h1v1h-1zM24,29h1v1h-1zM26,29h1v1h-1zM30,29h1v1h-1zM34,29h1v1h-1zM2,30h1v1h-1zM4,30h1v1h-1zM5,30h1v1h-1zM6,30h1v1h-1zM8,30h1v1h-1zM12,30h1v1h-1zM15,30h1v1h-1zM19,30h1v1h-1zM20,30h1v1h-1zM22,30h1v1h-1zM23,30h1v1h-1zM24,30h1v1h-1zM26,30h1v1h-1zM27,30h1v1h-1zM28,30h1v1h-1zM29,30h1v1h-1zM30,30h1v1h-1zM31,30h1v1h-1zM33,30h1v1h-1zM34,30h1v1h-1zM2,31h1v1h-1zM4,31h1v1h-1zM5,31h1v1h-1zM6,31h1v1h-1zM8,31h1v1h-1zM10,31h1v1h-1zM11,31h1v1h-1zM12,31h1v1h-1zM16,31h1v1h-1zM17,31h1v1h-1zM18,31h1v1h-1zM19,31h1v1h-1zM22,31h1v1h-1zM23,31h1v1h-1zM24,31h1v1h-1zM25,31h1v1h-1zM28,31h1v1h-1zM30,31h1v1h-1zM32,31h1v1h-1zM2,32h1v1h-1zM4,32h1v1h-1zM5,32h1v1h-1zM6,32h1v1h-1zM8,32h1v1h-1zM13,32h1v1h-1zM14,32h1v1h-1zM15,32h1v1h-1zM16,32h1v1h-1zM19,32h1v1h-1zM22,32h1v1h-1zM23,32h1v1h-1zM26,32h1v1h-1zM30,32h1v1h-1zM31,32h1v1h-1zM34,32h1v1h-1zM2,33h1v1h-1zM8,33h1v1h-1zM11,33h1v1h-1zM12,33h1v1h-1zM13,33h1v1h-1zM14,33h1v1h-1zM15,33h1v1h-1zM18,33h1v1h-1zM19,33h1v1h-1zM20,33h1v1h-1zM22,33h1v1h-1zM23,33h1v1h-1zM25,33h1v1h-1zM26,33h1v1h-1zM27,33h1v1h-1zM28,33h1v1h-1zM31,33h1v1h-1zM2,34h1v1h-1zM3,34h1v1h-1zM4,34h1v1h-1zM5,34h1v1h-1zM6,34h1v1h-1zM7,34h1v1h-1zM8,34h1v1h-1zM10,34h1v1h-1zM12,34h1v1h-1zM14,34h1v1h-1zM16,34h1v1h-1zM17,34h1v1h-1zM23,34h1v1h-1zM25,34h1v1h-1zM26,34h1v1h-1zM28,34h1v1h-1zM30,34h1v1h-1zM31,34h1v1h-1zM33,34h1v1h-1z"/>
+    <text x="1404" y="1972" font-family="'IBM Plex Mono', Consolas, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace" font-weight="500" font-size="22" letter-spacing="2" fill="#1d4ed8">SCAN FOR</text>
+    <text x="1404" y="2003" font-family="'IBM Plex Mono', Consolas, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace" font-weight="500" font-size="22" letter-spacing="2" fill="#1d4ed8">DIRECTIONS</text>
+  </g><!-- /qr -->
+</svg>
