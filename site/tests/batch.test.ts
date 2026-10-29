@@ -90,3 +90,16 @@ describe('rate and buy in mock mode', () => {
     expect(resultsCsv([r])).toContain('1001,' + r.id);
   });
 });
+
+describe('marketplace exports (v1.62.1)', () => {
+  it('reads eBay, Amazon, Square and WooCommerce order exports', () => {
+    const ebay = 'Sales Record Number,Order Number,Buyer Name,Ship To Name,Ship To Phone,Ship To Address 1,Ship To Address 2,Ship To City,Ship To State,Ship To Zip,Ship To Country,Item Title\n555,12-34567-89012,buyer1,Cy Fox,,12 Bay St,,Tampa,FL,33601,US,Vintage jacket\n';
+    const e = parseBatch(ebay, defaults); expect(e.format).toBe('ebay'); expect(e.rows[0].to).toMatchObject({ contact_name: 'Cy Fox', state: 'FL', postal_code: '33601' }); expect(e.rows[0].reference).toBe('12-34567-89012'); expect(e.rows[0].parcel?.description).toBe('Vintage jacket');
+    const amazon = 'order-id\trecipient-name\tship-address-1\tship-address-2\tship-city\tship-state\tship-postal-code\tship-country\tproduct-name'.replace(/\t/g, ',') + '\n111-222,Ann Lee,5 Oak St,,Shreveport,LA,71101,US,Candle\n';
+    const a = parseBatch(amazon, defaults); expect(a.format).toBe('amazon'); expect(a.rows[0].to?.city).toBe('Shreveport'); expect(a.rows[0].reference).toBe('111-222');
+    const square = 'Order ID,Recipient Name,Shipping Address Line 1,Shipping Address Line 2,Shipping City,Shipping State,Shipping Postal Code,Shipping Country\nSQ1,Bo Kim,9 Pine Rd,Unit 4,Austin,TX,78701,US\n';
+    const s = parseBatch(square, defaults); expect(s.format).toBe('square'); expect(s.rows[0].to?.line_2).toBe('Unit 4'); expect(s.rows[0].reference).toBe('SQ1');
+    const woo = 'Order Number,Shipping First Name,Shipping Last Name,Shipping Address 1,Shipping Address 2,Shipping City,Shipping State,Shipping Postcode,Shipping Country\n2001,Dee,Ray,1 Elm St,,Dallas,TX,75201,US\n';
+    const w = parseBatch(woo, defaults); expect(w.format).toBe('woocommerce'); expect(w.rows[0].to?.contact_name).toBe('Dee Ray'); expect(w.rows[0].to?.postal_code).toBe('75201');
+  });
+});

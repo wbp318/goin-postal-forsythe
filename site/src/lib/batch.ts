@@ -57,17 +57,17 @@ export const countryCode = (v: string) => { const t = v.trim(); return t ? COUNT
 // Column aliases, lower-cased, spaces and underscores folded. First match wins.
 type Field = 'reference' | 'name' | 'company' | 'phone' | 'email' | 'line_1' | 'line_2' | 'city' | 'state' | 'zip' | 'country' | 'weight_lb' | 'weight_oz' | 'weight_g' | 'length_in' | 'width_in' | 'height_in' | 'value_usd' | 'description';
 const ALIASES: Record<Field, string[]> = {
-  reference: ['reference', 'order', 'order number', 'order id', 'order #', 'order name'],
-  name: ['ship to', 'ship to name', 'shipping name', 'ship name', 'recipient', 'recipient name', 'to name', 'customer', 'full name', 'contact name', 'name'],
-  company: ['company', 'shipping company', 'ship company', 'company name'],
-  phone: ['phone', 'shipping phone', 'ship phone', 'contact phone', 'recipient phone'],
-  email: ['email', 'contact email', 'buyer email', 'customer email'],
-  line_1: ['address1', 'address 1', 'address', 'street', 'shipping address1', 'shipping address 1', 'shipping street', 'ship address1', 'ship address 1', 'line 1', 'line1', 'street 1'],
-  line_2: ['address2', 'address 2', 'shipping address2', 'shipping address 2', 'ship address2', 'ship address 2', 'line 2', 'line2', 'apt', 'suite', 'street 2'],
-  city: ['city', 'shipping city', 'ship city'],
-  state: ['state', 'province', 'shipping province', 'shipping province name', 'ship state', 'state/province', 'region'],
-  zip: ['zip', 'zipcode', 'zip code', 'postal code', 'postcode', 'shipping zip', 'ship zipcode', 'ship zip'],
-  country: ['country', 'shipping country', 'ship country', 'country code', 'shipping country code'],
+  reference: ['reference', 'order', 'order number', 'order id', 'order #', 'order name', 'order-id', 'sales record number'],
+  name: ['ship to', 'ship to name', 'shipping name', 'ship name', 'recipient', 'recipient name', 'recipient-name', 'to name', 'customer', 'full name', 'contact name', 'name'],
+  company: ['company', 'shipping company', 'ship company', 'company name', 'ship to company', 'shipping company name'],
+  phone: ['phone', 'shipping phone', 'ship phone', 'contact phone', 'recipient phone', 'ship to phone', 'buyer phone', 'ship-phone-number', 'shipping phone number'],
+  email: ['email', 'contact email', 'buyer email', 'customer email', 'buyer-email', 'billing email'],
+  line_1: ['address1', 'address 1', 'address', 'street', 'shipping address1', 'shipping address 1', 'shipping street', 'ship address1', 'ship address 1', 'ship to address 1', 'ship-address-1', 'shipping address line 1', 'line 1', 'line1', 'street 1'],
+  line_2: ['address2', 'address 2', 'shipping address2', 'shipping address 2', 'ship address2', 'ship address 2', 'ship to address 2', 'ship-address-2', 'shipping address line 2', 'line 2', 'line2', 'apt', 'suite', 'street 2'],
+  city: ['city', 'shipping city', 'ship city', 'ship to city', 'ship-city'],
+  state: ['state', 'province', 'shipping province', 'shipping province name', 'ship state', 'ship to state', 'ship to province', 'ship-state', 'shipping state', 'state/province', 'region'],
+  zip: ['zip', 'zipcode', 'zip code', 'postal code', 'postcode', 'shipping zip', 'ship zipcode', 'ship zip', 'ship to zip', 'ship to postal code', 'ship to post code', 'ship-postal-code', 'shipping postcode', 'shipping postal code'],
+  country: ['country', 'shipping country', 'ship country', 'ship to country', 'ship-country', 'country code', 'shipping country code'],
   weight_lb: ['weight lb', 'weight lbs', 'weight (lb)', 'weight (lbs)', 'lb', 'lbs', 'pounds', 'weight'],
   weight_oz: ['weight oz', 'weight (oz)', 'oz', 'ounces'],
   weight_g: ['total weight', 'weight g', 'weight (g)', 'grams', 'weight (grams)'],
@@ -75,7 +75,7 @@ const ALIASES: Record<Field, string[]> = {
   width_in: ['width in', 'width', 'w'],
   height_in: ['height in', 'height', 'h'],
   value_usd: ['value', 'value usd', 'declared value', 'total', 'order total', 'subtotal', 'sale amount'],
-  description: ['description', 'contents', 'item', 'items', 'lineitem name', 'item name', 'product'],
+  description: ['description', 'contents', 'item', 'items', 'lineitem name', 'item name', 'item title', 'product', 'product-name', 'product name'],
 };
 const fold = (h: string) => h.trim().toLowerCase().replace(/[_]+/g, ' ').replace(/\s+/g, ' ');
 
@@ -97,11 +97,15 @@ export function mapColumns(headers: string[]): Partial<Record<Field, number>> {
   return map;
 }
 
-export type Format = 'petership' | 'shopify' | 'etsy' | 'unknown';
+export type Format = 'petership' | 'shopify' | 'etsy' | 'ebay' | 'square' | 'woocommerce' | 'amazon' | 'unknown';
 export function detectFormat(headers: string[]): Format {
   const f = headers.map(fold);
   if (f.includes('shipping address1') && f.includes('financial status')) return 'shopify';
   if (f.includes('ship address1') || f.includes('ship zipcode')) return 'etsy';
+  if (f.includes('ship to address 1') || f.includes('sales record number')) return 'ebay';
+  if (f.includes('ship-address-1') || f.includes('recipient-name')) return 'amazon';
+  if (f.includes('shipping address line 1') || (f.includes('recipient name') && f.includes('shipping postal code'))) return 'square';
+  if (f.includes('shipping first name') || f.includes('shipping postcode')) return 'woocommerce';
   if (f.includes('address1') && f.includes('zip')) return 'petership';
   return 'unknown';
 }
@@ -114,6 +118,9 @@ export function parseBatch(text: string, defaults: ParcelDefaults): { format: Fo
   const map = mapColumns(headers);
   const format = detectFormat(headers);
   const col = (r: string[], f: Field) => (map[f] == null ? '' : (r[map[f]!] ?? '').trim());
+  // WooCommerce exports split the recipient into first and last name columns.
+  const firstCol = headers.map(fold).indexOf('shipping first name'), lastCol = headers.map(fold).indexOf('shipping last name');
+  const nameOf = (r: string[]) => col(r, 'name') || (firstCol >= 0 ? `${(r[firstCol] ?? '').trim()} ${lastCol >= 0 ? (r[lastCol] ?? '').trim() : ''}`.trim() : '');
   const rows: BatchRow[] = [];
   let skipped = 0;
   for (let i = 1; i < table.length; i++) {
@@ -123,7 +130,7 @@ export function parseBatch(text: string, defaults: ParcelDefaults): { format: Fo
     const row: BatchRow = { line: i, reference: col(r, 'reference').slice(0, 40), to: null, parcel: null, errors: [], warnings: [] };
     try {
       const to = parseAddress({
-        contact_name: col(r, 'name') || col(r, 'company'), company_name: col(r, 'company') || undefined,
+        contact_name: nameOf(r) || col(r, 'company'), company_name: col(r, 'company') || undefined,
         contact_phone: col(r, 'phone'), contact_email: col(r, 'email'),
         line_1: col(r, 'line_1'), line_2: col(r, 'line_2'), city: col(r, 'city'), state: stateCode(col(r, 'state')), postal_code: col(r, 'zip').replace(/^'/, ''), country_alpha2: countryCode(col(r, 'country')),
       });
