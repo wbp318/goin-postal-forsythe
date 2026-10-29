@@ -44,7 +44,14 @@ Root-level CI also runs `node --check` on every `shipping-client/**/*.mjs` conne
 
 **Pure helpers in `src/lib/`** (`batch.ts`, `fulfillment.ts`, `mailboxes.ts`, `pricing.ts`, `packing.ts`, ...) are tested directly in `tests/`; fee tables and thresholds live in `src/data/*.json` for the owners to edit.
 
-**Connectors** in `shipping-client/*-connector/connector.mjs` are standalone Node 24 scripts with no packages: they poll a marketplace, buy labels through the public `/api/v1`, and mark the order shipped. Same shape each time; copy the latest one.
+## `shipping-client/`: PeterShip's off-site pieces and plans
+
+PeterShip is proprietary under `shipping-client/LICENSE` (not the repo's Apache license); `shipping-client/README.md` is its long-form manual, with a "What is built so far" list keyed to releases and a screen-by-screen test script. The code that runs on Cloudflare lives in `site/` (see above); this folder holds what runs elsewhere and the business plans around it:
+
+- **Code that runs on a counter PC or a seller's machine.** `printer-agent/agent.mjs` polls the site's print queue (`PRINTER_KEY` shared secret) and sends ZPL, PDF or ESC/POS jobs to the printers; `--test` and `--once` flags for trying it. `shopify-connector/`, `square-connector/`, `ebay-connector/` each hold `connector.mjs`, `config.example.json` and a README: standalone Node 24 scripts with no packages that poll a marketplace, buy labels through the public `/api/v1` with a `psk_` key, mark the order shipped, and keep a `shipped.json` for dedupe, with `dry_run`. Same shape each time; copy the latest one, and add the new file to CI's `node --check` line.
+- **Plans, each a README with Mermaid charts and a "Decisions for Peter and Rin" section.** `api/` (the public API's contract), `connectors/` (the marketplace and fulfillment roadmap with a numbered step table that gets ✅ and a version when a step ships), `rates/` (beating Pirate Ship), `costs/` (savings versus Easyship and GP Rate Pro), `counter-pc/` (hardware), `for-other-stores/` (selling PeterShip to other stores), `gp-brands/` (selling it to Goin' Postal as the Rate Pro replacement), `llc/` (the PeterShip LLC plan plus four draft papers: articles, operating agreement, IP assignment, software license to the store; members and domiciles come from `LICENSE`).
+
+When a feature ships, update the matching plan's step table and the "What is built so far" list in `shipping-client/README.md` alongside `AGENDA.md`.
 
 ## Releases and docs
 
