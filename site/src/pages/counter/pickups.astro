@@ -1,0 +1,120 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+
+// Staff page: pickups for business accounts (T15). Schedule one, see the day's route in window
+// order, tap On the way (texts the customer), Picked up (with the count), Missed or Cancel.
+const account = Astro.url.searchParams.get('account') ?? '';
+const today = new Date().toISOString().slice(0, 10);
+---
+<Base title="Counter · Pickups">
+  <section class="hero">
+    <h1 data-i18n="st.pu.h1">Pickups</h1>
+    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/batch" data-i18n="st.nav.batch">Batch</a> · <a href="/counter/pickups" data-i18n="st.nav.pickups">Pickups</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/accounts" data-i18n="st.nav.accounts">Accounts</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/mailboxes" data-i18n="st.nav.mailboxes">Mailboxes</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/claims" data-i18n="st.nav.claims">Claims</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/close" data-i18n="st.nav.close">End of day</a> · <a href="/counter/invoices" data-i18n="st.nav.invoices">Invoices</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a> · <a href="/counter/staff" data-i18n="st.nav.staff">Staff</a> · <a href="/counter/export" data-i18n="st.nav.export">Export</a></p>
+    <p class="lead" data-i18n="st.pu.lead">Scheduled pickups for business accounts. The list for a day is the driver's route, morning then afternoon. On the way texts the customer; Picked up records how many came back. The pickup fee is the `pickup` item in the add-on catalog when Rin sets one.</p>
+  </section>
+
+  <div class="grid">
+    <form id="sched" class="card ship-form" autocomplete="off">
+      <h3 data-i18n="st.pu.schedule">Schedule a pickup</h3>
+      <div class="row">
+        <label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
+        <label><span data-i18n="st.bt.account">Account</span> <select name="account_id" id="account"><option value="" data-i18n="st.bt.loadaccounts">type the PIN first</option></select></label>
+      </div>
+      <div class="row">
+        <label><span data-i18n="st.pu.date">Date</span> <input name="date" type="date" value={today} min={today} required /></label>
+        <label><span data-i18n="st.pu.window">Window</span> <select name="window"><option value="morning" data-i18n="st.pu.morning">Morning</option><option value="afternoon" data-i18n="st.pu.afternoon">Afternoon</option></select></label>
+        <label><span data-i18n="st.pu.packages">Packages</span> <input name="packages" type="number" min="1" max="500" value="5" /></label>
+      </div>
+      <div class="row">
+        <label><span data-i18n="st.pu.addr1">Pickup address</span> <input name="line_1" maxlength="35" required /></label>
+        <label><span data-i18n="st.pu.addr2">Suite</span> <input name="line_2" maxlength="35" /></label>
+      </div>
+      <div class="row">
+        <label><span data-i18n="st.pu.city">City</span> <input name="city" required /></label>
+        <label><span data-i18n="st.pu.state">State</span> <input name="state" maxlength="2" value="LA" required /></label>
+        <label><span data-i18n="st.pu.zip">ZIP</span> <input name="postal_code" required /></label>
+        <label><span data-i18n="f.phone">Phone</span> <input name="phone" type="tel" /></label>
+      </div>
+      <label><span data-i18n="st.k.notes">Notes:</span> <input name="notes" maxlength="300" placeholder="Back door, ring twice" /></label>
+      <p class="btnrow"><button class="btn" type="submit" data-i18n="st.pu.schedule">Schedule a pickup</button></p>
+      <p id="msg" role="alert"></p>
+    </form>
+    <div class="card">
+      <p class="btnrow"><label><span data-i18n="st.pu.route">Route for</span> <input id="day" type="date" value={today} /></label> <button class="btn kraft" type="button" id="load" data-i18n="st.show">Show</button></p>
+      <ol class="timeline" id="route"></ol>
+      <p id="empty" class="muted hidden" data-i18n="st.pu.none">No pickups that day.</p>
+    </div>
+  </div>
+  <script>
+    import { t, tf } from '../../i18n';
+    const $ = (id: string) => document.getElementById(id)!;
+    const form = $('sched') as HTMLFormElement, msg = $('msg'), route = $('route'), accountSel = $('account') as HTMLSelectElement;
+    const pin = () => ($('pin') as HTMLInputElement).value;
+    const want = new URLSearchParams(location.search).get('account');
+    async function api(path: string, b: Record<string, unknown>) {
+      const res = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin(), ...b }) });
+      const j = await res.json(); if (!res.ok) throw new Error(j.error); return j;
+    }
+    let loaded = false;
+    async function loadAccounts() {
+      if (loaded || !pin()) return;
+      const j = await api('/api/accounts', { action: 'list' });
+      accountSel.innerHTML = '';
+      for (const a of j.accounts.filter((a: any) => a.active)) { const o = document.createElement('option'); o.value = a.id; o.textContent = a.business_name; accountSel.appendChild(o); }
+      if (want) accountSel.value = want;
+      loaded = true; prefill();
+    }
+    // The last pickup for the account fills the address in.
+    async function prefill() {
+      if (!accountSel.value) return;
+      const { pickup } = await api('/api/pickups', { action: 'last', account_id: accountSel.value });
+      if (!pickup) return;
+      const a = JSON.parse(pickup.address_json);
+      for (const k of ['line_1', 'line_2', 'city', 'state', 'postal_code']) (form.elements.namedItem(k) as HTMLInputElement).value = a[k] ?? '';
+      (form.elements.namedItem('phone') as HTMLInputElement).value = pickup.phone ?? '';
+      (form.elements.namedItem('packages') as HTMLInputElement).value = pickup.packages;
+    }
+    $('pin').addEventListener('change', () => loadAccounts().then(load).catch((e) => { msg.className = 'err'; msg.textContent = e.message; }));
+    accountSel.addEventListener('change', prefill);
+    const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }) : '');
+    async function load() {
+      if (!pin()) return;
+      try {
+        const { pickups } = await api('/api/pickups', { action: 'list', date: ($('day') as HTMLInputElement).value });
+        route.innerHTML = '';
+        for (const p of pickups) {
+          const a = JSON.parse(p.address_json);
+          const li = document.createElement('li');
+          li.innerHTML = `<time>${t('st.pu.' + p.window)}</time><strong></strong><span></span><span class="btnrow"></span>`;
+          li.querySelector('strong')!.textContent = `${p.account_name} · ${p.packages} ${t('st.pu.pkgs')} · ${t('st.pu.status.' + p.status)}`;
+          li.querySelector('span')!.textContent = [`${a.line_1}${a.line_2 ? ' ' + a.line_2 : ''}, ${a.city} ${a.postal_code}`, p.phone, p.notes, p.driver, p.on_the_way_at ? `${t('st.pu.status.on_the_way')} ${fmt(p.on_the_way_at)}` : '', p.picked_up_at ? `${t('st.pu.status.picked_up')} ${fmt(p.picked_up_at)}` : ''].filter(Boolean).join(' · ');
+          const acts = li.querySelectorAll('span')[1];
+          if (p.status === 'scheduled') acts.innerHTML = `<button class="btn small" data-act="on_the_way" data-code="${p.code}">${t('st.pu.ontheway')}</button> `;
+          if (p.status === 'scheduled' || p.status === 'on_the_way') acts.innerHTML += `<button class="btn small kraft" data-act="picked_up" data-code="${p.code}" data-n="${p.packages}">${t('st.pu.pickedup')}</button> <button class="btn small" data-act="missed" data-code="${p.code}">${t('st.pu.missed')}</button> <button class="btn small" data-act="cancel" data-code="${p.code}">${t('st.pu.cancel')}</button>`;
+          route.appendChild(li);
+        }
+        $('empty').classList.toggle('hidden', !!pickups.length);
+      } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    }
+    $('load').addEventListener('click', load); $('day').addEventListener('change', load);
+    route.addEventListener('click', async (ev) => {
+      const b = (ev.target as HTMLElement).closest<HTMLButtonElement>('[data-act]');
+      if (!b) return;
+      const body: Record<string, unknown> = { action: b.dataset.act, code: b.dataset.code };
+      if (b.dataset.act === 'picked_up') { const n = prompt(t('st.pu.howmany'), b.dataset.n); if (n == null) return; body.packages = n; }
+      if (b.dataset.act === 'cancel' || b.dataset.act === 'missed') { const r = prompt(t('st.pu.why')); if (r == null) return; body.reason = r; }
+      try { await api('/api/pickups', body); msg.className = ''; msg.textContent = tf('st.pu.done', { code: b.dataset.code! }); load(); }
+      catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    });
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const d = Object.fromEntries(new FormData(form).entries()) as Record<string, string>;
+      try {
+        const j = await api('/api/pickups', { action: 'create', account_id: d.account_id, date: d.date, window: d.window, packages: d.packages, phone: d.phone, notes: d.notes, address: { line_1: d.line_1, line_2: d.line_2, city: d.city, state: d.state, postal_code: d.postal_code } });
+        msg.className = ''; msg.textContent = tf('st.pu.scheduled', { code: j.pickup.code, date: j.pickup.scheduled_date });
+        ($('day') as HTMLInputElement).value = j.pickup.scheduled_date; load();
+      } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    });
+  </script>
+</Base>

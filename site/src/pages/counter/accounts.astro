@@ -11,7 +11,7 @@ const thisMonth = new Date().toISOString().slice(0, 7);
 <Base title="Counter · Accounts">
   <section class="hero">
     <h1 data-i18n="st.b.h1">Business accounts</h1>
-    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/batch" data-i18n="st.nav.batch">Batch</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/accounts" data-i18n="st.nav.accounts">Accounts</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/mailboxes" data-i18n="st.nav.mailboxes">Mailboxes</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/claims" data-i18n="st.nav.claims">Claims</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/close" data-i18n="st.nav.close">End of day</a> · <a href="/counter/invoices" data-i18n="st.nav.invoices">Invoices</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a> · <a href="/counter/staff" data-i18n="st.nav.staff">Staff</a> · <a href="/counter/export" data-i18n="st.nav.export">Export</a></p>
+    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/batch" data-i18n="st.nav.batch">Batch</a> · <a href="/counter/pickups" data-i18n="st.nav.pickups">Pickups</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/accounts" data-i18n="st.nav.accounts">Accounts</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/mailboxes" data-i18n="st.nav.mailboxes">Mailboxes</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/claims" data-i18n="st.nav.claims">Claims</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/close" data-i18n="st.nav.close">End of day</a> · <a href="/counter/invoices" data-i18n="st.nav.invoices">Invoices</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a> · <a href="/counter/staff" data-i18n="st.nav.staff">Staff</a> · <a href="/counter/export" data-i18n="st.nav.export">Export</a></p>
     <p class="lead" data-i18n="st.b.lead">Local shops, online sellers and contractors who ship often: a discount on every label, bill to account at the counter instead of paying each time, and one statement a month with a link to pay online.</p>
   </section>
 
@@ -57,6 +57,7 @@ const thisMonth = new Date().toISOString().slice(0, 7);
           <button class="btn small kraft" id="d-toggle"></button>
         </p>
         <label><span data-i18n="st.b.notes.short">Notes</span> <input id="d-notes" maxlength="300" /></label>
+        <p><a class="btn small kraft" id="d-pickup" href="/counter/pickups" data-i18n="st.pu.schedule">Schedule a pickup</a></p>
       </div>
       <div class="card">
         <h3 data-i18n="st.b.statement">Statement</h3>
@@ -129,6 +130,7 @@ const thisMonth = new Date().toISOString().slice(0, 7);
         current = j;
         const a = j.account, c = j.customer;
         $('d-name').textContent = a.business_name;
+        ($('d-pickup') as HTMLAnchorElement).href = `/counter/pickups?account=${a.id}`;
         $('d-contact').textContent = [c?.name, c?.phone, c?.email].filter(Boolean).join(' · ');
         ($('d-discount') as HTMLInputElement).value = String(a.discount_percent); ($('d-notes') as HTMLInputElement).value = a.notes ?? '';
         $('d-toggle').textContent = a.active ? t('st.s.deactivate') : t('st.s.reactivate');

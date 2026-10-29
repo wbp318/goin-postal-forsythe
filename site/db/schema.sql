@@ -393,3 +393,27 @@ CREATE TABLE IF NOT EXISTS claims (
   by_name TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS claims_status ON claims(status, filed_at);
+
+-- Pickups for business accounts (to-do T15): scheduled -> on_the_way -> picked_up, or missed / cancelled.
+CREATE TABLE IF NOT EXISTS pickups (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT NOT NULL UNIQUE,           -- PU-XXXXXX
+  account_id INTEGER NOT NULL REFERENCES accounts(id),
+  account_name TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  scheduled_date TEXT NOT NULL,        -- YYYY-MM-DD
+  window TEXT NOT NULL DEFAULT 'morning', -- morning, afternoon
+  address_json TEXT NOT NULL,
+  phone TEXT,
+  packages INTEGER NOT NULL DEFAULT 1,
+  notes TEXT,
+  fee_usd REAL NOT NULL DEFAULT 0,     -- the catalog's pickup item at scheduling time
+  status TEXT NOT NULL DEFAULT 'scheduled', -- scheduled, on_the_way, picked_up, missed, cancelled
+  driver TEXT,
+  on_the_way_at TEXT,
+  texted_at TEXT,
+  picked_up_at TEXT,
+  by_name TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS pickups_day ON pickups(scheduled_date, window);
+CREATE INDEX IF NOT EXISTS pickups_account ON pickups(account_id, scheduled_date);

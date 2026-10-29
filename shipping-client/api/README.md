@@ -104,6 +104,14 @@ curl -s https://goinpostalforsythe.com/api/v1/shipments/GP-7K2M9Q/void -H "Autho
 
 Voids an unshipped label; the charge comes off the statement the same way a counter void does. A reason is required and is audited. A shipment the carrier has already scanned cannot be voided.
 
+### `POST /pickups`, `GET /pickups`, `POST /pickups/:code/cancel`
+
+```bash
+curl -s https://goinpostalforsythe.com/api/v1/pickups -H "Authorization: Bearer $PSK" -H "Content-Type: application/json" -d '{ "date": "2026-11-03", "window": "afternoon", "packages": 6, "phone": "318-555-0177", "notes": "back door", "address": { "line_1": "9 Pine Rd", "city": "Monroe", "state": "LA", "postal_code": "71201" } }'
+```
+
+Schedules a pickup for the account on a date from today on, `window` morning (default) or afternoon. `address` is needed the first time and then defaults to the account's last pickup, as does `phone`. Returns `201` with the pickup (`code` PU-XXXXXX, `status` scheduled, `fee_usd` from the store's catalog). `GET /pickups` lists the account's pickups newest first with their status (scheduled, on_the_way, picked_up, missed, cancelled). `POST /pickups/:code/cancel` with a `reason` cancels one that is still scheduled.
+
 ### `POST /batches`
 
 ```bash

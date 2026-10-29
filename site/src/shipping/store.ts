@@ -92,6 +92,11 @@ export interface Mailbox {
   notes: string | null;
 }
 
+export interface PickupRow {
+  id: number; code: string; account_id: number; account_name: string; created_at: string; scheduled_date: string; window: 'morning' | 'afternoon';
+  address_json: string; phone: string | null; packages: number; notes: string | null; fee_usd: number;
+  status: 'scheduled' | 'on_the_way' | 'picked_up' | 'missed' | 'cancelled'; driver: string | null; on_the_way_at: string | null; texted_at: string | null; picked_up_at: string | null; by_name: string;
+}
 export interface ClaimRow {
   id: number; code: string; shipment_id: string; created_at: string; updated_at: string;
   kind: 'lost' | 'damaged' | 'missing_contents'; carrier: string; tracking_number: string | null;
@@ -130,6 +135,7 @@ const mem = {
   mailboxes: [] as Mailbox[],
   mailboxNotices: [] as MailboxNotice[],
   claims: [] as ClaimRow[],
+  pickups: [] as PickupRow[],
   quotes: new Map<string, QuoteRow>(),
   customers: new Map<string, CustomerRow>(),
   rules: [] as { id: number; scope: string; match: string | null; percent: number | null; flat: number | null; price: number | null; active: number; updated_at: string }[],
@@ -153,7 +159,7 @@ const mem = {
 
 // ---- Export (T10) --------------------------------------------------------------------------------
 /** Every table in the schema, in schema order. The allow-list for the export; nothing else can be named. */
-export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'mailboxes', 'mailbox_notices', 'claims'] as const;
+export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'mailboxes', 'mailbox_notices', 'claims', 'pickups'] as const;
 export type ExportTable = typeof EXPORT_TABLES[number];
 const memTable = (name: ExportTable): unknown[] => {
   switch (name) {
@@ -183,6 +189,7 @@ const memTable = (name: ExportTable): unknown[] => {
     case 'mailboxes': return mem.mailboxes;
     case 'mailbox_notices': return mem.mailboxNotices;
     case 'claims': return mem.claims;
+    case 'pickups': return mem.pickups;
     default: return [];
   }
 };
@@ -1152,6 +1159,57 @@ export async function updateMailbox(env: Env, code: string, patch: Partial<Omit<
   if (env.DB) await env.DB.prepare(`UPDATE mailboxes SET ${keys.map((k, i) => `${k} = ?${i + 2}`).join(', ')} WHERE code = ?1`).bind(m.code, ...keys.map((k) => patch[k] ?? null)).run();
   else Object.assign(m, Object.fromEntries(keys.map((k) => [k, patch[k] ?? null])));
   return { ...m, ...Object.fromEntries(keys.map((k) => [k, patch[k] ?? null])) } as Mailbox;
+}
+
+// ---- pickups (to-do T15) ---------------------------------------------------------------------------
+const PU_COLS = ['code', 'account_id', 'account_name', 'created_at', 'scheduled_date', 'window', 'address_json', 'phone', 'packages', 'notes', 'fee_usd', 'status', 'driver', 'on_the_way_at', 'texted_at', 'picked_up_at', 'by_name'] as const;
+export function newPickupCode() {
+  const b = crypto.getRandomValues(new Uint8Array(6));
+  return 'PU-' + Array.from(b, (x) => RT_ALPHABET[x % RT_ALPHABET.length]).join('');
+}
+export async function createPickup(env: Env, p: Pick<PickupRow, 'code' | 'account_id' | 'account_name' | 'scheduled_date' | 'window' | 'address_json' | 'phone' | 'packages' | 'notes' | 'fee_usd' | 'by_name'>): Promise<PickupRow> {
+  const row: Omit<PickupRow, 'id'> = { ...p, created_at: now(), status: 'scheduled', driver: null, on_the_way_at: null, texted_at: null, picked_up_at: null };
+  if (env.DB) {
+    const r = await env.DB.prepare(`INSERT INTO pickups (${PU_COLS.join(', ')}) VALUES (${PU_COLS.map((_, i) => `?${i + 1}`).join(', ')}) RETURNING id`).bind(...PU_COLS.map((k) => row[k])).first<{ id: number }>();
+    return { id: r!.id, ...row };
+  }
+  const full = { id: mem.seq++, ...row };
+  mem.pickups.unshift(full);
+  return full;
+}
+export async function getPickup(env: Env, code: string): Promise<PickupRow | null> {
+  const c = code.trim().toUpperCase();
+  if (!c) return null;
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM pickups WHERE code = ?1').bind(c).first<PickupRow>()) ?? null;
+  return mem.pickups.find((x) => x.code === c) ?? null;
+}
+/** A day's route: morning first, then afternoon, oldest scheduled first. Without a date, every pickup from today on. */
+export async function listPickups(env: Env, date?: string): Promise<PickupRow[]> {
+  const order = (a: PickupRow, b: PickupRow) => a.scheduled_date.localeCompare(b.scheduled_date) || (a.window === b.window ? 0 : a.window === 'morning' ? -1 : 1) || a.id - b.id;
+  if (env.DB) {
+    const sql = date ? 'SELECT * FROM pickups WHERE scheduled_date = ?1' : 'SELECT * FROM pickups WHERE scheduled_date >= ?1';
+    return (await env.DB.prepare(sql).bind(date ?? now().slice(0, 10)).all<PickupRow>()).results.sort(order);
+  }
+  const from = now().slice(0, 10);
+  return mem.pickups.filter((p) => (date ? p.scheduled_date === date : p.scheduled_date >= from)).sort(order);
+}
+/** The account's most recent pickup, to prefill the address. */
+export async function lastPickupFor(env: Env, accountId: number): Promise<PickupRow | null> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM pickups WHERE account_id = ?1 ORDER BY id DESC LIMIT 1').bind(accountId).first<PickupRow>()) ?? null;
+  return mem.pickups.find((p) => p.account_id === accountId) ?? null;
+}
+export async function pickupsForAccount(env: Env, accountId: number, limit = 50): Promise<PickupRow[]> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM pickups WHERE account_id = ?1 ORDER BY scheduled_date DESC, id DESC LIMIT ?2').bind(accountId, limit).all<PickupRow>()).results;
+  return mem.pickups.filter((p) => p.account_id === accountId).slice(0, limit);
+}
+export async function updatePickup(env: Env, code: string, patch: Partial<Omit<PickupRow, 'id' | 'code' | 'created_at'>>): Promise<PickupRow | null> {
+  const p = await getPickup(env, code);
+  if (!p) return null;
+  const keys = (Object.keys(patch) as (keyof typeof patch)[]).filter((k) => (PU_COLS as readonly string[]).includes(k) && !['code', 'created_at'].includes(k));
+  if (!keys.length) return p;
+  if (env.DB) await env.DB.prepare(`UPDATE pickups SET ${keys.map((k, i) => `${k} = ?${i + 2}`).join(', ')} WHERE code = ?1`).bind(p.code, ...keys.map((k) => patch[k] ?? null)).run();
+  else Object.assign(p, Object.fromEntries(keys.map((k) => [k, patch[k] ?? null])));
+  return { ...p, ...Object.fromEntries(keys.map((k) => [k, patch[k] ?? null])) } as PickupRow;
 }
 
 // ---- claims (to-do T13) ---------------------------------------------------------------------------

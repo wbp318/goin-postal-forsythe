@@ -12,6 +12,8 @@ import { voidLabel } from '../../../shipping/engine';
 import { store } from '../../../data/store';
 import { rateBatch, choose, discounted, MAX_ROWS, type BatchRow, type Pick } from '../../../lib/batch';
 import { buyBatchRow } from '../../../lib/batchBuy';
+import { createPickup, pickupsForAccount, getPickup, updatePickup, newPickupCode, lastPickupFor } from '../../../shipping/store';
+import { effectiveAddons as addonsCfg } from '../../../lib/addons';
 import { billShipmentToAccount, shipmentsForAccount, getShipment, listTrackingEvents, setShipmentStatus, logAudit } from '../../../shipping/store';
 
 // PeterShip public API, version 1. For a business account's own software, a Shopify or Etsy shop,
@@ -23,6 +25,9 @@ import { billShipmentToAccount, shipmentsForAccount, getShipment, listTrackingEv
 //   GET  /api/v1/shipments?since=ISO        -> this account's shipments, newest first
 //   GET  /api/v1/shipments/:id              -> one shipment with its tracking events
 //   POST /api/v1/shipments/:id/void         { reason }
+//   POST /api/v1/pickups                    { date, window, address?, phone?, packages, notes } -> schedules a pickup (address defaults to the last one)
+//   GET  /api/v1/pickups                    -> this account's pickups, newest first
+//   POST /api/v1/pickups/:code/cancel       { reason }
 //   POST /api/v1/batches                    { rows: [{ reference?, to, parcel }], pick?: 'cheapest' | 'fastest' | 'USPS Ground Advantage', insure?, dry_run? } -> rates every row, buys the good ones (up to 200)
 //   GET  /api/v1/me                         -> the account and key this token belongs to
 // Errors are { error: "plain sentence" } with the usual status codes. Webhooks (shipment.tracking) are
@@ -80,6 +85,30 @@ export const ALL: APIRoute = async ({ request, params }) => {
       await logAudit(env, who, 'label.buy', done.id, `API, ${rate.carrier} ${rate.service} $${(done.total ?? rate.total_charge).toFixed(2)}${body.reference ? `, ref ${String(body.reference).slice(0, 40)}` : ''}`);
       const s = await getShipment(env, done.id);
       return json({ shipment: { ...sh(s), label_url: done.label?.label_url ? (done.label.label_url.startsWith('/') ? `${env.SITE_URL}${done.label.label_url}` : done.label.label_url) : null, label_zpl: done.label?.label_zpl ?? null, total: done.total, reference: body.reference ?? null } }, 201);
+    }
+
+    if (path === 'pickups' || (seg[0] === 'pickups' && seg[1])) {
+      if (request.method === 'GET' && path === 'pickups') return json({ pickups: (await pickupsForAccount(env, account.id)).map((p) => ({ ...p, address: JSON.parse(p.address_json), address_json: undefined })) });
+      if (request.method === 'POST' && path === 'pickups') {
+        const date = String(body.date ?? '').slice(0, 10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date < new Date().toISOString().slice(0, 10)) return json({ error: 'date must be YYYY-MM-DD, today or later' }, 400);
+        const last = await lastPickupFor(env, account.id);
+        const address = body.address ? parseAddress({ ...addr(body.address), contact_name: body.address.contact_name ?? body.address.name ?? account.business_name, country_alpha2: body.address.country_alpha2 ?? 'US' }) : last ? JSON.parse(last.address_json) : null;
+        if (!address) return json({ error: 'address is needed the first time' }, 400);
+        const fee = (await addonsCfg(env)).items.find((i) => i.active && i.code === 'pickup')?.price ?? 0;
+        const p = await createPickup(env, { code: newPickupCode(), account_id: account.id, account_name: account.business_name, scheduled_date: date, window: body.window === 'afternoon' ? 'afternoon' : 'morning', address_json: JSON.stringify(address), phone: String(body.phone ?? last?.phone ?? '').trim().slice(0, 20) || null, packages: Math.min(500, Math.max(1, Math.floor(Number(body.packages)) || 1)), notes: String(body.notes ?? '').trim().slice(0, 300) || null, fee_usd: fee, by_name: who.name });
+        await logAudit(env, who, 'pickup.schedule', p.code, `API ${account.business_name} ${date} ${p.window}, ${p.packages} packages`);
+        return json({ pickup: { ...p, address, address_json: undefined } }, 201);
+      }
+      if (request.method === 'POST' && seg[1] && seg[2] === 'cancel') {
+        const p = await getPickup(env, seg[1]);
+        if (!p || p.account_id !== account.id) return json({ error: 'No such pickup on this account' }, 404);
+        if (p.status !== 'scheduled') return json({ error: `Cannot cancel a pickup that is ${p.status}` }, 400);
+        const reason = String(body.reason ?? '').trim().slice(0, 200) || 'cancelled by the account';
+        await updatePickup(env, p.code, { status: 'cancelled', notes: [p.notes, `Cancelled: ${reason}`].filter(Boolean).join('\n') });
+        await logAudit(env, who, 'pickup.cancel', p.code, `API: ${reason}`);
+        return json({ ok: true, code: p.code, status: 'cancelled' });
+      }
     }
 
     if (request.method === 'POST' && path === 'batches') {
