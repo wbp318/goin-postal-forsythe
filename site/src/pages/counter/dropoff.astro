@@ -23,12 +23,17 @@ import Base from '../../layouts/Base.astro';
       <label><span data-i18n="st.yourname">Your name or initials</span> <input name="staff" maxlength="20" /></label>
       <label class="check"><input name="receipt" type="checkbox" checked /> <span data-i18n="st.d.receipt">Print a receipt at the counter</span></label>
       <label class="check"><input name="text" type="checkbox" /> <span data-i18n="st.d.text">Text the receipt to the phone above</span></label>
+      <input type="hidden" name="return_code" />
+      <p id="retbox" class="muted hidden"></p>
       <p class="btnrow"><button class="btn" type="submit" data-i18n="st.d.accept">Accept drop-off</button></p>
       <p id="msg" role="alert"></p>
       <p id="outbox" class="muted hidden"></p>
     </form>
 
     <div class="card">
+      <h3 data-i18n="st.d.coming">Returns coming in</h3>
+      <p class="muted" data-i18n="st.d.coming.lead">People who said on the website they are bringing a return. Tap one, or scan their QR, and the form fills in. Charge the printing and the box on the POS; nothing was paid online.</p>
+      <ol class="timeline" id="coming"></ol>
       <h3 data-i18n="st.d.recent">Recent</h3>
       <p class="btnrow">
         <button class="btn kraft" data-handed="USPS">USPS <span data-i18n="st.d.pickedup">picked up</span></button>
@@ -58,8 +63,56 @@ import Base from '../../layouts/Base.astro';
       return j;
     }
 
+    // Returns requests from /returns: the list of people expected, and the one picked (by tap or by the QR's ?return= code).
+    const coming = document.getElementById('coming')!, retbox = document.getElementById('retbox')!;
+    let prices = { label: 0, box: 0 };
+    const needs = (r: any) => [r.label === 'print' ? `${t('st.d.ret.print')} $${prices.label.toFixed(2)}` : r.label === 'qr' ? t('st.d.ret.qr') : t('st.d.ret.printed'), r.box ? `${t('st.d.ret.box')} $${prices.box.toFixed(2)}` : ''].filter(Boolean).join(' · ');
+    const due = (r: any) => (r.label === 'print' ? prices.label : 0) + (r.box ? prices.box : 0);
+    function useReturn(r: any) {
+      field('return_code').value = r.code;
+      field('customer_name').value = r.customer_name ?? '';
+      field('customer_phone').value = r.phone ?? '';
+      if (r.carrier) (form.elements.namedItem('carrier') as HTMLSelectElement).value = r.carrier;
+      if (r.tracking && !field('barcode').value) field('barcode').value = r.tracking;
+      if (r.phone) field('text').checked = true;
+      retbox.classList.remove('hidden');
+      retbox.textContent = `${r.code} · ${r.customer_name} · ${needs(r)}${due(r) ? ` · ${tf('st.d.ret.due', { amount: due(r).toFixed(2) })}` : ''}${r.notes ? ` · ${r.notes}` : ''}`;
+      field('barcode').focus();
+    }
+    async function refreshReturns() {
+      if (!pin()) return;
+      try {
+        const j = await api({ action: 'returns' });
+        prices = j.prices;
+        coming.innerHTML = '';
+        if (!j.returns.length) { const li = document.createElement('li'); li.textContent = t('st.d.ret.none'); coming.appendChild(li); }
+        for (const r of j.returns) {
+          const li = document.createElement('li');
+          li.innerHTML = `<time>${fmt(r.created_at)}</time><strong></strong><span></span><span class="btnrow"><button type="button" class="btn small" data-use="${r.code}">${t('st.d.ret.use')}</button> <button type="button" class="btn small kraft" data-served="${r.code}">${t('st.d.ret.served')}</button></span>`;
+          li.querySelector('strong')!.textContent = `${r.code} · ${r.customer_name}${r.carrier ? ` · ${r.carrier}` : ''}`;
+          li.querySelector('span')!.textContent = [needs(r), r.phone, r.tracking, r.notes].filter(Boolean).join(' · ');
+          (li as any)._r = r;
+          coming.appendChild(li);
+        }
+        const want = new URLSearchParams(location.search).get('return');
+        if (want && !field('return_code').value) {
+          const hit = j.returns.find((r: any) => r.code === want.toUpperCase());
+          if (hit) useReturn(hit);
+          else { const g = await api({ action: 'return', code: want }).catch(() => null); if (g?.request) { prices = g.prices; useReturn(g.request); if (g.request.status === 'served') retbox.textContent += ` · ${t('st.d.ret.already')}`; } }
+        }
+      } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    }
+    coming.addEventListener('click', async (ev) => {
+      const b = (ev.target as HTMLElement).closest<HTMLButtonElement>('[data-use],[data-served]');
+      if (!b) return;
+      const li = b.closest('li') as any;
+      if (b.dataset.use) { useReturn(li._r); return; }
+      try { await api({ action: 'return_served', code: b.dataset.served }); msg.className = ''; msg.textContent = tf('st.d.ret.marked', { code: b.dataset.served! }); refreshReturns(); }
+      catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    });
     async function refresh() {
       if (!pin()) return;
+      refreshReturns();
       try {
         const { dropoffs } = await api({ action: 'recent' });
         recent.innerHTML = '';
@@ -113,8 +166,10 @@ import Base from '../../layouts/Base.astro';
         if (r.printed) bits.push(r.agent ? t('st.d.rsent') : t('st.d.rqueued'));
         if (r.texted) bits.push(r.text_mock ? t('st.d.tlogged') : t('st.d.tsent'));
         if (r.error) bits.push(`${t('st.d.rproblem')} ${r.error}`);
+        if (j.return_served) bits.push(tf('st.d.ret.marked', { code: j.return_served }));
         msg.textContent = bits.join(' · ');
-        for (const n of ['barcode', 'customer_name', 'customer_phone']) field(n).value = '';
+        for (const n of ['barcode', 'customer_name', 'customer_phone', 'return_code']) field(n).value = '';
+        retbox.classList.add('hidden');
         field('text').checked = false;
         field('barcode').focus();
         refresh();

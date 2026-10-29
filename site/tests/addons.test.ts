@@ -1,6 +1,6 @@
 // Insurance and add-on pricing: always on the server, from the catalog.
 import { describe, it, expect } from 'vitest';
-import { onlineFee, salesTax, taxableExtras, textUpdatesPrice, TEXT_UPDATES, addonsFromFile, insuranceFee, priceExtras, extrasOffer } from '../src/lib/addons';
+import { onlineFee, returnPrices, salesTax, taxableExtras, textUpdatesPrice, TEXT_UPDATES, addonsFromFile, insuranceFee, priceExtras, extrasOffer } from '../src/lib/addons';
 
 const cfg = addonsFromFile();
 
@@ -73,5 +73,12 @@ describe('sales tax', () => {
   });
   it('hands the page the rate', () => {
     expect(extrasOffer(cfg, 10).sales_tax).toEqual({ percent: 10.99 });
+  });
+});
+
+describe('returnPrices', () => {
+  it('reads the label-print and box prices from the catalog, zero when missing', () => {
+    expect(returnPrices(cfg)).toEqual({ label: 2, box: 2 });
+    expect(returnPrices({ ...cfg, items: cfg.items.filter((i) => i.code !== 'return-box') })).toEqual({ label: 2, box: 0 });
   });
 });

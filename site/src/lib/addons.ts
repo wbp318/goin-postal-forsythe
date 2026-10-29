@@ -70,6 +70,13 @@ export function salesTax(cfg: AddonsConfig, taxable: number): { percent: number;
 export function taxableExtras(extras: Extras): number {
   return round2(extras.addons.filter((l) => l.kind && TAXABLE_KINDS.includes(l.kind)).reduce((a, l) => a + l.total, 0));
 }
+/** What the returns drop-off page charges, from the catalog: printing a label from a phone, and a box. Zero when the item is missing or inactive. */
+export const RETURN_LABEL = 'return-label';
+export const RETURN_BOX = 'return-box';
+export function returnPrices(cfg: AddonsConfig): { label: number; box: number } {
+  const p = (code: string) => cfg.items.find((x) => x.active && x.code === code)?.price ?? 0;
+  return { label: p(RETURN_LABEL), box: p(RETURN_BOX) };
+}
 /** The text-updates add-on's price when it is in the catalog and active. */
 export function textUpdatesPrice(cfg: AddonsConfig): number | null {
   const i = cfg.items.find((x) => x.active && x.code === TEXT_UPDATES);

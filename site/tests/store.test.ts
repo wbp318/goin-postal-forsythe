@@ -144,3 +144,19 @@ describe('business accounts and invoices', () => {
     expect(m.get('1ZABCD1234')?.id).toBe(o.id);
   });
 });
+
+describe('returns drop-off requests', () => {
+  it('creates a coded request, lists it oldest first while open, and serves it with the drop-off', async () => {
+    const a = await store.createReturnRequest(env, { customer_name: 'Pat Return', phone: '318', email: null, carrier: 'Amazon', label: 'print', box: 1, tracking: null, notes: null });
+    const b = await store.createReturnRequest(env, { customer_name: 'Sam Return', phone: null, email: null, carrier: null, label: 'printed', box: 0, tracking: '1Z999AA10123456784', notes: 'two boxes' });
+    expect(a.code).toMatch(/^RT-[A-Z2-9]{6}$/);
+    expect((await store.getReturnRequest(env, a.code.toLowerCase()))?.customer_name).toBe('Pat Return');
+    const open = await store.listOpenReturns(env);
+    expect(open.map((r) => r.code)).toEqual([a.code, b.code]);
+    const d = await store.recordDropoff(env, { barcode: '1Z999AA10123456784', customer_name: 'Sam Return' });
+    const served = await store.markReturnServed(env, b.code, d.id);
+    expect(served).toMatchObject({ status: 'served', dropoff_id: d.id });
+    expect((await store.listOpenReturns(env)).map((r) => r.code)).toEqual([a.code]);
+    expect(await store.markReturnServed(env, 'RT-NOPE', null)).toBeNull();
+  });
+});

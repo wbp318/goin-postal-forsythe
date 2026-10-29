@@ -48,6 +48,18 @@
       "kind": "service",
       "name": "Text updates when it ships and when it is delivered",
       "price": 0.5
+    },
+    {
+      "code": "return-label",
+      "kind": "service",
+      "name": "Print a return label from a phone or email",
+      "price": 2.0
+    },
+    {
+      "code": "return-box",
+      "kind": "box",
+      "name": "Box for a return",
+      "price": 2.0
     }
   ],
   "online_fee": {

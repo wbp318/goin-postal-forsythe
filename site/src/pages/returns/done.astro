@@ -1,0 +1,34 @@
+---
+export const prerender = false;
+import QRCode from 'qrcode';
+import Base from '../../layouts/Base.astro';
+import { store } from '../../data/store';
+import { env } from '../../lib/env';
+import { getReturnRequest } from '../../shipping/store';
+import { effectiveAddons, returnPrices } from '../../lib/addons';
+
+const r = await getReturnRequest(env, Astro.url.searchParams.get('code') ?? '');
+if (!r) return new Response('No such request', { status: 404 });
+const prices = returnPrices(await effectiveAddons(env));
+const due = (r.label === 'print' ? prices.label : 0) + (r.box ? prices.box : 0);
+const qr = await QRCode.toString(`${env.SITE_URL}/counter/dropoff?return=${r.code}`, { type: 'svg', margin: 1, width: 200 });
+---
+<Base title={`Return ${r.code} · ${store.name}`}>
+  <section class="hero">
+    <h1 data-i18n={r.status === 'served' ? 'ret.done.served' : 'ret.done.h1'}>{r.status === 'served' ? 'Received. Thank you.' : "We're expecting you."}</h1>
+    <p class="lead"><span data-i18n="ret.done.code">Your code is</span> <strong class="code">{r.code}</strong>. <span data-i18n="ret.done.bring">Bring the item to</span> {store.address}. {due > 0 && <><span data-i18n="ret.done.due">At the counter you pay</span> <strong>${due.toFixed(2)}</strong>.</>}</p>
+  </section>
+  <div class="grid">
+    <div class="card qr">
+      <h3 data-i18n="cardsdone.show">Show this at the counter</h3>
+      <div set:html={qr} />
+      <p><span data-i18n="cardsdone.tell">Or tell us the code</span> <strong>{r.code}</strong>.</p>
+    </div>
+    <div class="card">
+      <p><strong>{r.customer_name}</strong>{r.carrier ? ` · ${r.carrier}` : ''}{r.tracking ? ` · ${r.tracking}` : ''}</p>
+      <p data-i18n={`ret.label.${r.label}`}>{r.label === 'print' ? 'On my phone or in my email, please print it' : r.label === 'qr' ? 'I have a QR code, the carrier prints the label' : 'Already printed and on the package'}</p>
+      {r.box ? <p data-i18n="ret.box">I need a box</p> : null}
+      <p class="muted" data-i18n="ret.done.while">While you're here: a mailbox with a real street address, business cards designed online, packing and notary. Ask at the counter.</p>
+    </div>
+  </div>
+</Base>

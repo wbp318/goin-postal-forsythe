@@ -49,6 +49,23 @@ export interface Dropoff {
   notes: string | null;
 }
 
+export interface ReturnRequest {
+  id: number;
+  code: string;
+  created_at: string;
+  customer_name: string;
+  phone: string | null;
+  email: string | null;
+  carrier: string | null;
+  label: 'printed' | 'print' | 'qr';
+  box: number;
+  tracking: string | null;
+  notes: string | null;
+  status: 'open' | 'served';
+  served_at: string | null;
+  dropoff_id: number | null;
+}
+
 /** Guess the carrier from a barcode or tracking number. Good enough for drop-offs; the carrier confirms on scan. */
 export function carrierFromBarcode(code: string): string | null {
   const c = code.replace(/\s+/g, '').toUpperCase();
@@ -69,6 +86,7 @@ const mem = {
   events: new Map<string, (TrackingEvent & { id: number })[]>(),
   jobs: [] as PrintJob[],
   dropoffs: [] as Dropoff[],
+  returns: [] as ReturnRequest[],
   quotes: new Map<string, QuoteRow>(),
   customers: new Map<string, CustomerRow>(),
   rules: [] as { id: number; scope: string; match: string | null; percent: number | null; flat: number | null; price: number | null; active: number; updated_at: string }[],
@@ -92,7 +110,7 @@ const mem = {
 
 // ---- Export (T10) --------------------------------------------------------------------------------
 /** Every table in the schema, in schema order. The allow-list for the export; nothing else can be named. */
-export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments'] as const;
+export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests'] as const;
 export type ExportTable = typeof EXPORT_TABLES[number];
 const memTable = (name: ExportTable): unknown[] => {
   switch (name) {
@@ -118,6 +136,7 @@ const memTable = (name: ExportTable): unknown[] => {
     case 'print_failures': return [...mem.printFailures.values()];
     case 'api_keys': return mem.apiKeys;
     case 'x402_payments': return mem.x402;
+    case 'return_requests': return mem.returns;
     default: return [];
   }
 };
@@ -1010,6 +1029,44 @@ export async function recordDropoff(env: Env, d: { barcode: string; carrier?: st
   const full = { id: mem.seq++, ...row };
   mem.dropoffs.unshift(full);
   return full;
+}
+
+// ---- returns drop-off requests (agenda item 27) --------------------------------------------
+const RT_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+export function newReturnCode() {
+  const b = crypto.getRandomValues(new Uint8Array(6));
+  return 'RT-' + Array.from(b, (x) => RT_ALPHABET[x % RT_ALPHABET.length]).join('');
+}
+export async function createReturnRequest(env: Env, r: { customer_name: string; phone: string | null; email: string | null; carrier: string | null; label: ReturnRequest['label']; box: number; tracking: string | null; notes: string | null }): Promise<ReturnRequest> {
+  const row: Omit<ReturnRequest, 'id'> = { code: newReturnCode(), created_at: now(), ...r, status: 'open', served_at: null, dropoff_id: null };
+  if (env.DB) {
+    const res = await env.DB.prepare('INSERT INTO return_requests (code, created_at, customer_name, phone, email, carrier, label, box, tracking, notes, status) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11) RETURNING id')
+      .bind(row.code, row.created_at, row.customer_name, row.phone, row.email, row.carrier, row.label, row.box, row.tracking, row.notes, row.status).first<{ id: number }>();
+    return { id: res!.id, ...row };
+  }
+  const full = { id: mem.seq++, ...row };
+  mem.returns.unshift(full);
+  return full;
+}
+export async function getReturnRequest(env: Env, code: string): Promise<ReturnRequest | null> {
+  const c = code.trim().toUpperCase();
+  if (!c) return null;
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM return_requests WHERE code = ?1').bind(c).first<ReturnRequest>()) ?? null;
+  return mem.returns.find((r) => r.code === c) ?? null;
+}
+/** Open requests, oldest first: the people expected at the counter. Requests older than two weeks drop off the list. */
+export async function listOpenReturns(env: Env): Promise<ReturnRequest[]> {
+  const since = new Date(Date.now() - 14 * 86_400_000).toISOString();
+  if (env.DB) return (await env.DB.prepare("SELECT * FROM return_requests WHERE status = 'open' AND created_at >= ?1 ORDER BY created_at, id").bind(since).all<ReturnRequest>()).results;
+  return mem.returns.filter((r) => r.status === 'open' && r.created_at >= since).sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id - b.id);
+}
+export async function markReturnServed(env: Env, code: string, dropoff_id: number | null): Promise<ReturnRequest | null> {
+  const r = await getReturnRequest(env, code);
+  if (!r || r.status !== 'open') return r;
+  const t = now();
+  if (env.DB) await env.DB.prepare("UPDATE return_requests SET status = 'served', served_at = ?2, dropoff_id = ?3 WHERE code = ?1").bind(r.code, t, dropoff_id).run();
+  else Object.assign(r, { status: 'served', served_at: t, dropoff_id });
+  return { ...r, status: 'served', served_at: t, dropoff_id };
 }
 
 export async function getDropoff(env: Env, id: number): Promise<Dropoff | null> {

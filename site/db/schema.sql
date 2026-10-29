@@ -297,3 +297,23 @@ CREATE TABLE IF NOT EXISTS x402_payments (
 );
 CREATE INDEX IF NOT EXISTS x402_payments_at ON x402_payments(at);
 CREATE INDEX IF NOT EXISTS x402_payments_tx ON x402_payments(tx_hash);
+
+-- Returns drop-off (agenda item 27): a customer says online that they are bringing a return. Served
+-- from /counter/dropoff, which records the drop-off and marks the request served.
+CREATE TABLE IF NOT EXISTS return_requests (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT NOT NULL UNIQUE,           -- RT-XXXXXX, on the customer's QR
+  created_at TEXT NOT NULL,
+  customer_name TEXT NOT NULL,
+  phone TEXT,
+  email TEXT,
+  carrier TEXT,                        -- Amazon, UPS, FedEx, USPS, DHL
+  label TEXT NOT NULL DEFAULT 'printed', -- printed, print (we print it, paid), qr (carrier prints from a QR)
+  box INTEGER NOT NULL DEFAULT 0,      -- 1 when they need a box (paid)
+  tracking TEXT,
+  notes TEXT,
+  status TEXT NOT NULL DEFAULT 'open', -- open, served
+  served_at TEXT,
+  dropoff_id INTEGER REFERENCES dropoffs(id)
+);
+CREATE INDEX IF NOT EXISTS return_requests_status ON return_requests(status, created_at);

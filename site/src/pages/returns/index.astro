@@ -1,0 +1,65 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+import StoreInfo from '../../components/StoreInfo.astro';
+import { store } from '../../data/store';
+import { env } from '../../lib/env';
+import { effectiveAddons, returnPrices } from '../../lib/addons';
+
+// Returns drop-off (agenda item 27, monetization plan): a customer with an online-order return tells us
+// they are coming. We print the label from their phone or email for a small fee, offer a box, scan the
+// package in and hand them a receipt. The request gets a code and a QR that opens the counter's
+// drop-off page with their details filled in. Paid at the counter on the POS, never online.
+const prices = returnPrices(await effectiveAddons(env));
+---
+<Base title={`Returns drop-off · ${store.name}`} description="Bringing back an online order? Drop the return with us. We print the label, box it if you need, and scan it in so you have proof it went out.">
+  <section class="hero">
+    <h1 data-i18n="ret.h1">Dropping off a return?</h1>
+    <p class="lead" data-i18n="ret.lead">Amazon, UPS, FedEx and USPS returns all go out from here. Tell us you're coming and what you need, show the code at the counter, and we scan it in so you have proof it left.</p>
+  </section>
+  <div class="grid">
+    <form id="ret" class="card" autocomplete="on">
+      <label><span data-i18n="f.name">Name</span> <input name="name" required maxlength="60" /></label>
+      <label><span data-i18n="f.phone">Phone</span> <input name="phone" type="tel" maxlength="20" /></label>
+      <label><span data-i18n="f.email">Email</span> <input name="email" type="email" maxlength="80" /></label>
+      <label><span data-i18n="ret.carrier">Which carrier is the return label for?</span>
+        <select name="carrier"><option value="">?</option><option>Amazon</option><option>UPS</option><option>FedEx</option><option>USPS</option><option>DHL</option></select>
+      </label>
+      <fieldset class="opts">
+        <legend data-i18n="ret.label">The label</legend>
+        <label class="opt"><input type="radio" name="label" value="printed" checked /> <span data-i18n="ret.label.printed">Already printed and on the package</span> <em data-i18n="ret.free">free</em></label>
+        <label class="opt"><input type="radio" name="label" value="print" /> <span data-i18n="ret.label.print">On my phone or in my email, please print it</span> <em>${prices.label.toFixed(2)}</em></label>
+        <label class="opt"><input type="radio" name="label" value="qr" /> <span data-i18n="ret.label.qr">I have a QR code, the carrier prints the label</span> <em data-i18n="ret.free">free</em></label>
+      </fieldset>
+      <label class="check"><input name="box" type="checkbox" /> <span data-i18n="ret.box">I need a box</span> <em>+${prices.box.toFixed(2)}</em></label>
+      <label><span data-i18n="ret.tracking">Tracking or return number (optional)</span> <input name="tracking" maxlength="40" autocapitalize="characters" /></label>
+      <label><span data-i18n="cards.notes">Notes</span> <input name="notes" maxlength="200" /></label>
+      <p class="muted" data-i18n="ret.pay">Pay at the counter, card or cash. Nothing is charged online.</p>
+      <button class="btn" type="submit" id="go" data-i18n="ret.go">I'm coming in</button>
+      <p class="err" id="err" hidden></p>
+    </form>
+    <div>
+      <div class="card">
+        <h3 data-i18n="ret.how">How it works</h3>
+        <ol>
+          <li data-i18n="ret.how1">Start the return with the seller and get the label or QR code.</li>
+          <li data-i18n="ret.how2">Bring the item here. Boxed or not, printed or not.</li>
+          <li data-i18n="ret.how3">We print, box, scan and hand you a receipt with the time it went out.</li>
+        </ol>
+      </div>
+      <StoreInfo />
+    </div>
+  </div>
+  <script>
+    const form = document.getElementById('ret') as HTMLFormElement, err = document.getElementById('err')!;
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const btn = document.getElementById('go')!; btn.setAttribute('disabled', '');
+      const body = Object.fromEntries(new FormData(form).entries());
+      const res = await fetch('/api/returns', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const j = await res.json();
+      if (!res.ok) { err.textContent = j.error; err.hidden = false; btn.removeAttribute('disabled'); return; }
+      location.href = `/returns/done?code=${j.code}`;
+    });
+  </script>
+</Base>
