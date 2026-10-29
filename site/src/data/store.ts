@@ -13,6 +13,7 @@ export interface StoreFacts {
   email: string;
   origin: { contact_name: string; company_name: string; contact_phone: string; contact_email: string; line_1: string; line_2?: string; city: string; state: string; postal_code: string; country_alpha2: string };
   formEndpoint: string;
+  reviewUrl?: string;         // the Google Business Profile review link (issue 7); the delivered email asks for a review when set
   hours: { days: string; key: string; open: string; openKey?: string }[];
   services: { key: string; name: string; blurb: string; link?: string }[];
 }
@@ -36,6 +37,7 @@ export const defaults: StoreFacts = {
     country_alpha2: "US",
   },
   formEndpoint: "https://formspree.io/f/REPLACE_ME", // TODO: create a Formspree form and paste its ID
+  reviewUrl: "", // TODO: the Google review link from the Business Profile (issue 7); blank sends no review ask
   hours: [
     { days: "Monday to Friday", key: "days.monfri", open: "9:00 am to 6:00 pm" }, // TODO: confirm
     { days: "Saturday", key: "days.sat", open: "10:00 am to 2:00 pm" }, // TODO: confirm

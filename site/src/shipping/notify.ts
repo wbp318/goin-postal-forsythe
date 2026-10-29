@@ -24,6 +24,12 @@ const BODY: Record<Notifiable, string> = {
   returned: 'The carrier is returning it to the shop. We will call you when it arrives.',
 };
 
+/** The lines under a delivered email (T21): a review ask when the store has its Google link, and a nudge back to the shop. */
+export function deliveredExtra(facts: { reviewUrl?: string; name: string }): string {
+  const review = facts.reviewUrl ? `Happy with how it went? A Google review helps a small shop more than you would think: ${facts.reviewUrl}\n\n` : '';
+  return `${review}Next time: ship online at the website and skip the line, or ask us about a mailbox with a real street address.`;
+}
+
 export interface Sent { channel: 'email' | 'sms'; to: string; status: Notifiable; mock: boolean }
 
 /** Called after new tracking events are stored. Sends whatever the customer has not yet been told. */
@@ -42,7 +48,7 @@ export async function notifyEvents(env: Env, s: ShipmentRow, fresh: TrackingEven
     const where = ev.location ? ` (${ev.location})` : '';
     const line = `${label(s)} to ${d.contact_name}, ${d.city}: ${ev.description}${where}.`;
     if (c.email) {
-      const mock = await sendEmail(env, c.email, SUBJECT[st], `${BODY[st]}\n\n${line}\n\nTrack it: ${trackUrl}\nPickup code ${s.id}\n\n${store.name}\n${store.address}`);
+      const mock = await sendEmail(env, c.email, SUBJECT[st], `${BODY[st]}\n\n${line}\n\n${st === 'delivered' ? deliveredExtra(store) + '\n\n' : ''}Track it: ${trackUrl}\nPickup code ${s.id}\n\n${store.name}\n${store.address}`);
       out.push({ channel: 'email', to: c.email, status: st, mock });
     }
     if (c.phone && c.sms_opt_in) {

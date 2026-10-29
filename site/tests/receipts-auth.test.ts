@@ -2,6 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { dropoffReceiptZpl, dropoffReceiptText, dropoffReceiptEscpos, escpos } from '../src/shipping/receipt';
 import { closeZpl, closeEscpos, drawerFigures } from '../src/lib/close';
+import { deliveredExtra } from '../src/shipping/notify';
 import { hashPin, authenticate, validPin, CAN, atLeast } from '../src/lib/auth';
 import { addStaff } from '../src/shipping/store';
 
@@ -78,5 +79,13 @@ describe('cash drawer (T18)', () => {
     const report: any = { day: '2026-10-29', labels: { count: 1, revenue: 20, cost: 10 }, addons: { revenue: 0 }, paid: { pos: 20, stripe: 0, account: 0 }, voided: [], pos_expected: 20, stripe_expected: 0, refunds_owed: [], dropoffs: { accepted: 0, handed: 0, waiting: 0 }, open_quotes: 0, exceptions: 0, walkups: 0, returns: 0, cancelled: 0, drawer: drawerFigures({ opening: 200, counted: 195, pos_cash: 0, pos_card: 0, paid_out: 0, tips_cash: 0, tips_card: 0 }) };
     expect(closeZpl(report, 'Rin', '')).toMatch(/SHORT \$5.00/);
     expect(closeEscpos(report, 'Rin', '')).toContain('SHORT $5.00');
+  });
+});
+
+describe('delivered email extra (T21)', () => {
+  it('asks for a review only when the store has its link, and always nudges back to the shop', () => {
+    expect(deliveredExtra({ name: 'X', reviewUrl: '' })).not.toMatch(/review/);
+    expect(deliveredExtra({ name: 'X', reviewUrl: 'https://g.page/r/abc/review' })).toMatch(/Google review[^\n]*https:\/\/g\.page\/r\/abc\/review/);
+    expect(deliveredExtra({ name: 'X' })).toMatch(/ship online/);
   });
 });
