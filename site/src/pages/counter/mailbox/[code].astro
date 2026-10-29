@@ -2,13 +2,14 @@
 export const prerender = false;
 import Base from '../../../layouts/Base.astro';
 import { env } from '../../../lib/env';
-import { getMailbox } from '../../../shipping/store';
+import { getMailbox, listMailboxNotices } from '../../../shipping/store';
 import { store } from '../../../data/store';
 
 // Staff page for one mailbox subscription: record Form 1583 and the two IDs, give the box number,
 // notes, cancel. Payment already happened on Stripe and renews there.
 const m = await getMailbox(env, Astro.params.code ?? '');
 if (!m) return new Response('No such mailbox', { status: 404 });
+const notices = await listMailboxNotices(env, m.code);
 const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '');
 ---
 <Base title={`Counter · ${m.code}`}>
@@ -23,6 +24,12 @@ const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString('en-US',
       <p><strong data-i18n="st.m.th.box">Box</strong> {m.box_number ? <strong>#{m.box_number}</strong> : <span class="muted" data-i18n="st.m.nobox">not given yet</span>}{m.box_number && <> · <span data-i18n="mb.done.addr">Your address is</span> {m.business_name || m.customer_name}, {store.address.replace(/,\s*/, ` #${m.box_number}, `)}</>}</p>
       <p><strong>Form 1583</strong> {m.form_1583_at ? <><span data-i18n="st.m.recorded">recorded</span> {fmt(m.form_1583_at)} ({m.form_1583_by}) · {m.ids_seen}</> : <span class="muted" data-i18n="st.m.need1583">needs Form 1583</span>}</p>
       {m.notes && <p><strong data-i18n="st.k.notes">Notes:</strong> <span style="white-space: pre-line">{m.notes}</span></p>}
+      <h3 data-i18n="st.m.arrived">Something arrived</h3>
+      <p class="muted" data-i18n="st.m.arrived.lead">One tap texts the holder (when there is a phone) and emails them, and keeps the time here.</p>
+      <p class="btnrow"><button class="btn" type="button" data-notice="mail" data-i18n="st.m.mailin">Mail in</button> <button class="btn" type="button" data-notice="package" data-i18n="st.m.packagein">Package in</button></p>
+      <label><span data-i18n="st.m.noticenote">Say what (optional, goes in the text)</span> <input id="noticenote" maxlength="120" placeholder="2 boxes from Amazon" /></label>
+      <p id="nmsg" role="alert"></p>
+      {notices.length > 0 && <ol class="timeline">{notices.map((n) => <li><time>{fmt(n.at)}</time><strong data-i18n={`st.m.kind.${n.kind}`}>{n.kind}</strong><span>{[n.note, n.by_name, n.texted ? 'texted' : '', n.emailed ? 'emailed' : '', n.error].filter(Boolean).join(' · ')}</span></li>)}</ol>}
       {m.stripe_subscription_id && <p class="muted">Stripe {m.stripe_subscription_id}</p>}
     </div>
     <form class="card" id="acts" autocomplete="off">
@@ -47,6 +54,13 @@ const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString('en-US',
   </div>
   <script define:vars={{ code: m.code }}>
     const form = document.getElementById('acts'), msg = document.getElementById('msg');
+    document.querySelectorAll('[data-notice]').forEach((b) => b.addEventListener('click', async () => {
+      b.disabled = true;
+      const res = await fetch('/api/mailbox', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, pin: document.getElementById('pin').value, action: 'notice', kind: b.dataset.notice, note: document.getElementById('noticenote').value }) });
+      const j = await res.json();
+      if (!res.ok) { const n = document.getElementById('nmsg'); n.className = 'err'; n.textContent = j.error; b.disabled = false; return; }
+      location.reload();
+    }));
     form.querySelectorAll('[data-action]').forEach((b) => b.addEventListener('click', async () => {
       b.disabled = true;
       const d = Object.fromEntries(new FormData(form).entries());

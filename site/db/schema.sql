@@ -347,3 +347,17 @@ CREATE TABLE IF NOT EXISTS mailboxes (
 );
 CREATE INDEX IF NOT EXISTS mailboxes_status ON mailboxes(status, created_at);
 CREATE INDEX IF NOT EXISTS mailboxes_sub ON mailboxes(stripe_subscription_id);
+
+-- Mailbox mail notifications (to-do T12): one row each time staff tell a holder something arrived.
+CREATE TABLE IF NOT EXISTS mailbox_notices (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  mailbox_code TEXT NOT NULL REFERENCES mailboxes(code),
+  kind TEXT NOT NULL,                  -- mail, package, other
+  note TEXT,
+  by_name TEXT NOT NULL,
+  at TEXT NOT NULL,
+  texted INTEGER NOT NULL DEFAULT 0,
+  emailed INTEGER NOT NULL DEFAULT 0,
+  error TEXT
+);
+CREATE INDEX IF NOT EXISTS mailbox_notices_box ON mailbox_notices(mailbox_code, at);

@@ -2,6 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { priceMailbox, newMailboxCode, statusFromStripe, SIZES, YEAR_MONTHS } from '../src/lib/mailboxes';
 import * as store from '../src/shipping/store';
+import { noticeText, notifyMailbox } from '../src/lib/mailboxNotify';
 
 const env = {} as any;
 
@@ -38,5 +39,21 @@ describe('mailbox records', () => {
     // unknown keys are ignored, not written
     const same = await store.updateMailbox(env, a.code, { ...( { bogus: 1 } as any) });
     expect(same?.code).toBe(a.code);
+  });
+});
+
+describe('mail notifications', () => {
+  it('writes the text with the box number and the note, sends by text and email in mock mode, keeps the row', async () => {
+    const m = await store.createMailbox(env, { code: 'MB-NOTE01', customer_id: null, customer_name: 'Holder', email: 'h@example.com', phone: '318-555-0100', business_name: 'Holder LLC', size: 'small', term: 'monthly', price: 15 });
+    await store.updateMailbox(env, m.code, { status: 'active', box_number: '42' });
+    const box = (await store.getMailbox(env, m.code))!;
+    const text = noticeText(box, 'package', '2 boxes');
+    expect(text).toContain('A package arrived for Holder LLC in box #42 (2 boxes)');
+    const n = await notifyMailbox(env, box, 'package', '2 boxes', 'Tester');
+    expect(n).toMatchObject({ mailbox_code: 'MB-NOTE01', kind: 'package', texted: 1, emailed: 1, text_mock: true, email_mock: true, error: null });
+    const nophone = await notifyMailbox(env, { ...box, phone: null }, 'mail', '', 'Tester');
+    expect(nophone).toMatchObject({ texted: 0, emailed: 1 });
+    expect((await store.listMailboxNotices(env, 'MB-NOTE01')).map((x) => x.kind)).toEqual(['mail', 'package']);
+    expect((await store.lastMailboxNotices(env))['MB-NOTE01'].kind).toBe('mail');
   });
 });

@@ -2,11 +2,12 @@
 export const prerender = false;
 import Base from '../../layouts/Base.astro';
 import { env } from '../../lib/env';
-import { listMailboxes } from '../../shipping/store';
+import { listMailboxes, lastMailboxNotices } from '../../shipping/store';
 
 // Staff page: every mailbox subscription, newest first. Paid online through Stripe; the box number
 // and Form 1583 happen here. Open one for the actions.
 const all = await listMailboxes(env);
+const last = await lastMailboxNotices(env);
 const todo = all.filter((m) => m.status === 'active' && (!m.form_1583_at || !m.box_number));
 const fmt = (iso: string | null) => (iso ? iso.slice(0, 10) : '');
 ---
@@ -20,10 +21,11 @@ const fmt = (iso: string | null) => (iso ? iso.slice(0, 10) : '');
     <h3 data-i18n="st.m.todo">Paid, waiting on the counter</h3>
     <ul>{todo.map((m) => <li><a href={`/counter/mailbox/${m.code}`}>{m.code}</a> · {m.customer_name} · <span data-i18n={`mb.size.${m.size}`}>{m.size}</span> · {!m.form_1583_at ? <span data-i18n="st.m.need1583">needs Form 1583</span> : <span data-i18n="st.m.needbox">needs a box number</span>}</li>)}</ul>
   </div>}
+  <p class="card"><label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label> <span class="muted" data-i18n="st.m.quick">Mail in and Package in text and email the holder straight from this list.</span> <span id="qmsg"></span></p>
   <table class="list">
-    <thead><tr><th data-i18n="st.m.th.code">Code</th><th data-i18n="st.o.customer">Customer:</th><th data-i18n="mb.size">Box size</th><th data-i18n="mb.term">Pay</th><th data-i18n="st.m.th.box">Box</th><th data-i18n="st.o.status">Status:</th><th data-i18n="st.m.th.since">Since</th><th data-i18n="st.m.th.renews">Renews</th></tr></thead>
+    <thead><tr><th data-i18n="st.m.th.code">Code</th><th data-i18n="st.o.customer">Customer:</th><th data-i18n="mb.size">Box size</th><th data-i18n="mb.term">Pay</th><th data-i18n="st.m.th.box">Box</th><th data-i18n="st.o.status">Status:</th><th data-i18n="st.m.th.since">Since</th><th data-i18n="st.m.th.renews">Renews</th><th data-i18n="st.m.th.last">Last notice</th><th></th></tr></thead>
     <tbody>
-      {all.length === 0 && <tr><td colspan="8" class="muted" data-i18n="st.m.none">No mailboxes yet. The page for customers is /mailbox.</td></tr>}
+      {all.length === 0 && <tr><td colspan="10" class="muted" data-i18n="st.m.none">No mailboxes yet. The page for customers is /mailbox.</td></tr>}
       {all.map((m) => <tr>
         <td><a href={`/counter/mailbox/${m.code}`}>{m.code}</a></td>
         <td>{m.customer_name}{m.business_name ? ` (${m.business_name})` : ''}</td>
@@ -33,7 +35,24 @@ const fmt = (iso: string | null) => (iso ? iso.slice(0, 10) : '');
         <td data-i18n={`st.m.status.${m.status}`}>{m.status.replace('_', ' ')}</td>
         <td>{fmt(m.started_at ?? m.created_at)}</td>
         <td>{fmt(m.current_period_end)}</td>
+        <td>{last[m.code] ? <><span data-i18n={`st.m.kind.${last[m.code].kind}`}>{last[m.code].kind}</span> {fmt(last[m.code].at)}</> : ''}</td>
+        <td class="btnrow">{m.status !== 'cancelled' && m.status !== 'awaiting_payment' && <><button class="btn small" type="button" data-code={m.code} data-notice="mail" data-i18n="st.m.mailin">Mail in</button> <button class="btn small kraft" type="button" data-code={m.code} data-notice="package" data-i18n="st.m.packagein">Package in</button></>}</td>
       </tr>)}
     </tbody>
   </table>
+  <script>
+    import { tf } from '../../i18n';
+    const qmsg = document.getElementById('qmsg')!;
+    document.querySelectorAll<HTMLButtonElement>('[data-notice]').forEach((b) => b.addEventListener('click', async () => {
+      b.disabled = true;
+      const res = await fetch('/api/mailbox', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: b.dataset.code, pin: (document.getElementById('pin') as HTMLInputElement).value, action: 'notice', kind: b.dataset.notice }) });
+      const j = await res.json();
+      b.disabled = false;
+      if (!res.ok) { qmsg.className = 'err'; qmsg.textContent = j.error; return; }
+      qmsg.className = '';
+      qmsg.textContent = tf('st.m.sent', { code: b.dataset.code!, how: [j.notice.texted ? 'text' : '', j.notice.emailed ? 'email' : ''].filter(Boolean).join(' + ') || 'nothing to send to' });
+      const cell = b.closest('tr')!.children[8];
+      cell.textContent = `${b.dataset.notice} ${new Date().toISOString().slice(0, 10)}`;
+    }));
+  </script>
 </Base>

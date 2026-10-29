@@ -92,6 +92,8 @@ export interface Mailbox {
   notes: string | null;
 }
 
+export interface MailboxNotice { id: number; mailbox_code: string; kind: string; note: string | null; by_name: string; at: string; texted: number; emailed: number; error: string | null }
+
 /** Guess the carrier from a barcode or tracking number. Good enough for drop-offs; the carrier confirms on scan. */
 export function carrierFromBarcode(code: string): string | null {
   const c = code.replace(/\s+/g, '').toUpperCase();
@@ -114,6 +116,7 @@ const mem = {
   dropoffs: [] as Dropoff[],
   returns: [] as ReturnRequest[],
   mailboxes: [] as Mailbox[],
+  mailboxNotices: [] as MailboxNotice[],
   quotes: new Map<string, QuoteRow>(),
   customers: new Map<string, CustomerRow>(),
   rules: [] as { id: number; scope: string; match: string | null; percent: number | null; flat: number | null; price: number | null; active: number; updated_at: string }[],
@@ -137,7 +140,7 @@ const mem = {
 
 // ---- Export (T10) --------------------------------------------------------------------------------
 /** Every table in the schema, in schema order. The allow-list for the export; nothing else can be named. */
-export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'mailboxes'] as const;
+export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'mailboxes', 'mailbox_notices'] as const;
 export type ExportTable = typeof EXPORT_TABLES[number];
 const memTable = (name: ExportTable): unknown[] => {
   switch (name) {
@@ -165,6 +168,7 @@ const memTable = (name: ExportTable): unknown[] => {
     case 'x402_payments': return mem.x402;
     case 'return_requests': return mem.returns;
     case 'mailboxes': return mem.mailboxes;
+    case 'mailbox_notices': return mem.mailboxNotices;
     default: return [];
   }
 };
@@ -1134,6 +1138,32 @@ export async function updateMailbox(env: Env, code: string, patch: Partial<Omit<
   if (env.DB) await env.DB.prepare(`UPDATE mailboxes SET ${keys.map((k, i) => `${k} = ?${i + 2}`).join(', ')} WHERE code = ?1`).bind(m.code, ...keys.map((k) => patch[k] ?? null)).run();
   else Object.assign(m, Object.fromEntries(keys.map((k) => [k, patch[k] ?? null])));
   return { ...m, ...Object.fromEntries(keys.map((k) => [k, patch[k] ?? null])) } as Mailbox;
+}
+
+export async function addMailboxNotice(env: Env, n: Omit<MailboxNotice, 'id' | 'at'>): Promise<MailboxNotice> {
+  const row = { ...n, at: now() };
+  if (env.DB) {
+    const r = await env.DB.prepare('INSERT INTO mailbox_notices (mailbox_code, kind, note, by_name, at, texted, emailed, error) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8) RETURNING id')
+      .bind(row.mailbox_code, row.kind, row.note, row.by_name, row.at, row.texted, row.emailed, row.error).first<{ id: number }>();
+    return { id: r!.id, ...row };
+  }
+  const full = { id: mem.seq++, ...row };
+  mem.mailboxNotices.unshift(full);
+  return full;
+}
+/** A box's notices, newest first. */
+export async function listMailboxNotices(env: Env, code: string, limit = 30): Promise<MailboxNotice[]> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM mailbox_notices WHERE mailbox_code = ?1 ORDER BY id DESC LIMIT ?2').bind(code, limit).all<MailboxNotice>()).results;
+  return mem.mailboxNotices.filter((n) => n.mailbox_code === code).slice(0, limit);
+}
+/** The last notice per box, for the list page. */
+export async function lastMailboxNotices(env: Env): Promise<Record<string, MailboxNotice>> {
+  const out: Record<string, MailboxNotice> = {};
+  const rows = env.DB
+    ? (await env.DB.prepare('SELECT n.* FROM mailbox_notices n JOIN (SELECT mailbox_code, MAX(id) AS id FROM mailbox_notices GROUP BY mailbox_code) l ON l.id = n.id').all<MailboxNotice>()).results
+    : mem.mailboxNotices;
+  for (const n of rows) if (!out[n.mailbox_code]) out[n.mailbox_code] = n;
+  return out;
 }
 
 export async function getDropoff(env: Env, id: number): Promise<Dropoff | null> {

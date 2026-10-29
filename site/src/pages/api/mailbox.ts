@@ -6,6 +6,7 @@ import { authenticate } from '../../lib/auth';
 import { priceMailbox, newMailboxCode } from '../../lib/mailboxes';
 import { createMailbox, getMailbox, updateMailbox, logAudit, upsertCustomer } from '../../shipping/store';
 import { createMailboxCheckout, cancelSubscription } from '../../lib/stripe';
+import { notifyMailbox, KINDS, type NoticeKind } from '../../lib/mailboxNotify';
 
 // Mailbox subscriptions. POST: a customer picks a size and a term on /mailbox and goes to Stripe
 // Checkout in subscription mode. PUT: staff actions from /counter/mailbox/CODE (box number, Form
@@ -51,6 +52,13 @@ export const PUT: APIRoute = async ({ request }) => {
       if (!ids) throw new Error('Note the two IDs seen (type and last digits)');
       await updateMailbox(env, m.code, { form_1583_at: new Date().toISOString(), ids_seen: ids, form_1583_by: user.name });
       await logAudit(env, user, 'mailbox.form1583', m.code, ids);
+    } else if (b.action === 'notice') {
+      // Mail in, package in: text and email the holder, keep the row. Works on any box that is not cancelled.
+      if (m.status === 'cancelled') throw new Error('This mailbox is cancelled');
+      const kind = (KINDS as string[]).includes(b.kind) ? (b.kind as NoticeKind) : 'mail';
+      const n = await notifyMailbox(env, m, kind, String(b.note ?? '').trim().slice(0, 120), user.name);
+      await logAudit(env, user, `mailbox.${kind}`, m.code, n.note ?? undefined);
+      return json({ ok: true, notice: n });
     } else if (b.action === 'note') {
       await updateMailbox(env, m.code, { notes: String(b.notes ?? '').trim().slice(0, 500) || null });
       await logAudit(env, user, 'mailbox.note', m.code);
