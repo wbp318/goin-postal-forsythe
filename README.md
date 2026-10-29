@@ -1086,6 +1086,8 @@ Run the same check locally with `python scripts/check_designs.py`.
 
 The program ads and counter flyer carry a QR code that opens the store's corner in Google Maps. To change the link, edit `MAP_URL` in `scripts/add_qr.py` and run it (`pip install segno` first).
 
+Every GitHub release ends with a changelog built by `python scripts/release_notes.py <tag> --body notes.md`: every file changed since the previous tag linked at the new tag, grouped by area, with the commit and compare links, so a reader goes from a sentence in the notes to the file that does it. The narrative above it names the agenda item, the to-do id, the issues and the tests.
+
 To add game-day posts, add a line to the `GAMES` list at the top of `scripts/make_game_posts.py` and run it. The Oct 30 and 31 opponents are still unconfirmed, so those posts say "Moccasins home game".
 
 Printers, sign shops and designers should start with **[brand-kit.html](brand-kit.html)**: colors, fonts, layout rules and file formats.
