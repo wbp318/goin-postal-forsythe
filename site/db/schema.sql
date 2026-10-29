@@ -466,3 +466,63 @@ CREATE TABLE IF NOT EXISTS benchmark_log (
   at_or_under INTEGER NOT NULL         -- 1 when store_price <= benchmark
 );
 CREATE INDEX IF NOT EXISTS benchmark_log_at ON benchmark_log(at);
+
+-- Fulfillment at the store (to-do T29): a business account's stock on the shelf, its orders, and the fees.
+CREATE TABLE IF NOT EXISTS products (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  account_id INTEGER NOT NULL REFERENCES accounts(id),
+  sku TEXT NOT NULL,
+  name TEXT NOT NULL,
+  weight_lb REAL NOT NULL DEFAULT 1,
+  length_in REAL NOT NULL DEFAULT 6,
+  width_in REAL NOT NULL DEFAULT 4,
+  height_in REAL NOT NULL DEFAULT 2,
+  value_usd REAL NOT NULL DEFAULT 0,
+  on_hand INTEGER NOT NULL DEFAULT 0,
+  bin TEXT,
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  UNIQUE (account_id, sku)
+);
+CREATE TABLE IF NOT EXISTS stock_moves (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  product_id INTEGER NOT NULL REFERENCES products(id),
+  account_id INTEGER NOT NULL,
+  at TEXT NOT NULL,
+  qty INTEGER NOT NULL,                -- positive in, negative out
+  kind TEXT NOT NULL,                  -- received, picked, adjusted
+  ref TEXT,                            -- the order code or the receiving note
+  by_name TEXT NOT NULL,
+  note TEXT
+);
+CREATE INDEX IF NOT EXISTS stock_moves_product ON stock_moves(product_id, at);
+CREATE TABLE IF NOT EXISTS fulfillment_orders (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT NOT NULL UNIQUE,           -- FO-XXXXXX
+  account_id INTEGER NOT NULL REFERENCES accounts(id),
+  source TEXT NOT NULL,                -- manual, api, shopify, csv
+  reference TEXT,
+  to_json TEXT NOT NULL,
+  lines_json TEXT NOT NULL,            -- [{ sku, qty }]
+  status TEXT NOT NULL DEFAULT 'open', -- open, shipped, cancelled
+  shipment_id TEXT,
+  notes TEXT,
+  created_at TEXT NOT NULL,
+  shipped_at TEXT,
+  by_name TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS fulfillment_orders_account ON fulfillment_orders(account_id, status, created_at);
+CREATE TABLE IF NOT EXISTS fulfillment_fees (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  account_id INTEGER NOT NULL REFERENCES accounts(id),
+  at TEXT NOT NULL,
+  kind TEXT NOT NULL,                  -- pick_pack, receiving, storage
+  qty REAL NOT NULL,
+  unit_usd REAL NOT NULL,
+  total REAL NOT NULL,
+  ref TEXT,                            -- the order code, the SKU, or the storage month
+  by_name TEXT NOT NULL,
+  statement_id INTEGER REFERENCES account_statements(id)
+);
+CREATE INDEX IF NOT EXISTS fulfillment_fees_account ON fulfillment_fees(account_id, statement_id);

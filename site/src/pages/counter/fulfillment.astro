@@ -1,0 +1,153 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+
+// Staff page: fulfillment (T29). A business account's stock on the shelf, its orders, the pick list,
+// and Pick, pack and ship, which buys the cheapest label, takes the stock and puts the fee on the statement.
+const want = Astro.url.searchParams.get('account') ?? '';
+---
+<Base title="Counter · Fulfillment">
+  <section class="hero">
+    <h1 data-i18n="st.ff.h1">Fulfillment</h1>
+    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/batch" data-i18n="st.nav.batch">Batch</a> · <a href="/counter/fulfillment" data-i18n="st.nav.fulfillment">Fulfillment</a> · <a href="/counter/pickups" data-i18n="st.nav.pickups">Pickups</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/accounts" data-i18n="st.nav.accounts">Accounts</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/mailboxes" data-i18n="st.nav.mailboxes">Mailboxes</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/claims" data-i18n="st.nav.claims">Claims</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/close" data-i18n="st.nav.close">End of day</a> · <a href="/counter/invoices" data-i18n="st.nav.invoices">Invoices</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a> · <a href="/counter/staff" data-i18n="st.nav.staff">Staff</a> · <a href="/counter/export" data-i18n="st.nav.export">Export</a></p>
+    <p class="lead" data-i18n="st.ff.lead">A business account keeps stock on our shelf; its orders come in with SKUs; we pick, pack and ship them on our rates and the fees go on the account's statement. Receive stock, add orders, print the pick list, ship.</p>
+  </section>
+  <form id="pick" class="card" autocomplete="off">
+    <div class="row">
+      <label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
+      <label><span data-i18n="st.bt.account">Account</span> <select id="account"><option value="" data-i18n="st.bt.loadaccounts">type the PIN first</option></select></label>
+      <button class="btn" type="submit" data-i18n="st.show">Show</button>
+    </div>
+    <p id="msg" role="alert"></p>
+    <p class="muted" id="feeline"></p>
+  </form>
+
+  <div id="out" class="hidden">
+    <div class="grid">
+      <div class="card">
+        <h3 data-i18n="st.ff.stock">Stock on the shelf</h3>
+        <table class="list"><thead><tr><th>SKU</th><th data-i18n="st.ff.th.name">Name</th><th data-i18n="st.ff.th.bin">Bin</th><th data-i18n="st.ff.th.onhand">On hand</th><th data-i18n="st.ff.th.each">Each</th><th></th></tr></thead><tbody id="products"></tbody></table>
+        <p class="muted" id="storage"></p>
+        <h4 data-i18n="st.ff.addproduct">Add a product</h4>
+        <div class="row">
+          <label>SKU <input id="p-sku" maxlength="40" /></label>
+          <label><span data-i18n="st.ff.th.name">Name</span> <input id="p-name" maxlength="80" /></label>
+          <label><span data-i18n="st.ff.th.bin">Bin</span> <input id="p-bin" maxlength="20" placeholder="A3" /></label>
+        </div>
+        <div class="row">
+          <label><span data-i18n="st.bt.weight">Weight lb</span> <input id="p-w" type="number" step="0.01" value="1" /></label>
+          <label>L <input id="p-l" type="number" value="6" /></label><label>W <input id="p-wd" type="number" value="4" /></label><label>H <input id="p-h" type="number" value="2" /></label>
+          <label><span data-i18n="st.bt.value">Value $ each</span> <input id="p-v" type="number" step="0.01" value="0" /></label>
+        </div>
+        <p><button class="btn small" type="button" id="addproduct" data-i18n="st.ff.addproduct">Add a product</button> <button class="btn small kraft" type="button" id="storagefee" data-i18n="st.ff.storagefee">Charge this month's storage</button></p>
+      </div>
+      <div class="card">
+        <h3 data-i18n="st.ff.orders">Orders to ship</h3>
+        <p class="btnrow"><button class="btn small kraft" type="button" id="picklist" data-i18n="st.ff.picklist">Pick list</button> <label class="check"><input id="printlabels" type="checkbox" checked /> <span data-i18n="st.ff.printlabel">Print the label at the counter</span></label></p>
+        <ol class="timeline" id="orders"></ol>
+        <p class="muted hidden" id="noorders" data-i18n="st.ff.noorders">No open orders.</p>
+        <div id="picklistout" class="hidden"><h4 data-i18n="st.ff.picklist">Pick list</h4><table class="list"><thead><tr><th data-i18n="st.ff.th.bin">Bin</th><th>SKU</th><th data-i18n="st.ff.th.name">Name</th><th data-i18n="st.ff.th.qty">Qty</th><th data-i18n="st.ff.th.orders">Orders</th></tr></thead><tbody id="pl"></tbody></table></div>
+        <h4 data-i18n="st.ff.addorder">Add an order by hand</h4>
+        <div class="row">
+          <label><span data-i18n="st.bt.th.ref">Ref</span> <input id="o-ref" maxlength="40" /></label>
+          <label><span data-i18n="ship.recipient">Recipient name</span> <input id="o-name" /></label>
+          <label><span data-i18n="ship.street">Street address</span> <input id="o-l1" maxlength="35" /></label>
+        </div>
+        <div class="row">
+          <label><span data-i18n="ship.apt">Apt, suite (optional)</span> <input id="o-l2" maxlength="35" /></label>
+          <label><span data-i18n="ship.city">City</span> <input id="o-city" /></label>
+          <label><span data-i18n="ship.state">State</span> <input id="o-state" maxlength="2" /></label>
+          <label><span data-i18n="ship.zip">ZIP / postal code</span> <input id="o-zip" /></label>
+        </div>
+        <label><span data-i18n="st.ff.lines">Lines, one per line: SKU × qty</span> <textarea id="o-lines" rows="3" placeholder="CANDLE-8OZ x 2&#10;MUG-BLUE x 1"></textarea></label>
+        <p><button class="btn small" type="button" id="addorder" data-i18n="st.ff.addorder">Add an order by hand</button></p>
+      </div>
+    </div>
+  </div>
+  <script>
+    import { t, tf } from '../../i18n';
+    const $ = (id: string) => document.getElementById(id)!;
+    const v = (id: string) => ($(id) as HTMLInputElement).value;
+    const msg = $('msg'), accountSel = $('account') as HTMLSelectElement;
+    const pin = () => v('pin');
+    const want = new URLSearchParams(location.search).get('account');
+    async function api(path: string, body: Record<string, unknown>) {
+      const res = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin(), ...body }) });
+      const j = await res.json(); if (!res.ok) throw new Error(j.error); return j;
+    }
+    const aid = () => accountSel.value;
+    let loaded = false;
+    async function loadAccounts() {
+      if (loaded || !pin()) return;
+      const j = await api('/api/accounts', { action: 'list' });
+      accountSel.innerHTML = '';
+      for (const a of j.accounts.filter((a: any) => a.active)) { const o = document.createElement('option'); o.value = a.id; o.textContent = a.business_name; accountSel.appendChild(o); }
+      if (want) accountSel.value = want;
+      const f = await api('/api/fulfillment', { action: 'fee_rates' });
+      $('feeline').textContent = tf('st.ff.fees', { pp: f.fees.pick_pack_usd.toFixed(2), extra: f.fees.extra_item_usd.toFixed(2), recv: f.fees.receiving_per_box_usd.toFixed(2), bin: f.fees.storage_bin_month_usd.toFixed(2) });
+      loaded = true;
+    }
+    $('pin').addEventListener('change', () => loadAccounts().catch((e) => { msg.className = 'err'; msg.textContent = e.message; }));
+    const addr = (a: any) => `${a.contact_name}, ${a.line_1}${a.line_2 ? ' ' + a.line_2 : ''}, ${a.city} ${a.state} ${a.postal_code}`;
+    async function load() {
+      if (!aid()) return;
+      msg.textContent = '';
+      try {
+        const p = await api('/api/fulfillment', { action: 'products', account_id: aid() });
+        const tb = $('products'); tb.innerHTML = '';
+        for (const x of p.products) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td></td><td></td><td></td><td><strong></strong></td><td></td><td class="btnrow"><input type="number" style="width:5em" value="1" min="-9999" /> <input type="number" style="width:4em" value="0" min="0" title="boxes" /> <button class="btn small" type="button">${t('st.ff.receive')}</button></td>`;
+          const c = tr.querySelectorAll('td');
+          c[0].textContent = x.sku; c[1].textContent = x.name; c[2].textContent = x.bin ?? ''; c[3].querySelector('strong')!.textContent = String(x.on_hand); c[4].textContent = `${x.weight_lb} lb · ${x.length_in}×${x.width_in}×${x.height_in}`;
+          const [qty, boxes] = c[5].querySelectorAll('input');
+          c[5].querySelector('button')!.addEventListener('click', async () => { try { await api('/api/fulfillment', { action: 'receive', account_id: aid(), id: x.id, qty: qty.value, boxes: boxes.value }); load(); } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; } });
+          tb.appendChild(tr);
+        }
+        $('storage').textContent = tf('st.ff.storage', { bins: p.storage.bins, fee: p.storage.fee.toFixed(2) });
+        const o = await api('/api/fulfillment', { action: 'orders', account_id: aid() });
+        const ol = $('orders'); ol.innerHTML = '';
+        for (const x of o.orders) {
+          const li = document.createElement('li');
+          const lines = JSON.parse(x.lines_json);
+          li.innerHTML = `<time>${x.created_at.slice(0, 10)} · ${x.source}${x.reference ? ' · ' + x.reference : ''}</time><strong></strong><span></span><span class="btnrow"></span>`;
+          li.querySelector('strong')!.textContent = `${x.code} · ${addr(JSON.parse(x.to_json))}`;
+          li.querySelector('span')!.textContent = lines.map((l: any) => `${l.qty}× ${l.sku}`).join(', ') + ` · ${t('st.pu.status.' + (x.status === 'open' ? 'scheduled' : x.status === 'shipped' ? 'picked_up' : 'cancelled'))}` + (x.shipment_id ? ` · ${x.shipment_id}` : '');
+          const acts = li.querySelectorAll('span')[1];
+          if (x.status === 'open') acts.innerHTML = `<button class="btn small" type="button" data-ship="${x.code}">${t('st.ff.ship')}</button> <button class="btn small kraft" type="button" data-cancel="${x.code}">${t('st.pu.cancel')}</button>`;
+          else if (x.shipment_id) acts.innerHTML = `<a class="btn small kraft" href="/counter/${x.shipment_id}">${x.shipment_id}</a>`;
+          ol.appendChild(li);
+        }
+        $('noorders').classList.toggle('hidden', !!o.orders.length);
+        $('out').classList.remove('hidden');
+      } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    }
+    ($('pick') as HTMLFormElement).addEventListener('submit', (ev) => { ev.preventDefault(); loadAccounts().then(load).catch((e) => { msg.className = 'err'; msg.textContent = e.message; }); });
+    accountSel.addEventListener('change', load);
+    $('orders').addEventListener('click', async (ev) => {
+      const b = (ev.target as HTMLElement).closest<HTMLButtonElement>('[data-ship],[data-cancel]'); if (!b) return;
+      try {
+        if (b.dataset.ship) { b.disabled = true; const j = await api('/api/fulfillment', { action: 'ship', code: b.dataset.ship, print: ($('printlabels') as HTMLInputElement).checked }); msg.className = ''; msg.textContent = tf('st.ff.shipped', { code: j.order.code, id: j.shipment.id, service: `${j.shipment.carrier} ${j.shipment.service}`, price: (j.shipment.price ?? 0).toFixed(2), fee: j.fee.total.toFixed(2) }); }
+        else { const r = prompt(t('st.pu.why')); if (r == null) return; await api('/api/fulfillment', { action: 'cancel', code: b.dataset.cancel, reason: r }); }
+        load();
+      } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; b.disabled = false; }
+    });
+    $('picklist').addEventListener('click', async () => {
+      try { const j = await api('/api/fulfillment', { action: 'picklist', account_id: aid() }); const tb = $('pl'); tb.innerHTML = ''; for (const r of j.picklist) { const tr = document.createElement('tr'); tr.innerHTML = '<td></td><td></td><td></td><td></td><td></td>'; const c = tr.querySelectorAll('td'); c[0].textContent = r.bin ?? ''; c[1].textContent = r.sku; c[2].textContent = r.name; c[3].textContent = String(r.qty); c[4].textContent = r.orders.join(', '); tb.appendChild(tr); } $('picklistout').classList.remove('hidden'); }
+      catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    });
+    $('addproduct').addEventListener('click', async () => {
+      try { await api('/api/fulfillment', { action: 'product_add', account_id: aid(), sku: v('p-sku'), name: v('p-name'), bin: v('p-bin'), weight_lb: v('p-w'), length_in: v('p-l'), width_in: v('p-wd'), height_in: v('p-h'), value_usd: v('p-v') }); for (const id of ['p-sku', 'p-name', 'p-bin']) ($(id) as HTMLInputElement).value = ''; load(); }
+      catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    });
+    $('storagefee').addEventListener('click', async () => {
+      try { const j = await api('/api/fulfillment', { action: 'storage', account_id: aid() }); msg.className = ''; msg.textContent = tf('st.ff.storagecharged', { bins: j.fee.qty, fee: j.fee.total.toFixed(2) }); }
+      catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    });
+    $('addorder').addEventListener('click', async () => {
+      const lines = v('o-lines').split('\n').map((l) => l.trim()).filter(Boolean).map((l) => { const m = /^(.+?)\s*[x×]\s*(\d+)$/i.exec(l); return m ? { sku: m[1], qty: Number(m[2]) } : { sku: l, qty: 1 }; });
+      try { await api('/api/fulfillment', { action: 'order_add', account_id: aid(), reference: v('o-ref'), source: 'manual', to: { contact_name: v('o-name'), line_1: v('o-l1'), line_2: v('o-l2'), city: v('o-city'), state: v('o-state'), postal_code: v('o-zip') }, lines }); ($('o-lines') as HTMLTextAreaElement).value = ''; load(); }
+      catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    });
+  </script>
+</Base>

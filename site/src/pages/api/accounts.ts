@@ -3,7 +3,7 @@ import type { APIRoute } from 'astro';
 import { env } from '../../lib/env';
 import { json } from '../../lib/validate';
 import { authenticate, CAN } from '../../lib/auth';
-import { addReturnLink, listReturnLinks, setReturnLinkActive } from '../../shipping/store';
+import { addReturnLink, listReturnLinks, setReturnLinkActive, accountOpenFees } from '../../shipping/store';
 import { parseAddress } from '../../lib/validate';
 import { store } from '../../data/store';
 import { listAccounts, getAccount, addAccount, updateAccount, accountOpenShipments, saveStatement, listStatements, markStatementPaid, getCustomer, searchCustomers, upsertCustomer, logAudit, addApiKey, listApiKeys, revokeApiKey } from '../../shipping/store';
@@ -66,7 +66,7 @@ export const POST: APIRoute = async ({ request }) => {
       const period = String(b.period ?? new Date().toISOString().slice(0, 7));
       if (!/^\d{4}-\d{2}$/.test(period)) throw new Error('Period must be YYYY-MM');
       const cutoff = `${period}-31T23:59:59.999Z`;
-      const lines = (await accountOpenShipments(env, a)).filter((s) => s.created_at <= cutoff);
+      const lines = [...(await accountOpenShipments(env, a)), ...(await accountOpenFees(env, a.id))].filter((s) => s.created_at <= cutoff);
       if (!lines.length) throw new Error('Nothing to bill for that month');
       const total = Math.round(lines.reduce((x, s) => x + s.total, 0) * 100) / 100;
       const customer = await getCustomer(env, a.customer_id);

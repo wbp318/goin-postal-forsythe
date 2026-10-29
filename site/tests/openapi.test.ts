@@ -15,7 +15,7 @@ describe('openapi.json', () => {
   });
   it('every spec path has a matching branch in the handler, and the handler serves nothing the spec leaves out', () => {
     const served = new Set<string>();
-    for (const m of handler.matchAll(/path === '([a-z]+)'/g)) served.add('/' + m[1]);
+    for (const m of handler.matchAll(/path === '([a-z/]+)'/g)) served.add('/' + m[1]);
     if (/seg\[0\] === 'shipments' && seg\[1\]/.test(handler)) { served.add('/shipments/{id}'); served.add('/shipments/{id}/void'); }
     if (/seg\[0\] === 'pickups' && seg\[1\]/.test(handler)) served.add('/pickups/{code}/cancel');
     for (const p of Object.keys(spec.paths)) expect(served.has(p), `spec path ${p} is not served`).toBe(true);

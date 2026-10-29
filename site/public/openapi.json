@@ -15,7 +15,8 @@
     { "name": "rates", "description": "Prices before buying" },
     { "name": "shipments", "description": "Labels, tracking, voids" },
     { "name": "batches", "description": "Many labels in one call" },
-    { "name": "pickups", "description": "Scheduled pickups at the account's address" }
+    { "name": "pickups", "description": "Scheduled pickups at the account's address" },
+    { "name": "fulfillment", "description": "Stock the store holds for the account, and orders it picks, packs and ships" }
   ],
   "paths": {
     "/me": {
@@ -50,6 +51,17 @@
       "post": { "tags": ["batches"], "summary": "Rate up to 200 rows and buy the good ones in one call", "operationId": "createBatch",
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["rows"], "properties": { "rows": { "type": "array", "maxItems": 200, "items": { "type": "object", "required": ["to", "parcel"], "properties": { "reference": { "type": "string", "maxLength": 40 }, "to": { "$ref": "#/components/schemas/Address" }, "parcel": { "$ref": "#/components/schemas/Parcel" } } } }, "pick": { "type": "string", "description": "cheapest (default), fastest, or a service name such as USPS Ground Advantage", "default": "cheapest" }, "insure": { "type": "boolean" }, "dry_run": { "type": "boolean", "description": "Price every row and buy nothing" } } } } } },
         "responses": { "201": { "description": "Bought (200 for a dry run)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BatchResult" } } } }, "200": { "description": "Dry run", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BatchResult" } } } }, "400": { "$ref": "#/components/responses/BadRequest" } } }
+    },
+    "/stock": {
+      "get": { "tags": ["fulfillment"], "summary": "The account's products on the store's shelf with the quantity on hand", "operationId": "stock",
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "object", "properties": { "products": { "type": "array", "items": { "$ref": "#/components/schemas/StockItem" } } } } } } } } }
+    },
+    "/fulfillment/orders": {
+      "post": { "tags": ["fulfillment"], "summary": "An order for the store to pick, pack and ship from the account's stock", "operationId": "createFulfillmentOrder",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["to", "lines"], "properties": { "reference": { "type": "string", "maxLength": 40 }, "to": { "$ref": "#/components/schemas/Address" }, "lines": { "type": "array", "maxItems": 50, "items": { "type": "object", "required": ["sku", "qty"], "properties": { "sku": { "type": "string" }, "qty": { "type": "integer", "minimum": 1 } } } }, "notes": { "type": "string", "maxLength": 300 } } } } } },
+        "responses": { "201": { "description": "Queued for the counter; the shipment appears on the order once shipped", "content": { "application/json": { "schema": { "type": "object", "properties": { "order": { "$ref": "#/components/schemas/FulfillmentOrder" } } } } } }, "400": { "$ref": "#/components/responses/BadRequest" } } },
+      "get": { "tags": ["fulfillment"], "summary": "The account's fulfillment orders, newest first", "operationId": "listFulfillmentOrders",
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "object", "properties": { "orders": { "type": "array", "items": { "$ref": "#/components/schemas/FulfillmentOrder" } } } } } } } } }
     },
     "/pickups": {
       "post": { "tags": ["pickups"], "summary": "Schedule a pickup", "operationId": "createPickup",
@@ -93,6 +105,8 @@
       "TrackingEvent": { "type": "object", "properties": { "at": { "type": "string", "format": "date-time" }, "status": { "type": "string" }, "description": { "type": "string" }, "location": { "type": ["string", "null"] } } },
       "BatchRow": { "type": "object", "properties": { "line": { "type": "integer" }, "reference": { "type": "string" }, "id": { "type": ["string", "null"] }, "carrier": { "type": ["string", "null"] }, "service": { "type": ["string", "null"] }, "tracking_number": { "type": ["string", "null"] }, "price": { "type": ["number", "null"] }, "label_url": { "type": ["string", "null"] }, "error": { "type": ["string", "null"], "description": "Why this row was not bought" } } },
       "BatchResult": { "type": "object", "properties": { "batch": { "type": ["string", "null"], "description": "B-..., null on a dry run" }, "dry_run": { "type": "boolean" }, "bought": { "type": "integer" }, "failed": { "type": "integer" }, "total": { "type": "number" }, "results": { "type": "array", "items": { "$ref": "#/components/schemas/BatchRow" } } } },
+      "StockItem": { "type": "object", "properties": { "sku": { "type": "string" }, "name": { "type": "string" }, "on_hand": { "type": "integer" }, "bin": { "type": ["string", "null"] }, "weight_lb": { "type": "number" } } },
+      "FulfillmentOrder": { "type": "object", "properties": { "code": { "type": "string" }, "reference": { "type": ["string", "null"] }, "status": { "type": "string", "enum": ["open", "shipped", "cancelled"] }, "shipment_id": { "type": ["string", "null"], "description": "The GP- shipment once shipped" }, "to": { "$ref": "#/components/schemas/Address" }, "lines": { "type": "array", "items": { "type": "object", "properties": { "sku": { "type": "string" }, "qty": { "type": "integer" } } } }, "created_at": { "type": "string", "format": "date-time" }, "shipped_at": { "type": ["string", "null"] } } },
       "Pickup": { "type": "object", "properties": { "code": { "type": "string" }, "scheduled_date": { "type": "string", "format": "date" }, "window": { "type": "string", "enum": ["morning", "afternoon"] }, "address": { "$ref": "#/components/schemas/Address" }, "phone": { "type": ["string", "null"] }, "packages": { "type": "integer" }, "notes": { "type": ["string", "null"] }, "fee_usd": { "type": "number" }, "status": { "type": "string", "enum": ["scheduled", "on_the_way", "picked_up", "missed", "cancelled"] }, "driver": { "type": ["string", "null"] }, "on_the_way_at": { "type": ["string", "null"] }, "picked_up_at": { "type": ["string", "null"] }, "created_at": { "type": "string", "format": "date-time" } } }
     }
   }

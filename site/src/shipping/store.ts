@@ -92,6 +92,10 @@ export interface Mailbox {
   notes: string | null;
 }
 
+export interface ProductRow { id: number; account_id: number; sku: string; name: string; weight_lb: number; length_in: number; width_in: number; height_in: number; value_usd: number; on_hand: number; bin: string | null; active: number; created_at: string; updated_at: string }
+export interface StockMove { id: number; product_id: number; account_id: number; at: string; qty: number; kind: 'received' | 'picked' | 'adjusted'; ref: string | null; by_name: string; note: string | null }
+export interface FulfillmentOrder { id: number; code: string; account_id: number; source: string; reference: string | null; to_json: string; lines_json: string; status: 'open' | 'shipped' | 'cancelled'; shipment_id: string | null; notes: string | null; created_at: string; shipped_at: string | null; by_name: string }
+export interface FeeRow { id: number; account_id: number; at: string; kind: 'pick_pack' | 'receiving' | 'storage'; qty: number; unit_usd: number; total: number; ref: string | null; by_name: string; statement_id: number | null }
 export interface ReturnLink { id: number; account_id: number; token: string; return_to_json: string; service: string | null; max_weight_lb: number; note: string | null; active: number; created_at: string }
 export interface CustomerAddress { id: number; customer_id: string; label: string; address_json: string; created_at: string }
 export interface PhotoRow { id: string; shipment_id: string; content_type: string; bytes: number; caption: string | null; by_name: string; at: string }
@@ -142,6 +146,10 @@ const mem = {
   photos: [] as PhotoRow[],
   customerAddresses: [] as CustomerAddress[],
   returnLinks: [] as ReturnLink[],
+  products: [] as ProductRow[],
+  stockMoves: [] as StockMove[],
+  fulfillmentOrders: [] as FulfillmentOrder[],
+  fees: [] as FeeRow[],
   benchmarks: [] as { id: number; at: string; source: string; zone: number; weight_lb: number; store_price: number | null; benchmark: number; at_or_under: number }[],
   quotes: new Map<string, QuoteRow>(),
   customers: new Map<string, CustomerRow>(),
@@ -166,7 +174,7 @@ const mem = {
 
 // ---- Export (T10) --------------------------------------------------------------------------------
 /** Every table in the schema, in schema order. The allow-list for the export; nothing else can be named. */
-export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'mailboxes', 'mailbox_notices', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'return_links', 'benchmark_log'] as const;
+export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'mailboxes', 'mailbox_notices', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees'] as const;
 export type ExportTable = typeof EXPORT_TABLES[number];
 const memTable = (name: ExportTable): unknown[] => {
   switch (name) {
@@ -201,6 +209,10 @@ const memTable = (name: ExportTable): unknown[] => {
     case 'customer_addresses': return mem.customerAddresses;
     case 'return_links': return mem.returnLinks;
     case 'benchmark_log': return mem.benchmarks;
+    case 'products': return mem.products;
+    case 'stock_moves': return mem.stockMoves;
+    case 'fulfillment_orders': return mem.fulfillmentOrders;
+    case 'fulfillment_fees': return mem.fees;
     default: return [];
   }
 };
@@ -432,11 +444,14 @@ export async function saveStatement(env: Env, st: { account_id: number; period: 
     const r = await env.DB.prepare('INSERT INTO account_statements (account_id, period, issued_at, total, lines_json, stripe_invoice_id, stripe_invoice_url) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7) RETURNING id').bind(row.account_id, row.period, row.issued_at, row.total, row.lines_json, row.stripe_invoice_id, row.stripe_invoice_url).first<{ id: number }>();
     id = r!.id;
     const upd = env.DB.prepare('UPDATE shipment_billing SET statement_id = ?2 WHERE shipment_id = ?1');
-    for (let i = 0; i < st.lines.length; i += 100) await env.DB.batch(st.lines.slice(i, i + 100).map((l) => upd.bind(l.id, id)));
+    const updFee = env.DB.prepare('UPDATE fulfillment_fees SET statement_id = ?2 WHERE id = ?1');
+    const ships = st.lines.filter((l) => !l.id.startsWith('FEE-')), fees = st.lines.filter((l) => l.id.startsWith('FEE-'));
+    for (let i = 0; i < ships.length; i += 100) await env.DB.batch(ships.slice(i, i + 100).map((l) => upd.bind(l.id, id)));
+    for (let i = 0; i < fees.length; i += 100) await env.DB.batch(fees.slice(i, i + 100).map((l) => updFee.bind(Number(l.id.slice(4)), id)));
   } else {
     id = mem.seq++;
     mem.statements.unshift({ id, ...row });
-    for (const l of st.lines) { const b = mem.billing.get(l.id); if (b) b.statement_id = id; }
+    for (const l of st.lines) { if (l.id.startsWith('FEE-')) { const f = mem.fees.find((x) => x.id === Number(l.id.slice(4))); if (f) f.statement_id = id; } else { const b = mem.billing.get(l.id); if (b) b.statement_id = id; } }
   }
   return { id, ...row };
 }
@@ -1170,6 +1185,83 @@ export async function updateMailbox(env: Env, code: string, patch: Partial<Omit<
   if (env.DB) await env.DB.prepare(`UPDATE mailboxes SET ${keys.map((k, i) => `${k} = ?${i + 2}`).join(', ')} WHERE code = ?1`).bind(m.code, ...keys.map((k) => patch[k] ?? null)).run();
   else Object.assign(m, Object.fromEntries(keys.map((k) => [k, patch[k] ?? null])));
   return { ...m, ...Object.fromEntries(keys.map((k) => [k, patch[k] ?? null])) } as Mailbox;
+}
+
+// ---- fulfillment at the store (to-do T29) ---------------------------------------------------------
+export function newFulfillmentCode() {
+  const b = crypto.getRandomValues(new Uint8Array(6));
+  return 'FO-' + Array.from(b, (x) => RT_ALPHABET[x % RT_ALPHABET.length]).join('');
+}
+export async function listProducts(env: Env, accountId: number): Promise<ProductRow[]> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM products WHERE account_id = ?1 ORDER BY bin, sku').bind(accountId).all<ProductRow>()).results;
+  return mem.products.filter((p) => p.account_id === accountId).sort((a, b) => (a.bin ?? '').localeCompare(b.bin ?? '') || a.sku.localeCompare(b.sku));
+}
+export async function addProduct(env: Env, p: Pick<ProductRow, 'account_id' | 'sku' | 'name' | 'weight_lb' | 'length_in' | 'width_in' | 'height_in' | 'value_usd' | 'bin'>): Promise<ProductRow> {
+  const t = now();
+  const row: Omit<ProductRow, 'id'> = { ...p, on_hand: 0, active: 1, created_at: t, updated_at: t };
+  if (env.DB) { const r = await env.DB.prepare('INSERT INTO products (account_id, sku, name, weight_lb, length_in, width_in, height_in, value_usd, on_hand, bin, active, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 0, ?9, 1, ?10, ?10) RETURNING id').bind(row.account_id, row.sku, row.name, row.weight_lb, row.length_in, row.width_in, row.height_in, row.value_usd, row.bin, t).first<{ id: number }>(); return { id: r!.id, ...row }; }
+  const full = { id: mem.seq++, ...row }; mem.products.push(full); return full;
+}
+export async function updateProduct(env: Env, id: number, patch: Partial<Pick<ProductRow, 'name' | 'weight_lb' | 'length_in' | 'width_in' | 'height_in' | 'value_usd' | 'bin' | 'active'>>): Promise<ProductRow | null> {
+  const keys = (Object.keys(patch) as (keyof typeof patch)[]).filter((k) => ['name', 'weight_lb', 'length_in', 'width_in', 'height_in', 'value_usd', 'bin', 'active'].includes(k));
+  const t = now();
+  if (env.DB) {
+    if (keys.length) await env.DB.prepare(`UPDATE products SET ${keys.map((k, i) => `${k} = ?${i + 2}`).join(', ')}, updated_at = ?${keys.length + 2} WHERE id = ?1`).bind(id, ...keys.map((k) => patch[k] ?? null), t).run();
+    return (await env.DB.prepare('SELECT * FROM products WHERE id = ?1').bind(id).first<ProductRow>()) ?? null;
+  }
+  const p = mem.products.find((x) => x.id === id); if (!p) return null;
+  Object.assign(p, Object.fromEntries(keys.map((k) => [k, patch[k] ?? null])), { updated_at: t }); return p;
+}
+/** Stock in or out, with the move recorded. Never lets on_hand go below zero. */
+export async function moveStock(env: Env, m: { product_id: number; account_id: number; qty: number; kind: StockMove['kind']; ref: string | null; by_name: string; note: string | null }): Promise<StockMove> {
+  const row = { ...m, at: now() };
+  if (env.DB) {
+    await env.DB.batch([
+      env.DB.prepare('UPDATE products SET on_hand = MAX(0, on_hand + ?2), updated_at = ?3 WHERE id = ?1').bind(m.product_id, m.qty, row.at),
+      env.DB.prepare('INSERT INTO stock_moves (product_id, account_id, at, qty, kind, ref, by_name, note) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)').bind(m.product_id, m.account_id, row.at, m.qty, m.kind, m.ref, m.by_name, m.note),
+    ]);
+    return { id: 0, ...row };
+  }
+  const p = mem.products.find((x) => x.id === m.product_id); if (p) { p.on_hand = Math.max(0, p.on_hand + m.qty); p.updated_at = row.at; }
+  const full = { id: mem.seq++, ...row }; mem.stockMoves.push(full); return full;
+}
+export async function addFulfillmentOrder(env: Env, o: Pick<FulfillmentOrder, 'code' | 'account_id' | 'source' | 'reference' | 'to_json' | 'lines_json' | 'notes' | 'by_name'>): Promise<FulfillmentOrder> {
+  const row: Omit<FulfillmentOrder, 'id'> = { ...o, status: 'open', shipment_id: null, created_at: now(), shipped_at: null };
+  if (env.DB) { const r = await env.DB.prepare('INSERT INTO fulfillment_orders (code, account_id, source, reference, to_json, lines_json, status, shipment_id, notes, created_at, shipped_at, by_name) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, NULL, ?8, ?9, NULL, ?10) RETURNING id').bind(row.code, row.account_id, row.source, row.reference, row.to_json, row.lines_json, row.status, row.notes, row.created_at, row.by_name).first<{ id: number }>(); return { id: r!.id, ...row }; }
+  const full = { id: mem.seq++, ...row }; mem.fulfillmentOrders.unshift(full); return full;
+}
+export async function getFulfillmentOrder(env: Env, code: string): Promise<FulfillmentOrder | null> {
+  const c = code.trim().toUpperCase(); if (!c) return null;
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM fulfillment_orders WHERE code = ?1').bind(c).first<FulfillmentOrder>()) ?? null;
+  return mem.fulfillmentOrders.find((o) => o.code === c) ?? null;
+}
+/** Open orders oldest first; with all, the last 200 of every status newest first. */
+export async function listFulfillmentOrders(env: Env, accountId: number, all = false): Promise<FulfillmentOrder[]> {
+  if (env.DB) return (await env.DB.prepare(all ? 'SELECT * FROM fulfillment_orders WHERE account_id = ?1 ORDER BY created_at DESC LIMIT 200' : "SELECT * FROM fulfillment_orders WHERE account_id = ?1 AND status = 'open' ORDER BY created_at").bind(accountId).all<FulfillmentOrder>()).results;
+  const rows = mem.fulfillmentOrders.filter((o) => o.account_id === accountId && (all || o.status === 'open'));
+  return all ? rows.slice(0, 200) : [...rows].sort((a, b) => a.created_at.localeCompare(b.created_at));
+}
+export async function updateFulfillmentOrder(env: Env, code: string, patch: Partial<Pick<FulfillmentOrder, 'status' | 'shipment_id' | 'notes' | 'shipped_at'>>): Promise<FulfillmentOrder | null> {
+  const o = await getFulfillmentOrder(env, code); if (!o) return null;
+  const keys = (Object.keys(patch) as (keyof typeof patch)[]);
+  if (env.DB) await env.DB.prepare(`UPDATE fulfillment_orders SET ${keys.map((k, i) => `${k} = ?${i + 2}`).join(', ')} WHERE code = ?1`).bind(o.code, ...keys.map((k) => patch[k] ?? null)).run();
+  else Object.assign(o, Object.fromEntries(keys.map((k) => [k, patch[k] ?? null])));
+  return { ...o, ...patch } as FulfillmentOrder;
+}
+export async function addFee(env: Env, f: Pick<FeeRow, 'account_id' | 'kind' | 'qty' | 'unit_usd' | 'total' | 'ref' | 'by_name'>): Promise<FeeRow> {
+  const row: Omit<FeeRow, 'id'> = { ...f, at: now(), statement_id: null };
+  if (env.DB) { const r = await env.DB.prepare('INSERT INTO fulfillment_fees (account_id, at, kind, qty, unit_usd, total, ref, by_name) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8) RETURNING id').bind(row.account_id, row.at, row.kind, row.qty, row.unit_usd, row.total, row.ref, row.by_name).first<{ id: number }>(); return { id: r!.id, ...row }; }
+  const full = { id: mem.seq++, ...row }; mem.fees.push(full); return full;
+}
+export async function listFees(env: Env, accountId: number): Promise<FeeRow[]> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM fulfillment_fees WHERE account_id = ?1 ORDER BY at DESC LIMIT 500').bind(accountId).all<FeeRow>()).results;
+  return mem.fees.filter((f) => f.account_id === accountId).sort((a, b) => b.at.localeCompare(a.at));
+}
+/** Unbilled fees as statement lines, so they ride on the same statement as the labels. Their ids start with FEE-. */
+export async function accountOpenFees(env: Env, accountId: number): Promise<UnbilledLine[]> {
+  const fees = (await listFees(env, accountId)).filter((f) => !f.statement_id);
+  const name: Record<FeeRow['kind'], string> = { pick_pack: 'Pick and pack', receiving: 'Receiving', storage: 'Storage' };
+  return fees.map((f) => ({ id: `FEE-${f.id}`, created_at: f.at, carrier: 'Fulfillment', service: `${name[f.kind]} × ${f.qty}`, to: f.ref ?? '', total: f.total })).sort((a, b) => a.created_at.localeCompare(b.created_at));
 }
 
 // ---- Pirate Ship benchmark log (to-do T26) -------------------------------------------------------

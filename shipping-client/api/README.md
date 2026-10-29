@@ -116,6 +116,10 @@ curl -s https://goinpostalforsythe.com/api/v1/pickups -H "Authorization: Bearer 
 
 Schedules a pickup for the account on a date from today on, `window` morning (default) or afternoon. `address` is needed the first time and then defaults to the account's last pickup, as does `phone`. Returns `201` with the pickup (`code` PU-XXXXXX, `status` scheduled, `fee_usd` from the store's catalog). `GET /pickups` lists the account's pickups newest first with their status (scheduled, on_the_way, picked_up, missed, cancelled). `POST /pickups/:code/cancel` with a `reason` cancels one that is still scheduled.
 
+### `GET /stock`, `POST /fulfillment/orders`, `GET /fulfillment/orders`
+
+For an account whose stock the store holds (fulfillment). `GET /stock` lists the products on the shelf with `on_hand`. `POST /fulfillment/orders` with `{ reference, to, lines: [{ sku, qty }], notes }` queues an order for the store to pick, pack and ship; SKUs must exist on the account (ask the store to add them). Returns `201` with the `FO-` code and `status` open. `GET /fulfillment/orders` lists them newest first with `shipment_id` once shipped; the shipment then shows under `/shipments` with its tracking like any other.
+
 ### `POST /batches`
 
 ```bash

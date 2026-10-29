@@ -78,9 +78,9 @@ Every marketplace above sells its own labels at commercial rates (eBay, Etsy, Sh
 | 2 | Square connector (seller token, orders poll, tracking push), the easiest live one | 2 days | A Square seller to test with |
 | 3 | eBay connector (developer account, OAuth, Sell Fulfillment API) | A week | eBay developer program approval in the company's name (the LLC, item 57) |
 | 4 | Etsy connector (OAuth, app approval) | 3 days once approved | Etsy app approval |
-| 5 | Inventory and the pick list: `products`, receiving, stock per order | A week | A first fulfillment customer |
-| 6 | Packing station: scan SKU, scan box, print, push tracking | A week | Step 5, a barcode scanner (issue 5) |
-| 7 | Fulfillment fees on the statement | 2 days | Steps 5 and 6 |
+| 5 ✅ v1.63.0 | Inventory and the pick list: `products`, receiving, stock per order | Done | A first fulfillment customer to use it |
+| 6 ✅ v1.63.0 (first form) | Packing station: Pick, pack and ship buys the label, takes the stock and prints; scanning the SKU and the box barcode comes with the scanner (issue 5) | Done | |
+| 7 ✅ v1.63.0 | Fulfillment fees on the statement | Done | |
 | 8 | Amazon SP-API and Walmart | When a seller asks | Registrations |
 | 9 | The listed Shopify app (OAuth) | A week | A second Shopify merchant |
 

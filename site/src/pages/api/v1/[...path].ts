@@ -12,6 +12,7 @@ import { voidLabel } from '../../../shipping/engine';
 import { store } from '../../../data/store';
 import { rateBatch, choose, discounted, MAX_ROWS, type BatchRow, type Pick } from '../../../lib/batch';
 import { buyBatchRow } from '../../../lib/batchBuy';
+import { listProducts, addFulfillmentOrder, listFulfillmentOrders, newFulfillmentCode } from '../../../shipping/store';
 import { createPickup, pickupsForAccount, getPickup, updatePickup, newPickupCode, lastPickupFor } from '../../../shipping/store';
 import { effectiveAddons as addonsCfg } from '../../../lib/addons';
 import { billShipmentToAccount, shipmentsForAccount, getShipment, listTrackingEvents, setShipmentStatus, logAudit } from '../../../shipping/store';
@@ -28,6 +29,9 @@ import { billShipmentToAccount, shipmentsForAccount, getShipment, listTrackingEv
 //   POST /api/v1/pickups                    { date, window, address?, phone?, packages, notes } -> schedules a pickup (address defaults to the last one)
 //   GET  /api/v1/pickups                    -> this account's pickups, newest first
 //   POST /api/v1/pickups/:code/cancel       { reason }
+//   GET  /api/v1/stock                      -> the account's products on the shelf with on_hand
+//   POST /api/v1/fulfillment/orders         { reference?, to, lines: [{ sku, qty }], notes? } -> an order for the store to pick, pack and ship
+//   GET  /api/v1/fulfillment/orders         -> the account's fulfillment orders, newest first
 //   POST /api/v1/batches                    { rows: [{ reference?, to, parcel }], pick?: 'cheapest' | 'fastest' | 'USPS Ground Advantage', insure?, dry_run? } -> rates every row, buys the good ones (up to 200)
 //   GET  /api/v1/me                         -> the account and key this token belongs to
 // Errors are { error: "plain sentence" } with the usual status codes. Webhooks (shipment.tracking) are
@@ -85,6 +89,21 @@ export const ALL: APIRoute = async ({ request, params }) => {
       await logAudit(env, who, 'label.buy', done.id, `API, ${rate.carrier} ${rate.service} $${(done.total ?? rate.total_charge).toFixed(2)}${body.reference ? `, ref ${String(body.reference).slice(0, 40)}` : ''}`);
       const s = await getShipment(env, done.id);
       return json({ shipment: { ...sh(s), label_url: done.label?.label_url ? (done.label.label_url.startsWith('/') ? `${env.SITE_URL}${done.label.label_url}` : done.label.label_url) : null, label_zpl: done.label?.label_zpl ?? null, total: done.total, reference: body.reference ?? null } }, 201);
+    }
+
+    if (request.method === 'GET' && path === 'stock') return json({ products: (await listProducts(env, account.id)).filter((p) => p.active).map(({ sku, name, on_hand, bin, weight_lb }) => ({ sku, name, on_hand, bin, weight_lb })) });
+    if (path === 'fulfillment/orders') {
+      if (request.method === 'GET') return json({ orders: (await listFulfillmentOrders(env, account.id, true)).map((o) => ({ code: o.code, reference: o.reference, status: o.status, shipment_id: o.shipment_id, to: JSON.parse(o.to_json), lines: JSON.parse(o.lines_json), created_at: o.created_at, shipped_at: o.shipped_at })) });
+      const to = parseAddress(addr(body.to));
+      const check = checkAddress(to); if (check.errors.length) return json({ error: check.errors[0] }, 400);
+      const known = new Set((await listProducts(env, account.id)).filter((p) => p.active).map((p) => p.sku));
+      const lines = (Array.isArray(body.lines) ? body.lines : []).map((l: any) => ({ sku: String(l?.sku ?? '').trim().toUpperCase(), qty: Math.max(1, Math.floor(Number(l?.qty) || 1)) })).filter((l: any) => l.sku).slice(0, 50);
+      if (!lines.length) return json({ error: 'lines is needed: [{ sku, qty }]' }, 400);
+      const unknown = lines.filter((l: any) => !known.has(l.sku)).map((l: any) => l.sku);
+      if (unknown.length) return json({ error: `Unknown SKU on this account: ${unknown.join(', ')}. Ask the store to add it to your stock` }, 400);
+      const o = await addFulfillmentOrder(env, { code: newFulfillmentCode(), account_id: account.id, source: 'api', reference: String(body.reference ?? '').trim().slice(0, 40) || null, to_json: JSON.stringify(to), lines_json: JSON.stringify(lines), notes: String(body.notes ?? '').trim().slice(0, 300) || null, by_name: who.name });
+      await logAudit(env, who, 'fulfillment.order', o.code, `API ${account.business_name}${o.reference ? ` ref ${o.reference}` : ''}, ${lines.length} lines`);
+      return json({ order: { code: o.code, reference: o.reference, status: o.status, to, lines, created_at: o.created_at } }, 201);
     }
 
     if (path === 'pickups' || (seg[0] === 'pickups' && seg[1])) {

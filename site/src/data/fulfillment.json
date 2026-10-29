@@ -1,0 +1,7 @@
+{
+  "_comment": "Fulfillment fees (T29): what the store charges a business account to hold its stock and ship its orders. Under ShipBob at small volume on purpose; no minimum, no onboarding. TODO owners: Peter and Rin set these (connectors plan, decision 3). All in USD.",
+  "pick_pack_usd": 2.0,
+  "extra_item_usd": 0.25,
+  "receiving_per_box_usd": 5.0,
+  "storage_bin_month_usd": 4.0
+}
