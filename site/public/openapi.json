@@ -1,0 +1,99 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "PeterShip public API",
+    "version": "1",
+    "summary": "Rates, labels, tracking, batches and pickups for a business account at a Goin' Postal store running PeterShip.",
+    "description": "Every call carries `Authorization: Bearer psk_...`, an API key made for the account on the store's counter. Every label is billed to the account's monthly statement with its discount already applied. Errors are `{ \"error\": \"a plain sentence\" }` with the usual status codes. Webhooks (`shipment.tracking`) are set on the key and signed with HMAC-SHA256 in the `X-PeterShip-Signature` header.",
+    "contact": { "name": "The store", "url": "https://goinpostalforsythe.com/contact" },
+    "license": { "name": "PeterShip Proprietary License", "url": "https://github.com/wbp318/goin-postal-forsythe/blob/main/shipping-client/LICENSE" }
+  },
+  "servers": [{ "url": "https://goinpostalforsythe.com/api/v1", "description": "Goin' Postal Forsythe. Another store running PeterShip has its own host with the same paths." }],
+  "security": [{ "bearer": [] }],
+  "tags": [
+    { "name": "account", "description": "Who the key belongs to" },
+    { "name": "rates", "description": "Prices before buying" },
+    { "name": "shipments", "description": "Labels, tracking, voids" },
+    { "name": "batches", "description": "Many labels in one call" },
+    { "name": "pickups", "description": "Scheduled pickups at the account's address" }
+  ],
+  "paths": {
+    "/me": {
+      "get": { "tags": ["account"], "summary": "The account and key this token belongs to", "operationId": "me",
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "object", "properties": { "account": { "$ref": "#/components/schemas/Account" }, "key": { "$ref": "#/components/schemas/Key" } } } } } }, "401": { "$ref": "#/components/responses/Unauthorized" } } }
+    },
+    "/rates": {
+      "post": { "tags": ["rates"], "summary": "Rates for a parcel to an address, with the account's discount taken off", "operationId": "rates",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["to", "parcel"], "properties": { "to": { "$ref": "#/components/schemas/Address" }, "parcel": { "$ref": "#/components/schemas/Parcel" } } } } } },
+        "responses": { "200": { "description": "Rates, newest quote. A PO Box or military address gets USPS only.", "content": { "application/json": { "schema": { "type": "object", "properties": { "rates": { "type": "array", "items": { "$ref": "#/components/schemas/Rate" } }, "demo": { "type": "boolean", "description": "true while the store runs on demo rates" }, "address": { "$ref": "#/components/schemas/AddressCheck" } } } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" } } }
+    },
+    "/shipments": {
+      "post": { "tags": ["shipments"], "summary": "Buy a label now and bill the account", "operationId": "createShipment",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["to", "parcel", "rate_id"], "properties": { "to": { "$ref": "#/components/schemas/Address" }, "parcel": { "$ref": "#/components/schemas/Parcel" }, "rate_id": { "type": "string", "description": "An id from /rates for the same parcel" }, "reference": { "type": "string", "maxLength": 40, "description": "Your own order number, written to the audit log" }, "insure": { "type": "boolean", "description": "Add the store's declared-value insurance for parcel.value_usd" }, "addons": { "type": "array", "items": { "type": "object", "properties": { "code": { "type": "string" }, "qty": { "type": "integer" } } }, "description": "Add-on codes the store offers (boxes, packing, signature)" }, "email": { "type": "string", "format": "email", "description": "Where tracking emails go" } } } } } },
+        "responses": { "201": { "description": "Bought", "content": { "application/json": { "schema": { "type": "object", "properties": { "shipment": { "$ref": "#/components/schemas/ShipmentBought" } } } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" } } },
+      "get": { "tags": ["shipments"], "summary": "This account's shipments, newest first, up to 500", "operationId": "listShipments",
+        "parameters": [{ "name": "since", "in": "query", "schema": { "type": "string", "format": "date-time" }, "description": "Only shipments created after this instant" }],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "object", "properties": { "shipments": { "type": "array", "items": { "$ref": "#/components/schemas/Shipment" } } } } } } }, "401": { "$ref": "#/components/responses/Unauthorized" } } }
+    },
+    "/shipments/{id}": {
+      "get": { "tags": ["shipments"], "summary": "One shipment with its tracking events", "operationId": "getShipment",
+        "parameters": [{ "$ref": "#/components/parameters/ShipmentId" }],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "object", "properties": { "shipment": { "allOf": [{ "$ref": "#/components/schemas/Shipment" }, { "type": "object", "properties": { "events": { "type": "array", "items": { "$ref": "#/components/schemas/TrackingEvent" } } } }] } } } } } }, "404": { "$ref": "#/components/responses/NotFound" } } }
+    },
+    "/shipments/{id}/void": {
+      "post": { "tags": ["shipments"], "summary": "Void an unshipped label; the charge comes off the statement", "operationId": "voidShipment",
+        "parameters": [{ "$ref": "#/components/parameters/ShipmentId" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["reason"], "properties": { "reason": { "type": "string", "maxLength": 200 } } } } } },
+        "responses": { "200": { "description": "Voided", "content": { "application/json": { "schema": { "type": "object", "properties": { "ok": { "type": "boolean" }, "id": { "type": "string" }, "status": { "type": "string", "const": "voided" } } } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "404": { "$ref": "#/components/responses/NotFound" } } }
+    },
+    "/batches": {
+      "post": { "tags": ["batches"], "summary": "Rate up to 200 rows and buy the good ones in one call", "operationId": "createBatch",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["rows"], "properties": { "rows": { "type": "array", "maxItems": 200, "items": { "type": "object", "required": ["to", "parcel"], "properties": { "reference": { "type": "string", "maxLength": 40 }, "to": { "$ref": "#/components/schemas/Address" }, "parcel": { "$ref": "#/components/schemas/Parcel" } } } }, "pick": { "type": "string", "description": "cheapest (default), fastest, or a service name such as USPS Ground Advantage", "default": "cheapest" }, "insure": { "type": "boolean" }, "dry_run": { "type": "boolean", "description": "Price every row and buy nothing" } } } } } },
+        "responses": { "201": { "description": "Bought (200 for a dry run)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BatchResult" } } } }, "200": { "description": "Dry run", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BatchResult" } } } }, "400": { "$ref": "#/components/responses/BadRequest" } } }
+    },
+    "/pickups": {
+      "post": { "tags": ["pickups"], "summary": "Schedule a pickup", "operationId": "createPickup",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["date"], "properties": { "date": { "type": "string", "format": "date", "description": "Today or later" }, "window": { "type": "string", "enum": ["morning", "afternoon"], "default": "morning" }, "packages": { "type": "integer", "minimum": 1, "maximum": 500 }, "phone": { "type": "string" }, "notes": { "type": "string", "maxLength": 300 }, "address": { "allOf": [{ "$ref": "#/components/schemas/Address" }], "description": "Needed the first time; then defaults to the last pickup's" } } } } } },
+        "responses": { "201": { "description": "Scheduled", "content": { "application/json": { "schema": { "type": "object", "properties": { "pickup": { "$ref": "#/components/schemas/Pickup" } } } } } }, "400": { "$ref": "#/components/responses/BadRequest" } } },
+      "get": { "tags": ["pickups"], "summary": "This account's pickups, newest first", "operationId": "listPickups",
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "object", "properties": { "pickups": { "type": "array", "items": { "$ref": "#/components/schemas/Pickup" } } } } } } } } }
+    },
+    "/pickups/{code}/cancel": {
+      "post": { "tags": ["pickups"], "summary": "Cancel a pickup that is still scheduled", "operationId": "cancelPickup",
+        "parameters": [{ "name": "code", "in": "path", "required": true, "schema": { "type": "string", "pattern": "^PU-[A-Z2-9]{6}$" } }],
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "reason": { "type": "string", "maxLength": 200 } } } } } },
+        "responses": { "200": { "description": "Cancelled", "content": { "application/json": { "schema": { "type": "object", "properties": { "ok": { "type": "boolean" }, "code": { "type": "string" }, "status": { "type": "string", "const": "cancelled" } } } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "404": { "$ref": "#/components/responses/NotFound" } } }
+    }
+  },
+  "webhooks": {
+    "shipment.tracking": {
+      "post": { "summary": "Sent to the key's webhook_url when a shipment's tracking changes", "description": "Signed: `X-PeterShip-Signature: sha256=<hex HMAC-SHA256 of the raw body with the key's webhook_secret>`. Retried a few times on a non-2xx answer.",
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "event": { "type": "string", "const": "shipment.tracking" }, "shipment": { "$ref": "#/components/schemas/Shipment" }, "events": { "type": "array", "items": { "$ref": "#/components/schemas/TrackingEvent" } }, "sent_at": { "type": "string", "format": "date-time" } } } } } },
+        "responses": { "200": { "description": "Any 2xx acknowledges" } } }
+    }
+  },
+  "components": {
+    "securitySchemes": { "bearer": { "type": "http", "scheme": "bearer", "bearerFormat": "psk_...", "description": "An API key made on the store's accounts page; shown once, revocable" } },
+    "parameters": { "ShipmentId": { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "pattern": "^GP-[A-Z2-9]{6}$" }, "description": "The shipment code" } },
+    "responses": {
+      "BadRequest": { "description": "Something in the request is wrong; the error says what", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "Unauthorized": { "description": "No valid API key", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "NotFound": { "description": "Not on this account", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+    },
+    "schemas": {
+      "Error": { "type": "object", "properties": { "error": { "type": "string" } }, "required": ["error"] },
+      "Account": { "type": "object", "properties": { "id": { "type": "integer" }, "business_name": { "type": "string" }, "discount_percent": { "type": "number" } } },
+      "Key": { "type": "object", "properties": { "id": { "type": "integer" }, "label": { "type": "string" }, "prefix": { "type": "string" }, "webhook_url": { "type": ["string", "null"] } } },
+      "Address": { "type": "object", "required": ["name", "line_1", "city", "state", "postal_code", "country_alpha2"], "properties": { "name": { "type": "string" }, "company": { "type": "string" }, "line_1": { "type": "string", "maxLength": 35 }, "line_2": { "type": "string", "maxLength": 35 }, "city": { "type": "string" }, "state": { "type": "string", "minLength": 2, "maxLength": 2, "description": "Two-letter code" }, "postal_code": { "type": "string" }, "country_alpha2": { "type": "string", "minLength": 2, "maxLength": 2 }, "phone": { "type": "string" }, "email": { "type": "string", "format": "email" } }, "description": "The internal names contact_name, contact_phone and contact_email are accepted too" },
+      "Parcel": { "type": "object", "required": ["weight_lb", "length_in", "width_in", "height_in"], "properties": { "weight_lb": { "type": "number", "minimum": 0.1, "maximum": 150 }, "length_in": { "type": "number", "minimum": 1, "maximum": 108 }, "width_in": { "type": "number", "minimum": 1, "maximum": 108 }, "height_in": { "type": "number", "minimum": 1, "maximum": 108 }, "description": { "type": "string", "maxLength": 80 }, "value_usd": { "type": "number", "description": "Declared value, for insurance" } } },
+      "AddressCheck": { "type": "object", "properties": { "errors": { "type": "array", "items": { "type": "string" } }, "warnings": { "type": "array", "items": { "type": "string" } } } },
+      "Rate": { "type": "object", "properties": { "id": { "type": "string" }, "carrier": { "type": "string", "enum": ["USPS", "UPS", "FedEx", "DHL"] }, "service": { "type": "string" }, "price": { "type": "number", "description": "After the account's discount" }, "currency": { "type": "string" }, "min_days": { "type": ["integer", "null"] }, "max_days": { "type": ["integer", "null"] } } },
+      "Shipment": { "type": "object", "properties": { "id": { "type": "string" }, "status": { "type": "string", "description": "labeled, printed, in_transit, out_for_delivery, delivered, exception, returned, voided" }, "carrier": { "type": "string" }, "service": { "type": "string" }, "tracking_number": { "type": ["string", "null"] }, "label_id": { "type": ["string", "null"] }, "price": { "type": "number" }, "created_at": { "type": "string", "format": "date-time" }, "updated_at": { "type": "string", "format": "date-time" }, "to": { "$ref": "#/components/schemas/Address" }, "parcel": { "$ref": "#/components/schemas/Parcel" }, "track_url": { "type": "string", "format": "uri" } } },
+      "ShipmentBought": { "allOf": [{ "$ref": "#/components/schemas/Shipment" }, { "type": "object", "properties": { "label_url": { "type": ["string", "null"], "format": "uri", "description": "PDF" }, "label_zpl": { "type": ["string", "null"], "description": "ZPL, base64, for a thermal printer" }, "total": { "type": "number", "description": "Label plus add-ons, insurance and tax" }, "reference": { "type": ["string", "null"] } } }] },
+      "TrackingEvent": { "type": "object", "properties": { "at": { "type": "string", "format": "date-time" }, "status": { "type": "string" }, "description": { "type": "string" }, "location": { "type": ["string", "null"] } } },
+      "BatchRow": { "type": "object", "properties": { "line": { "type": "integer" }, "reference": { "type": "string" }, "id": { "type": ["string", "null"] }, "carrier": { "type": ["string", "null"] }, "service": { "type": ["string", "null"] }, "tracking_number": { "type": ["string", "null"] }, "price": { "type": ["number", "null"] }, "label_url": { "type": ["string", "null"] }, "error": { "type": ["string", "null"], "description": "Why this row was not bought" } } },
+      "BatchResult": { "type": "object", "properties": { "batch": { "type": ["string", "null"], "description": "B-..., null on a dry run" }, "dry_run": { "type": "boolean" }, "bought": { "type": "integer" }, "failed": { "type": "integer" }, "total": { "type": "number" }, "results": { "type": "array", "items": { "$ref": "#/components/schemas/BatchRow" } } } },
+      "Pickup": { "type": "object", "properties": { "code": { "type": "string" }, "scheduled_date": { "type": "string", "format": "date" }, "window": { "type": "string", "enum": ["morning", "afternoon"] }, "address": { "$ref": "#/components/schemas/Address" }, "phone": { "type": ["string", "null"] }, "packages": { "type": "integer" }, "notes": { "type": ["string", "null"] }, "fee_usd": { "type": "number" }, "status": { "type": "string", "enum": ["scheduled", "on_the_way", "picked_up", "missed", "cancelled"] }, "driver": { "type": ["string", "null"] }, "on_the_way_at": { "type": ["string", "null"] }, "picked_up_at": { "type": ["string", "null"] }, "created_at": { "type": "string", "format": "date-time" } } }
+    }
+  }
+}

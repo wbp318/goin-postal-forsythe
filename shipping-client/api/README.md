@@ -20,6 +20,10 @@ flowchart LR
 
 Chart legend: a **rectangle** is a step or a thing; **dark blue** runs in Cloudflare, **gold** runs in the store, **light blue** is a person or someone else's software; an **arrow** is data moving, and its label says what.
 
+## The spec
+
+An OpenAPI 3.1 description of every endpoint, for Postman, Insomnia or a code generator: [`/openapi.json`](https://goinpostalforsythe.com/openapi.json) on the store's site (the file is `site/public/openapi.json`). The same spec rendered as a page: [`/developers`](https://goinpostalforsythe.com/developers). A test keeps the spec and the route in step.
+
 ## Getting a key
 
 1. A manager or owner opens **Staff → Accounts** on the counter pages and picks the business account (make one first if the business has none; it needs a customer record).

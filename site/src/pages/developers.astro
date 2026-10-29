@@ -1,0 +1,79 @@
+---
+import Base from '../layouts/Base.astro';
+import { store } from '../data/store';
+import spec from '../../public/openapi.json';
+
+// Hosted API docs (T25), rendered from public/openapi.json at build time so the page and the spec
+// cannot drift. The JSON itself is at /openapi.json for Postman, Insomnia, code generators.
+type Schema = any;
+const s: any = spec;
+const schemas: Record<string, Schema> = s.components.schemas;
+const deref = (x: any): any => (x && x.$ref ? deref(x.$ref.split('/').reduce((o: any, k: string) => (k === '#' ? s : o[k]), s)) : x);
+const typeOf = (p: any): string => {
+  p = deref(p);
+  if (!p) return '';
+  if (p.allOf) return p.allOf.map(typeOf).join(' + ');
+  if (p.$ref) return p.$ref.split('/').pop();
+  const t = Array.isArray(p.type) ? p.type.join(' | ') : p.type ?? '';
+  if (t === 'array') return `array of ${p.items?.$ref ? p.items.$ref.split('/').pop() : typeOf(p.items)}`;
+  if (p.enum) return p.enum.join(' | ');
+  if (p.const) return `"${p.const}"`;
+  return t + (p.format ? ` (${p.format})` : '');
+};
+const props = (schema: any): { name: string; type: string; required: boolean; desc: string }[] => {
+  schema = deref(schema);
+  if (!schema) return [];
+  if (schema.allOf) return schema.allOf.flatMap(props);
+  const req: string[] = schema.required ?? [];
+  return Object.entries(schema.properties ?? {}).map(([name, p]: [string, any]) => ({ name, type: typeOf(p), required: req.includes(name), desc: deref(p)?.description ?? p.description ?? '' }));
+};
+const ops: { path: string; method: string; op: any }[] = [];
+for (const [path, item] of Object.entries<any>(s.paths)) for (const [method, op] of Object.entries<any>(item)) ops.push({ path, method: method.toUpperCase(), op });
+const refName = (x: any) => (x?.$ref ? x.$ref.split('/').pop() : null);
+---
+<Base title={`API for developers · ${store.name}`} description="The PeterShip public API: rates, labels, tracking, batches and pickups for business accounts, with an OpenAPI 3.1 spec.">
+  <section class="hero">
+    <h1>PeterShip API, version {s.info.version}</h1>
+    <p class="lead">{s.info.summary}</p>
+    <p class="btnrow"><a class="btn" href="/openapi.json" download>OpenAPI 3.1 JSON</a> <a class="btn kraft" href="https://github.com/wbp318/goin-postal-forsythe/blob/main/shipping-client/api/README.md" target="_blank" rel="noopener">Guide with curl examples</a> <a class="btn kraft" href="/contact">Ask for a key</a></p>
+  </section>
+  <div class="card">
+    <h3>Before you start</h3>
+    <p set:html={s.info.description.replace(/`([^`]+)`/g, '<code>$1</code>')} />
+    <p><strong>Base URL:</strong> <code>{s.servers[0].url}</code>. {s.servers[0].description}</p>
+    <p><strong>Auth:</strong> <code>Authorization: Bearer psk_…</code>. {s.components.securitySchemes.bearer.description}.</p>
+  </div>
+  {ops.map(({ path, method, op }) => {
+    const body = op.requestBody?.content?.['application/json']?.schema;
+    const ok = Object.entries<any>(op.responses).find(([code]) => code.startsWith('2'));
+    const okSchema = ok?.[1]?.content?.['application/json']?.schema;
+    return (
+      <div class="card" id={op.operationId}>
+        <h3><code>{method} {path}</code></h3>
+        <p>{op.summary}</p>
+        {op.parameters?.length > 0 && <p class="muted">{op.parameters.map((p: any) => { const d = deref(p); return `${d.in} ${d.name}${d.required ? ' (required)' : ''}: ${typeOf(d.schema)}${d.description ? ', ' + d.description : ''}`; }).join(' · ')}</p>}
+        {body && <>
+          <h4>Request</h4>
+          <table class="list"><thead><tr><th>Field</th><th>Type</th><th></th></tr></thead><tbody>{props(body).map((f) => <tr><td><code>{f.name}</code>{f.required && <span class="muted"> required</span>}</td><td>{f.type}</td><td class="muted">{f.desc}</td></tr>)}</tbody></table>
+        </>}
+        {ok && <>
+          <h4>Response {ok[0]}</h4>
+          <p class="muted">{ok[1].description}</p>
+          {okSchema && props(okSchema).length > 0 && <table class="list"><thead><tr><th>Field</th><th>Type</th><th></th></tr></thead><tbody>{props(okSchema).map((f) => <tr><td><code>{f.name}</code></td><td>{f.type}</td><td class="muted">{f.desc}</td></tr>)}</tbody></table>}
+        </>}
+        <p class="muted">Errors: {Object.entries<any>(op.responses).filter(([code]) => !code.startsWith('2')).map(([code, r]) => `${code} ${deref(r).description}`).join(' · ')}</p>
+      </div>
+    );
+  })}
+  <div class="card" id="webhooks">
+    <h3>Webhook <code>shipment.tracking</code></h3>
+    <p>{s.webhooks['shipment.tracking'].post.summary}.</p>
+    <p class="muted" set:html={s.webhooks['shipment.tracking'].post.description.replace(/`([^`]+)`/g, '<code>$1</code>')} />
+    <table class="list"><thead><tr><th>Field</th><th>Type</th></tr></thead><tbody>{props(s.webhooks['shipment.tracking'].post.requestBody.content['application/json'].schema).map((f) => <tr><td><code>{f.name}</code></td><td>{f.type}</td></tr>)}</tbody></table>
+  </div>
+  <div class="card" id="schemas">
+    <h3>Objects</h3>
+    {Object.entries(schemas).map(([name, sch]) => <details><summary><code>{name}</code>{(sch as any).description ? <span class="muted"> {(sch as any).description}</span> : null}</summary><table class="list"><tbody>{props(sch).map((f) => <tr><td><code>{f.name}</code>{f.required && <span class="muted"> required</span>}</td><td>{f.type}</td><td class="muted">{f.desc}</td></tr>)}</tbody></table></details>)}
+  </div>
+  <p class="muted">{refName(null) ?? ''}A listed Shopify app (OAuth) is on the to-do list; today a Shopify shop connects with the custom-app token the connector README describes.</p>
+</Base>
