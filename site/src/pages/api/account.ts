@@ -5,7 +5,8 @@ import { json, parseAddress } from '../../lib/validate';
 import { createLoginToken, readSession, clearCookie } from '../../lib/session';
 import { sendEmail } from '../../shipping/notify';
 import { store } from '../../data/store';
-import { upsertCustomer, getCustomer, findCustomer, saveCustomerAddress, deleteCustomerAddress, setCustomerName, normalizePhone } from '../../shipping/store';
+import { upsertCustomer, getCustomer, findCustomer, saveCustomerAddress, deleteCustomerAddress, setCustomerName, normalizePhone, logAudit } from '../../shipping/store';
+import { getOrder, saveOrder } from '../../lib/orders';
 
 // Customer accounts (T20). login { email } emails a magic link; the rest need the session cookie:
 // name { name }, save_address { label, address }, delete_address { id }, logout.
@@ -38,6 +39,26 @@ export const POST: APIRoute = async ({ request }) => {
       const address = parseAddress({ ...b.address, country_alpha2: b.address?.country_alpha2 || 'US' });
       const row = await saveCustomerAddress(env, { customer_id: c.id, label: String(b.label ?? '').trim().slice(0, 40) || address.contact_name, address_json: JSON.stringify(address) });
       return json({ ok: true, address: row });
+    }
+    if (b.action === 'resend_label') {
+      // The customer's own labeled order, emailed again to the account's address. Same text the counter sends.
+      const o = await getOrder(env, String(b.order ?? '').toUpperCase());
+      if (!o || (o.email ?? '').toLowerCase() !== (c.email ?? '').toLowerCase()) return json({ error: 'No such order on this account' }, 404);
+      if (!o.label || (o.status !== 'labeled' && o.status !== 'printed')) return json({ error: 'That order has no label to send' }, 400);
+      const l = o.label;
+      const abs = (u: string | null | undefined) => (u ? (u.startsWith('/') ? `${env.SITE_URL}${u}` : u) : null);
+      const isReturn = o.kind === 'return';
+      const lines = [
+        isReturn ? `Here is your prepaid return label from ${store.name}.` : `Here is your shipping label from ${store.name}.`, '',
+        (o.rate.service.toLowerCase().startsWith(o.rate.carrier.toLowerCase()) ? o.rate.service : `${o.rate.carrier} ${o.rate.service}`) + (l.tracking_number ? `, tracking number ${l.tracking_number}.` : '.'),
+        abs(l.label_url) ? `Label (print on plain paper and tape it flat to the box): ${abs(l.label_url)}` : null,
+        abs(l.qr_url) ? `No printer? Show this code at any ${o.rate.carrier} location and they print it: ${abs(l.qr_url)}` : null, '',
+        `Track it any time: ${env.SITE_URL}/track?q=${o.id}`, '', `${store.name}, ${store.address}, ${store.phone}. Pickup code ${o.id}.`,
+      ].filter((x) => x !== null);
+      const mock = await sendEmail(env, c.email!, `${isReturn ? 'Your return label' : 'Your shipping label'} ${o.id}`, lines.join('\n'));
+      await saveOrder(env, { ...o, emailed_at: new Date().toISOString() });
+      await logAudit(env, { id: null, name: `Customer ${c.name}` }, 'label.email', o.id, `${c.email} (from the account page)`);
+      return json({ ok: true, mock });
     }
     if (b.action === 'delete_address') {
       const ok = await deleteCustomerAddress(env, c.id, Number(b.id));

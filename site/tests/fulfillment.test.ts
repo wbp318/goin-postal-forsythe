@@ -1,6 +1,6 @@
 // Fulfillment at the store (T29): fees, the parcel from products, shortages, the pick list, the records, fees on the statement.
 import { describe, it, expect } from 'vitest';
-import { pickPackFee, parcelFor, shortages, pickList, storageFee, FEES } from '../src/lib/fulfillment';
+import { pickPackFee, parcelFor, shortages, pickList, storageFee, lowStock, FEES } from '../src/lib/fulfillment';
 import * as store from '../src/shipping/store';
 
 const env = {} as any;
@@ -24,6 +24,7 @@ describe('fulfillment helpers', () => {
     const pl = pickList([{ code: 'FO-1', lines: [{ sku: 'B', qty: 1 }, { sku: 'A', qty: 2 }] }, { code: 'FO-2', lines: [{ sku: 'A', qty: 1 }] }], m);
     expect(pl.map((r) => [r.sku, r.qty, r.orders.length])).toEqual([['A', 3, 2], ['B', 1, 1]]);
     expect(storageFee([p('A'), p('B', { bin: 'A1' }), p('C', { on_hand: 0, bin: 'C3' })])).toEqual({ bins: 1, fee: FEES.storage_bin_month_usd });
+    expect(lowStock([p('A', { on_hand: 5 }), p('B', { on_hand: 6 }), p('C', { on_hand: 0, active: 0 })]).map((x) => x.sku)).toEqual(['A']);
   });
 });
 

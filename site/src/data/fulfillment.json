@@ -3,5 +3,6 @@
   "pick_pack_usd": 2.0,
   "extra_item_usd": 0.25,
   "receiving_per_box_usd": 5.0,
-  "storage_bin_month_usd": 4.0
+  "storage_bin_month_usd": 4.0,
+  "low_stock_at": 5
 }

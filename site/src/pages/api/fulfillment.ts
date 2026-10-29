@@ -7,7 +7,9 @@ import { authenticate } from '../../lib/auth';
 import { quote } from '../../lib/quote';
 import { choose, discounted } from '../../lib/batch';
 import { buyBatchRow } from '../../lib/batchBuy';
-import { FEES, pickPackFee, parcelFor, shortages, pickList, storageFee } from '../../lib/fulfillment';
+import { FEES, pickPackFee, parcelFor, shortages, pickList, storageFee, lowStock } from '../../lib/fulfillment';
+import { getCustomer } from '../../shipping/store';
+import { sendEmail } from '../../shipping/notify';
 import { getAccount, listProducts, addProduct, updateProduct, moveStock, listFulfillmentOrders, getFulfillmentOrder, addFulfillmentOrder, updateFulfillmentOrder, addFee, listFees, logAudit, newFulfillmentCode, type ProductRow } from '../../shipping/store';
 
 // Fulfillment at the store (T29), from /counter/fulfillment. Staff PIN, audited.
@@ -116,8 +118,15 @@ export const POST: APIRoute = async ({ request }) => {
       const pp = pickPackFee(lines);
       const fee = await addFee(env, { account_id: account.id, kind: 'pick_pack', qty: pp.units, unit_usd: FEES.pick_pack_usd, total: pp.fee, ref: o.code, by_name: user.name });
       const next = await updateFulfillmentOrder(env, o.code, { status: 'shipped', shipment_id: bought.id, shipped_at: new Date().toISOString() });
+      // Low stock: tell the account when any line it ships from is at or under the line, once per ship.
+      const low = lowStock((await listProducts(env, account.id)).filter((p) => lines.some((l) => l.sku === p.sku)));
+      let low_stock_emailed = false;
+      if (low.length) {
+        const contact = await getCustomer(env, account.customer_id);
+        if (contact?.email) { await sendEmail(env, contact.email, `Low stock at ${store.name}: ${low.map((p) => p.sku).join(', ')}`, `${account.business_name}: after order ${o.reference ?? o.code} these are running low on our shelf:\n\n${low.map((p) => `${p.sku}  ${p.name}  ${p.on_hand} left`).join('\n')}\n\nSend more when you can; drop it at the counter or ship it to ${store.address}.`).catch(() => {}); low_stock_emailed = true; }
+      }
       await logAudit(env, user, 'fulfillment.ship', o.code, `${account.business_name} -> ${bought.id}, ${rate.carrier} ${rate.service} $${(bought.price ?? 0).toFixed(2)}, pick and pack $${pp.fee.toFixed(2)}`);
-      return json({ ok: true, order: next, shipment: bought, fee, parcel });
+      return json({ ok: true, order: next, shipment: bought, fee, parcel, low_stock: low.map((p) => ({ sku: p.sku, on_hand: p.on_hand })), low_stock_emailed });
     }
     return json({ error: 'Unknown action' }, 400);
   } catch (e: any) {

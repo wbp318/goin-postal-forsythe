@@ -5,7 +5,9 @@ import fees from '../data/fulfillment.json';
 import type { Parcel } from '../shipping/types';
 import type { ProductRow } from '../shipping/store';
 
-export const FEES = fees as { pick_pack_usd: number; extra_item_usd: number; receiving_per_box_usd: number; storage_bin_month_usd: number };
+export const FEES = fees as { pick_pack_usd: number; extra_item_usd: number; receiving_per_box_usd: number; storage_bin_month_usd: number; low_stock_at: number };
+/** Products at or under the low-stock line, for the email to the account after a ship. */
+export const lowStock = (products: ProductRow[], at = FEES.low_stock_at) => products.filter((p) => p.active && p.on_hand <= at);
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
 export interface OrderLine { sku: string; qty: number }

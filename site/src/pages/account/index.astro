@@ -104,7 +104,7 @@ const fmt = (iso: string) => iso.slice(0, 10);
       <div class="card">
         <h3 data-i18n="acct.orders">Your orders</h3>
         {!quotes.length && <p class="muted" data-i18n="acct.noorders">No orders yet under this email.</p>}
-        <table class="list">{quotes.map((q) => <tr><td>{fmt(q.created_at)}</td><td><a href={q.shipment_status ? `/track?q=${q.id}` : `/ship/done?order=${q.id}`}>{q.id}</a></td><td>{q.carrier} {q.service}</td><td>{q.destination}</td><td>${Number(q.price).toFixed(2)}</td><td>{q.shipment_status ?? q.status}</td></tr>)}</table>
+        <table class="list">{quotes.map((q) => <tr><td>{fmt(q.created_at)}</td><td><a href={q.shipment_status ? `/track?q=${q.id}` : `/ship/done?order=${q.id}`}>{q.id}</a></td><td>{q.carrier} {q.service}</td><td>{q.destination}</td><td>${Number(q.price).toFixed(2)}</td><td>{q.shipment_status ?? q.status}</td><td>{q.shipment_status && q.shipment_status !== 'voided' ? <button type="button" class="btn small kraft" data-resend={q.id} data-i18n="acct.resend">Email me the label again</button> : null}</td></tr>)}</table>
       </div>
     </div>
   )}
@@ -124,6 +124,7 @@ const fmt = (iso: string) => iso.slice(0, 10);
     $('logout')?.addEventListener('click', async () => { await api({ action: 'logout' }); location.href = '/account'; });
     $('namef')?.addEventListener('submit', async (ev) => { ev.preventDefault(); const d = Object.fromEntries(new FormData(ev.target as HTMLFormElement).entries()); try { await api({ action: 'name', ...d }); msg().className = ''; msg().textContent = 'Saved.'; } catch (e: any) { msg().className = 'err'; msg().textContent = e.message; } });
     $('addf')?.addEventListener('submit', async (ev) => { ev.preventDefault(); const d = Object.fromEntries(new FormData(ev.target as HTMLFormElement).entries()) as Record<string, string>; try { await api({ action: 'save_address', label: d.label, address: { contact_name: d.contact_name, line_1: d.line_1, line_2: d.line_2, city: d.city, state: d.state, postal_code: d.postal_code } }); location.reload(); } catch (e: any) { msg().className = 'err'; msg().textContent = e.message; } });
+    document.querySelectorAll<HTMLButtonElement>('[data-resend]').forEach((b) => b.addEventListener('click', async () => { b.disabled = true; try { await api({ action: 'resend_label', order: b.dataset.resend }); msg().className = ''; msg().textContent = 'Sent. Check your email.'; } catch (e: any) { msg().className = 'err'; msg().textContent = e.message; b.disabled = false; } }));
     document.querySelectorAll<HTMLButtonElement>('[data-del]').forEach((b) => b.addEventListener('click', async () => { try { await api({ action: 'delete_address', id: b.dataset.del }); b.closest('li')!.remove(); } catch (e: any) { msg().className = 'err'; msg().textContent = e.message; } }));
   </script>
 </Base>
