@@ -1470,6 +1470,59 @@ export interface Report {
   rows: { id: string; created_at: string; carrier: string; service: string; tracking_number: string | null; provider: string; cost: number; price: number; paid_via: string | null; status: string; email: string | null }[];
 }
 
+// ---- the figures an acquirer asks for (to-do T24) -------------------------------------------------
+export interface AcquirerFigures {
+  by_week: { week: string; shipments: number; revenue: number; margin: number }[];   // week = the Monday, YYYY-MM-DD
+  mix: { source: string; shipments: number; revenue: number; share: number }[];      // pos, stripe, account, other
+  accounts: { total: ReportLine; share: number; by_account: (ReportLine & { account_id: number; business_name: string })[] };
+  mailboxes: { active: number; new: number; cancelled: number; mrr: number; churn: number; by_size: { size: string; active: number }[] };
+  claims: { opened: number; refunded: number; refunded_usd: number };
+}
+export async function acquirerFigures(env: Env, from: string, to: string): Promise<AcquirerFigures> {
+  const start = `${from}T00:00:00.000Z`, end = `${to}T23:59:59.999Z`;
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+  type S = { id: string; created_at: string; cost: number; price: number; paid_via: string | null; account_id: number | null; business_name: string | null };
+  let ships: S[]; let boxes: Mailbox[]; let claims: ClaimRow[];
+  if (env.DB) {
+    ships = (await env.DB.prepare(`SELECT s.id, s.created_at, s.cost, s.price, s.paid_via, b.account_id, a.business_name FROM shipments s LEFT JOIN shipment_billing b ON b.shipment_id = s.id LEFT JOIN accounts a ON a.id = b.account_id WHERE s.created_at BETWEEN ?1 AND ?2 AND s.status != 'voided'`).bind(start, end).all<S>()).results;
+    boxes = (await env.DB.prepare("SELECT * FROM mailboxes WHERE status != 'awaiting_payment'").all<Mailbox>()).results;
+    claims = (await env.DB.prepare('SELECT * FROM claims WHERE created_at BETWEEN ?1 AND ?2 OR (refunded_at BETWEEN ?1 AND ?2)').bind(start, end).all<ClaimRow>()).results;
+  } else {
+    ships = [...mem.shipments.values()].filter((s) => s.created_at >= start && s.created_at <= end && s.status !== 'voided').map((s) => { const b = mem.billing.get(s.id); const a = b ? mem.accounts.find((x) => x.id === b.account_id) : null; return { id: s.id, created_at: s.created_at, cost: s.cost, price: s.price, paid_via: s.paid_via, account_id: b?.account_id ?? null, business_name: a?.business_name ?? null }; });
+    boxes = mem.mailboxes.filter((m) => m.status !== 'awaiting_payment');
+    claims = mem.claims.filter((c) => (c.created_at >= start && c.created_at <= end) || (c.refunded_at != null && c.refunded_at >= start && c.refunded_at <= end));
+  }
+  const line = (): ReportLine => ({ shipments: 0, revenue: 0, cost: 0, margin: 0 });
+  const add = (l: ReportLine, s: S) => { l.shipments++; l.revenue += s.price; l.cost += s.cost; l.margin += s.price - s.cost; };
+  const round = <T extends ReportLine>(l: T): T => { l.revenue = r2(l.revenue); l.cost = r2(l.cost); l.margin = r2(l.margin); return l; };
+  // Weeks, Monday-based, so a trend line has one point per week.
+  const monday = (iso: string) => { const d = new Date(iso); const day = (d.getUTCDay() + 6) % 7; d.setUTCDate(d.getUTCDate() - day); return d.toISOString().slice(0, 10); };
+  const weeks = new Map<string, ReportLine>();
+  const mix = new Map<string, ReportLine>();
+  const accts = new Map<number, ReportLine & { account_id: number; business_name: string }>();
+  const total = line(), accountTotal = line();
+  for (const s of ships) {
+    add(total, s);
+    const w = monday(s.created_at); if (!weeks.has(w)) weeks.set(w, line()); add(weeks.get(w)!, s);
+    const src = s.account_id != null ? 'account' : s.paid_via === 'stripe' ? 'online' : s.paid_via === 'pos' ? 'counter' : s.paid_via === 'mock' ? 'online' : 'other';
+    if (!mix.has(src)) mix.set(src, line()); add(mix.get(src)!, s);
+    if (s.account_id != null) { add(accountTotal, s); if (!accts.has(s.account_id)) accts.set(s.account_id, { ...line(), account_id: s.account_id, business_name: s.business_name ?? `#${s.account_id}` }); add(accts.get(s.account_id)!, s); }
+  }
+  const activeAtStart = boxes.filter((m) => (m.started_at ?? m.created_at) < start && !(m.cancelled_at && m.cancelled_at < start)).length;
+  const active = boxes.filter((m) => m.status === 'active' || m.status === 'past_due');
+  const monthly = (m: Mailbox) => (m.term === 'yearly' ? m.price / 12 : m.price);
+  const cancelled = boxes.filter((m) => m.cancelled_at && m.cancelled_at >= start && m.cancelled_at <= end).length;
+  const bySize = new Map<string, number>(); for (const m of active) bySize.set(m.size, (bySize.get(m.size) ?? 0) + 1);
+  const refunded = claims.filter((c) => c.refunded_at && c.refunded_at >= start && c.refunded_at <= end);
+  return {
+    by_week: [...weeks].sort(([a], [b]) => a.localeCompare(b)).map(([week, l]) => ({ week, shipments: l.shipments, revenue: r2(l.revenue), margin: r2(l.margin) })),
+    mix: [...mix].map(([source, l]) => ({ source, shipments: l.shipments, revenue: r2(l.revenue), share: total.revenue ? r2(l.revenue / total.revenue * 100) : 0 })).sort((a, b) => b.revenue - a.revenue),
+    accounts: { total: round(accountTotal), share: total.revenue ? r2(accountTotal.revenue / total.revenue * 100) : 0, by_account: [...accts.values()].map(round).sort((a, b) => b.revenue - a.revenue) },
+    mailboxes: { active: active.length, new: boxes.filter((m) => m.started_at && m.started_at >= start && m.started_at <= end).length, cancelled, mrr: r2(active.reduce((a, m) => a + monthly(m), 0)), churn: activeAtStart ? r2(cancelled / activeAtStart * 100) : 0, by_size: [...bySize].map(([size, n]) => ({ size, active: n })) },
+    claims: { opened: claims.filter((c) => c.created_at >= start && c.created_at <= end).length, refunded: refunded.length, refunded_usd: r2(refunded.reduce((a, c) => a + (c.customer_refund_usd ?? 0), 0)) },
+  };
+}
+
 export async function report(env: Env, from: string, to: string): Promise<Report> {
   const start = `${from}T00:00:00.000Z`, end = `${to}T23:59:59.999Z`;
   let rows: Report['rows'];

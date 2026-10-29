@@ -160,3 +160,29 @@ describe('returns drop-off requests', () => {
     expect(await store.markReturnServed(env, 'RT-NOPE', null)).toBeNull();
   });
 });
+
+describe("the buyer's figures (T24)", () => {
+  it('weeks, payment mix, account share, mailbox MRR and churn, claims', async () => {
+    const cid = (await store.upsertCustomer(env, { name: 'Acq Co', email: 'acq@example.com' }))!;
+    const acc = await store.addAccount(env, { customer_id: cid, business_name: 'Acq Co', discount_percent: 0, notes: '' });
+    const a = order({ id: 'GP-ACQ1', created_at: '2030-01-07T10:00:00Z', source: 'counter' }); // a Tuesday
+    const b = order({ id: 'GP-ACQ2', created_at: '2030-01-15T10:00:00Z' });
+    await store.recordShipment(env, { ...a, status: 'labeled', label: label('a1') } as any, label('a1'), 'account');
+    await store.recordShipment(env, { ...b, status: 'labeled', label: label('b1') } as any, label('b1'), 'stripe');
+    await store.billShipmentToAccount(env, 'GP-ACQ1', acc.id);
+    await store.createMailbox(env, { code: 'MB-ACQ1', customer_id: null, customer_name: 'B', email: 'b@example.com', phone: null, business_name: null, size: 'small', term: 'yearly', price: 150 });
+    await store.updateMailbox(env, 'MB-ACQ1', { status: 'active', started_at: '2029-12-01T00:00:00Z' });
+    await store.createMailbox(env, { code: 'MB-ACQ2', customer_id: null, customer_name: 'C', email: 'c@example.com', phone: null, business_name: null, size: 'large', term: 'monthly', price: 30 });
+    await store.updateMailbox(env, 'MB-ACQ2', { status: 'cancelled', started_at: '2029-12-01T00:00:00Z', cancelled_at: '2030-01-10T00:00:00Z' });
+    await store.createClaim(env, { code: 'CL-ACQ1', shipment_id: 'GP-ACQ2', kind: 'lost', carrier: 'USPS', tracking_number: null, declared_usd: 50, postage_usd: 9, claimed_usd: 59, insured: 0, customer_name: null, customer_email: null, customer_phone: null, notes: null, by_name: 'T' });
+    await store.updateClaim(env, 'CL-ACQ1', { status: 'refunded', customer_refund_usd: 40, refunded_at: '2030-01-20T00:00:00Z' });
+    const f = await store.acquirerFigures(env, '2030-01-01', '2030-01-31');
+    expect(f.by_week.map((w) => [w.week, w.shipments])).toEqual([['2030-01-07', 1], ['2030-01-14', 1]]);
+    expect(f.accounts.by_account[0]).toMatchObject({ business_name: 'Acq Co', shipments: 1 });
+    expect(f.accounts.share).toBe(50);
+    expect(f.mix.find((m) => m.source === 'account')?.shipments).toBe(1);
+    expect(f.mix.find((m) => m.source === 'online')?.shipments).toBe(1);
+    expect(f.mailboxes).toMatchObject({ active: 1, cancelled: 1, mrr: 12.5, churn: 50 });
+    expect(f.claims).toMatchObject({ refunded: 1, refunded_usd: 40 }); // opened counts by created_at, which is today, outside the 2030 range
+  });
+});

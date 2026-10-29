@@ -3,7 +3,7 @@ import type { APIRoute } from 'astro';
 import { env } from '../../lib/env';
 import { json } from '../../lib/validate';
 import { authenticate } from '../../lib/auth';
-import { x402Summary, markX402Refunded, report } from '../../shipping/store';
+import { x402Summary, markX402Refunded, report, acquirerFigures } from '../../shipping/store';
 
 // Staff reports. POST { pin, from, to } (ISO days, inclusive, at most 366 days) returns the report;
 // add format: "csv" for the shipment rows as a spreadsheet, for reconciling against the carrier invoice.
@@ -26,7 +26,7 @@ export const POST: APIRoute = async ({ request }) => {
       const lines = [head.join(','), ...r.rows.map((x) => [x.id, x.created_at, x.carrier, x.service, x.tracking_number, x.provider, x.cost.toFixed(2), x.price.toFixed(2), (x.price - x.cost).toFixed(2), x.paid_via, x.status, x.email].map(esc).join(','))];
       return new Response(lines.join('\r\n'), { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="shipments-${from}-to-${to}.csv"` } });
     }
-    return json({ ...r, x402: await x402Summary(env, from, to) });
+    return json({ ...r, x402: await x402Summary(env, from, to), acquirer: await acquirerFigures(env, from, to) });
   } catch (e: any) {
     return json({ error: e.message }, 500);
   }

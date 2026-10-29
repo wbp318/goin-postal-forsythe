@@ -54,6 +54,29 @@ const monthStart = today.slice(0, 8) + '01';
       </div>
     </div>
 
+    <div class="card" id="acq">
+      <h3 data-i18n="st.p.acq">The numbers a buyer asks for</h3>
+      <p class="muted" data-i18n="st.p.acq.lead">Labels per week, where the money comes from, what business accounts bring, mailbox subscriptions and churn, claims. Same range as above.</p>
+      <div class="tiles">
+        <div class="card"><h3 data-i18n="st.p.acq.accshare">From business accounts</h3><p class="big" id="a-accshare"></p><p class="muted" id="a-accn"></p></div>
+        <div class="card"><h3 data-i18n="st.p.acq.mrr">Mailbox revenue a month</h3><p class="big" id="a-mrr"></p><p class="muted" id="a-boxes"></p></div>
+        <div class="card"><h3 data-i18n="st.p.acq.churn">Mailbox churn</h3><p class="big" id="a-churn"></p><p class="muted" id="a-churnn"></p></div>
+        <div class="card"><h3 data-i18n="st.p.acq.claims">Claims</h3><p class="big" id="a-claims"></p><p class="muted" id="a-claimsn"></p></div>
+      </div>
+      <div class="grid">
+        <div>
+          <h3 data-i18n="st.p.acq.byweek">By week</h3>
+          <table class="list"><thead><tr><th data-i18n="st.p.acq.th.week">Week of</th><th data-i18n="st.p.th.ships">Ships</th><th data-i18n="st.p.th.paid">Paid</th><th data-i18n="st.p.th.margin">Margin</th></tr></thead><tbody id="a-week"></tbody></table>
+        </div>
+        <div>
+          <h3 data-i18n="st.p.acq.mix">Where it was paid</h3>
+          <table class="list"><thead><tr><th data-i18n="st.p.acq.th.source">Source</th><th data-i18n="st.p.th.ships">Ships</th><th data-i18n="st.p.th.paid">Paid</th><th data-i18n="st.p.acq.th.share">Share</th></tr></thead><tbody id="a-mix"></tbody></table>
+          <h3 data-i18n="st.p.acq.accounts">By business account</h3>
+          <table class="list"><thead><tr><th data-i18n="st.b.th.business">Business</th><th data-i18n="st.p.th.ships">Ships</th><th data-i18n="st.p.th.paid">Paid</th><th data-i18n="st.p.th.margin">Margin</th></tr></thead><tbody id="a-acc"></tbody></table>
+        </div>
+      </div>
+    </div>
+
     <div class="grid">
       <div class="card">
         <h3 data-i18n="st.p.hours">Busiest hours</h3>
@@ -123,6 +146,17 @@ const monthStart = today.slice(0, 8) + '01';
       $('t-pct').textContent = r.total.revenue ? `${Math.round((r.total.margin / r.total.revenue) * 100)}${t('st.p.pct')}` : '';
       rows($('by-day'), r.by_day.map((d: any) => [d.day, d.shipments, usd(d.revenue), usd(d.cost), usd(d.margin)]));
       rows($('by-carrier'), r.by_carrier.map((d: any) => [d.carrier, d.shipments, usd(d.revenue), usd(d.cost), usd(d.margin)]));
+      // The buyer's block (T24)
+      const a = r.acquirer;
+      if (a) {
+        $('a-accshare').textContent = `${a.accounts.share}%`; $('a-accn').textContent = tf('st.p.acq.accn', { n: a.accounts.by_account.length, ships: a.accounts.total.shipments, paid: usd(a.accounts.total.revenue) });
+        $('a-mrr').textContent = usd(a.mailboxes.mrr); $('a-boxes').textContent = tf('st.p.acq.boxes', { active: a.mailboxes.active, new: a.mailboxes.new, sizes: a.mailboxes.by_size.map((s: any) => `${s.size} ${s.active}`).join(', ') });
+        $('a-churn').textContent = `${a.mailboxes.churn}%`; $('a-churnn').textContent = tf('st.p.acq.churnn', { n: a.mailboxes.cancelled });
+        $('a-claims').textContent = String(a.claims.opened); $('a-claimsn').textContent = tf('st.p.acq.claimsn', { n: a.claims.refunded, usd: usd(a.claims.refunded_usd) });
+        rows($('a-week'), a.by_week.map((w: any) => [w.week, w.shipments, usd(w.revenue), usd(w.margin)]));
+        rows($('a-mix'), a.mix.map((m: any) => [t('st.p.acq.src.' + m.source), m.shipments, usd(m.revenue), `${m.share}%`]));
+        rows($('a-acc'), a.accounts.by_account.map((x: any) => [x.business_name, x.shipments, usd(x.revenue), usd(x.margin)]));
+      }
       rows($('by-service'), r.by_service.map((d: any) => [d.service, d.shipments, usd(d.revenue), usd(d.margin)]));
       // Hours come in UTC; shift to this device's zone (the shop tablet is on Central time).
       const offset = Math.round(new Date().getTimezoneOffset() / 60);
