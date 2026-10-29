@@ -2,6 +2,22 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.67.0] - 2026-10-29
+
+**low-stock alerts and label resend from the account page**
+
+To-do **T31** ([AGENDA.md](https://github.com/wbp318/goin-postal-forsythe/blob/v1.67.0/AGENDA.md)): two small conveniences that follow from fulfillment (v1.63.0) and customer accounts (v1.55.0).
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.67.0) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.67.0) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.66.0...v1.67.0)
+
+## [v1.66.0] - 2026-10-29
+
+**eBay connector**
+
+To-do **T28** ([AGENDA.md](https://github.com/wbp318/goin-postal-forsythe/blob/v1.66.0/AGENDA.md)), step 3 of the [connectors plan](https://github.com/wbp318/goin-postal-forsythe/blob/v1.66.0/shipping-client/connectors/README.md): the eBay connector, [shipping-client/ebay-connector/](https://github.com/wbp318/goin-postal-forsythe/tree/v1.66.0/shipping-client/ebay-connector). The third connector after [Shopify](https://github.com/wbp318/goin-postal-forsythe/tree/v1.66.0/shipping-client/shopify-connector) and [Square](https://github.com/wbp318/goin-postal-forsythe/tree/v1.66.0/shipping-client/square-connector), same shape, Node 24, no packages.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.66.0) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.66.0) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.65.0...v1.66.0)
+
 ## [v1.65.0] - 2026-10-29
 
 **seller dashboard on the account page**
