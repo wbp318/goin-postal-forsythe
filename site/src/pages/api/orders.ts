@@ -6,7 +6,7 @@ import { newOrderId, saveOrder, type Order } from '../../lib/orders';
 import { createCheckout } from '../../lib/stripe';
 import { parseAddress, parseParcel, json } from '../../lib/validate';
 import { store } from '../../data/store';
-import { effectiveAddons, priceExtras } from '../../lib/addons';
+import { effectiveAddons, priceExtras, onlineFee, textUpdatesPrice, TEXT_UPDATES } from '../../lib/addons';
 import { accountForContact } from '../../shipping/store';
 import { checkAddress } from '../../lib/address';
 
@@ -31,16 +31,22 @@ export const POST: APIRoute = async ({ request }) => {
     if (!found) throw new Error('That rate is no longer available. Please quote again.');
     // A business account's email gets its discount online too; the card is still charged now.
     const account = await accountForContact(env, email, phone);
+    const international = destination.country_alpha2 !== 'US';
     const rate = account && account.discount_percent ? { ...found, total_charge: Math.round(found.total_charge * (1 - account.discount_percent / 100) * 100) / 100 } : found;
 
-    const international = destination.country_alpha2 !== 'US';
-    const extras = priceExtras(await effectiveAddons(env), b.addons, parcel.value_usd, b.insure === true || b.insure === 'on');
+    const cfg = await effectiveAddons(env);
+    // Text updates are a priced add-on when the catalog has one; ticking the box adds it.
+    const picks: { code: string; qty: number }[] = Array.isArray(b.addons) ? b.addons.filter((p: any) => p?.code !== TEXT_UPDATES) : [];
+    if (sms && textUpdatesPrice(cfg) != null) picks.push({ code: TEXT_UPDATES, qty: 1 });
+    const extras = priceExtras(cfg, picks, parcel.value_usd, b.insure === true || b.insure === 'on');
+    const subtotal = Math.round((rate.total_charge + extras.extras_total) * 100) / 100;
+    const fee = international ? undefined : onlineFee(cfg, subtotal);
     const order: Order = {
       id: newOrderId(),
       status: international ? 'reserved' : 'awaiting_payment',
       created_at: new Date().toISOString(),
       email, phone: sms ? phone : undefined, sms, origin, destination, parcel, rate, international,
-      addons: extras.addons.length ? extras.addons : undefined, insurance: extras.insurance, total: Math.round((rate.total_charge + extras.extras_total) * 100) / 100,
+      addons: extras.addons.length ? extras.addons : undefined, insurance: extras.insurance, fee, total: Math.round((subtotal + (fee?.amount ?? 0)) * 100) / 100,
       account_name: account?.business_name, discount_percent: account?.discount_percent || undefined,
     };
     await saveOrder(env, order);

@@ -13,7 +13,7 @@ import { saveAddons, logAudit, type AddonRow } from '../../shipping/store';
 //  save: replace the whole catalog and the insurance terms, validated row by row.
 const KINDS = ['box', 'packing', 'service'];
 
-function clean(b: any): { insurance: { included_usd: number; per_100_usd: number; minimum_usd: number; max_declared_usd: number }; items: AddonRow[] } {
+function clean(b: any): { insurance: { included_usd: number; per_100_usd: number; minimum_usd: number; max_declared_usd: number }; online_fee: { percent: number; flat: number }; items: AddonRow[] } {
   const num = (v: unknown, what: string, min: number, max: number) => {
     const n = Number(v);
     if (!Number.isFinite(n) || n < min || n > max) throw new Error(`${what} must be a number between ${min} and ${max}`);
@@ -26,6 +26,8 @@ function clean(b: any): { insurance: { included_usd: number; per_100_usd: number
     minimum_usd: num(ins.minimum_usd, 'Minimum fee', 0, 100),
     max_declared_usd: num(ins.max_declared_usd, 'Most we insure', 100, 100000),
   };
+  const fee = b.online_fee ?? {};
+  const online_fee = { percent: num(fee.percent ?? 0, 'Online fee percent', 0, 20), flat: num(fee.flat ?? 0, 'Online fee flat', 0, 20) };
   const items: AddonRow[] = [];
   const seen = new Set<string>();
   for (const [i, r] of (Array.isArray(b.items) ? b.items : []).entries()) {
@@ -37,7 +39,7 @@ function clean(b: any): { insurance: { included_usd: number; per_100_usd: number
     seen.add(code);
     items.push({ code, kind: r.kind, name, price: num(r.price, `${name}: price`, 0, 1000), active: r.active === false || r.active === 0 ? 0 : 1, sort: i });
   }
-  return { insurance, items };
+  return { insurance, online_fee, items };
 }
 
 export const POST: APIRoute = async ({ request }) => {

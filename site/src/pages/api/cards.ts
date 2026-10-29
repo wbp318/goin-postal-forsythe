@@ -1,5 +1,6 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
+import { effectiveAddons, onlineFee } from '../../lib/addons';
 import { env } from '../../lib/env';
 import { authenticate } from '../../lib/auth';
 import { logAudit } from '../../shipping/store';
@@ -26,9 +27,11 @@ export const POST: APIRoute = async ({ request }) => {
       customer: { name, email, phone },
       quantity,
       price: PRICES[quantity],
+      fee: onlineFee(await effectiveAddons(env), PRICES[quantity]),
       design: sanitizeDesign(b.design),
       notes: String(b.notes ?? '').slice(0, 300),
     };
+    order.total = Math.round((order.price + (order.fee?.amount ?? 0)) * 100) / 100;
     await saveCardOrder(env, order);
     const url = await createCardCheckout(env, order);
     return json({ order_id: order.id, next: url });

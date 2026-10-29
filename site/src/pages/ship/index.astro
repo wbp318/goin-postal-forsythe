@@ -64,8 +64,9 @@ const cancelled = Astro.url.searchParams.get('cancelled');
       <label><span data-i18n="ship.email">Your email (for the receipt and label)</span> <input name="email" type="email" required /></label>
       <label class="check" id="insRow" hidden><input name="insure" type="checkbox" /> <span data-i18n="ship.insure">Insure it for the full value</span> <span id="insFee" class="muted"></span></label>
       <p id="insCovered" class="muted" hidden></p>
+      <p id="feeRow" class="muted" hidden></p>
       <p id="totalRow" class="price"><span data-i18n="ship.total">Total</span>: <strong id="totalAmt"></strong></p>
-      <label class="check"><input name="sms" type="checkbox" /> <span data-i18n="ship.sms">Text me when it ships and when it is delivered</span></label>
+      <label class="check"><input name="sms" type="checkbox" /> <span data-i18n="ship.sms">Text me when it ships and when it is delivered</span> <span id="smsFee" class="muted"></span></label>
       <label id="phoneRow" hidden><span data-i18n="ship.phone">Your mobile number</span> <input name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="318 555 0100" /></label>
       <button class="btn" type="submit" id="buyBtn" data-i18n="ship.continue">Continue</button>
     </form>
@@ -90,8 +91,15 @@ const cancelled = Astro.url.searchParams.get('cancelled');
     let extras: any = null;
     const insBox = buy.querySelector('[name=insure]') as HTMLInputElement;
     function total() {
-      const fee = insBox.checked && extras && !extras.insurance.covered ? extras.insurance.fee : 0;
-      document.getElementById('totalAmt')!.textContent = `$${(pickedPrice + fee).toFixed(2)}`;
+      const ins = insBox.checked && extras && !extras.insurance.covered ? extras.insurance.fee : 0;
+      const smsOn = (buy.querySelector('[name=sms]') as HTMLInputElement).checked;
+      const text = smsOn && extras?.text_updates_price ? extras.text_updates_price : 0;
+      const subtotal = pickedPrice + ins + text;
+      const f = extras?.online_fee && (extras.online_fee.percent || extras.online_fee.flat) && !international ? Math.round((subtotal * extras.online_fee.percent / 100 + extras.online_fee.flat) * 100) / 100 : 0;
+      const feeRow = document.getElementById('feeRow')!;
+      feeRow.hidden = !f;
+      if (f) feeRow.textContent = t('ship.fee').replace('{fee}', f.toFixed(2)).replace('{pct}', String(extras.online_fee.percent));
+      document.getElementById('totalAmt')!.textContent = `$${(subtotal + f).toFixed(2)}`;
     }
     insBox.addEventListener('change', total);
 
@@ -113,6 +121,7 @@ const cancelled = Astro.url.searchParams.get('cancelled');
       if (!res.ok) { err.textContent = j.error; err.hidden = false; return; }
       international = j.international;
       extras = j.extras;
+      document.getElementById('smsFee')!.textContent = extras?.text_updates_price ? t('ship.textfee').replace('{fee}', extras.text_updates_price.toFixed(2)) : '';
       const insRow = document.getElementById('insRow')!, insCovered = document.getElementById('insCovered')!;
       if (extras?.insurance.covered) { insRow.hidden = true; insBox.checked = false; insCovered.hidden = false; insCovered.textContent = t('ship.inscovered').replace('{n}', String(extras.insurance.included_usd)); }
       else { insRow.hidden = false; insCovered.hidden = true; document.getElementById('insFee')!.textContent = t('ship.insfee').replace('{fee}', extras.insurance.fee.toFixed(2)).replace('{value}', String(extras.insurance.declared_usd)); }
@@ -144,7 +153,7 @@ const cancelled = Astro.url.searchParams.get('cancelled');
 
     const smsBox = buy.querySelector('[name=sms]') as HTMLInputElement;
     const phoneRow = document.getElementById('phoneRow') as HTMLElement;
-    smsBox.addEventListener('change', () => { phoneRow.hidden = !smsBox.checked; if (smsBox.checked) (buy.querySelector('[name=phone]') as HTMLInputElement).focus(); });
+    smsBox.addEventListener('change', () => { phoneRow.hidden = !smsBox.checked; if (smsBox.checked) (buy.querySelector('[name=phone]') as HTMLInputElement).focus(); total(); });
     buy.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!picked) return;

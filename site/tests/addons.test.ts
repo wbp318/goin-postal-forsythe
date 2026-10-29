@@ -1,6 +1,6 @@
 // Insurance and add-on pricing: always on the server, from the catalog.
 import { describe, it, expect } from 'vitest';
-import { addonsFromFile, insuranceFee, priceExtras, extrasOffer } from '../src/lib/addons';
+import { onlineFee, textUpdatesPrice, TEXT_UPDATES, addonsFromFile, insuranceFee, priceExtras, extrasOffer } from '../src/lib/addons';
 
 const cfg = addonsFromFile();
 
@@ -38,5 +38,20 @@ describe('extrasOffer', () => {
     expect(o.insurance.fee).toBe(7.5);
     expect(o.addons[0]).toMatchObject({ code: 'box-s', kind: 'box' });
     expect(o.addons.every((a) => 'price' in a)).toBe(true);
+  });
+
+  it('online fee is percent plus flat on the subtotal, off when both are zero', () => {
+    const cfg = addonsFromFile();
+    expect(cfg.online_fee.percent).toBe(3.5);
+    expect(onlineFee(cfg, 20)?.amount).toBe(0.7);
+    expect(onlineFee({ ...cfg, online_fee: { percent: 0, flat: 1 } }, 20)?.amount).toBe(1);
+    expect(onlineFee({ ...cfg, online_fee: { percent: 0, flat: 0 } }, 20)).toBeUndefined();
+  });
+  it('the text-updates add-on is in the seed catalog at 50 cents and prices like any other line', () => {
+    const cfg = addonsFromFile();
+    expect(textUpdatesPrice(cfg)).toBe(0.5);
+    const x = priceExtras(cfg, [{ code: TEXT_UPDATES, qty: 1 }], 10, false);
+    expect(x.extras_total).toBe(0.5);
+    expect(textUpdatesPrice({ ...cfg, items: cfg.items.filter((i) => i.code !== TEXT_UPDATES) })).toBeNull();
   });
 });

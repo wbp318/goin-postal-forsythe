@@ -8,10 +8,14 @@ export interface CardOrder {
   paid_at?: string;
   customer: { name: string; email: string; phone: string };
   quantity: number;
-  price: number;
+  price: number;          // the cards
+  fee?: { percent: number; flat: number; amount: number }; // online convenience fee
+  total?: number;         // price plus fee; older orders have only price
   design: Design;
   notes: string;
 }
+
+export const cardTotal = (o: CardOrder) => o.total ?? o.price;
 
 const KEY = (id: string) => `card:${id}`;
 const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';

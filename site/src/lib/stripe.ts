@@ -34,6 +34,7 @@ export async function createCheckout(env: Env, order: Order): Promise<string> {
       },
       ...(order.addons ?? []).map((l) => ({ quantity: l.qty, price_data: { currency: 'usd', unit_amount: Math.round(l.unit_price * 100), product_data: { name: l.name } } })),
       ...(order.insurance ? [{ quantity: 1, price_data: { currency: 'usd', unit_amount: Math.round(order.insurance.fee * 100), product_data: { name: `Insurance to $${order.insurance.declared_usd}` } } }] : []),
+      ...(order.fee ? [{ quantity: 1, price_data: { currency: 'usd', unit_amount: Math.round(order.fee.amount * 100), product_data: { name: 'Online convenience fee' } } }] : []),
     ],
     success_url: `${site}/ship/done?order=${order.id}`,
     cancel_url: `${site}/ship?cancelled=${order.id}`,
@@ -56,7 +57,7 @@ export async function createCardCheckout(env: Env, order: CardOrder): Promise<st
         unit_amount: Math.round(order.price * 100),
         product_data: { name: `${order.quantity} business cards`, description: `Pickup code ${order.id}. Printed at ${store.name}.` },
       },
-    }],
+    }, ...(order.fee ? [{ quantity: 1, price_data: { currency: 'usd', unit_amount: Math.round(order.fee.amount * 100), product_data: { name: 'Online convenience fee' } } }] : [])],
     success_url: `${site}/cards/done?order=${order.id}`,
     cancel_url: `${site}/cards?cancelled=${order.id}`,
   });

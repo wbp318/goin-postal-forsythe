@@ -84,6 +84,11 @@ import Base from '../../layouts/Base.astro';
         <label><span data-i18n="st.a.ins.min">Minimum fee $</span> <input name="minimum_usd" type="number" step="0.05" min="0" /></label>
         <label><span data-i18n="st.a.ins.max">Most we insure $</span> <input name="max_declared_usd" type="number" step="100" min="100" /></label>
       </div>
+      <p class="muted" data-i18n="st.a.fee.lead">Online convenience fee: a line on every label and card order paid on the website, covering the card processor's 2.9% plus 30 cents. Percent of the subtotal plus a flat amount; both zero switches it off. Never charged at the counter.</p>
+      <div class="row">
+        <label><span data-i18n="st.a.fee.percent">Online fee %</span> <input name="fee_percent" type="number" step="0.1" min="0" max="20" /></label>
+        <label><span data-i18n="st.a.fee.flat">Online fee flat $</span> <input name="fee_flat" type="number" step="0.05" min="0" max="20" /></label>
+      </div>
       <table class="list" id="addontable">
         <thead><tr><th data-i18n="st.a.th.code">Code</th><th data-i18n="st.a.th.kind">Kind</th><th data-i18n="st.a.th.name">Name</th><th data-i18n="st.a.th.price">Price $</th><th data-i18n="st.u.th.active">Active</th><th></th></tr></thead>
         <tbody></tbody>
@@ -209,6 +214,7 @@ import Base from '../../layouts/Base.astro';
     }
     function renderAddons(c: any) {
       for (const k of ['included_usd', 'per_100_usd', 'minimum_usd', 'max_declared_usd']) (aform.elements.namedItem(k) as HTMLInputElement).value = String(c.insurance[k]);
+      (aform.elements.namedItem('fee_percent') as HTMLInputElement).value = String(c.online_fee?.percent ?? 0); (aform.elements.namedItem('fee_flat') as HTMLInputElement).value = String(c.online_fee?.flat ?? 0);
       abody.innerHTML = '';
       for (const r of c.items) abody.appendChild(addonRow(r));
       $('asource').textContent = c.source === 'table' ? tf('st.u.src.table', { when: new Date(c.updated_at).toLocaleString() }) : t('st.a.src.file');
@@ -218,7 +224,7 @@ import Base from '../../layouts/Base.astro';
     function collectAddons() {
       const d = Object.fromEntries(new FormData(aform).entries()) as Record<string, string>;
       const items = [...abody.querySelectorAll('tr')].map((tr) => { const f = (n: string) => tr.querySelector<HTMLInputElement>(`[data-f="${n}"]`)!; return { code: f('code').value, kind: (f('kind') as any).value, name: f('name').value, price: f('price').value, active: f('active').checked }; });
-      return { insurance: { included_usd: d.included_usd, per_100_usd: d.per_100_usd, minimum_usd: d.minimum_usd, max_declared_usd: d.max_declared_usd }, items };
+      return { insurance: { included_usd: d.included_usd, per_100_usd: d.per_100_usd, minimum_usd: d.minimum_usd, max_declared_usd: d.max_declared_usd }, online_fee: { percent: d.fee_percent, flat: d.fee_flat }, items };
     }
     $('addaddon').addEventListener('click', () => { abody.appendChild(addonRow(null)); (abody.lastElementChild!.querySelector('input') as HTMLInputElement).focus(); });
     aform.addEventListener('submit', async (ev) => {

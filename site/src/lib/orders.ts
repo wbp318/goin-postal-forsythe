@@ -39,6 +39,8 @@ export interface Order {
   // what the customer pays: label plus add-ons plus insurance. Orders from before N6 have none.
   addons?: { code: string; name: string; qty: number; unit_price: number; total: number }[];
   insurance?: { declared_usd: number; fee: number };
+  // Online convenience fee (monetization plan): percent of label plus extras, plus a flat amount. Online orders only.
+  fee?: { percent: number; flat: number; amount: number };
   total?: number;
   // Business accounts (T1): the discount already taken off rate.total_charge, and the account a
   // counter order is billed to instead of being paid at the POS.

@@ -3,7 +3,7 @@ export const prerender = false;
 import QRCode from 'qrcode';
 import { env } from '../../lib/env';
 import Base from '../../layouts/Base.astro';
-import { getCardOrder } from '../../lib/cardOrders';
+import { getCardOrder, cardTotal } from '../../lib/cardOrders';
 import { renderCard } from '../../lib/cards';
 import { store } from '../../data/store';
 
@@ -14,7 +14,7 @@ const qr = await QRCode.toString(`${env.SITE_URL}/counter/card/${order.id}`, { t
 <Base title={`Cards ${order.id} · ${store.name}`}>
   <section class="hero">
     <h1 data-i18n={order.status === 'awaiting_payment' ? 'done.waiting' : 'cardsdone.paid'}>{order.status === 'awaiting_payment' ? 'Waiting for payment.' : 'Paid. We are printing your cards.'}</h1>
-    <p class="lead"><span data-i18n="done.code">Pickup code</span> <strong class="code">{order.id}</strong>. {order.quantity} <span data-i18n="cards.unit">cards</span>, ${order.price.toFixed(2)}. <span data-i18n="cardsdone.pickup">Pick up at</span> {store.address}. <span data-i18n="cardsdone.contact">We'll contact</span> {order.customer.email}{order.customer.phone ? ` / ${order.customer.phone}` : ''} <span data-i18n="cardsdone.ready">when they're ready.</span></p>
+    <p class="lead"><span data-i18n="done.code">Pickup code</span> <strong class="code">{order.id}</strong>. {order.quantity} <span data-i18n="cards.unit">cards</span>, ${cardTotal(order).toFixed(2)}{order.fee && <> (<span data-i18n="done.fee">Online fee</span> ${order.fee.amount.toFixed(2)})</>}. <span data-i18n="cardsdone.pickup">Pick up at</span> {store.address}. <span data-i18n="cardsdone.contact">We'll contact</span> {order.customer.email}{order.customer.phone ? ` / ${order.customer.phone}` : ''} <span data-i18n="cardsdone.ready">when they're ready.</span></p>
   </section>
   <div class="grid">
     <div class="card-wrap" set:html={renderCard(order.design, 'front')} />

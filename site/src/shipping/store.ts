@@ -594,8 +594,9 @@ export async function listAudit(env: Env, o: { staff_id?: number; limit?: number
 // and the seed file stands in. order_addons holds what was actually sold, for the reports.
 export interface AddonRow { code: string; kind: 'box' | 'packing' | 'service'; name: string; price: number; active: number; sort: number }
 interface RawAddonRow extends Omit<AddonRow, 'kind'> { kind: string; updated_at: string }
-export interface AddonsSaved { insurance: { included_usd: number; per_100_usd: number; minimum_usd: number; max_declared_usd: number }; items: AddonRow[]; updated_at: string | null }
+export interface AddonsSaved { insurance: { included_usd: number; per_100_usd: number; minimum_usd: number; max_declared_usd: number }; online_fee: { percent: number; flat: number }; items: AddonRow[]; updated_at: string | null }
 const INS_KEYS = ['included_usd', 'per_100_usd', 'minimum_usd', 'max_declared_usd'] as const;
+const FEE_KEYS = ['percent', 'flat'] as const;
 let addonsCache: { at: number; value: AddonsSaved | null } | null = null;
 
 export async function loadAddons(env: Env, fresh = false): Promise<AddonsSaved | null> {
@@ -606,6 +607,7 @@ export async function loadAddons(env: Env, fresh = false): Promise<AddonsSaved |
     const setting = (k: string, d: number) => rows.find((r) => r.kind === 'setting' && r.code === k)?.price ?? d;
     value = {
       insurance: { included_usd: setting('included_usd', 100), per_100_usd: setting('per_100_usd', 1.25), minimum_usd: setting('minimum_usd', 2.75), max_declared_usd: setting('max_declared_usd', 5000) },
+      online_fee: { percent: setting('fee_percent', 3.5), flat: setting('fee_flat', 0) },
       items: rows.filter((r) => r.kind !== 'setting').map(({ code, kind, name, price, active, sort }) => ({ code, kind: kind as AddonRow['kind'], name, price, active, sort })),
       updated_at: rows.map((r) => r.updated_at).sort().pop() ?? null,
     };
@@ -614,10 +616,11 @@ export async function loadAddons(env: Env, fresh = false): Promise<AddonsSaved |
   return value;
 }
 
-export async function saveAddons(env: Env, c: { insurance: AddonsSaved['insurance']; items: AddonRow[] }): Promise<AddonsSaved> {
+export async function saveAddons(env: Env, c: { insurance: AddonsSaved['insurance']; online_fee: AddonsSaved['online_fee']; items: AddonRow[] }): Promise<AddonsSaved> {
   const t = now();
   const rows: RawAddonRow[] = [
     ...INS_KEYS.map((k) => ({ code: k, kind: 'setting', name: k, price: c.insurance[k], active: 1, sort: 0, updated_at: t })),
+    ...FEE_KEYS.map((k) => ({ code: `fee_${k}`, kind: 'setting', name: `fee_${k}`, price: c.online_fee[k], active: 1, sort: 0, updated_at: t })),
     ...c.items.map((i) => ({ ...i, kind: i.kind as string, active: i.active ? 1 : 0, updated_at: t })),
   ];
   if (env.DB) {
