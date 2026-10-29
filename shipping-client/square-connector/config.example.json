@@ -1,0 +1,13 @@
+{
+  "petership_url": "https://goinpostalforsythe.com",
+  "petership_key": "psk_paste_the_key_here",
+  "square_token": "EAAA_paste_the_seller_access_token_here",
+  "square_env": "production",
+  "location_ids": ["L_PASTE_THE_LOCATION_ID"],
+  "store_name": "Goin' Postal Forsythe",
+  "service": "cheapest",
+  "default_parcel": { "length_in": 10, "width_in": 8, "height_in": 4, "min_weight_lb": 0.5, "weight_per_item_lb": 0.5 },
+  "products": { "Candle 8 oz": { "length_in": 6, "width_in": 6, "height_in": 6, "weight_lb": 1.2 } },
+  "insure_over_usd": 100,
+  "dry_run": true
+}
