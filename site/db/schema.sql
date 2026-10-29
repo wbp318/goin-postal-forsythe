@@ -439,3 +439,17 @@ CREATE TABLE IF NOT EXISTS customer_addresses (
   created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS customer_addresses_customer ON customer_addresses(customer_id);
+
+-- Merchant returns portal (to-do T22): a public link per business account; its customers make prepaid return labels billed to the account.
+CREATE TABLE IF NOT EXISTS return_links (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  account_id INTEGER NOT NULL REFERENCES accounts(id),
+  token TEXT NOT NULL UNIQUE,          -- 24 hex characters, in the URL /return/<token>
+  return_to_json TEXT NOT NULL,        -- where the packages go: the merchant, or the store
+  service TEXT,                        -- a service name to force, or NULL for cheapest
+  max_weight_lb REAL NOT NULL DEFAULT 10,
+  note TEXT,                           -- shown to the customer and put in the email
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS return_links_account ON return_links(account_id);

@@ -86,6 +86,27 @@ const thisMonth = new Date().toISOString().slice(0, 7);
       <p class="muted"><a href="https://github.com/wbp318/goin-postal-forsythe/blob/main/shipping-client/api/README.md" target="_blank" rel="noopener" data-i18n="st.k2.docs">API reference and the Shopify connector</a></p>
     </div>
     <div class="card">
+      <h3 data-i18n="st.rl.h3">Returns portal</h3>
+      <p class="muted" data-i18n="st.rl.lead">A link this account gives its own customers. The customer types their address, gets a prepaid return label by email, the label is billed to this account. The package comes to the address below.</p>
+      <table class="list" id="rlinks"><thead><tr><th data-i18n="st.rl.th.link">Link</th><th data-i18n="st.rl.th.to">Returns go to</th><th data-i18n="st.rl.th.service">Service</th><th data-i18n="st.u.th.active">Active</th><th></th></tr></thead><tbody></tbody></table>
+      <div class="row">
+        <label><span data-i18n="st.rl.to">Returns go to</span> <select id="rl-to"><option value="merchant" data-i18n="st.rl.merchant">The account's address below</option><option value="store" data-i18n="st.rl.store">This store</option></select></label>
+        <label><span data-i18n="st.rl.service">Service (blank: cheapest)</span> <input id="rl-service" maxlength="40" placeholder="USPS Ground Advantage" /></label>
+        <label><span data-i18n="st.rl.maxw">Max weight lb</span> <input id="rl-maxw" type="number" min="1" max="70" value="10" /></label>
+      </div>
+      <div class="row" id="rl-addr">
+        <label><span data-i18n="ship.recipient">Recipient name</span> <input id="rl-name" maxlength="60" /></label>
+        <label><span data-i18n="ship.street">Street address</span> <input id="rl-line1" maxlength="35" /></label>
+        <label><span data-i18n="ship.apt">Apt, suite (optional)</span> <input id="rl-line2" maxlength="35" /></label>
+        <label><span data-i18n="ship.city">City</span> <input id="rl-city" /></label>
+        <label><span data-i18n="ship.state">State</span> <input id="rl-state" maxlength="2" value="LA" /></label>
+        <label><span data-i18n="ship.zip">ZIP / postal code</span> <input id="rl-zip" /></label>
+      </div>
+      <label><span data-i18n="st.rl.note">Note shown to the customer (optional)</span> <input id="rl-note" maxlength="200" placeholder="Include your order number in the box" /></label>
+      <p class="btnrow"><button class="btn small" id="addrl" data-i18n="st.rl.add">Make a returns link</button></p>
+      <p id="rlmsg" class="muted"></p>
+    </div>
+    <div class="card">
       <h3 data-i18n="st.b.statements">Statements</h3>
       <table class="list" id="statements"><thead><tr><th data-i18n="st.b.period">Month</th><th data-i18n="st.b.issued">Issued</th><th data-i18n="st.i.th.billed">Amount</th><th data-i18n="st.q.th.status">Status</th><th></th></tr></thead><tbody></tbody></table>
       <p id="nostatements" class="muted hidden" data-i18n="st.b.nostatements">No statements yet.</p>
@@ -146,6 +167,7 @@ const thisMonth = new Date().toISOString().slice(0, 7);
           sb.appendChild(tr);
         }
         $('nostatements').classList.toggle('hidden', !!j.statements.length);
+        loadLinks().catch(() => {});
         const kb = $('keys').querySelector('tbody')!; kb.innerHTML = '';
         for (const k of j.keys ?? []) {
           const tr = document.createElement('tr'); if (!k.active) tr.style.opacity = '.55';
@@ -167,6 +189,30 @@ const thisMonth = new Date().toISOString().slice(0, 7);
       if (!window.confirm(tf('st.b.confirm', { name: current.account.business_name, period }))) return;
       try { const j = await api({ action: 'statement', id: current.account.id, period }); msg.className = ''; msg.textContent = tf('st.b.issued.msg', { total: usd(j.statement.total), email: j.emailed ? t('st.b.emailed') : t('st.b.noemail'), stripe: j.stripe ? t('st.b.stripeyes') : t('st.b.stripeno') }); open(current.account.id); load(); }
       catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    });
+    // Returns portal links (T22)
+    async function loadLinks() {
+      const j = await api({ action: 'returnlinks', id: current.account.id });
+      const tb = $('rlinks').querySelector('tbody')!; tb.innerHTML = '';
+      for (const l of j.links) {
+        const to = JSON.parse(l.return_to_json);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td><a href="${j.site}/return/${l.token}" target="_blank" rel="noopener">${j.site}/return/${l.token}</a></td><td></td><td></td><td></td><td></td>`;
+        const c = tr.querySelectorAll('td');
+        c[1].textContent = `${to.contact_name}, ${to.city} ${to.state}`; c[2].textContent = l.service ?? t('st.bt.cheapest'); c[3].textContent = l.active ? '✓' : '';
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'btn small kraft'; b.textContent = l.active ? t('st.rl.off') : t('st.rl.on');
+        b.addEventListener('click', async () => { await api({ action: 'returnlinkactive', id: current.account.id, link_id: l.id, active: !l.active }); loadLinks(); });
+        c[4].appendChild(b); tb.appendChild(tr);
+      }
+      $('rlinks').classList.toggle('hidden', !j.links.length);
+    }
+    $('rl-to').addEventListener('change', () => $('rl-addr').classList.toggle('hidden', ($('rl-to') as HTMLSelectElement).value === 'store'));
+    $('addrl').addEventListener('click', async () => {
+      try {
+        const j = await api({ action: 'addreturnlink', id: current.account.id, return_to: ($('rl-to') as HTMLSelectElement).value, service: ($('rl-service') as HTMLInputElement).value, max_weight_lb: ($('rl-maxw') as HTMLInputElement).value, note: ($('rl-note') as HTMLInputElement).value,
+          address: { contact_name: ($('rl-name') as HTMLInputElement).value, line_1: ($('rl-line1') as HTMLInputElement).value, line_2: ($('rl-line2') as HTMLInputElement).value, city: ($('rl-city') as HTMLInputElement).value, state: ($('rl-state') as HTMLInputElement).value, postal_code: ($('rl-zip') as HTMLInputElement).value } });
+        $('rlmsg').className = 'muted'; $('rlmsg').textContent = `${t('st.rl.made')} ${j.url}`; loadLinks();
+      } catch (e: any) { $('rlmsg').className = 'err'; $('rlmsg').textContent = e.message; }
     });
     $('addkey').addEventListener('click', async () => {
       if (!current) return;

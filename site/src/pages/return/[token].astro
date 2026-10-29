@@ -1,0 +1,64 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+import { store } from '../../data/store';
+import { env } from '../../lib/env';
+import { getReturnLink, getAccount } from '../../shipping/store';
+
+// Merchant returns portal (T22): a business account's customer makes a prepaid return label here.
+const link = await getReturnLink(env, Astro.params.token ?? '');
+const account = link?.active ? await getAccount(env, link.account_id) : null;
+if (!link || !account || !account.active) return new Response('This return link is not active. Contact the seller.', { status: 404 });
+const to = JSON.parse(link.return_to_json);
+---
+<Base title={`Return to ${account.business_name} · ${store.name}`} description={`Make a prepaid return label for ${account.business_name}.`}>
+  <section class="hero">
+    <h1><span data-i18n="rp.h1">Return an item to</span> {account.business_name}</h1>
+    <p class="lead" data-i18n="rp.lead">Tell us where the package is and what is in it. We email you a prepaid label in a minute. Print it, or show the code at the carrier and they print it.</p>
+    {link.note && <p class="card">{link.note}</p>}
+  </section>
+  <div class="grid">
+    <form id="rp" class="card ship-form" autocomplete="on">
+      <label><span data-i18n="rp.ref">Order number (from the seller)</span> <input name="reference" maxlength="40" /></label>
+      <label><span data-i18n="rp.item">What are you sending back?</span> <input name="item" maxlength="80" required /></label>
+      <label><span data-i18n="rp.size">How big is the box?</span>
+        <select name="size"><option value="small" data-i18n="rp.size.small">Small, under 1 lb (shoebox)</option><option value="medium" selected data-i18n="rp.size.medium">Medium, up to 3 lb</option><option value="large" data-i18n="rp.size.large">Large, up to 8 lb</option></select>
+      </label>
+      <h3 data-i18n="rp.from">Where the package is</h3>
+      <label><span data-i18n="f.name">Name</span> <input name="name" required maxlength="60" /></label>
+      <label><span data-i18n="f.email">Email</span> <input name="email" type="email" required /></label>
+      <label><span data-i18n="f.phone">Phone</span> <input name="phone" type="tel" /></label>
+      <label><span data-i18n="ship.street">Street address</span> <input name="line_1" required maxlength="35" /></label>
+      <label><span data-i18n="ship.apt">Apt, suite (optional)</span> <input name="line_2" maxlength="35" /></label>
+      <div class="row">
+        <label><span data-i18n="ship.city">City</span> <input name="city" required /></label>
+        <label><span data-i18n="ship.state">State</span> <input name="state" maxlength="2" required /></label>
+        <label><span data-i18n="ship.zip">ZIP / postal code</span> <input name="postal_code" required /></label>
+      </div>
+      <p class="muted"><span data-i18n="rp.goesto">The package goes to</span> {to.contact_name}, {to.city} {to.state}. <span data-i18n="rp.free">The label is paid by the seller.</span></p>
+      <button class="btn" type="submit" id="go" data-i18n="rp.go">Email me the label</button>
+      <p class="err" id="err" hidden></p>
+    </form>
+    <div class="card hidden" id="done">
+      <h3 data-i18n="rp.done">Your label is on its way to your email.</h3>
+      <p id="doneline"></p>
+      <p class="btnrow"><a class="btn" id="dl" target="_blank" rel="noopener" data-i18n="done.download">Download label (PDF)</a> <a class="btn kraft hidden" id="qr" target="_blank" rel="noopener" data-i18n="rp.qr">Carrier QR code</a></p>
+      <p class="muted" data-i18n="rp.dropoff">Pack it, tape the label flat, and hand it to the carrier. Or bring it to us at {store.address} and we send it for you.</p>
+    </div>
+  </div>
+  <script define:vars={{ token: link.token }}>
+    const form = document.getElementById('rp'), err = document.getElementById('err');
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const btn = document.getElementById('go'); btn.disabled = true; err.hidden = true;
+      const d = Object.fromEntries(new FormData(form).entries());
+      const res = await fetch('/api/return-portal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, reference: d.reference, item: d.item, size: d.size, name: d.name, email: d.email, phone: d.phone, address: { line_1: d.line_1, line_2: d.line_2, city: d.city, state: d.state, postal_code: d.postal_code } }) });
+      const j = await res.json();
+      if (!res.ok) { err.textContent = j.error; err.hidden = false; btn.disabled = false; return; }
+      document.getElementById('doneline').textContent = `${j.carrier} ${j.service}${j.tracking_number ? ' · ' + j.tracking_number : ''} · ${j.order}`;
+      const dl = document.getElementById('dl'); if (j.label_url) dl.href = j.label_url; else dl.classList.add('hidden');
+      const qr = document.getElementById('qr'); if (j.qr_url) { qr.href = j.qr_url; qr.classList.remove('hidden'); }
+      form.classList.add('hidden'); document.getElementById('done').classList.remove('hidden');
+    });
+  </script>
+</Base>

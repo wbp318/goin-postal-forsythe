@@ -92,6 +92,7 @@ export interface Mailbox {
   notes: string | null;
 }
 
+export interface ReturnLink { id: number; account_id: number; token: string; return_to_json: string; service: string | null; max_weight_lb: number; note: string | null; active: number; created_at: string }
 export interface CustomerAddress { id: number; customer_id: string; label: string; address_json: string; created_at: string }
 export interface PhotoRow { id: string; shipment_id: string; content_type: string; bytes: number; caption: string | null; by_name: string; at: string }
 export interface PickupRow {
@@ -140,6 +141,7 @@ const mem = {
   pickups: [] as PickupRow[],
   photos: [] as PhotoRow[],
   customerAddresses: [] as CustomerAddress[],
+  returnLinks: [] as ReturnLink[],
   quotes: new Map<string, QuoteRow>(),
   customers: new Map<string, CustomerRow>(),
   rules: [] as { id: number; scope: string; match: string | null; percent: number | null; flat: number | null; price: number | null; active: number; updated_at: string }[],
@@ -163,7 +165,7 @@ const mem = {
 
 // ---- Export (T10) --------------------------------------------------------------------------------
 /** Every table in the schema, in schema order. The allow-list for the export; nothing else can be named. */
-export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'mailboxes', 'mailbox_notices', 'claims', 'pickups', 'shipment_photos', 'customer_addresses'] as const;
+export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'mailboxes', 'mailbox_notices', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'return_links'] as const;
 export type ExportTable = typeof EXPORT_TABLES[number];
 const memTable = (name: ExportTable): unknown[] => {
   switch (name) {
@@ -196,6 +198,7 @@ const memTable = (name: ExportTable): unknown[] => {
     case 'pickups': return mem.pickups;
     case 'shipment_photos': return mem.photos;
     case 'customer_addresses': return mem.customerAddresses;
+    case 'return_links': return mem.returnLinks;
     default: return [];
   }
 };
@@ -1165,6 +1168,29 @@ export async function updateMailbox(env: Env, code: string, patch: Partial<Omit<
   if (env.DB) await env.DB.prepare(`UPDATE mailboxes SET ${keys.map((k, i) => `${k} = ?${i + 2}`).join(', ')} WHERE code = ?1`).bind(m.code, ...keys.map((k) => patch[k] ?? null)).run();
   else Object.assign(m, Object.fromEntries(keys.map((k) => [k, patch[k] ?? null])));
   return { ...m, ...Object.fromEntries(keys.map((k) => [k, patch[k] ?? null])) } as Mailbox;
+}
+
+// ---- merchant returns portal (to-do T22) ------------------------------------------------------------
+export function newReturnLinkToken() {
+  return Array.from(crypto.getRandomValues(new Uint8Array(12)), (x) => x.toString(16).padStart(2, '0')).join('');
+}
+export async function addReturnLink(env: Env, l: { account_id: number; return_to_json: string; service: string | null; max_weight_lb: number; note: string | null }): Promise<ReturnLink> {
+  const row = { ...l, token: newReturnLinkToken(), active: 1, created_at: now() };
+  if (env.DB) { const r = await env.DB.prepare('INSERT INTO return_links (account_id, token, return_to_json, service, max_weight_lb, note, active, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, 1, ?7) RETURNING id').bind(row.account_id, row.token, row.return_to_json, row.service, row.max_weight_lb, row.note, row.created_at).first<{ id: number }>(); return { id: r!.id, ...row }; }
+  const full = { id: mem.seq++, ...row }; mem.returnLinks.push(full); return full;
+}
+export async function getReturnLink(env: Env, token: string): Promise<ReturnLink | null> {
+  if (!/^[0-9a-f]{24}$/.test(token)) return null;
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM return_links WHERE token = ?1').bind(token).first<ReturnLink>()) ?? null;
+  return mem.returnLinks.find((l) => l.token === token) ?? null;
+}
+export async function listReturnLinks(env: Env, accountId: number): Promise<ReturnLink[]> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM return_links WHERE account_id = ?1 ORDER BY id').bind(accountId).all<ReturnLink>()).results;
+  return mem.returnLinks.filter((l) => l.account_id === accountId);
+}
+export async function setReturnLinkActive(env: Env, accountId: number, id: number, active: boolean): Promise<boolean> {
+  if (env.DB) return ((await env.DB.prepare('UPDATE return_links SET active = ?3 WHERE id = ?1 AND account_id = ?2').bind(id, accountId, active ? 1 : 0).run()).meta.changes ?? 0) > 0;
+  const l = mem.returnLinks.find((x) => x.id === id && x.account_id === accountId); if (!l) return false; l.active = active ? 1 : 0; return true;
 }
 
 // ---- customer accounts online (to-do T20) ---------------------------------------------------------

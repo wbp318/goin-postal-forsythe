@@ -40,3 +40,18 @@ describe('saved addresses', () => {
     expect((await store.getCustomer(env, cid))?.name).toBe('Renamed');
   });
 });
+
+describe('merchant returns links (T22)', () => {
+  it('makes a link with a 24-hex token, finds it, lists by account, turns it off only for its owner', async () => {
+    const cid = (await store.upsertCustomer(env, { name: 'Link Co', email: 'link@example.com' }))!;
+    const account = await store.addAccount(env, { customer_id: cid, business_name: 'Link Co', discount_percent: 5, notes: '' });
+    const l = await store.addReturnLink(env, { account_id: account.id, return_to_json: '{"city":"Monroe"}', service: null, max_weight_lb: 10, note: 'Include the order number' });
+    expect(l.token).toMatch(/^[0-9a-f]{24}$/);
+    expect((await store.getReturnLink(env, l.token))?.id).toBe(l.id);
+    expect(await store.getReturnLink(env, 'nope')).toBeNull();
+    expect((await store.listReturnLinks(env, account.id)).map((x) => x.id)).toEqual([l.id]);
+    expect(await store.setReturnLinkActive(env, account.id + 999, l.id, false)).toBe(false);
+    expect(await store.setReturnLinkActive(env, account.id, l.id, false)).toBe(true);
+    expect((await store.getReturnLink(env, l.token))?.active).toBe(0);
+  });
+});

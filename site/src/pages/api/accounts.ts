@@ -3,11 +3,13 @@ import type { APIRoute } from 'astro';
 import { env } from '../../lib/env';
 import { json } from '../../lib/validate';
 import { authenticate, CAN } from '../../lib/auth';
+import { addReturnLink, listReturnLinks, setReturnLinkActive } from '../../shipping/store';
+import { parseAddress } from '../../lib/validate';
+import { store } from '../../data/store';
 import { listAccounts, getAccount, addAccount, updateAccount, accountOpenShipments, saveStatement, listStatements, markStatementPaid, getCustomer, searchCustomers, upsertCustomer, logAudit, addApiKey, listApiKeys, revokeApiKey } from '../../shipping/store';
 import { newApiKey, newWebhookSecret } from '../../lib/apikeys';
 import { createInvoice } from '../../lib/stripe';
 import { sendEmail } from '../../shipping/notify';
-import { store } from '../../data/store';
 
 // Business accounts, from /counter/accounts and the walk-up form. Any staff member can list accounts
 // (to bill a walk-up to one); creating, changing and issuing statements need a manager or owner.
@@ -87,6 +89,21 @@ export const POST: APIRoute = async ({ request }) => {
       return json({ ok: true });
     }
     if (b.action === 'customers') return json(await searchCustomers(env, String(b.q ?? '')));
+    if (b.action === 'returnlinks') return json({ links: await listReturnLinks(env, Number(b.id)), site: env.SITE_URL });
+    if (b.action === 'addreturnlink') {
+      const account = await getAccount(env, Number(b.id));
+      if (!account) return json({ error: 'No such account' }, 404);
+      const to = b.return_to === 'store' ? store.origin : parseAddress({ ...b.address, contact_name: b.address?.contact_name || account.business_name, country_alpha2: 'US' });
+      const link = await addReturnLink(env, { account_id: account.id, return_to_json: JSON.stringify(to), service: String(b.service ?? '').trim().slice(0, 40) || null, max_weight_lb: Math.min(70, Math.max(1, Number(b.max_weight_lb) || 10)), note: String(b.note ?? '').trim().slice(0, 200) || null });
+      await logAudit(env, user, 'returnlink.add', String(link.id), `${account.business_name} -> ${to.city} ${to.state}`);
+      return json({ ok: true, link, url: `${env.SITE_URL}/return/${link.token}` });
+    }
+    if (b.action === 'returnlinkactive') {
+      const ok = await setReturnLinkActive(env, Number(b.id), Number(b.link_id), b.active !== false);
+      if (!ok) return json({ error: 'No such link' }, 404);
+      await logAudit(env, user, b.active !== false ? 'returnlink.on' : 'returnlink.off', String(b.link_id));
+      return json({ ok: true });
+    }
     if (b.action === 'addkey') {
       const a = await getAccount(env, Number(b.id));
       if (!a) return json({ error: 'No such account' }, 404);
