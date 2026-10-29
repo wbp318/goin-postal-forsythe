@@ -38,7 +38,7 @@ import Base from '../../layouts/Base.astro';
 
   <div id="review" class="hidden">
     <p id="summary" class="lead"></p>
-    <table class="list"><thead><tr><th>#</th><th data-i18n="st.bt.th.ref">Ref</th><th data-i18n="st.q.th.to">To</th><th data-i18n="st.bt.th.parcel">Parcel</th><th data-i18n="st.q.th.service">Service</th><th data-i18n="st.bt.th.price">Price</th><th data-i18n="st.bt.th.check">Check</th></tr></thead><tbody id="rows"></tbody></table>
+    <table class="list"><thead><tr><th>#</th><th data-i18n="st.bt.th.ref">Ref</th><th data-i18n="st.q.th.to">To</th><th data-i18n="st.bt.th.parcel">Parcel</th><th data-i18n="st.q.th.service">Service</th><th data-i18n="st.bt.th.price">Price</th><th data-i18n="st.bt.th.bench">Pirate Ship</th><th data-i18n="st.bt.th.check">Check</th></tr></thead><tbody id="rows"></tbody></table>
     <form id="buyform" class="card">
       <label class="check"><input name="print" type="checkbox" checked /> <span data-i18n="st.bt.print">Print every label at the counter, in file order</span></label>
       <p class="btnrow"><button class="btn" type="submit" id="buy"></button> <span class="muted" data-i18n="st.bt.billed">Billed to the account's next statement. Rows with a problem are skipped.</span></p>
@@ -93,13 +93,14 @@ import Base from '../../layouts/Base.astro';
         for (const r of j.rows) {
           const tr = document.createElement('tr');
           const ok = r.chosen && !r.errors.length;
-          tr.innerHTML = `<td>${r.line}</td><td></td><td></td><td></td><td></td><td></td><td class="${ok ? '' : 'err'}"></td>`;
+          tr.innerHTML = `<td>${r.line}</td><td></td><td></td><td></td><td></td><td></td><td></td><td class="${ok ? '' : 'err'}"></td>`;
           const c = tr.querySelectorAll('td');
           c[1].textContent = r.reference; c[2].textContent = addr(r.to);
           c[3].textContent = r.parcel ? `${r.parcel.weight_lb} lb · ${r.parcel.length_in}×${r.parcel.width_in}×${r.parcel.height_in}` : '';
           c[4].textContent = r.chosen ? `${r.chosen.carrier} ${r.chosen.service}` : '';
           c[5].textContent = r.chosen ? `$${r.chosen.total_charge.toFixed(2)}` : '';
-          c[6].textContent = [...r.errors, ...r.warnings].join(' · ') || t('st.bt.ok');
+          c[6].textContent = r.benchmark ? `$${r.benchmark.pirate_ship.toFixed(2)}${r.benchmark.estimated ? '*' : ''}` : '';
+          c[7].textContent = [...r.errors, ...r.warnings].join(' · ') || t('st.bt.ok');
           tb.appendChild(tr);
         }
         $('buy').textContent = tf('st.bt.buy', { n: j.ready, total: j.total.toFixed(2) });

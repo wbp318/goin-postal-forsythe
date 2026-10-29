@@ -79,7 +79,7 @@ flowchart TD
 5. **Add an "at cost" rule scope** for business accounts in the retail rules.
 6. **Put a Pirate Ship benchmark on every quote.** Pirate Ship publishes its USPS rate tables; keep the current table in `site/src/data/benchmarks.json`, and show "Pirate Ship: $X" beside the store's price on the counter quote, the account's online quote and the batch page. Make it a report: percent of quotes at or under the benchmark, by week. That is the proof the sales conversation needs, and it is the line an acquirer asks for.
 
-Steps 3 to 6 are to-do items T16 and T26 in the agenda. Steps 1 and 2 are the owners'.
+Step 6 shipped as v1.61.0 (T26): the benchmark line on every USPS quote and the share at or under Pirate Ship on the reports page, from an interpolated table marked estimated until the owners paste Pirate Ship's full chart into `site/src/data/benchmarks.json`. Steps 3 to 5 are T16, waiting on the carrier accounts (issue 14) and Connect Local (issue 15). Steps 1 and 2 are the owners'.
 
 ## Decisions for Peter and Rin
 

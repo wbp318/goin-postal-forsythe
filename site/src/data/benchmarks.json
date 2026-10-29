@@ -1,0 +1,13 @@
+{
+  "_comment": "Pirate Ship's USPS Ground Advantage prices (its commercial-plus-platform rate), used only to show 'Pirate Ship would charge about $X' beside the store's price (T26, agenda item 54). Published Pirate Ship tables found Oct 29, 2026 give zone 5 at 1, 2, 3, 5 and 10 lb, and the flat under-1-lb price by zone since USPS's July 12, 2026 change. Every other cell is interpolated between those and marked estimated on the page. TODO owners: paste the full table from pirateship.com's rate chart when a real label order is near, and set estimated to false.",
+  "source": "Pirate Ship rate guides, Oct 2026 (thriftflipping.com article 165 and 184; dimmath.com Ground Advantage 2026)",
+  "as_of": "2026-10-29",
+  "estimated": true,
+  "service": "USPS Ground Advantage",
+  "under_1_lb_by_zone": { "1": 6.93, "2": 6.93, "3": 7.1, "4": 7.3, "5": 7.69, "6": 7.9, "7": 8.15, "8": 8.4, "9": 8.4 },
+  "zone5_by_lb": { "1": 8.74, "2": 9.95, "3": 11.57, "4": 12.5, "5": 13.48, "6": 14.2, "7": 14.9, "8": 15.6, "9": 16.2, "10": 16.76, "15": 20.5, "20": 24.5, "30": 32.0, "50": 46.0, "70": 60.0 },
+  "zone_factor_vs_zone5": { "1": 0.82, "2": 0.84, "3": 0.88, "4": 0.94, "5": 1.0, "6": 1.07, "7": 1.15, "8": 1.24, "9": 1.24 },
+  "zones_from_louisiana_by_state": {
+    "LA": 2, "MS": 3, "AR": 3, "TX": 4, "AL": 4, "TN": 4, "OK": 4, "MO": 5, "GA": 5, "FL": 5, "KS": 5, "KY": 5, "IL": 5, "IN": 5, "SC": 5, "NC": 5, "OH": 6, "NE": 5, "IA": 5, "WI": 6, "MI": 6, "MN": 6, "SD": 6, "ND": 6, "CO": 6, "NM": 5, "WY": 6, "AZ": 6, "UT": 7, "VA": 6, "WV": 6, "MD": 6, "DE": 6, "PA": 6, "NJ": 7, "NY": 7, "CT": 7, "RI": 7, "MA": 7, "VT": 7, "NH": 7, "ME": 8, "MT": 7, "ID": 7, "NV": 7, "CA": 7, "OR": 8, "WA": 8, "AK": 8, "HI": 8, "PR": 8, "DC": 6
+  }
+}

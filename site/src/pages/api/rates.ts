@@ -7,6 +7,8 @@ import { store } from '../../data/store';
 import { effectiveAddons, extrasOffer } from '../../lib/addons';
 import { advise, boxesFrom } from '../../lib/packing';
 import { checkAddress } from '../../lib/address';
+import { benchmarkFor } from '../../lib/benchmark';
+import { logBenchmark } from '../../shipping/store';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -25,7 +27,10 @@ export const POST: APIRoute = async ({ request }) => {
     // Address checks: errors stop the label later; warnings are shown now. PO boxes drop UPS and FedEx from the list.
     const address = checkAddress(destination);
     const offered = address.po_box || address.military ? visible.filter((r) => r.carrier === 'USPS') : visible;
-    return json({ rates: offered, international: destination.country_alpha2 !== 'US', demo, oversize, extras, packing, address });
+    // The Pirate Ship benchmark (T26): shown beside the rates and logged for the weekly share.
+    const benchmark = benchmarkFor(destination, parcel, rates);
+    if (benchmark) await logBenchmark(env, { source: b.origin ? 'counter' : 'online', zone: benchmark.zone, weight_lb: parcel.weight_lb, store_price: benchmark.store, benchmark: benchmark.pirate_ship }).catch(() => {});
+    return json({ rates: offered, international: destination.country_alpha2 !== 'US', demo, oversize, extras, packing, address, benchmark });
   } catch (e: any) {
     return json({ error: e.message }, 400);
   }

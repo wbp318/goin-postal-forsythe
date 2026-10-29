@@ -142,6 +142,7 @@ const mem = {
   photos: [] as PhotoRow[],
   customerAddresses: [] as CustomerAddress[],
   returnLinks: [] as ReturnLink[],
+  benchmarks: [] as { id: number; at: string; source: string; zone: number; weight_lb: number; store_price: number | null; benchmark: number; at_or_under: number }[],
   quotes: new Map<string, QuoteRow>(),
   customers: new Map<string, CustomerRow>(),
   rules: [] as { id: number; scope: string; match: string | null; percent: number | null; flat: number | null; price: number | null; active: number; updated_at: string }[],
@@ -165,7 +166,7 @@ const mem = {
 
 // ---- Export (T10) --------------------------------------------------------------------------------
 /** Every table in the schema, in schema order. The allow-list for the export; nothing else can be named. */
-export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'mailboxes', 'mailbox_notices', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'return_links'] as const;
+export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'mailboxes', 'mailbox_notices', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'return_links', 'benchmark_log'] as const;
 export type ExportTable = typeof EXPORT_TABLES[number];
 const memTable = (name: ExportTable): unknown[] => {
   switch (name) {
@@ -199,6 +200,7 @@ const memTable = (name: ExportTable): unknown[] => {
     case 'shipment_photos': return mem.photos;
     case 'customer_addresses': return mem.customerAddresses;
     case 'return_links': return mem.returnLinks;
+    case 'benchmark_log': return mem.benchmarks;
     default: return [];
   }
 };
@@ -1170,6 +1172,20 @@ export async function updateMailbox(env: Env, code: string, patch: Partial<Omit<
   return { ...m, ...Object.fromEntries(keys.map((k) => [k, patch[k] ?? null])) } as Mailbox;
 }
 
+// ---- Pirate Ship benchmark log (to-do T26) -------------------------------------------------------
+export async function logBenchmark(env: Env, b: { source: string; zone: number; weight_lb: number; store_price: number | null; benchmark: number }) {
+  const row = { ...b, at: now(), at_or_under: b.store_price != null && b.store_price <= b.benchmark ? 1 : 0 };
+  if (env.DB) { await env.DB.prepare('INSERT INTO benchmark_log (at, source, zone, weight_lb, store_price, benchmark, at_or_under) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)').bind(row.at, row.source, row.zone, row.weight_lb, row.store_price, row.benchmark, row.at_or_under).run(); return; }
+  mem.benchmarks.push({ id: mem.seq++, ...row });
+}
+export async function benchmarkSummary(env: Env, start: string, end: string): Promise<{ quotes: number; at_or_under: number; share: number; avg_diff: number | null }> {
+  type R = { n: number; under: number; diff: number | null };
+  let r: R;
+  if (env.DB) r = (await env.DB.prepare('SELECT COUNT(*) AS n, COALESCE(SUM(at_or_under), 0) AS under, AVG(store_price - benchmark) AS diff FROM benchmark_log WHERE at BETWEEN ?1 AND ?2 AND store_price IS NOT NULL').bind(start, end).first<R>())!;
+  else { const rows = mem.benchmarks.filter((x) => x.at >= start && x.at <= end && x.store_price != null); r = { n: rows.length, under: rows.filter((x) => x.at_or_under).length, diff: rows.length ? rows.reduce((a, x) => a + (x.store_price! - x.benchmark), 0) / rows.length : null }; }
+  return { quotes: r.n, at_or_under: r.under, share: r.n ? Math.round(r.under / r.n * 1000) / 10 : 0, avg_diff: r.diff == null ? null : Math.round(r.diff * 100) / 100 };
+}
+
 // ---- merchant returns portal (to-do T22) ------------------------------------------------------------
 export function newReturnLinkToken() {
   return Array.from(crypto.getRandomValues(new Uint8Array(12)), (x) => x.toString(16).padStart(2, '0')).join('');
@@ -1477,6 +1493,7 @@ export interface AcquirerFigures {
   accounts: { total: ReportLine; share: number; by_account: (ReportLine & { account_id: number; business_name: string })[] };
   mailboxes: { active: number; new: number; cancelled: number; mrr: number; churn: number; by_size: { size: string; active: number }[] };
   claims: { opened: number; refunded: number; refunded_usd: number };
+  benchmark: { quotes: number; at_or_under: number; share: number; avg_diff: number | null };  // against Pirate Ship (T26)
 }
 export async function acquirerFigures(env: Env, from: string, to: string): Promise<AcquirerFigures> {
   const start = `${from}T00:00:00.000Z`, end = `${to}T23:59:59.999Z`;
@@ -1520,6 +1537,7 @@ export async function acquirerFigures(env: Env, from: string, to: string): Promi
     accounts: { total: round(accountTotal), share: total.revenue ? r2(accountTotal.revenue / total.revenue * 100) : 0, by_account: [...accts.values()].map(round).sort((a, b) => b.revenue - a.revenue) },
     mailboxes: { active: active.length, new: boxes.filter((m) => m.started_at && m.started_at >= start && m.started_at <= end).length, cancelled, mrr: r2(active.reduce((a, m) => a + monthly(m), 0)), churn: activeAtStart ? r2(cancelled / activeAtStart * 100) : 0, by_size: [...bySize].map(([size, n]) => ({ size, active: n })) },
     claims: { opened: claims.filter((c) => c.created_at >= start && c.created_at <= end).length, refunded: refunded.length, refunded_usd: r2(refunded.reduce((a, c) => a + (c.customer_refund_usd ?? 0), 0)) },
+    benchmark: await benchmarkSummary(env, start, end),
   };
 }
 

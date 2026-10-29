@@ -101,6 +101,7 @@ import { store } from '../../data/store';
     <p id="packNote" class="muted" hidden></p>
     <p id="mockNote" class="muted" hidden data-i18n="ship.mock">Demo rates: live carrier rates appear once the store's carrier accounts are connected.</p>
     <div id="rates" class="rates"></div>
+    <p id="wBench" class="muted" hidden></p>
     <fieldset id="extras" class="hidden">
       <legend data-i18n="st.a.legend">Add-ons</legend>
       <label class="check" id="wInsRow"><input id="wInsure" type="checkbox" /> <span data-i18n="st.a.insure">Insurance for the declared value</span> <span id="wInsFee" class="muted"></span></label>
@@ -336,6 +337,8 @@ import { store } from '../../data/store';
           ratesEl.appendChild(el);
         }
         if (!j.rates.length) throw new Error(t('st.q.norates'));
+        const wb = $('wBench') as HTMLElement;
+        if (j.benchmark) { const b = j.benchmark; wb.hidden = false; wb.textContent = tf('st.q.bench', { ps: b.pirate_ship.toFixed(2), zone: b.zone, store: b.store != null ? `$${b.store.toFixed(2)}` : '?', est: b.estimated ? t('ship.bench.est') : '' }); } else wb.hidden = true;
         renderExtras(j.extras);
         renderPacking(j.packing);
         renderAddress(j.address);

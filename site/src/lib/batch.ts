@@ -7,6 +7,7 @@ import { parseAddress, parseParcel } from './validate';
 import { checkAddress } from './address';
 import { quote } from './quote';
 import { store } from '../data/store';
+import { benchmarkFor, type Benchmark } from './benchmark';
 
 export const MAX_ROWS = 200;
 
@@ -20,7 +21,7 @@ export interface BatchRow {
   warnings: string[];
 }
 export type Pick = 'cheapest' | 'fastest' | { service: string };
-export interface RatedRow extends BatchRow { rates: Rate[]; chosen: Rate | null }
+export interface RatedRow extends BatchRow { rates: Rate[]; chosen: Rate | null; benchmark?: Benchmark | null }
 
 // ---- CSV -------------------------------------------------------------------------------------
 
@@ -169,7 +170,7 @@ export async function rateBatch(env: Env, rows: BatchRow[], pick: Pick, discount
       const chosen = choose(offered, pick);
       const warnings = [...row.warnings];
       if (!chosen && offered.length && typeof pick === 'object') warnings.push(`No ${pick.service} rate for this row; pick another service or let it take the cheapest`);
-      out.push({ ...row, warnings, rates: offered, chosen, errors: offered.length ? row.errors : [...row.errors, 'No rates for this address and parcel'] });
+      out.push({ ...row, warnings, rates: offered, chosen, benchmark: benchmarkFor(row.to, row.parcel, offered), errors: offered.length ? row.errors : [...row.errors, 'No rates for this address and parcel'] });
     } catch (e: any) {
       out.push({ ...row, rates: [], chosen: null, errors: [...row.errors, e.message] });
     }

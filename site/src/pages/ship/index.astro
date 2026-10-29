@@ -70,6 +70,7 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
     <p id="packNote" class="muted" hidden></p>
     <p id="mockNote" class="card" hidden data-i18n="ship.mock">Demo rates for testing. Live carrier rates appear once the store connects its accounts.</p>
     <div id="rates" class="rates"></div>
+    <p id="bench" class="muted" hidden></p>
     <form id="buy" class="buy" hidden>
       <label><span data-i18n="ship.email">Your email (for the receipt and label)</span> <input name="email" type="email" required value={me?.email ?? ''} /></label>
       {me && <label class="check"><input name="save_address" type="checkbox" /> <span data-i18n="acct.savethis">Save this address to my account</span></label>}
@@ -169,6 +170,8 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
         el.querySelector('input')!.addEventListener('change', () => { picked = r.id; pickedPrice = r.total_charge; buy.hidden = false; total(); });
         ratesEl.appendChild(el);
       }
+      const bench = document.getElementById('bench')!;
+      if (j.benchmark) { const b = j.benchmark; bench.hidden = false; bench.textContent = t(b.diff != null && b.diff <= 0 ? 'ship.bench.under' : 'ship.bench').replace('{ps}', b.pirate_ship.toFixed(2)).replace('{service}', b.service).replace('{est}', b.estimated ? t('ship.bench.est') : ''); } else bench.hidden = true;
       results.hidden = false;
       results.scrollIntoView({ behavior: 'smooth' });
     });

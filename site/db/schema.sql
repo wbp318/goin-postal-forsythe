@@ -453,3 +453,16 @@ CREATE TABLE IF NOT EXISTS return_links (
   created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS return_links_account ON return_links(account_id);
+
+-- Pirate Ship benchmark log (to-do T26): one row per quote where the benchmark applied, for the weekly share at or under it.
+CREATE TABLE IF NOT EXISTS benchmark_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  at TEXT NOT NULL,
+  source TEXT NOT NULL,                -- online, counter, batch, api
+  zone INTEGER NOT NULL,
+  weight_lb REAL NOT NULL,
+  store_price REAL,                    -- the store's cheapest USPS ground price, NULL when USPS gave no rate
+  benchmark REAL NOT NULL,             -- Pirate Ship's estimate
+  at_or_under INTEGER NOT NULL         -- 1 when store_price <= benchmark
+);
+CREATE INDEX IF NOT EXISTS benchmark_log_at ON benchmark_log(at);

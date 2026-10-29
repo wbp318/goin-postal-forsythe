@@ -62,6 +62,7 @@ const monthStart = today.slice(0, 8) + '01';
         <div class="card"><h3 data-i18n="st.p.acq.mrr">Mailbox revenue a month</h3><p class="big" id="a-mrr"></p><p class="muted" id="a-boxes"></p></div>
         <div class="card"><h3 data-i18n="st.p.acq.churn">Mailbox churn</h3><p class="big" id="a-churn"></p><p class="muted" id="a-churnn"></p></div>
         <div class="card"><h3 data-i18n="st.p.acq.claims">Claims</h3><p class="big" id="a-claims"></p><p class="muted" id="a-claimsn"></p></div>
+        <div class="card"><h3 data-i18n="st.p.acq.bench">At or under Pirate Ship</h3><p class="big" id="a-bench"></p><p class="muted" id="a-benchn"></p></div>
       </div>
       <div class="grid">
         <div>
@@ -153,6 +154,7 @@ const monthStart = today.slice(0, 8) + '01';
         $('a-mrr').textContent = usd(a.mailboxes.mrr); $('a-boxes').textContent = tf('st.p.acq.boxes', { active: a.mailboxes.active, new: a.mailboxes.new, sizes: a.mailboxes.by_size.map((s: any) => `${s.size} ${s.active}`).join(', ') });
         $('a-churn').textContent = `${a.mailboxes.churn}%`; $('a-churnn').textContent = tf('st.p.acq.churnn', { n: a.mailboxes.cancelled });
         $('a-claims').textContent = String(a.claims.opened); $('a-claimsn').textContent = tf('st.p.acq.claimsn', { n: a.claims.refunded, usd: usd(a.claims.refunded_usd) });
+        $('a-bench').textContent = a.benchmark.quotes ? `${a.benchmark.share}%` : '–'; $('a-benchn').textContent = tf('st.p.acq.benchn', { n: a.benchmark.quotes, diff: a.benchmark.avg_diff == null ? '–' : (a.benchmark.avg_diff >= 0 ? '+' : '−') + usd(Math.abs(a.benchmark.avg_diff)) });
         rows($('a-week'), a.by_week.map((w: any) => [w.week, w.shipments, usd(w.revenue), usd(w.margin)]));
         rows($('a-mix'), a.mix.map((m: any) => [t('st.p.acq.src.' + m.source), m.shipments, usd(m.revenue), `${m.share}%`]));
         rows($('a-acc'), a.accounts.by_account.map((x: any) => [x.business_name, x.shipments, usd(x.revenue), usd(x.margin)]));
