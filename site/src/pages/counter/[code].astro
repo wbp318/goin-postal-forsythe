@@ -4,11 +4,13 @@ import Base from '../../layouts/Base.astro';
 import { env } from '../../lib/env';
 import { getOrder, orderTotal } from '../../lib/orders';
 import { listNotes } from '../../shipping/store';
+import { listPhotos } from '../../lib/photos';
 
 // Staff page. Opened by scanning the customer's QR code. Buying or marking printed needs the PIN.
 const order = await getOrder(env, Astro.params.code ?? '');
 if (!order) return new Response('No such order', { status: 404 });
 const notes = await listNotes(env, 'order', order.id);
+const photos = await listPhotos(env, order.id);
 ---
 <Base title={`Counter · ${order.id}`}>
   <section class="hero">
@@ -52,7 +54,12 @@ const notes = await listNotes(env, 'order', order.id);
       <ol class="timeline" id="notes">{notes.map((n) => <li><time>{n.at.slice(0, 16).replace('T', ' ')} · {n.by_name}</time><span>{n.note}</span></li>)}</ol>
       {!notes.length && <p class="muted" id="nonotes" data-i18n="st.n.none">No notes yet.</p>}
       <p><input id="note" maxlength="500" data-i18n-ph="st.n.ph" placeholder="Fragile pottery, call before delivery…" /> <button class="btn small kraft" data-addnote data-i18n="st.n.add">Add note</button></p>
+      <h3 data-i18n="st.ph.h3">Photos</h3>
+      <p class="muted" data-i18n="st.ph.lead">Photograph the item before it is packed. Settles a damage claim and is what the carrier asks for first.</p>
+      <div class="photos" id="photos">{photos.map((p) => <figure data-photo={p.id}><a href={`/api/photos?id=${p.id}`} target="_blank" rel="noopener"><img src={`/api/photos?id=${p.id}`} alt={p.caption ?? ''} loading="lazy" /></a><figcaption>{p.caption ?? ''} <span class="muted">{p.at.slice(0, 16).replace('T', ' ')} · {p.by_name}</span> <button type="button" class="btn small" data-delphoto={p.id}>×</button></figcaption></figure>)}</div>
+      <p><input type="file" id="photo" accept="image/*" capture="environment" /> <input id="caption" maxlength="120" data-i18n-ph="st.ph.ph" placeholder="Before packing, small dent on lid" /> <button class="btn small kraft" data-addphoto data-i18n="st.ph.add">Add photo</button></p>
     </div>
+    <style>.photos { display: flex; flex-wrap: wrap; gap: 10px; } .photos figure { margin: 0; width: 160px; } .photos img { width: 160px; height: 120px; object-fit: cover; border-radius: 6px; } .photos figcaption { font-size: .85rem; }</style>
   </div>
 
   <script define:vars={{ id: order.id }}>
@@ -76,6 +83,35 @@ const notes = await listNotes(env, 'order', order.id);
       if (!res.ok) { msg.textContent = j.error; return; }
       const li = document.createElement('li'); const tm = document.createElement('time'); tm.textContent = `${j.note.at.slice(0, 16).replace('T', ' ')} · ${j.note.by_name}`; const sp = document.createElement('span'); sp.textContent = j.note.note; li.append(tm, sp);
       document.getElementById('notes').prepend(li); document.getElementById('note').value = ''; const nn = document.getElementById('nonotes'); if (nn) nn.remove();
+    }));
+    // Intake photos: shrink to 1280 px JPEG in the browser, send as a data URL.
+    async function shrink(file) {
+      const bmp = await createImageBitmap(file);
+      const scale = Math.min(1, 1280 / Math.max(bmp.width, bmp.height));
+      const c = document.createElement('canvas'); c.width = Math.round(bmp.width * scale); c.height = Math.round(bmp.height * scale);
+      c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+      let q = 0.82, out = c.toDataURL('image/jpeg', q);
+      while (out.length > 780_000 && q > 0.4) { q -= 0.1; out = c.toDataURL('image/jpeg', q); }
+      return out;
+    }
+    document.querySelectorAll('[data-addphoto]').forEach((b) => b.addEventListener('click', async () => {
+      const file = document.getElementById('photo').files[0];
+      if (!file) { msg.textContent = 'Pick or take a photo first'; return; }
+      b.disabled = true;
+      try {
+        const image = await shrink(file);
+        const res = await fetch('/api/photos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: document.getElementById('pin').value, action: 'add', shipment: id, image, caption: document.getElementById('caption').value }) });
+        const j = await res.json();
+        if (!res.ok) { msg.textContent = j.error; b.disabled = false; return; }
+        location.reload();
+      } catch (e) { msg.textContent = e.message; b.disabled = false; }
+    }));
+    document.querySelectorAll('[data-delphoto]').forEach((b) => b.addEventListener('click', async () => {
+      if (!confirm('Delete this photo?')) return;
+      const res = await fetch('/api/photos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: document.getElementById('pin').value, action: 'delete', id: b.dataset.delphoto }) });
+      const j = await res.json();
+      if (!res.ok) { msg.textContent = j.error; return; }
+      b.closest('figure').remove();
     }));
     document.querySelectorAll('[data-email]').forEach((b) => b.addEventListener('click', async () => {
       const pin = document.getElementById('pin').value;

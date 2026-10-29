@@ -3,11 +3,13 @@ export const prerender = false;
 import Base from '../../../layouts/Base.astro';
 import { env } from '../../../lib/env';
 import { getClaim, getShipment, REMIND_DAYS } from '../../../shipping/store';
+import { listPhotos } from '../../../lib/photos';
 
 // Staff page for one claim: file it with the carrier, record the decision, refund the customer, close.
 const c = await getClaim(env, Astro.params.code ?? '');
 if (!c) return new Response('No such claim', { status: 404 });
 const s = await getShipment(env, c.shipment_id);
+const photos = await listPhotos(env, c.shipment_id);
 const dest = s ? JSON.parse(s.destination_json) : null;
 const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '');
 const late = c.status === 'filed' && c.filed_at && Date.now() - Date.parse(c.filed_at) > REMIND_DAYS * 86_400_000;
@@ -34,7 +36,10 @@ const open = c.status !== 'closed';
       </table>
       <p class="muted"><span data-i18n="st.c.openedby">Opened by</span> {c.by_name}, {fmt(c.created_at)}</p>
       {c.notes && <p><strong data-i18n="st.k.notes">Notes:</strong> <span style="white-space: pre-line">{c.notes}</span></p>}
+      <h3 data-i18n="st.ph.h3">Photos</h3>
+      {photos.length ? <div class="photos">{photos.map((p) => <figure><a href={`/api/photos?id=${p.id}`} target="_blank" rel="noopener"><img src={`/api/photos?id=${p.id}`} alt={p.caption ?? ''} loading="lazy" /></a><figcaption>{p.caption ?? ''} <span class="muted">{p.at.slice(0, 10)}</span></figcaption></figure>)}</div> : <p class="muted" data-i18n="st.ph.none">No intake photos for this shipment. Next time, photograph the item before packing on the order page.</p>}
     </div>
+    <style>.photos { display: flex; flex-wrap: wrap; gap: 10px; } .photos figure { margin: 0; width: 160px; } .photos img { width: 160px; height: 120px; object-fit: cover; border-radius: 6px; } .photos figcaption { font-size: .85rem; }</style>
     <form class="card" id="acts" autocomplete="off">
       <label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
       {open && c.status === 'open' && <>

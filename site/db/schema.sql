@@ -417,3 +417,15 @@ CREATE TABLE IF NOT EXISTS pickups (
 );
 CREATE INDEX IF NOT EXISTS pickups_day ON pickups(scheduled_date, window);
 CREATE INDEX IF NOT EXISTS pickups_account ON pickups(account_id, scheduled_date);
+
+-- Intake photos (to-do T17): the item before packing. Bytes live in the ORDERS KV namespace under photo:<id>.
+CREATE TABLE IF NOT EXISTS shipment_photos (
+  id TEXT PRIMARY KEY,                 -- 32 random hex characters, also the KV key
+  shipment_id TEXT NOT NULL,
+  content_type TEXT NOT NULL,
+  bytes INTEGER NOT NULL,
+  caption TEXT,
+  by_name TEXT NOT NULL,
+  at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS shipment_photos_shipment ON shipment_photos(shipment_id, at);

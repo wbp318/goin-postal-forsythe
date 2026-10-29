@@ -92,6 +92,7 @@ export interface Mailbox {
   notes: string | null;
 }
 
+export interface PhotoRow { id: string; shipment_id: string; content_type: string; bytes: number; caption: string | null; by_name: string; at: string }
 export interface PickupRow {
   id: number; code: string; account_id: number; account_name: string; created_at: string; scheduled_date: string; window: 'morning' | 'afternoon';
   address_json: string; phone: string | null; packages: number; notes: string | null; fee_usd: number;
@@ -136,6 +137,7 @@ const mem = {
   mailboxNotices: [] as MailboxNotice[],
   claims: [] as ClaimRow[],
   pickups: [] as PickupRow[],
+  photos: [] as PhotoRow[],
   quotes: new Map<string, QuoteRow>(),
   customers: new Map<string, CustomerRow>(),
   rules: [] as { id: number; scope: string; match: string | null; percent: number | null; flat: number | null; price: number | null; active: number; updated_at: string }[],
@@ -159,7 +161,7 @@ const mem = {
 
 // ---- Export (T10) --------------------------------------------------------------------------------
 /** Every table in the schema, in schema order. The allow-list for the export; nothing else can be named. */
-export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'mailboxes', 'mailbox_notices', 'claims', 'pickups'] as const;
+export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'mailboxes', 'mailbox_notices', 'claims', 'pickups', 'shipment_photos'] as const;
 export type ExportTable = typeof EXPORT_TABLES[number];
 const memTable = (name: ExportTable): unknown[] => {
   switch (name) {
@@ -190,6 +192,7 @@ const memTable = (name: ExportTable): unknown[] => {
     case 'mailbox_notices': return mem.mailboxNotices;
     case 'claims': return mem.claims;
     case 'pickups': return mem.pickups;
+    case 'shipment_photos': return mem.photos;
     default: return [];
   }
 };
@@ -1159,6 +1162,23 @@ export async function updateMailbox(env: Env, code: string, patch: Partial<Omit<
   if (env.DB) await env.DB.prepare(`UPDATE mailboxes SET ${keys.map((k, i) => `${k} = ?${i + 2}`).join(', ')} WHERE code = ?1`).bind(m.code, ...keys.map((k) => patch[k] ?? null)).run();
   else Object.assign(m, Object.fromEntries(keys.map((k) => [k, patch[k] ?? null])));
   return { ...m, ...Object.fromEntries(keys.map((k) => [k, patch[k] ?? null])) } as Mailbox;
+}
+
+// ---- intake photos (to-do T17): the rows; the bytes are in lib/photos.ts -----------------------------
+export async function addPhotoRow(env: Env, p: Omit<PhotoRow, 'at'>): Promise<PhotoRow> {
+  const row = { ...p, at: now() };
+  if (env.DB) await env.DB.prepare('INSERT INTO shipment_photos (id, shipment_id, content_type, bytes, caption, by_name, at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)').bind(row.id, row.shipment_id, row.content_type, row.bytes, row.caption, row.by_name, row.at).run();
+  else mem.photos.push(row);
+  return row;
+}
+/** A shipment's photos oldest first, or one photo by id. */
+export async function listPhotoRows(env: Env, shipmentId: string | null, id?: string): Promise<PhotoRow[]> {
+  if (env.DB) return (await (id ? env.DB.prepare('SELECT * FROM shipment_photos WHERE id = ?1').bind(id) : env.DB.prepare('SELECT * FROM shipment_photos WHERE shipment_id = ?1 ORDER BY at, id').bind(shipmentId)).all<PhotoRow>()).results;
+  return mem.photos.filter((p) => (id ? p.id === id : p.shipment_id === shipmentId));
+}
+export async function deletePhotoRow(env: Env, id: string): Promise<boolean> {
+  if (env.DB) return ((await env.DB.prepare('DELETE FROM shipment_photos WHERE id = ?1').bind(id).run()).meta.changes ?? 0) > 0;
+  const n = mem.photos.length; mem.photos = mem.photos.filter((p) => p.id !== id); return mem.photos.length < n;
 }
 
 // ---- pickups (to-do T15) ---------------------------------------------------------------------------
