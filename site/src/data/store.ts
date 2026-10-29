@@ -14,7 +14,7 @@ export interface StoreFacts {
   origin: { contact_name: string; company_name: string; contact_phone: string; contact_email: string; line_1: string; line_2?: string; city: string; state: string; postal_code: string; country_alpha2: string };
   formEndpoint: string;
   hours: { days: string; key: string; open: string; openKey?: string }[];
-  services: { key: string; name: string; blurb: string }[];
+  services: { key: string; name: string; blurb: string; link?: string }[];
 }
 
 export const defaults: StoreFacts = {
@@ -44,9 +44,9 @@ export const defaults: StoreFacts = {
   services: [
     { key: "ship", name: "Shipping", blurb: "UPS, FedEx, USPS and DHL under one roof. We compare rates so you pay the least." },
     { key: "pack", name: "Packing", blurb: "Bring it in loose. We box, cushion and label it so it arrives in one piece." },
-    { key: "returns", name: "Returns drop-off", blurb: "Amazon, UPS, FedEx and USPS returns. We print the label from your phone, box it, and scan it in so you have proof." },
-    { key: "mailbox", name: "Mailbox rental", blurb: "A real street address, package acceptance from every carrier, and text alerts." },
-    { key: "print", name: "Printing and copies", blurb: "Flyers, banners and everyday copies, often same day. Design your own business cards online." },
+    { key: "returns", name: "Returns drop-off", blurb: "Amazon, UPS, FedEx and USPS returns. We print the label from your phone, box it, and scan it in so you have proof.", link: "/returns" },
+    { key: "mailbox", name: "Mailbox rental", blurb: "A real street address, package acceptance from every carrier, and text alerts.", link: "/mailbox" },
+    { key: "print", name: "Printing and copies", blurb: "Flyers, banners and everyday copies, often same day. Design your own business cards online.", link: "/cards" },
     { key: "notary", name: "Notary", blurb: "Walk-in notary service during store hours." },
     { key: "shred", name: "Shredding", blurb: "Drop off a bag or a box. Secure, by the pound." },
   ],

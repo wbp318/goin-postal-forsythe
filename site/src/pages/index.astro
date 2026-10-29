@@ -15,7 +15,7 @@ import { store } from '../data/store';
     <h2 data-i18n="home.services">Services</h2>
     <div class="grid">
       {store.services.map(s => (
-        <div class="card"><h3 data-i18n={`svc.${s.key}.n`}>{s.name}</h3><p data-i18n={`svc.${s.key}.b`}>{s.blurb}</p></div>
+        <div class="card"><h3>{s.link ? <a href={s.link} data-i18n={`svc.${s.key}.n`}>{s.name}</a> : <span data-i18n={`svc.${s.key}.n`}>{s.name}</span>}</h3><p data-i18n={`svc.${s.key}.b`}>{s.blurb}</p></div>
       ))}
     </div>
   </section>

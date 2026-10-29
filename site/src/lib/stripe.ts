@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import { store } from '../data/store';
 import type { Order } from './orders';
 import type { CardOrder } from './cardOrders';
+import type { Mailbox } from '../shipping/store';
 
 export function stripeClient(env: Env) {
   if (!env.STRIPE_SECRET_KEY) return null; // mock mode
@@ -65,6 +66,37 @@ export async function createCardCheckout(env: Env, order: CardOrder): Promise<st
     cancel_url: `${site}/cards?cancelled=${order.id}`,
   });
   return session.url!;
+}
+
+/** Stripe Checkout in subscription mode for a mailbox: the price recurs monthly or yearly and Stripe runs the renewals. Mock mode goes straight to the paid handler. */
+export async function createMailboxCheckout(env: Env, m: Mailbox): Promise<string> {
+  const stripe = stripeClient(env);
+  const site = env.SITE_URL;
+  if (!stripe) return `${site}/api/mock-paid?order=${m.code}`;
+  const session = await stripe.checkout.sessions.create({
+    mode: 'subscription',
+    customer_email: m.email,
+    client_reference_id: m.code,
+    line_items: [{
+      quantity: 1,
+      price_data: {
+        currency: 'usd',
+        unit_amount: Math.round(m.price * 100),
+        recurring: { interval: m.term === 'yearly' ? 'year' : 'month' },
+        product_data: { name: `${m.size[0].toUpperCase()}${m.size.slice(1)} mailbox at ${store.name}`, description: `Code ${m.code}. Box number given at the counter with Form 1583.` },
+      },
+    }],
+    subscription_data: { metadata: { mailbox: m.code, store: store.id } },
+    success_url: `${site}/mailbox/done?code=${m.code}`,
+    cancel_url: `${site}/mailbox?cancelled=${m.code}`,
+  });
+  return session.url!;
+}
+/** Ends a mailbox subscription in Stripe now. Nothing to do in mock mode. */
+export async function cancelSubscription(env: Env, id: string): Promise<void> {
+  const stripe = stripeClient(env);
+  if (!stripe) return;
+  await stripe.subscriptions.cancel(id);
 }
 
 /** A Stripe invoice for a business account's monthly statement, sent by email with a hosted pay link. Null in mock mode. */

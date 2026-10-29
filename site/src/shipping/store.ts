@@ -66,6 +66,32 @@ export interface ReturnRequest {
   dropoff_id: number | null;
 }
 
+export interface Mailbox {
+  id: number;
+  code: string;
+  created_at: string;
+  customer_id: string | null;
+  customer_name: string;
+  email: string;
+  phone: string | null;
+  business_name: string | null;
+  size: string;
+  term: string;
+  price: number;
+  status: 'awaiting_payment' | 'active' | 'past_due' | 'cancelled';
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  stripe_session_id: string | null;
+  started_at: string | null;
+  current_period_end: string | null;
+  cancelled_at: string | null;
+  box_number: string | null;
+  form_1583_at: string | null;
+  form_1583_by: string | null;
+  ids_seen: string | null;
+  notes: string | null;
+}
+
 /** Guess the carrier from a barcode or tracking number. Good enough for drop-offs; the carrier confirms on scan. */
 export function carrierFromBarcode(code: string): string | null {
   const c = code.replace(/\s+/g, '').toUpperCase();
@@ -87,6 +113,7 @@ const mem = {
   jobs: [] as PrintJob[],
   dropoffs: [] as Dropoff[],
   returns: [] as ReturnRequest[],
+  mailboxes: [] as Mailbox[],
   quotes: new Map<string, QuoteRow>(),
   customers: new Map<string, CustomerRow>(),
   rules: [] as { id: number; scope: string; match: string | null; percent: number | null; flat: number | null; price: number | null; active: number; updated_at: string }[],
@@ -110,7 +137,7 @@ const mem = {
 
 // ---- Export (T10) --------------------------------------------------------------------------------
 /** Every table in the schema, in schema order. The allow-list for the export; nothing else can be named. */
-export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests'] as const;
+export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'mailboxes'] as const;
 export type ExportTable = typeof EXPORT_TABLES[number];
 const memTable = (name: ExportTable): unknown[] => {
   switch (name) {
@@ -137,6 +164,7 @@ const memTable = (name: ExportTable): unknown[] => {
     case 'api_keys': return mem.apiKeys;
     case 'x402_payments': return mem.x402;
     case 'return_requests': return mem.returns;
+    case 'mailboxes': return mem.mailboxes;
     default: return [];
   }
 };
@@ -1067,6 +1095,45 @@ export async function markReturnServed(env: Env, code: string, dropoff_id: numbe
   if (env.DB) await env.DB.prepare("UPDATE return_requests SET status = 'served', served_at = ?2, dropoff_id = ?3 WHERE code = ?1").bind(r.code, t, dropoff_id).run();
   else Object.assign(r, { status: 'served', served_at: t, dropoff_id });
   return { ...r, status: 'served', served_at: t, dropoff_id };
+}
+
+// ---- mailbox subscriptions (agenda items 24, 29) --------------------------------------------
+const MB_COLS = ['code', 'created_at', 'customer_id', 'customer_name', 'email', 'phone', 'business_name', 'size', 'term', 'price', 'status', 'stripe_customer_id', 'stripe_subscription_id', 'stripe_session_id', 'started_at', 'current_period_end', 'cancelled_at', 'box_number', 'form_1583_at', 'form_1583_by', 'ids_seen', 'notes'] as const;
+export async function createMailbox(env: Env, m: { code: string; customer_id: string | null; customer_name: string; email: string; phone: string | null; business_name: string | null; size: string; term: string; price: number }): Promise<Mailbox> {
+  const row: Omit<Mailbox, 'id'> = { ...m, created_at: now(), status: 'awaiting_payment', stripe_customer_id: null, stripe_subscription_id: null, stripe_session_id: null, started_at: null, current_period_end: null, cancelled_at: null, box_number: null, form_1583_at: null, form_1583_by: null, ids_seen: null, notes: null };
+  if (env.DB) {
+    const r = await env.DB.prepare(`INSERT INTO mailboxes (${MB_COLS.join(', ')}) VALUES (${MB_COLS.map((_, i) => `?${i + 1}`).join(', ')}) RETURNING id`).bind(...MB_COLS.map((c) => row[c])).first<{ id: number }>();
+    return { id: r!.id, ...row };
+  }
+  const full = { id: mem.seq++, ...row };
+  mem.mailboxes.unshift(full);
+  return full;
+}
+export async function getMailbox(env: Env, code: string): Promise<Mailbox | null> {
+  const c = code.trim().toUpperCase();
+  if (!c) return null;
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM mailboxes WHERE code = ?1').bind(c).first<Mailbox>()) ?? null;
+  return mem.mailboxes.find((m) => m.code === c) ?? null;
+}
+export async function getMailboxBySubscription(env: Env, sub: string): Promise<Mailbox | null> {
+  if (!sub) return null;
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM mailboxes WHERE stripe_subscription_id = ?1').bind(sub).first<Mailbox>()) ?? null;
+  return mem.mailboxes.find((m) => m.stripe_subscription_id === sub) ?? null;
+}
+/** Every mailbox, newest first. Unpaid sign-ups older than a day are left out: the customer never finished Checkout. */
+export async function listMailboxes(env: Env): Promise<Mailbox[]> {
+  const stale = new Date(Date.now() - 86_400_000).toISOString();
+  if (env.DB) return (await env.DB.prepare("SELECT * FROM mailboxes WHERE NOT (status = 'awaiting_payment' AND created_at < ?1) ORDER BY created_at DESC, id DESC").bind(stale).all<Mailbox>()).results;
+  return mem.mailboxes.filter((m) => !(m.status === 'awaiting_payment' && m.created_at < stale)).sort((a, b) => b.created_at.localeCompare(a.created_at) || b.id - a.id);
+}
+export async function updateMailbox(env: Env, code: string, patch: Partial<Omit<Mailbox, 'id' | 'code' | 'created_at'>>): Promise<Mailbox | null> {
+  const m = await getMailbox(env, code);
+  if (!m) return null;
+  const keys = (Object.keys(patch) as (keyof typeof patch)[]).filter((k) => (MB_COLS as readonly string[]).includes(k) && !['code', 'created_at'].includes(k));
+  if (!keys.length) return m;
+  if (env.DB) await env.DB.prepare(`UPDATE mailboxes SET ${keys.map((k, i) => `${k} = ?${i + 2}`).join(', ')} WHERE code = ?1`).bind(m.code, ...keys.map((k) => patch[k] ?? null)).run();
+  else Object.assign(m, Object.fromEntries(keys.map((k) => [k, patch[k] ?? null])));
+  return { ...m, ...Object.fromEntries(keys.map((k) => [k, patch[k] ?? null])) } as Mailbox;
 }
 
 export async function getDropoff(env: Env, id: number): Promise<Dropoff | null> {

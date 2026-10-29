@@ -1,0 +1,9 @@
+{
+  "_comment": "Mailbox sizes and monthly prices for the online subscription page (/mailbox). year_months is what a year costs in months: 10 means 12 for the price of 10. TODO owners: real sizes and prices (issue 9); the UPS Stores in town are the comparison (agenda item 29).",
+  "year_months": 10,
+  "sizes": [
+    { "id": "small", "name": "Small", "fits": "Letters and small envelopes", "monthly": 15 },
+    { "id": "medium", "name": "Medium", "fits": "Letters, magazines, small parcels", "monthly": 22 },
+    { "id": "large", "name": "Large", "fits": "Everything, with package acceptance", "monthly": 30 }
+  ]
+}

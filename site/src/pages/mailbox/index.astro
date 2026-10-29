@@ -1,0 +1,72 @@
+---
+import Base from '../../layouts/Base.astro';
+import StoreInfo from '../../components/StoreInfo.astro';
+import { store } from '../../data/store';
+import { SIZES, YEAR_MONTHS } from '../../lib/mailboxes';
+const cancelled = Astro.url.searchParams.get('cancelled');
+---
+<Base title={`Rent a mailbox · ${store.name}`} description="A real street address in Monroe, package acceptance from every carrier, and a text when something arrives. Pay monthly or yearly online.">
+  <section class="hero">
+    <h1 data-i18n="mb.h1">Rent a mailbox</h1>
+    <p class="lead" data-i18n="mb.lead">A real street address, not a PO Box, so every carrier can deliver. We sign for packages and text you when something comes in. Pay monthly or yearly, cancel any time.</p>
+    {cancelled && <p class="card" data-i18n="mb.cancelled">Payment was cancelled, so nothing was set up. Pick again when you're ready.</p>}
+  </section>
+  <div class="grid">
+    <form id="mb" class="card order" autocomplete="on">
+      <fieldset class="opts">
+        <legend data-i18n="mb.size">Box size</legend>
+        {SIZES.map((s, i) => (
+          <label class="opt"><input type="radio" name="size" value={s.id} data-monthly={s.monthly} checked={i === 0} /> <span><strong data-i18n={`mb.size.${s.id}`}>{s.name}</strong> <span class="muted" data-i18n={`mb.fits.${s.id}`}>{s.fits}</span></span> <em>${s.monthly.toFixed(2)}<span data-i18n="mb.permonth">/month</span></em></label>
+        ))}
+      </fieldset>
+      <fieldset class="opts">
+        <legend data-i18n="mb.term">Pay</legend>
+        <label class="opt"><input type="radio" name="term" value="monthly" checked /> <span data-i18n="mb.monthly">Monthly</span></label>
+        <label class="opt"><input type="radio" name="term" value="yearly" /> <span data-i18n="mb.yearly">Yearly, 12 months for the price of</span> <span>{YEAR_MONTHS}</span></label>
+      </fieldset>
+      <p class="subtotal"><span data-i18n="mb.total">Today</span>: <strong id="total">$0.00</strong> <span id="per" class="muted"></span></p>
+      <label><span data-i18n="f.name">Name</span> <input name="name" required maxlength="60" /></label>
+      <label><span data-i18n="f.email">Email</span> <input name="email" type="email" required maxlength="80" /></label>
+      <label><span data-i18n="f.phone">Phone</span> <input name="phone" type="tel" maxlength="20" /></label>
+      <label><span data-i18n="mb.business">Business name on the box (optional)</span> <input name="business" maxlength="80" /></label>
+      <label class="check"><input name="agree" type="checkbox" required /> <span data-i18n="mb.agree">I'll bring two forms of ID (one with a photo) and sign USPS Form 1583 at the counter. The box number and address are given then.</span></label>
+      <button class="btn" type="submit" id="go" data-i18n="mb.go">Pay and reserve my box</button>
+      <p class="err" id="err" hidden></p>
+    </form>
+    <div>
+      <div class="card">
+        <h3 data-i18n="mb.what">What you get</h3>
+        <ul>
+          <li data-i18n="mb.what1">A street address: your name, our address, your box number. Banks and the DMV accept it.</li>
+          <li data-i18n="mb.what2">Packages from USPS, UPS, FedEx, DHL and Amazon, signed for and kept safe.</li>
+          <li data-i18n="mb.what3">A text or email when mail or a package arrives.</li>
+          <li data-i18n="mb.what4">Mail forwarding and holding while you travel, ask at the counter.</li>
+        </ul>
+        <p class="muted" data-i18n="mb.ids">USPS requires two IDs for a private mailbox: a photo ID (driver's license, passport) and a second ID (vehicle registration, lease, insurance card, voter card). Form 1583 is signed in the shop.</p>
+      </div>
+      <StoreInfo />
+    </div>
+  </div>
+  <script>
+    import { t } from '../../i18n';
+    const form = document.getElementById('mb') as HTMLFormElement, err = document.getElementById('err')!;
+    const YEAR = Number((form.querySelector('[name=term][value=yearly]') as HTMLElement).nextElementSibling!.nextElementSibling!.textContent);
+    function total() {
+      const size = form.querySelector<HTMLInputElement>('[name=size]:checked')!;
+      const yearly = (form.querySelector<HTMLInputElement>('[name=term]:checked')!).value === 'yearly';
+      const m = Number(size.dataset.monthly);
+      document.getElementById('total')!.textContent = `$${(yearly ? m * YEAR : m).toFixed(2)}`;
+      document.getElementById('per')!.textContent = yearly ? t('mb.peryear') : t('mb.permonth2');
+    }
+    form.addEventListener('change', total); total();
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const btn = document.getElementById('go')!; btn.setAttribute('disabled', '');
+      const body = Object.fromEntries(new FormData(form).entries());
+      const res = await fetch('/api/mailbox', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const j = await res.json();
+      if (!res.ok) { err.textContent = j.error; err.hidden = false; btn.removeAttribute('disabled'); return; }
+      location.href = j.next;
+    });
+  </script>
+</Base>

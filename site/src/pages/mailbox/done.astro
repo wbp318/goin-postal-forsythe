@@ -1,0 +1,35 @@
+---
+export const prerender = false;
+import QRCode from 'qrcode';
+import Base from '../../layouts/Base.astro';
+import { store } from '../../data/store';
+import { env } from '../../lib/env';
+import { getMailbox } from '../../shipping/store';
+
+const m = await getMailbox(env, Astro.url.searchParams.get('code') ?? '');
+if (!m) return new Response('No such mailbox', { status: 404 });
+const qr = await QRCode.toString(`${env.SITE_URL}/counter/mailbox/${m.code}`, { type: 'svg', margin: 1, width: 200 });
+const waiting = m.status === 'awaiting_payment';
+---
+<Base title={`Mailbox ${m.code} · ${store.name}`}>
+  <section class="hero">
+    <h1 data-i18n={waiting ? 'done.waiting' : m.box_number ? 'mb.done.box' : 'mb.done.h1'}>{waiting ? 'Waiting for payment.' : m.box_number ? 'Your mailbox is open.' : 'Paid. Come in to finish setting it up.'}</h1>
+    <p class="lead"><span data-i18n="ret.done.code">Your code is</span> <strong class="code">{m.code}</strong>. <span data-i18n={`mb.size.${m.size}`}>{m.size}</span>, ${m.price.toFixed(2)} <span data-i18n={m.term === 'yearly' ? 'mb.peryear' : 'mb.permonth2'}>{m.term === 'yearly' ? 'a year' : 'a month'}</span>.
+      {m.box_number
+        ? <><span data-i18n="mb.done.addr">Your address is</span> <strong>{m.business_name || m.customer_name}, {store.address.replace(/,\s*/, ` #${m.box_number}, `)}</strong>.</>
+        : <><span data-i18n="mb.done.bring">Bring two IDs to</span> {store.address}. <span data-i18n="mb.done.then">We fill in USPS Form 1583 together and give you the box number and your new address.</span></>}
+    </p>
+  </section>
+  <div class="grid">
+    <div class="card qr">
+      <h3 data-i18n="cardsdone.show">Show this at the counter</h3>
+      <div set:html={qr} />
+      <p><span data-i18n="cardsdone.tell">Or tell us the code</span> <strong>{m.code}</strong>.</p>
+    </div>
+    <div class="card">
+      <p><strong>{m.customer_name}</strong>{m.business_name ? ` · ${m.business_name}` : ''} · {m.email}{m.phone ? ` · ${m.phone}` : ''}</p>
+      <p class="muted" data-i18n="mb.ids">USPS requires two IDs for a private mailbox: a photo ID (driver's license, passport) and a second ID (vehicle registration, lease, insurance card, voter card). Form 1583 is signed in the shop.</p>
+      <p class="muted" data-i18n="mb.done.renew">Renewals charge the same card automatically and Stripe emails each receipt. To cancel, ask at the counter or reply to any receipt.</p>
+    </div>
+  </div>
+</Base>

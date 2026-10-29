@@ -317,3 +317,33 @@ CREATE TABLE IF NOT EXISTS return_requests (
   dropoff_id INTEGER REFERENCES dropoffs(id)
 );
 CREATE INDEX IF NOT EXISTS return_requests_status ON return_requests(status, created_at);
+
+-- Mailbox subscriptions (agenda items 24, 29): paid on Stripe in subscription mode from /mailbox; the
+-- box number and PS Form 1583 are recorded at /counter/mailbox/CODE.
+CREATE TABLE IF NOT EXISTS mailboxes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT NOT NULL UNIQUE,           -- MB-XXXXXX
+  created_at TEXT NOT NULL,
+  customer_id TEXT REFERENCES customers(id),
+  customer_name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  phone TEXT,
+  business_name TEXT,
+  size TEXT NOT NULL,                  -- small, medium, large
+  term TEXT NOT NULL,                  -- monthly, yearly
+  price REAL NOT NULL,                 -- per term, at signup
+  status TEXT NOT NULL DEFAULT 'awaiting_payment', -- awaiting_payment, active, past_due, cancelled
+  stripe_customer_id TEXT,
+  stripe_subscription_id TEXT,
+  stripe_session_id TEXT,
+  started_at TEXT,
+  current_period_end TEXT,
+  cancelled_at TEXT,
+  box_number TEXT,
+  form_1583_at TEXT,
+  form_1583_by TEXT,
+  ids_seen TEXT,
+  notes TEXT
+);
+CREATE INDEX IF NOT EXISTS mailboxes_status ON mailboxes(status, created_at);
+CREATE INDEX IF NOT EXISTS mailboxes_sub ON mailboxes(stripe_subscription_id);

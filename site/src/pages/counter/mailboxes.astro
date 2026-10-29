@@ -1,0 +1,39 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+import { env } from '../../lib/env';
+import { listMailboxes } from '../../shipping/store';
+
+// Staff page: every mailbox subscription, newest first. Paid online through Stripe; the box number
+// and Form 1583 happen here. Open one for the actions.
+const all = await listMailboxes(env);
+const todo = all.filter((m) => m.status === 'active' && (!m.form_1583_at || !m.box_number));
+const fmt = (iso: string | null) => (iso ? iso.slice(0, 10) : '');
+---
+<Base title="Counter · Mailboxes">
+  <section class="hero">
+    <h1 data-i18n="st.m.h1">Mailboxes</h1>
+    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/accounts" data-i18n="st.nav.accounts">Accounts</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/mailboxes" data-i18n="st.nav.mailboxes">Mailboxes</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/close" data-i18n="st.nav.close">End of day</a> · <a href="/counter/invoices" data-i18n="st.nav.invoices">Invoices</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a> · <a href="/counter/staff" data-i18n="st.nav.staff">Staff</a> · <a href="/counter/export" data-i18n="st.nav.export">Export</a></p>
+    <p class="lead" data-i18n="st.m.lead">Subscriptions paid on the website. Stripe charges the renewals. When the customer comes in: check two IDs, record Form 1583, then give the box number. Nothing here takes money.</p>
+  </section>
+  {todo.length > 0 && <div class="card">
+    <h3 data-i18n="st.m.todo">Paid, waiting on the counter</h3>
+    <ul>{todo.map((m) => <li><a href={`/counter/mailbox/${m.code}`}>{m.code}</a> · {m.customer_name} · <span data-i18n={`mb.size.${m.size}`}>{m.size}</span> · {!m.form_1583_at ? <span data-i18n="st.m.need1583">needs Form 1583</span> : <span data-i18n="st.m.needbox">needs a box number</span>}</li>)}</ul>
+  </div>}
+  <table class="list">
+    <thead><tr><th data-i18n="st.m.th.code">Code</th><th data-i18n="st.o.customer">Customer:</th><th data-i18n="mb.size">Box size</th><th data-i18n="mb.term">Pay</th><th data-i18n="st.m.th.box">Box</th><th data-i18n="st.o.status">Status:</th><th data-i18n="st.m.th.since">Since</th><th data-i18n="st.m.th.renews">Renews</th></tr></thead>
+    <tbody>
+      {all.length === 0 && <tr><td colspan="8" class="muted" data-i18n="st.m.none">No mailboxes yet. The page for customers is /mailbox.</td></tr>}
+      {all.map((m) => <tr>
+        <td><a href={`/counter/mailbox/${m.code}`}>{m.code}</a></td>
+        <td>{m.customer_name}{m.business_name ? ` (${m.business_name})` : ''}</td>
+        <td data-i18n={`mb.size.${m.size}`}>{m.size}</td>
+        <td>${m.price.toFixed(2)} <span data-i18n={m.term === 'yearly' ? 'mb.peryear' : 'mb.permonth2'}>{m.term === 'yearly' ? 'a year' : 'a month'}</span></td>
+        <td>{m.box_number ?? ''}</td>
+        <td data-i18n={`st.m.status.${m.status}`}>{m.status.replace('_', ' ')}</td>
+        <td>{fmt(m.started_at ?? m.created_at)}</td>
+        <td>{fmt(m.current_period_end)}</td>
+      </tr>)}
+    </tbody>
+  </table>
+</Base>

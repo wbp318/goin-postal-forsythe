@@ -1,0 +1,59 @@
+---
+export const prerender = false;
+import Base from '../../../layouts/Base.astro';
+import { env } from '../../../lib/env';
+import { getMailbox } from '../../../shipping/store';
+import { store } from '../../../data/store';
+
+// Staff page for one mailbox subscription: record Form 1583 and the two IDs, give the box number,
+// notes, cancel. Payment already happened on Stripe and renews there.
+const m = await getMailbox(env, Astro.params.code ?? '');
+if (!m) return new Response('No such mailbox', { status: 404 });
+const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '');
+---
+<Base title={`Counter · ${m.code}`}>
+  <section class="hero">
+    <h1>{m.code}</h1>
+    <p class="lead"><span data-i18n="st.o.status">Status:</span> <strong data-i18n={`st.m.status.${m.status}`}>{m.status.replace('_', ' ')}</strong> · <span data-i18n={`mb.size.${m.size}`}>{m.size}</span> · ${m.price.toFixed(2)} <span data-i18n={m.term === 'yearly' ? 'mb.peryear' : 'mb.permonth2'}>{m.term === 'yearly' ? 'a year' : 'a month'}</span>{m.current_period_end && <> · <span data-i18n="st.m.th.renews">Renews</span> {fmt(m.current_period_end)}</>}{m.status === 'awaiting_payment' && <> · <strong data-i18n="st.k.notpaid">NOT PAID, do not print</strong></>}</p>
+    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/accounts" data-i18n="st.nav.accounts">Accounts</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/mailboxes" data-i18n="st.nav.mailboxes">Mailboxes</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/close" data-i18n="st.nav.close">End of day</a> · <a href="/counter/invoices" data-i18n="st.nav.invoices">Invoices</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a> · <a href="/counter/staff" data-i18n="st.nav.staff">Staff</a> · <a href="/counter/export" data-i18n="st.nav.export">Export</a></p>
+  </section>
+  <div class="grid">
+    <div class="card">
+      <p><strong data-i18n="st.o.customer">Customer:</strong> {m.customer_name}{m.business_name ? ` (${m.business_name})` : ''} · {m.email}{m.phone ? ` · ${m.phone}` : ''}{m.customer_id && <> · <a href={`/counter/customers?q=${encodeURIComponent(m.email)}`} data-i18n="st.nav.customers">Customers</a></>}</p>
+      <p><strong data-i18n="st.m.th.box">Box</strong> {m.box_number ? <strong>#{m.box_number}</strong> : <span class="muted" data-i18n="st.m.nobox">not given yet</span>}{m.box_number && <> · <span data-i18n="mb.done.addr">Your address is</span> {m.business_name || m.customer_name}, {store.address.replace(/,\s*/, ` #${m.box_number}, `)}</>}</p>
+      <p><strong>Form 1583</strong> {m.form_1583_at ? <><span data-i18n="st.m.recorded">recorded</span> {fmt(m.form_1583_at)} ({m.form_1583_by}) · {m.ids_seen}</> : <span class="muted" data-i18n="st.m.need1583">needs Form 1583</span>}</p>
+      {m.notes && <p><strong data-i18n="st.k.notes">Notes:</strong> <span style="white-space: pre-line">{m.notes}</span></p>}
+      {m.stripe_subscription_id && <p class="muted">Stripe {m.stripe_subscription_id}</p>}
+    </div>
+    <form class="card" id="acts" autocomplete="off">
+      <label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
+      {m.status !== 'cancelled' && !m.form_1583_at && <>
+        <p class="muted" data-i18n="st.m.1583.lead">Check a photo ID and a second ID, fill in USPS Form 1583 with the customer, keep the store's copy. Then note what you saw here.</p>
+        <label><span data-i18n="st.m.ids">IDs seen (type and last digits)</span> <input name="ids" maxlength="200" placeholder="LA DL ...1234, insurance card" /></label>
+        <p><button class="btn" type="button" data-action="form1583" data-i18n="st.m.record1583">Record Form 1583</button></p>
+      </>}
+      {m.status !== 'cancelled' && m.form_1583_at && !m.box_number && <>
+        <label><span data-i18n="st.m.boxnum">Box number</span> <input name="box_number" maxlength="10" inputmode="numeric" /></label>
+        <p><button class="btn" type="button" data-action="box" data-i18n="st.m.givebox">Give this box</button></p>
+      </>}
+      <label><span data-i18n="st.k.notes">Notes:</span> <textarea name="notes" rows="3" maxlength="500">{m.notes}</textarea></label>
+      <p><button class="btn kraft" type="button" data-action="note" data-i18n="st.m.savenote">Save notes</button></p>
+      {m.status !== 'cancelled' && <>
+        <label><span data-i18n="st.m.reason">Reason to cancel</span> <input name="reason" maxlength="200" /></label>
+        <p><button class="btn" type="button" data-action="cancel" data-i18n="st.m.cancel">Cancel the subscription</button></p>
+      </>}
+      <p id="msg" role="alert"></p>
+    </form>
+  </div>
+  <script define:vars={{ code: m.code }}>
+    const form = document.getElementById('acts'), msg = document.getElementById('msg');
+    form.querySelectorAll('[data-action]').forEach((b) => b.addEventListener('click', async () => {
+      b.disabled = true;
+      const d = Object.fromEntries(new FormData(form).entries());
+      const res = await fetch('/api/mailbox', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, pin: document.getElementById('pin').value, action: b.dataset.action, ...d }) });
+      const j = await res.json();
+      if (!res.ok) { msg.className = 'err'; msg.textContent = j.error; b.disabled = false; return; }
+      location.reload();
+    }));
+  </script>
+</Base>
