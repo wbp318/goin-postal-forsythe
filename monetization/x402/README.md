@@ -227,7 +227,7 @@ About two weeks of build in total, none of it urgent, all of it after the Forsyt
 - **Protocol churn.** x402 v2 shipped in December 2025 and Cloudflare proposed a deferred-settlement scheme. Pin the template version, update quarterly.
 - **Reputation.** Some customers hear "crypto" and think scam. Nothing on the public site changes; this is machine-to-machine only. Humans keep paying by card.
 
-## Decisions for Rin
+## Decisions for Peter and Rin
 
 1. Open a Kraken business account in the store's name, or wait until PeterShip has its own LLC and open it there.
 2. Agree the refund rule for agent-bought labels and cards.

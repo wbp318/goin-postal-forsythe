@@ -105,7 +105,7 @@ flowchart LR
 - `/shirts` in the site, built on the card designer's renderer (the editor already draws any size; a shirt front is a canvas with a shirt-shaped mask). The customer uploads art or types text, picks style, color and sizes, sees the price from a table, pays the deposit on Stripe, and the order lands in a `shirt_orders` table with a counter page like the card orders. The partner gets the proof PDF by email automatically. This is the "print products beyond cards" row of the monetization plan with shirts first.
 - Routing from the chart above as a rule in the order: partner picked by Tech marks, date and quantity, overridable at the counter.
 
-## Decisions for Rin
+## Decisions for Peter and Rin
 
 1. Ask Weekend Press for a wholesale rate card, their minimum, whether they do DTF for small runs, and proof and print turnarounds. That one conversation sets the whole price sheet.
 2. Ask Tommy's Tees the same, plus whether their Louisiana Tech license covers shirts a reseller sells, and whether they do hats and embroidery.

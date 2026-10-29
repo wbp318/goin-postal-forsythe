@@ -70,6 +70,7 @@ quadrantChart
 
 | Idea | How it works | Suggested price | Build | Rough money |
 |---|---|---|---|---|
+| **Who prints the business cards** | The designer's orders have to be printed by someone. In the shop (the 10-up sheet on a cardstock laser, cut, same day) for standard 100 and 250 runs; a trade printer shipped in (4over, about a week) for every upsell and big run, where the margin is; Sir Speedy Monroe for a rush that the laser cannot do. Routing chart and the software to add (PDF export, "sent to printer" status) in [`business-cards/`](business-cards/README.md) | Already set: $24.99 to $89.99 plus upsells; costs $0.04 to $0.15 a card | A trade account and an afternoon of software (T27) | A 500-card trade-printed order keeps about $30; the shop press is for same-day, not margin |
 | **Custom screen-printed shirts, printed by a partner** | The store takes the order, the art and the deposit; Weekend Press in Lake Providence (friends, the owner's commute carries the goods) prints by default, Tommy's Tees in Ruston for Louisiana Tech marks and big runs, Atomic Ink in West Monroe for a same-week rush or embroidery. Plan with the routing chart and a price example in [`screen-printing/`](screen-printing/README.md) | Retail $15 to $20 a shirt at 12 to 48 pieces; the store keeps 30 to 40 percent | A form and a folder this month; `/shirts` on the card designer's renderer when there are ten orders a month | 24 one-color shirts: $229 cost, $360 sale, $131 kept. Walk-ins already ask |
 | **Print products beyond cards** | The card designer's renderer draws any size. Add flyers, postcards, yard signs, banners, labels, stickers, each as a template set at its own dimensions, with the same editor and the same order flow. | Postcards from $25 per 100, flyers from $40 per 100, banners from $45 | A week per product family: templates, size presets, print sheets, counter workflow | The store already prints these. Online design removes the back-and-forth over email proofs, which is what stops most orders today. |
 | **Business accounts** (software ✅ v1.32.0, one-page offer ✅ Oct 29, v1.48.0: `designs/business-accounts-offer.svg`) | Agenda item 28. Local shops, Etsy sellers and contractors get a login, a saved address book, discounted rates, a monthly Stripe invoice instead of paying per label, and a scheduled pickup. | 5 to 10% below walk-in rates, $10 to $25 a month for the pickup | Two weeks: accounts in D1, invoice run, pickup calendar, CSV upload of orders | Ten accounts shipping 50 packages a month each is 500 labels nobody had to stand in line for. |
@@ -154,7 +155,7 @@ flowchart LR
 - **Support.** Every store that pays for the software will call when a label fails. Price that in, or keep it to a handful of stores the owners know.
 - **Keep money separate.** In-person payments stay on the Goin' Postal POS. Online money is Stripe. Platform fees from other stores would be a third stream through Stripe Connect. Do not mix them in the books.
 
-## Decisions for Rin
+## Decisions for Peter and Rin
 
 1. Convenience fee: percentage, flat, or absorb it?
 2. The card upsells are built with the suggested prices above. Confirm or change them in `CARD_OPTIONS` (issue 9).

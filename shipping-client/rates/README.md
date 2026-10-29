@@ -81,7 +81,7 @@ flowchart TD
 
 Steps 3 to 6 are to-do items T16 and T26 in the agenda. Steps 1 and 2 are the owners'.
 
-## Decisions for Rin
+## Decisions for Peter and Rin
 
 1. Are USPS labels for business accounts sold at cost, with the money made on the visit? (Recommended.)
 2. Which platform for USPS postage: EasyPost or Shippo? Both have per-label fees under a nickel at the store's volume; the choice is whichever gives a quicker USPS approval.

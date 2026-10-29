@@ -329,7 +329,7 @@ The three sentences for the pitch: it runs in a browser on whatever you have. It
 - **One developer.** Today that is one person and Claude Code. Document everything, keep the adapters isolated, and plan the part-time developer at 100 stores.
 - **Data.** Stores' customers' addresses and phone numbers live in our D1. Encrypt at rest (Cloudflare does), scope every query by `store_id`, and never let one store see another's rows. Test that in CI.
 
-## Decisions for Rin
+## Decisions for Peter and Rin
 
 1. Ask GP Brands the one question: may a franchisee sell shipping software to other franchisees, and must franchisees use Rate Pro? Everything else waits on nothing but that.
 2. Agree to a separate LLC for PeterShip once the Forsythe switch-over is done.

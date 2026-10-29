@@ -190,7 +190,7 @@ Measured the same way as every other placement, through the Coupon Counter: the 
 - **Griefing.** Whitelist from day one.
 - **Reputation.** A GTA server attached to a family shipping store needs clear content rules: no conflict roleplay, no real-world organizations, teen-appropriate chat, and age gates on anything that touches real money.
 
-## Decisions for Rin
+## Decisions for Peter and Rin
 
 1. Start the design document and the browser prototype now, or wait until Rockstar announces a PC version.
 2. Which parody name, and will GP Brands allow the real store to be credited on the server website.
