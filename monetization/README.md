@@ -60,7 +60,7 @@ quadrantChart
 | Idea | How it works | Suggested price | Build | Rough money |
 |---|---|---|---|---|
 | **Online convenience fee** ✅ built Oct 28, v1.43.0 | A line on every online label and card order covering Stripe's 2.9% plus 30 cents, or a touch more. | 3.5% to start; percent and flat amount at Staff → Prices | Done: shown on the Ship page, a Stripe line, never at the counter | Covers the only real site cost. At 100 labels a month, about $75 recovered. |
-| **Card designer upsells** | Quantity tiers already exist. Add paper stock (standard, thick, linen), finish (matte, gloss, soft touch), rounded corners, and rush pickup as priced options on the order form. | +$5 thick, +$8 linen, +$4 gloss, +$6 rounded, +$10 rush | A day: options list, price math, counter sheet shows the choices | Vistaprint's margin lives here. If a third of orders take one upsell at $6, 20 orders a month is $40 extra, 60 is $120. |
+| **Card designer upsells** ✅ built Oct 29, v1.44.0 | Quantity tiers already exist. Add paper stock (standard, thick, linen), finish (matte, gloss, soft touch), rounded corners, and rush pickup as priced options on the order form. | +$5 thick, +$8 linen, +$4 gloss, +$6 soft touch, +$6 rounded, +$10 rush, all in `CARD_OPTIONS` in `site/src/lib/cards.ts` until Rin sets them | Done: options on the order form, priced on the server, a Stripe line each, shown on the done page, the counter page and the print sheet | Vistaprint's margin lives here. If a third of orders take one upsell at $6, 20 orders a month is $40 extra, 60 is $120. |
 | **Mailbox subscriptions online** | Mailbox rental is already a service. Sell it on the site: pick a size, pay monthly or yearly through Stripe Billing, renewals automatic, reminder emails. | $15 to $30 a month by size, 12 months for the price of 10 | Two to three days: a page, Stripe subscription products, a webhook, a mailbox number issued at the counter | A recurring line. 40 boxes at $20 is $800 a month on autopilot, with no card swipes at the counter. |
 | **Insurance and packaging add-ons** | On the ship page after picking a rate: declared-value insurance, a box, bubble wrap, a signature. Priced from a small table, added to the Stripe total. | Insurance at 2 to 3% of value with a $2 minimum, boxes at cost plus a margin | A day | Industry average is a couple of dollars a shipment. 100 labels is about $200. |
 | **Text notifications fee** ✅ built Oct 28, v1.43.0 | "Text me when it's delivered" as a 50-cent option. Costs about a cent a text to send. | $0.50, the `text-updates` add-on in the catalog | Half a day once the shipping client's tracking exists; sooner by polling the carrier page | Small, but almost all margin. |
@@ -156,6 +156,6 @@ flowchart LR
 ## Decisions for Rin
 
 1. Convenience fee: percentage, flat, or absorb it?
-2. Which three card upsells to offer first, and at what price?
+2. The card upsells are built with the suggested prices above. Confirm or change them in `CARD_OPTIONS` (issue 9).
 3. Mailbox sizes and monthly prices for the online subscription page.
 4. Is selling the software to other Goin' Postal stores something to raise with GP Brands now, or after the shipping client works for Forsythe?

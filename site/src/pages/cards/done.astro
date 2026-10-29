@@ -9,12 +9,14 @@ import { store } from '../../data/store';
 
 const order = await getCardOrder(env, Astro.url.searchParams.get('order') ?? '');
 if (!order) return new Response('No such order', { status: 404 });
+// The lines under the card price, each with its translation key: the paid options, then the online fee.
+const extras = [...(order.options ?? []).map((o) => ({ key: `cards.opt.${o.code}`, label: o.name, amount: o.price })), ...(order.fee ? [{ key: 'done.fee', label: 'Online fee', amount: order.fee.amount }] : [])];
 const qr = await QRCode.toString(`${env.SITE_URL}/counter/card/${order.id}`, { type: 'svg', margin: 1, width: 200 });
 ---
 <Base title={`Cards ${order.id} · ${store.name}`}>
   <section class="hero">
     <h1 data-i18n={order.status === 'awaiting_payment' ? 'done.waiting' : 'cardsdone.paid'}>{order.status === 'awaiting_payment' ? 'Waiting for payment.' : 'Paid. We are printing your cards.'}</h1>
-    <p class="lead"><span data-i18n="done.code">Pickup code</span> <strong class="code">{order.id}</strong>. {order.quantity} <span data-i18n="cards.unit">cards</span>, ${cardTotal(order).toFixed(2)}{order.fee && <> (<span data-i18n="done.fee">Online fee</span> ${order.fee.amount.toFixed(2)})</>}. <span data-i18n="cardsdone.pickup">Pick up at</span> {store.address}. <span data-i18n="cardsdone.contact">We'll contact</span> {order.customer.email}{order.customer.phone ? ` / ${order.customer.phone}` : ''} <span data-i18n="cardsdone.ready">when they're ready.</span></p>
+    <p class="lead"><span data-i18n="done.code">Pickup code</span> <strong class="code">{order.id}</strong>. {order.quantity} <span data-i18n="cards.unit">cards</span>, ${cardTotal(order).toFixed(2)}{extras.length > 0 && <> ({extras.map((x, i) => <span>{i ? ', ' : ''}<span data-i18n={x.key}>{x.label}</span> ${x.amount.toFixed(2)}</span>)})</>}. <span data-i18n="cardsdone.pickup">Pick up at</span> {store.address}. <span data-i18n="cardsdone.contact">We'll contact</span> {order.customer.email}{order.customer.phone ? ` / ${order.customer.phone}` : ''} <span data-i18n="cardsdone.ready">when they're ready.</span></p>
   </section>
   <div class="grid">
     <div class="card-wrap" set:html={renderCard(order.design, 'front')} />

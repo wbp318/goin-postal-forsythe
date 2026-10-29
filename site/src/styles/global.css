@@ -98,6 +98,11 @@ select { width: 100%; padding: 12px 14px; min-height: 52px; border: 2px solid #8
 .btnrow { display: flex; flex-wrap: wrap; gap: 6px; }
 .muted { color: var(--muted); font-size: .9rem; }
 .order { display: grid; gap: 10px; max-width: 32rem; margin-top: 24px; }
+.opts { border: 1px solid #d9dee7; border-radius: 8px; padding: 8px 12px; display: grid; gap: 4px; }
+.opts legend { font-weight: 700; padding: 0 4px; }
+.opt { display: flex; gap: 8px; align-items: center; }
+.opt em { margin-left: auto; font-style: normal; color: #4b5563; }
+.subtotal { font-size: 1.1rem; margin: 4px 0; }
 .btn.small { padding: 6px 12px; font-size: .9rem; }
 input[type=color] { height: 44px; padding: 2px; }
 input[type=file] { padding: 6px; }

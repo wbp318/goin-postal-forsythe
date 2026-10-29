@@ -28,7 +28,7 @@ const back = renderCard(o.design, 'back');
   </style>
 </head>
 <body>
-  <div class="bar">{o.id} · {o.quantity} cards · print this page, then flip on the long edge for the backs. <button onclick="print()">Print</button></div>
+  <div class="bar">{o.id} · {o.quantity} cards{o.options?.length ? ' · ' + o.options.map((x) => x.name).join(', ') : ''} · print this page, then flip on the long edge for the backs. <button onclick="print()">Print</button></div>
   <div class="page">
     {Array.from({ length: 10 }).map(() => <div class="c" set:html={front} />)}
   </div>

@@ -3,7 +3,7 @@ export const prerender = false;
 import { env } from '../../../lib/env';
 import Base from '../../../layouts/Base.astro';
 import { getCardOrder } from '../../../lib/cardOrders';
-import { renderCard } from '../../../lib/cards';
+import { renderCard, chosenOptions } from '../../../lib/cards';
 
 // Staff page for a card order. Already paid online through Stripe. The print sheet is at /sheet.
 const o = await getCardOrder(env, Astro.params.code ?? '');
@@ -22,6 +22,8 @@ if (!o) return new Response('No such order', { status: 404 });
     </div>
     <div class="card">
       <p><strong data-i18n="st.o.customer">Customer:</strong> {o.customer.name} · {o.customer.email} {o.customer.phone}</p>
+      {o.options?.some((x) => x.code === 'rush') && <p class="rush" data-i18n="st.k.rush">RUSH: ready next business day</p>}
+      <p><strong data-i18n="st.k.options">Options:</strong> {chosenOptions(o.options).map((x, i) => <span>{i ? ', ' : ''}<span data-i18n={`cards.opt.${x.code}`}>{x.name}</span>{x.price ? ` ($${x.price.toFixed(2)})` : ''}</span>)}</p>
       {o.notes && <p><strong data-i18n="st.k.notes">Notes:</strong> {o.notes}</p>}
       <p><a class="btn" href={`/counter/card/${o.id}/sheet`} target="_blank" data-i18n="st.k.sheet">Open print sheet (10 up, letter)</a></p>
       <label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
@@ -30,6 +32,7 @@ if (!o) return new Response('No such order', { status: 404 });
       <p id="msg"></p>
     </div>
   </div>
+  <style>.rush { background: #fde68a; color: #3b2c00; font-weight: 700; padding: 6px 10px; border-radius: 6px; }</style>
   <script define:vars={{ id: o.id }}>
     const msg = document.getElementById('msg');
     document.querySelectorAll('[data-action]').forEach((b) => b.addEventListener('click', async () => {

@@ -57,7 +57,8 @@ export async function createCardCheckout(env: Env, order: CardOrder): Promise<st
         unit_amount: Math.round(order.price * 100),
         product_data: { name: `${order.quantity} business cards`, description: `Pickup code ${order.id}. Printed at ${store.name}.` },
       },
-    }, ...(order.fee ? [{ quantity: 1, price_data: { currency: 'usd', unit_amount: Math.round(order.fee.amount * 100), product_data: { name: 'Online convenience fee' } } }] : [])],
+    }, ...(order.options ?? []).map((o) => ({ quantity: 1, price_data: { currency: 'usd', unit_amount: Math.round(o.price * 100), product_data: { name: o.name } } })),
+    ...(order.fee ? [{ quantity: 1, price_data: { currency: 'usd', unit_amount: Math.round(order.fee.amount * 100), product_data: { name: 'Online convenience fee' } } }] : [])],
     success_url: `${site}/cards/done?order=${order.id}`,
     cancel_url: `${site}/cards?cancelled=${order.id}`,
   });

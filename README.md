@@ -833,7 +833,7 @@ flowchart LR
 | Ship | Address and parcel form, rates from all four carriers side by side, pay online or reserve |
 | Done | Label PDF to print at home, a QR code and a pickup code for printing at the counter |
 | Counter | Staff-only view of an order, opened by scanning the QR. For international orders: ring up on the POS, press the button to buy the label. Then mark printed |
-| Business cards | Vistaprint-style designer: 12 layouts in 12 color schemes, 6 typefaces, click any text on the card to edit it, drag it, resize it, add text and logos, front and back, undo and redo, free PNG download, pay by card online and pick up in the shop |
+| Business cards | Vistaprint-style designer: 12 layouts in 12 color schemes, 6 typefaces, click any text on the card to edit it, drag it, resize it, add text and logos, front and back, undo and redo, free PNG download, pay by card online and pick up in the shop. Order-form upsells: thick or linen stock, gloss or soft-touch finish, rounded corners, rush pickup, each a priced line on the Stripe checkout and on the counter's print sheet |
 | Contact | Quote request form that posts to Formspree |
 | Any page | Language picker, text size (5 steps) and high contrast switches in the header, remembered per device |
 

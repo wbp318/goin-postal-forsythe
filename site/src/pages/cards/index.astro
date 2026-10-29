@@ -1,7 +1,7 @@
 ---
 import { store } from '../../data/store';
 import Base from '../../layouts/Base.astro';
-import { TEMPLATES, PALETTES, QUANTITIES, PRICES, FONT_NAMES } from '../../lib/cards';
+import { TEMPLATES, PALETTES, QUANTITIES, PRICES, FONT_NAMES, CARD_OPTIONS, OPTION_GROUPS } from '../../lib/cards';
 const cancelled = Astro.url.searchParams.get('cancelled');
 ---
 <Base title={`Design business cards · ${store.name}`} description="Design your own business cards in the browser like Vistaprint, pay online, and pick them up at Goin' Postal Forsythe.">
@@ -84,13 +84,22 @@ const cancelled = Astro.url.searchParams.get('cancelled');
       <p class="muted" data-i18n="cards.paynow">Pay by card now. We print them and you pick them up in the shop.</p>
       <label><span data-i18n="cards.qty">Quantity</span>
         <select name="quantity">
-          {QUANTITIES.map((q) => <option value={q}>{q} · ${PRICES[q].toFixed(2)}</option>)}
+          {QUANTITIES.map((q) => <option value={q} data-price={PRICES[q]}>{q} · ${PRICES[q].toFixed(2)}</option>)}
         </select>
       </label>
+      {OPTION_GROUPS.map((g) => (
+        <fieldset class="opts">
+          <legend data-i18n={`cards.g.${g}`}>{g}</legend>
+          {CARD_OPTIONS.filter((o) => o.group === g).map((o) => (
+            <label class="opt"><input type="radio" name={g} value={o.code} data-price={o.price} checked={!!o.default} /> <span data-i18n={`cards.opt.${o.code}`}>{o.name}</span> <em>{o.price ? `+$${o.price.toFixed(2)}` : <span data-i18n="cards.included">included</span>}</em></label>
+          ))}
+        </fieldset>
+      ))}
+      <p class="subtotal"><span data-i18n="cards.subtotal">Total before the online fee</span>: <strong id="subtotal">$0.00</strong></p>
       <label><span data-i18n="cards.yourname">Your name</span> <input name="cname" required /></label>
       <label><span data-i18n="f.email">Email</span> <input name="cemail" type="email" required /></label>
       <label><span data-i18n="cards.phone">Phone (we text when ready)</span> <input name="cphone" type="tel" /></label>
-      <label><span data-i18n="cards.notes">Notes</span> <input name="notes" maxlength="300" placeholder="Matte or glossy, rounded corners..." /></label>
+      <label><span data-i18n="cards.notes">Notes</span> <input name="notes" maxlength="300" placeholder="Anything else we should know" /></label>
       <button class="btn" type="submit" id="orderBtn" data-i18n="cards.order">Pay and order</button>
       <p class="err" id="err" hidden></p>
     </form>
@@ -290,6 +299,15 @@ const cancelled = Astro.url.searchParams.get('cancelled');
     });
 
     const order = $('order') as HTMLFormElement, err = $('err');
+    // Live total: the quantity price plus the picked options. The server prices the same table again when ordering.
+    const subtotal = () => {
+      const qty = order.querySelector<HTMLSelectElement>('[name=quantity]')!;
+      let sum = Number(qty.selectedOptions[0]?.dataset.price ?? 0);
+      order.querySelectorAll<HTMLInputElement>('.opts input:checked').forEach((i) => { sum += Number(i.dataset.price ?? 0); });
+      $('subtotal').textContent = `$${sum.toFixed(2)}`;
+    };
+    order.addEventListener('change', subtotal); subtotal();
+    const picks = () => Object.fromEntries(['stock', 'finish', 'corners', 'speed'].map((g) => [g, (order.querySelector(`input[name=${g}]:checked`) as HTMLInputElement | null)?.value ?? '']));
     order.addEventListener('submit', async (ev) => {
       ev.preventDefault();
       const d = printable();
@@ -299,7 +317,7 @@ const cancelled = Astro.url.searchParams.get('cancelled');
       const o = Object.fromEntries(new FormData(order).entries()) as Record<string, string>;
       const btn = $('orderBtn'); btn.setAttribute('disabled', '');
       const res = await fetch('/api/cards', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ design: d, quantity: Number(o.quantity), customer: { name: o.cname, email: o.cemail, phone: o.cphone }, notes: o.notes }) });
+        body: JSON.stringify({ design: d, quantity: Number(o.quantity), options: picks(), customer: { name: o.cname, email: o.cemail, phone: o.cphone }, notes: o.notes }) });
       const j = await res.json();
       if (!res.ok) { err.textContent = j.error; err.hidden = false; btn.removeAttribute('disabled'); return; }
       try { localStorage.removeItem('gp-card-design'); } catch {}

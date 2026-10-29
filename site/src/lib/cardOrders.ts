@@ -1,4 +1,4 @@
-import type { Design } from './cards';
+import type { Design, CardOptionLine } from './cards';
 
 export interface CardOrder {
   id: string;             // CD-XXXXXX
@@ -9,8 +9,9 @@ export interface CardOrder {
   customer: { name: string; email: string; phone: string };
   quantity: number;
   price: number;          // the cards
+  options?: CardOptionLine[]; // paid upsells: stock, finish, corners, rush (older orders have none)
   fee?: { percent: number; flat: number; amount: number }; // online convenience fee
-  total?: number;         // price plus fee; older orders have only price
+  total?: number;         // price plus options plus fee; older orders have only price
   design: Design;
   notes: string;
 }

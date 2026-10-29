@@ -64,10 +64,10 @@ flowchart LR
 | `/ship/done?order=CODE` | customers | Label download, QR code, pickup code, link to tracking |
 | `/track?q=CODE` | customers | Tracking page: pickup code or carrier tracking number, status and history, no login |
 | any page | customers | Language picker, text size (5 steps) and high contrast switches in the header, all remembered per device |
-| `/cards` | customers | Vistaprint-style card designer: 12 layouts, 12 color schemes, 6 typefaces, click-to-edit text on the card, drag, resize, add text and images, front and back, undo and redo, PNG download, pay by card on Stripe and pick up in the shop |
+| `/cards` | customers | Vistaprint-style card designer: 12 layouts, 12 color schemes, 6 typefaces, click-to-edit text on the card, drag, resize, add text and images, front and back, undo and redo, PNG download, pay by card on Stripe and pick up in the shop. Upsells on the order form: paper stock, finish, rounded corners, rush pickup, priced server side |
 | `/cards/done?order=CODE` | customers | Order confirmation with a QR code and pickup code |
 | `/contact` | customers | Formspree contact form |
-| `/counter/card/CODE` | staff | Card order, already paid online: preview both sides, print sheet, mark printed, mark picked up. Unpaid orders are flagged do not print |
+| `/counter/card/CODE` | staff | Card order, already paid online: preview both sides, the stock, finish, corners and speed the customer picked (RUSH banner when due next business day), print sheet, mark printed, mark picked up. Unpaid orders are flagged do not print |
 | `/counter/card/CODE/sheet` | staff | Print-ready 10-up US letter sheet, fronts then mirrored backs |
 | `/counter/queue` | staff | The quote queue: every quote reserved online and every walk-up staff typed in, oldest first, with Buy label, Print at the counter, Mark printed, Void and Cancel on one screen. Walk-up form quotes with the same engine as the website, and has a return mode: the sender's address is typed in, the package comes to the store or to a local business, and Email label sends it to the sender. Refreshes itself every thirty seconds. PIN |
 | `/counter/customers` | staff | Customer lookup with notes on each customer: search by name, phone or email; shipment history with tracking status; address book with Ship here again (fills the walk-up form); returning badge; CSV of everyone keyed by phone. PIN |
@@ -106,7 +106,7 @@ flowchart LR
 | `POST /api/exceptions` | staff page | The exceptions list, PIN |
 | `POST /api/reports` | staff page | `from` and `to` days, up to a year; `format: "csv"` for the shipment rows. PIN |
 | `GET /api/mock-paid` | dev only | Stands in for Stripe when no key is set |
-| `POST /api/cards` | site | Saves a card order (design sanitized server side, logo must be a PNG, JPG or SVG data URL under 400 KB) and starts Stripe Checkout |
+| `POST /api/cards` | site | Saves a card order (design sanitized server side, logo must be a PNG, JPG or SVG data URL under 400 KB; `options` {stock, finish, corners, speed} priced from `CARD_OPTIONS`, unknown codes fall back to the free default) and starts Stripe Checkout with one line per paid option |
 | `PUT /api/cards` | staff page | `printed` and `picked_up` actions, PIN |
 
 ## Where prices come from
@@ -170,6 +170,8 @@ Pages are built once in English. In the browser, every element tagged `data-i18n
 ## Business card designer
 
 Everything runs in the browser. A design is a plain object: a template id, a typeface, and a front and back side, each with a background color and a list of elements. An element is either text (position, width, size, bold, italic, color, alignment) or an image (position, size, data URL). Colored bars, bands, circles and triangles are just images made from tiny SVG data URLs, so the customer can move or delete them like anything else. `renderCard()` in `src/lib/cards.ts` turns a design into SVG, and the same function draws the editor canvas, the gallery thumbnails, the saved order and the counter's print sheet, so what the customer sees is exactly what prints. `makeTemplate()` builds a starting design from a layout, a palette and a set of details. The gallery shows every layout with Rin Ho's sample details in the chosen color; the editor starts from the same layout with grey placeholder text that is dropped from the print if never edited. Cards are 3.5 by 2 inches at 300 dpi with a dashed safe-area guide. The design is kept in the browser's local storage so a refresh does not lose it. Server-side sanitizing caps element counts and text lengths, requires hex colors, and only accepts PNG, JPG or SVG data URLs under 400 KB for images.
+
+**Upsells (v1.44.0).** Paper stock (standard 14 pt, thick 16 pt +$5, linen +$8), finish (matte, gloss +$4, soft touch +$6), rounded corners +$6 and rush next-business-day pickup +$10 are picked on the order form with a live total; the server prices the same table again in `priceCards()` and never trusts the browser's number. Each paid option is its own Stripe line, the done page lists them, the counter page shows every choice with a yellow RUSH banner when one is due tomorrow, and the print sheet's top bar names the stock and finish so whoever loads the printer sees it. Options are priced per order, not per card, and the four free defaults never make a line, so older orders with no options read as standard, matte, square corners, three days. Prices are placeholders until Rin confirms them (issue 9).
 
 ```mermaid
 flowchart LR

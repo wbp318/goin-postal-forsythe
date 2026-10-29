@@ -295,3 +295,51 @@ export function sanitizeDesign(v: any): Design {
 export const QUANTITIES = [100, 250, 500, 1000];
 // Shop prices. TODO owners: confirm per-quantity pricing (issue 9).
 export const PRICES: Record<number, number> = { 100: 24.99, 250: 39.99, 500: 59.99, 1000: 89.99 };
+
+// ---- upsells: stock, finish, rounded corners, rush ---------------------------------
+// Priced per order, not per card, and always computed here on the server from the picks the
+// browser sends. The order form shows the same table so the customer sees the total before paying.
+// TODO owners: confirm these prices (issue 9).
+
+export type OptionGroup = 'stock' | 'finish' | 'corners' | 'speed';
+export interface CardOption { group: OptionGroup; code: string; name: string; price: number; default?: boolean }
+export const CARD_OPTIONS: CardOption[] = [
+  { group: 'stock', code: 'standard', name: 'Standard 14 pt', price: 0, default: true },
+  { group: 'stock', code: 'thick', name: 'Thick 16 pt', price: 5 },
+  { group: 'stock', code: 'linen', name: 'Linen', price: 8 },
+  { group: 'finish', code: 'matte', name: 'Matte', price: 0, default: true },
+  { group: 'finish', code: 'gloss', name: 'Gloss', price: 4 },
+  { group: 'finish', code: 'softtouch', name: 'Soft touch', price: 6 },
+  { group: 'corners', code: 'square', name: 'Square corners', price: 0, default: true },
+  { group: 'corners', code: 'rounded', name: 'Rounded corners', price: 6 },
+  { group: 'speed', code: 'normal', name: 'Ready in 3 business days', price: 0, default: true },
+  { group: 'speed', code: 'rush', name: 'Rush, next business day', price: 10 },
+];
+export const OPTION_GROUPS: OptionGroup[] = ['stock', 'finish', 'corners', 'speed'];
+export interface CardOptionLine { group: OptionGroup; code: string; name: string; price: number }
+
+/** The option a customer picked in each group. Unknown codes fall back to the group's free default; only paid picks become lines. */
+export function priceCardOptions(picks: Record<string, unknown> | undefined): { lines: CardOptionLine[]; total: number; chosen: Record<OptionGroup, string> } {
+  const lines: CardOptionLine[] = [];
+  const chosen = {} as Record<OptionGroup, string>;
+  for (const g of OPTION_GROUPS) {
+    const want = String(picks?.[g] ?? '');
+    const opt = CARD_OPTIONS.find((o) => o.group === g && o.code === want) ?? CARD_OPTIONS.find((o) => o.group === g && o.default)!;
+    chosen[g] = opt.code;
+    if (opt.price > 0) lines.push({ group: g, code: opt.code, name: opt.name, price: opt.price });
+  }
+  return { lines, total: Math.round(lines.reduce((a, l) => a + l.price, 0) * 100) / 100, chosen };
+}
+
+/** Everything a card order costs before the online fee: the cards at their quantity price plus the paid options. */
+export function priceCards(quantity: number, picks?: Record<string, unknown>) {
+  const price = PRICES[quantity];
+  if (!price) throw new Error('Pick a quantity');
+  const options = priceCardOptions(picks);
+  return { price, options: options.lines, chosen: options.chosen, subtotal: Math.round((price + options.total) * 100) / 100 };
+}
+
+/** The option in force for every group on a saved order: its paid lines, defaults for the rest. Older orders with no lines show all defaults. */
+export function chosenOptions(lines: CardOptionLine[] | undefined): CardOption[] {
+  return OPTION_GROUPS.map((g) => CARD_OPTIONS.find((o) => o.group === g && lines?.some((l) => l.group === g && l.code === o.code)) ?? CARD_OPTIONS.find((o) => o.group === g && o.default)!);
+}

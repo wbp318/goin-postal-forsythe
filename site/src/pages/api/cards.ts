@@ -4,7 +4,7 @@ import { effectiveAddons, onlineFee } from '../../lib/addons';
 import { env } from '../../lib/env';
 import { authenticate } from '../../lib/auth';
 import { logAudit } from '../../shipping/store';
-import { sanitizeDesign, PRICES } from '../../lib/cards';
+import { sanitizeDesign, PRICES, priceCards } from '../../lib/cards';
 import { newCardId, saveCardOrder, type CardOrder } from '../../lib/cardOrders';
 import { json } from '../../lib/validate';
 import { createCardCheckout } from '../../lib/stripe';
@@ -15,6 +15,7 @@ export const POST: APIRoute = async ({ request }) => {
     const b: any = await request.json();
     const quantity = Number(b.quantity);
     if (!PRICES[quantity]) throw new Error('Pick a quantity');
+    const priced = priceCards(quantity, b.options);
     const name = String(b.customer?.name ?? '').trim();
     const email = String(b.customer?.email ?? '').trim();
     const phone = String(b.customer?.phone ?? '').trim();
@@ -26,12 +27,13 @@ export const POST: APIRoute = async ({ request }) => {
       status: 'awaiting_payment',
       customer: { name, email, phone },
       quantity,
-      price: PRICES[quantity],
-      fee: onlineFee(await effectiveAddons(env), PRICES[quantity]),
+      price: priced.price,
+      options: priced.options,
+      fee: onlineFee(await effectiveAddons(env), priced.subtotal),
       design: sanitizeDesign(b.design),
       notes: String(b.notes ?? '').slice(0, 300),
     };
-    order.total = Math.round((order.price + (order.fee?.amount ?? 0)) * 100) / 100;
+    order.total = Math.round((priced.subtotal + (order.fee?.amount ?? 0)) * 100) / 100;
     await saveCardOrder(env, order);
     const url = await createCardCheckout(env, order);
     return json({ order_id: order.id, next: url });
