@@ -1086,7 +1086,7 @@ Run the same check locally with `python scripts/check_designs.py`.
 
 The program ads and counter flyer carry a QR code that opens the store's corner in Google Maps. To change the link, edit `MAP_URL` in `scripts/add_qr.py` and run it (`pip install segno` first).
 
-Every GitHub release ends with a changelog built by `python scripts/release_notes.py <tag> --body notes.md`: every file changed since the previous tag linked at the new tag, grouped by area, with the commit and compare links, so a reader goes from a sentence in the notes to the file that does it. The narrative above it names the agenda item, the to-do id, the issues and the tests.
+[`CHANGELOG.md`](CHANGELOG.md) lists every release newest first with its date, title, first paragraph and links to the release, the tree and the compare; `python scripts/changelog.py` rebuilds it from the GitHub releases and is run after every release. Every GitHub release ends with a changelog built by `python scripts/release_notes.py <tag> --body notes.md`: every file changed since the previous tag linked at the new tag, grouped by area, with the commit and compare links, so a reader goes from a sentence in the notes to the file that does it. The narrative above it names the agenda item, the to-do id, the issues and the tests.
 
 To add game-day posts, add a line to the `GAMES` list at the top of `scripts/make_game_posts.py` and run it. The Oct 30 and 31 opponents are still unconfirmed, so those posts say "Moccasins home game".
 
