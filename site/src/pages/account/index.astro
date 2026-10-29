@@ -4,7 +4,7 @@ import Base from '../../layouts/Base.astro';
 import { store } from '../../data/store';
 import { env } from '../../lib/env';
 import { consumeLoginToken, readSession, signSession, sessionCookie } from '../../lib/session';
-import { findCustomer, getCustomer, customerQuotes, listCustomerAddresses } from '../../shipping/store';
+import { findCustomer, getCustomer, customerQuotes, listCustomerAddresses, accountForContact, accountOpenShipments, accountOpenFees, listStatements, pickupsForAccount, listReturnLinks, listProducts, listFulfillmentOrders, listApiKeys } from '../../shipping/store';
 
 // Customer account (T20): sign in by magic link, see saved addresses and past orders, ship again.
 const token = Astro.url.searchParams.get('token');
@@ -22,6 +22,16 @@ const me = id ? await getCustomer(env, id) : null;
 const expired = Astro.url.searchParams.get('expired');
 const quotes = me ? (await customerQuotes(env, me)).slice(0, 30) : [];
 const saved = me ? await listCustomerAddresses(env, me.id) : [];
+// The seller dashboard (business accounts online): everything the counter keeps for the account, read-only here.
+const biz = me ? await accountForContact(env, me.email, me.phone) : null;
+const unbilled = biz ? [...(await accountOpenShipments(env, biz)), ...(await accountOpenFees(env, biz.id))] : [];
+const unbilledTotal = Math.round(unbilled.reduce((a, l) => a + l.total, 0) * 100) / 100;
+const statements = biz ? await listStatements(env, biz.id) : [];
+const pickups = biz ? (await pickupsForAccount(env, biz.id, 10)) : [];
+const links = biz ? (await listReturnLinks(env, biz.id)).filter((l) => l.active) : [];
+const stock = biz ? await listProducts(env, biz.id) : [];
+const fulfil = biz ? (await listFulfillmentOrders(env, biz.id, true)).slice(0, 20) : [];
+const keys = biz ? (await listApiKeys(env, biz.id)).filter((k) => k.active) : [];
 const fmt = (iso: string) => iso.slice(0, 10);
 ---
 <Base title={`Your account · ${store.name}`} description="Sign in with your email, keep your addresses, see your orders, ship again in two clicks.">
@@ -77,6 +87,20 @@ const fmt = (iso: string) => iso.slice(0, 10);
         </form>
         <p id="msg" role="alert"></p>
       </div>
+      {biz && <div class="card" id="biz">
+        <h3><span data-i18n="acct.biz.h3">Business account</span>: {biz.business_name}</h3>
+        <p class="muted"><span data-i18n="acct.biz.lead">What the store keeps for your account. Labels are billed to your monthly statement; the counter makes keys and links for you.</span>{biz.discount_percent ? <> <span data-i18n="acct.biz.discount">Your discount:</span> {biz.discount_percent}%.</> : null}</p>
+        <h4 data-i18n="acct.biz.unbilled">Unbilled so far</h4>
+        {unbilled.length ? <><p><strong>${unbilledTotal.toFixed(2)}</strong> · {unbilled.length} <span data-i18n="acct.biz.lines">lines</span></p><table class="list">{unbilled.slice(-15).map((l) => <tr><td>{l.created_at.slice(0, 10)}</td><td>{l.id.startsWith('FEE-') ? l.service : <a href={`/track?q=${l.id}`}>{l.id}</a>}</td><td>{l.id.startsWith('FEE-') ? l.to : `${l.carrier} ${l.service} · ${l.to}`}</td><td>${l.total.toFixed(2)}</td></tr>)}</table></> : <p class="muted" data-i18n="acct.biz.nothing">Nothing unbilled.</p>}
+        <h4 data-i18n="acct.biz.statements">Statements</h4>
+        {statements.length ? <table class="list">{statements.slice(0, 12).map((s) => <tr><td>{s.period}</td><td>${s.total.toFixed(2)}</td><td>{s.paid_at ? <span data-i18n="acct.biz.paid">paid</span> : s.stripe_invoice_url ? <a href={s.stripe_invoice_url} target="_blank" rel="noopener" data-i18n="acct.biz.pay">Pay</a> : <span data-i18n="acct.biz.due">due</span>}</td></tr>)}</table> : <p class="muted" data-i18n="acct.biz.nostatements">No statements yet.</p>}
+        {pickups.length > 0 && <><h4 data-i18n="st.nav.pickups">Pickups</h4><table class="list">{pickups.map((p) => <tr><td>{p.scheduled_date}</td><td data-i18n={`st.pu.${p.window}`}>{p.window}</td><td>{p.packages}</td><td data-i18n={`st.pu.status.${p.status}`}>{p.status.replace('_', ' ')}</td></tr>)}</table></>}
+        {links.length > 0 && <><h4 data-i18n="acct.biz.returns">Your returns link</h4><p data-i18n="acct.biz.returns.lead">Give this to your customers; they get a prepaid return label and it lands on your statement.</p>{links.map((l) => <p><code>{env.SITE_URL}/return/{l.token}</code></p>)}</>}
+        {stock.length > 0 && <><h4 data-i18n="acct.biz.stock">Your stock on our shelf</h4><table class="list">{stock.map((p) => <tr><td>{p.sku}</td><td>{p.name}</td><td><strong>{p.on_hand}</strong></td></tr>)}</table></>}
+        {fulfil.length > 0 && <><h4 data-i18n="acct.biz.fulfil">Orders we ship for you</h4><table class="list">{fulfil.map((o) => <tr><td>{o.created_at.slice(0, 10)}</td><td>{o.reference ?? o.code}</td><td>{JSON.parse(o.lines_json).map((l: any) => `${l.qty}× ${l.sku}`).join(', ')}</td><td>{o.shipment_id ? <a href={`/track?q=${o.shipment_id}`}>{o.shipment_id}</a> : <span data-i18n={`st.pu.status.${o.status === 'open' ? 'scheduled' : 'cancelled'}`}>{o.status}</span>}</td></tr>)}</table></>}
+        <h4 data-i18n="acct.biz.api">API keys</h4>
+        {keys.length ? <p>{keys.map((k) => <span><code>{k.prefix}…</code> {k.label}{k.webhook_url ? ' · webhook' : ''} </span>)} · <a href="/developers" data-i18n="acct.biz.docs">API docs</a></p> : <p class="muted"><span data-i18n="acct.biz.nokeys">No keys yet. Ask the counter for one to connect your shop.</span> <a href="/developers" data-i18n="acct.biz.docs">API docs</a></p>}
+      </div>}
       <div class="card">
         <h3 data-i18n="acct.orders">Your orders</h3>
         {!quotes.length && <p class="muted" data-i18n="acct.noorders">No orders yet under this email.</p>}
