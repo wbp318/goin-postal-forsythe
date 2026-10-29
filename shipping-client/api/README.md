@@ -104,6 +104,28 @@ curl -s https://goinpostalforsythe.com/api/v1/shipments/GP-7K2M9Q/void -H "Autho
 
 Voids an unshipped label; the charge comes off the statement the same way a counter void does. A reason is required and is audited. A shipment the carrier has already scanned cannot be voided.
 
+### `POST /batches`
+
+```bash
+curl -s https://goinpostalforsythe.com/api/v1/batches -H "Authorization: Bearer $PSK" -H "Content-Type: application/json" -d '{
+  "pick": "cheapest",
+  "dry_run": true,
+  "rows": [
+    { "reference": "#1001", "to": { "name": "Ann Lee", "line_1": "5 Oak St", "city": "Shreveport", "state": "LA", "postal_code": "71101", "country_alpha2": "US" }, "parcel": { "weight_lb": 2, "length_in": 10, "width_in": 8, "height_in": 4 } },
+    { "reference": "#1002", "to": { "name": "Bo Kim", "line_1": "9 Pine Rd", "line_2": "Unit 4", "city": "Austin", "state": "TX", "postal_code": "78701", "country_alpha2": "US" }, "parcel": { "weight_lb": 1, "length_in": 10, "width_in": 8, "height_in": 4 } }
+  ]
+}'
+```
+
+Up to 200 rows. Every row is address-checked and rated with the account's discount; `pick` is `cheapest` (default), `fastest`, or a service name such as `USPS Ground Advantage` or `UPS Ground`. With `dry_run: true` nothing is bought and each row comes back with its chosen service and price, so a shop can show the customer the cost first. Without it, every good row is bought and billed to the account, and the call returns `201` with a `batch` id and one result per row:
+
+```json
+{ "batch": "B-MVTLQKNI", "bought": 2, "failed": 0, "total": 17.38,
+  "results": [ { "line": 1, "reference": "#1001", "id": "GP-SW2UL8", "carrier": "USPS", "service": "USPS Ground Advantage", "tracking_number": "9400...", "price": 8.69, "label_url": "https://.../labels/GP-SW2UL8.pdf", "error": null } ] }
+```
+
+A row with a bad address or no rate is skipped with its `error` filled in; the others still go through. `insure: true` adds declared-value insurance on every row from each row's `parcel.value_usd`. International rows are refused.
+
 ## Webhooks
 
 When the tracking poll finds new events on a shipment billed to the account, it POSTs to every active key on that account that has a webhook address:
@@ -132,6 +154,6 @@ Answer with any 2xx within 8 seconds. A failed delivery is logged on the store s
 ## Limits and what is not here yet
 
 - No rate limit beyond Cloudflare's; keys are per account and revocable, which is enough for the first merchants.
-- International shipments, returns and multi-piece shipments go through the counter for now.
+- International shipments, returns and multi-piece shipments go through the counter for now. Batches are domestic only for the same reason.
 - Webhooks cover tracking only. `shipment.voided` and `statement.issued` events are the natural next ones.
 - A listed Shopify app (OAuth, the App Store) would replace the custom-app token the connector uses today. See the connector README.

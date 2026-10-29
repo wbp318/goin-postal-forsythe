@@ -49,6 +49,9 @@ export interface Order {
   account_id?: number;
   account_name?: string;
   discount_percent?: number;
+  // Batch shipping (T11): the batch this label was bought in and the seller's own order number.
+  batch?: string;
+  reference?: string;
 }
 
 /** What the customer pays, label and extras together. Older orders have only the label. */

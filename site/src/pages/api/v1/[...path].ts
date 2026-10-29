@@ -10,6 +10,8 @@ import { checkAddress } from '../../../lib/address';
 import { authenticateApi } from '../../../lib/apikeys';
 import { voidLabel } from '../../../shipping/engine';
 import { store } from '../../../data/store';
+import { rateBatch, choose, discounted, MAX_ROWS, type BatchRow, type Pick } from '../../../lib/batch';
+import { buyBatchRow } from '../../../lib/batchBuy';
 import { billShipmentToAccount, shipmentsForAccount, getShipment, listTrackingEvents, setShipmentStatus, logAudit } from '../../../shipping/store';
 
 // PeterShip public API, version 1. For a business account's own software, a Shopify or Etsy shop,
@@ -21,6 +23,7 @@ import { billShipmentToAccount, shipmentsForAccount, getShipment, listTrackingEv
 //   GET  /api/v1/shipments?since=ISO        -> this account's shipments, newest first
 //   GET  /api/v1/shipments/:id              -> one shipment with its tracking events
 //   POST /api/v1/shipments/:id/void         { reason }
+//   POST /api/v1/batches                    { rows: [{ reference?, to, parcel }], pick?: 'cheapest' | 'fastest' | 'USPS Ground Advantage', insure?, dry_run? } -> rates every row, buys the good ones (up to 200)
 //   GET  /api/v1/me                         -> the account and key this token belongs to
 // Errors are { error: "plain sentence" } with the usual status codes. Webhooks (shipment.tracking) are
 // set on the key. Reference: shipping-client/api/README.md.
@@ -77,6 +80,32 @@ export const ALL: APIRoute = async ({ request, params }) => {
       await logAudit(env, who, 'label.buy', done.id, `API, ${rate.carrier} ${rate.service} $${(done.total ?? rate.total_charge).toFixed(2)}${body.reference ? `, ref ${String(body.reference).slice(0, 40)}` : ''}`);
       const s = await getShipment(env, done.id);
       return json({ shipment: { ...sh(s), label_url: done.label?.label_url ? (done.label.label_url.startsWith('/') ? `${env.SITE_URL}${done.label.label_url}` : done.label.label_url) : null, label_zpl: done.label?.label_zpl ?? null, total: done.total, reference: body.reference ?? null } }, 201);
+    }
+
+    if (request.method === 'POST' && path === 'batches') {
+      const list: any[] = Array.isArray(body.rows) ? body.rows : [];
+      if (!list.length) return json({ error: 'rows is needed: an array of { reference, to, parcel }' }, 400);
+      if (list.length > MAX_ROWS) return json({ error: `At most ${MAX_ROWS} rows per batch` }, 400);
+      const pick: Pick = body.pick === 'fastest' ? 'fastest' : !body.pick || body.pick === 'cheapest' ? 'cheapest' : { service: String(body.pick) };
+      const rows: BatchRow[] = list.map((r, i) => {
+        const row: BatchRow = { line: i + 1, reference: String(r?.reference ?? '').slice(0, 40), to: null, parcel: null, errors: [], warnings: [] };
+        try { row.to = parseAddress(addr(r?.to)); const c = checkAddress(row.to); row.errors.push(...c.errors); row.warnings.push(...c.warnings); } catch (e: any) { row.errors.push(e.message); }
+        try { row.parcel = parseParcel(r?.parcel); } catch (e: any) { row.errors.push(e.message); }
+        if (row.to && row.to.country_alpha2 !== 'US') row.errors.push('International rows need customs paperwork; bring them to the counter');
+        return row;
+      });
+      const rated = await rateBatch(env, rows, pick, account.discount_percent || 0);
+      const batch = `B-${Date.now().toString(36).toUpperCase()}`;
+      const results = [];
+      for (const r of rated) {
+        if (!r.chosen || r.errors.length || !r.to || !r.parcel) { results.push({ line: r.line, reference: r.reference, id: null, carrier: r.chosen?.carrier ?? null, service: r.chosen?.service ?? null, tracking_number: null, price: r.chosen?.total_charge ?? null, label_url: null, error: r.errors[0] ?? 'No rate' }); continue; }
+        if (body.dry_run === true) { results.push({ line: r.line, reference: r.reference, id: null, carrier: r.chosen.carrier, service: r.chosen.service, tracking_number: null, price: r.chosen.total_charge, label_url: null, error: null }); continue; }
+        try { results.push(await buyBatchRow(env, { to: r.to, parcel: r.parcel, rate: r.chosen, reference: r.reference, account, batch, who, print: false, insure: body.insure === true, line: r.line })); }
+        catch (e: any) { results.push({ line: r.line, reference: r.reference, id: null, carrier: null, service: null, tracking_number: null, price: null, label_url: null, error: e.message }); }
+      }
+      const bought = results.filter((x) => x.id);
+      if (!body.dry_run) await logAudit(env, who, 'batch.buy', batch, `API ${account.business_name}: ${bought.length} of ${results.length} labels`);
+      return json({ batch: body.dry_run ? null : batch, dry_run: body.dry_run === true, results, bought: bought.length, failed: results.length - bought.length, total: Math.round(results.reduce((a, x) => a + (x.id || body.dry_run ? (x.price ?? 0) : 0), 0) * 100) / 100 }, body.dry_run ? 200 : 201);
     }
 
     if (request.method === 'GET' && path === 'shipments') {

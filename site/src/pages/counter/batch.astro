@@ -1,0 +1,134 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+
+// Staff page: batch shipping for a business account (T11). Paste or open the seller's CSV (our
+// columns, a Shopify orders export or an Etsy orders export), set the box that most rows use, pick a
+// service rule, check and rate every row, then buy all the good ones in one click. Labels are billed
+// to the account and queued for the counter printer in file order.
+---
+<Base title="Counter · Batch">
+  <section class="hero">
+    <h1 data-i18n="st.bt.h1">Batch shipping</h1>
+    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/batch" data-i18n="st.nav.batch">Batch</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/accounts" data-i18n="st.nav.accounts">Accounts</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/mailboxes" data-i18n="st.nav.mailboxes">Mailboxes</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/close" data-i18n="st.nav.close">End of day</a> · <a href="/counter/invoices" data-i18n="st.nav.invoices">Invoices</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a> · <a href="/counter/staff" data-i18n="st.nav.staff">Staff</a> · <a href="/counter/export" data-i18n="st.nav.export">Export</a></p>
+    <p class="lead" data-i18n="st.bt.lead">A business account's whole stack at once. Open their CSV (our columns, or the orders export from Shopify or Etsy), say which box most of them ship in, and every row is checked and priced. Buy all the good rows in one click: billed to the account, printed in order.</p>
+  </section>
+
+  <form id="setup" class="card ship-form" autocomplete="off">
+    <div class="row">
+      <label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
+      <label><span data-i18n="st.bt.account">Account</span> <select name="account_id" id="account"><option value="" data-i18n="st.bt.loadaccounts">type the PIN first</option></select></label>
+      <label><span data-i18n="st.bt.pick">Service for every row</span>
+        <select name="pick"><option value="cheapest" data-i18n="st.bt.cheapest">Cheapest</option><option value="fastest" data-i18n="st.bt.fastest">Fastest</option><option value="USPS Ground Advantage">USPS Ground Advantage</option><option value="USPS Priority">USPS Priority Mail</option><option value="UPS Ground">UPS Ground</option><option value="FedEx Ground">FedEx Ground</option></select>
+      </label>
+    </div>
+    <p class="muted" data-i18n="st.bt.defaults">The box most rows ship in. A row's own weight and size columns win when the file has them.</p>
+    <div class="row">
+      <label><span data-i18n="st.bt.weight">Weight lb</span> <input name="weight_lb" type="number" step="0.1" min="0.1" max="150" value="1" /></label>
+      <label><span data-i18n="st.bt.l">Length in</span> <input name="length_in" type="number" min="1" max="108" value="10" /></label>
+      <label><span data-i18n="st.bt.w">Width in</span> <input name="width_in" type="number" min="1" max="108" value="8" /></label>
+      <label><span data-i18n="st.bt.hgt">Height in</span> <input name="height_in" type="number" min="1" max="108" value="4" /></label>
+      <label><span data-i18n="st.bt.value">Value $ each</span> <input name="value_usd" type="number" min="1" max="5000" value="25" /></label>
+    </div>
+    <label><span data-i18n="st.bt.file">Open the CSV</span> <input type="file" id="file" accept=".csv,text/csv" /></label>
+    <label><span data-i18n="st.bt.paste">Or paste it</span> <textarea name="csv" id="csv" rows="6" spellcheck="false" placeholder="reference,name,address1,address2,city,state,zip,weight_lb"></textarea></label>
+    <p class="btnrow"><button class="btn" type="submit" id="rate" data-i18n="st.bt.rate">Check and rate</button> <a class="btn kraft" href="/batch-template.csv" download data-i18n="st.bt.template">Blank template</a></p>
+    <p id="msg" role="alert"></p>
+  </form>
+
+  <div id="review" class="hidden">
+    <p id="summary" class="lead"></p>
+    <table class="list"><thead><tr><th>#</th><th data-i18n="st.bt.th.ref">Ref</th><th data-i18n="st.q.th.to">To</th><th data-i18n="st.bt.th.parcel">Parcel</th><th data-i18n="st.q.th.service">Service</th><th data-i18n="st.bt.th.price">Price</th><th data-i18n="st.bt.th.check">Check</th></tr></thead><tbody id="rows"></tbody></table>
+    <form id="buyform" class="card">
+      <label class="check"><input name="print" type="checkbox" checked /> <span data-i18n="st.bt.print">Print every label at the counter, in file order</span></label>
+      <p class="btnrow"><button class="btn" type="submit" id="buy"></button> <span class="muted" data-i18n="st.bt.billed">Billed to the account's next statement. Rows with a problem are skipped.</span></p>
+    </form>
+  </div>
+
+  <div id="done" class="card hidden">
+    <h3 id="donehead"></h3>
+    <table class="list"><thead><tr><th data-i18n="st.bt.th.ref">Ref</th><th data-i18n="st.q.th.code">Code</th><th data-i18n="st.q.th.service">Service</th><th data-i18n="st.bt.th.tracking">Tracking</th><th data-i18n="st.bt.th.price">Price</th></tr></thead><tbody id="results"></tbody></table>
+    <p class="btnrow"><a class="btn" id="dl" download="labels.csv" data-i18n="st.bt.download">Download the results CSV</a> <a class="btn kraft" href="/counter/queue" data-i18n="st.nav.queue">Queue</a></p>
+  </div>
+
+  <script>
+    import { t, tf } from '../../i18n';
+    const $ = (id: string) => document.getElementById(id)!;
+    const setup = $('setup') as HTMLFormElement, msg = $('msg'), accountSel = $('account') as HTMLSelectElement;
+    const pin = () => ($('pin') as HTMLInputElement).value;
+    let rated: any[] = [];
+    async function api(path: string, body: Record<string, unknown>) {
+      const res = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin(), ...body }) });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error);
+      return j;
+    }
+    // Accounts fill in once the PIN is typed.
+    let loaded = false;
+    $('pin').addEventListener('change', async () => {
+      if (loaded || !pin()) return;
+      try {
+        const j = await api('/api/accounts', { action: 'list' });
+        accountSel.innerHTML = '';
+        for (const a of j.accounts.filter((a: any) => a.active)) { const o = document.createElement('option'); o.value = a.id; o.textContent = `${a.business_name}${a.discount_percent ? ` (${a.discount_percent}% off)` : ''}`; accountSel.appendChild(o); }
+        if (!accountSel.options.length) { const o = document.createElement('option'); o.value = ''; o.textContent = t('st.b.none'); accountSel.appendChild(o); }
+        loaded = true;
+      } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    });
+    ($('file') as HTMLInputElement).addEventListener('change', async (ev) => {
+      const f = (ev.target as HTMLInputElement).files?.[0];
+      if (f) ($('csv') as HTMLTextAreaElement).value = await f.text();
+    });
+    const addr = (a: any) => a ? `${a.contact_name}, ${a.line_1}${a.line_2 ? ' ' + a.line_2 : ''}, ${a.city} ${a.state} ${a.postal_code}` : '';
+    setup.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const d = Object.fromEntries(new FormData(setup).entries()) as Record<string, string>;
+      msg.className = ''; msg.textContent = t('st.bt.rating'); $('rate').setAttribute('disabled', '');
+      try {
+        const j = await api('/api/batch', { action: 'rate', account_id: d.account_id, csv: d.csv, pick: d.pick, defaults: { weight_lb: d.weight_lb, length_in: d.length_in, width_in: d.width_in, height_in: d.height_in, value_usd: d.value_usd } });
+        rated = j.rows;
+        msg.textContent = '';
+        $('summary').textContent = tf('st.bt.summary', { n: j.rows.length, format: j.format, ready: j.ready, total: j.total.toFixed(2) }) + (j.skipped ? ` ${tf('st.bt.skipped', { n: j.skipped })}` : '');
+        const tb = $('rows'); tb.innerHTML = '';
+        for (const r of j.rows) {
+          const tr = document.createElement('tr');
+          const ok = r.chosen && !r.errors.length;
+          tr.innerHTML = `<td>${r.line}</td><td></td><td></td><td></td><td></td><td></td><td class="${ok ? '' : 'err'}"></td>`;
+          const c = tr.querySelectorAll('td');
+          c[1].textContent = r.reference; c[2].textContent = addr(r.to);
+          c[3].textContent = r.parcel ? `${r.parcel.weight_lb} lb · ${r.parcel.length_in}×${r.parcel.width_in}×${r.parcel.height_in}` : '';
+          c[4].textContent = r.chosen ? `${r.chosen.carrier} ${r.chosen.service}` : '';
+          c[5].textContent = r.chosen ? `$${r.chosen.total_charge.toFixed(2)}` : '';
+          c[6].textContent = [...r.errors, ...r.warnings].join(' · ') || t('st.bt.ok');
+          tb.appendChild(tr);
+        }
+        $('buy').textContent = tf('st.bt.buy', { n: j.ready, total: j.total.toFixed(2) });
+        $('buy').toggleAttribute('disabled', !j.ready);
+        $('review').classList.remove('hidden'); $('done').classList.add('hidden');
+      } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+      $('rate').removeAttribute('disabled');
+    });
+    ($('buyform') as HTMLFormElement).addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const good = rated.filter((r) => r.chosen && !r.errors.length);
+      if (!good.length || !confirm(tf('st.bt.confirm', { n: good.length }))) return;
+      $('buy').setAttribute('disabled', '');
+      try {
+        const print = ((document.querySelector('#buyform [name=print]') as HTMLInputElement).checked);
+        const j = await api('/api/batch', { action: 'buy', account_id: (setup.elements.namedItem('account_id') as HTMLSelectElement).value, print, rows: good.map((r) => ({ line: r.line, reference: r.reference, to: r.to, parcel: r.parcel, rate_id: r.chosen.id })) });
+        $('donehead').textContent = tf('st.bt.done', { bought: j.bought, failed: j.failed, total: j.total.toFixed(2), batch: j.batch }) + (print ? ` ${j.agent ? t('st.r.sent') : t('st.r.queuednoagent')}` : '');
+        const tb = $('results'); tb.innerHTML = '';
+        for (const r of j.results) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td></td><td></td><td></td><td></td><td></td>`;
+          const c = tr.querySelectorAll('td');
+          c[0].textContent = r.reference; c[1].innerHTML = r.id ? `<a href="/counter/${r.id}">${r.id}</a>` : `<span class="err">${r.error ?? ''}</span>`;
+          c[2].textContent = r.id ? `${r.carrier} ${r.service}` : ''; c[3].textContent = r.tracking_number ?? ''; c[4].textContent = r.price != null ? `$${r.price.toFixed(2)}` : '';
+          tb.appendChild(tr);
+        }
+        ($('dl') as HTMLAnchorElement).href = URL.createObjectURL(new Blob([j.csv], { type: 'text/csv' }));
+        $('review').classList.add('hidden'); $('done').classList.remove('hidden');
+      } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; $('buy').removeAttribute('disabled'); }
+    });
+  </script>
+</Base>
