@@ -40,7 +40,7 @@ jobs:
         working-directory: site
         run: npm run build
       - name: Syntax-check the printer agent
-        run: node --check shipping-client/printer-agent/agent.mjs && node --check shipping-client/shopify-connector/connector.mjs && node --check shipping-client/square-connector/connector.mjs
+        run: node --check shipping-client/printer-agent/agent.mjs && node --check shipping-client/shopify-connector/connector.mjs && node --check shipping-client/square-connector/connector.mjs && node --check shipping-client/ebay-connector/connector.mjs
       - name: Syntax-check the Python scripts
         run: python -m py_compile scripts/*.py
       - name: Check the database schema parses

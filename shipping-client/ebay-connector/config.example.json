@@ -1,0 +1,13 @@
+{
+  "petership_url": "https://goinpostalforsythe.com",
+  "petership_key": "psk_paste_the_key_here",
+  "ebay_env": "production",
+  "ebay_client_id": "paste_the_app_id_from_developer.ebay.com",
+  "ebay_client_secret": "paste_the_cert_id",
+  "ebay_refresh_token": "paste_the_user_refresh_token_from_the_consent_flow",
+  "service": "cheapest",
+  "default_parcel": { "length_in": 10, "width_in": 8, "height_in": 4, "min_weight_lb": 0.5, "weight_per_item_lb": 0.5 },
+  "products": { "VINTAGE-JACKET-M": { "length_in": 14, "width_in": 10, "height_in": 4, "weight_lb": 1.5 } },
+  "insure_over_usd": 100,
+  "dry_run": true
+}
