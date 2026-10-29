@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.64.3] - 2026-10-29
+
+**CHANGELOG.md**
+
+At the owners' request: a changelog file in the repository.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.64.3) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.64.3) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.64.2...v1.64.3)
+
 ## [v1.64.2] - 2026-10-29
 
 **release notes with a full changelog**
