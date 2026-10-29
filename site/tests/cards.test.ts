@@ -1,6 +1,6 @@
 // Card order pricing: quantity tiers plus the upsells, always from the server's table.
 import { describe, it, expect } from 'vitest';
-import { priceCards, priceCardOptions, chosenOptions, CARD_OPTIONS, OPTION_GROUPS, PRICES, sanitizeDesign } from '../src/lib/cards';
+import { priceCards, priceCardOptions, chosenOptions, CARD_OPTIONS, OPTION_GROUPS, PRICES, sanitizeDesign, routeCard } from '../src/lib/cards';
 
 describe('card options', () => {
   it('every group has exactly one free default', () => {
@@ -56,5 +56,16 @@ describe('sanitizeDesign', () => {
     expect(d.front.elements).toHaveLength(1);
     const t = d.front.elements[0] as any;
     expect(t.text).toHaveLength(300); expect(t.size).toBe(300); expect(t.color).toBe('#17202d'); expect(t.align).toBe('start');
+  });
+});
+
+describe('routeCard (T27)', () => {
+  it('standard small runs print in the shop, upsells and big runs go to the trade printer, rushed non-standard goes local', () => {
+    expect(routeCard({ quantity: 100 }).printer).toBe('shop');
+    expect(routeCard({ quantity: 250, options: [{ group: 'speed', code: 'rush' }] }).printer).toBe('shop');
+    expect(routeCard({ quantity: 500 }).printer).toBe('trade');
+    expect(routeCard({ quantity: 100, options: [{ group: 'stock', code: 'linen' }] }).printer).toBe('trade');
+    expect(routeCard({ quantity: 100, options: [{ group: 'stock', code: 'linen' }, { group: 'speed', code: 'rush' }] }).printer).toBe('local');
+    expect(routeCard({ quantity: 1000, options: [{ group: 'speed', code: 'rush' }] }).printer).toBe('local');
   });
 });

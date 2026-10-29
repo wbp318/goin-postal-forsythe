@@ -343,3 +343,16 @@ export function priceCards(quantity: number, picks?: Record<string, unknown>) {
 export function chosenOptions(lines: CardOptionLine[] | undefined): CardOption[] {
   return OPTION_GROUPS.map((g) => CARD_OPTIONS.find((o) => o.group === g && lines?.some((l) => l.group === g && l.code === o.code)) ?? CARD_OPTIONS.find((o) => o.group === g && o.default)!);
 }
+
+// ---- where a card order gets printed (T27, item 56) -----------------------------------------------
+export type CardPrinter = 'shop' | 'trade' | 'local';
+export const PRINTER_NAMES: Record<CardPrinter, string> = { shop: 'In the shop (laser, 10-up sheet)', trade: 'Trade printer, shipped in (4over)', local: 'Sir Speedy Monroe (rush)' };
+/** The chart in monetization/business-cards: any upsell or 500 and up goes to the trade printer unless rushed; standard 100 or 250 prints in the shop; rushed non-standard goes to the local printer. */
+export function routeCard(o: { quantity: number; options?: { group: string; code: string }[] }): { printer: CardPrinter; why: string } {
+  const opts = o.options ?? [];
+  const rush = opts.some((x) => x.code === 'rush');
+  const special = opts.some((x) => x.group !== 'speed');
+  if (!special && o.quantity <= 250) return { printer: 'shop', why: `standard stock, ${o.quantity} cards${rush ? ', rush' : ''}` };
+  if (rush) return { printer: 'local', why: `rush with ${special ? opts.filter((x) => x.group !== 'speed').map((x) => x.code).join(', ') : `${o.quantity} cards`}` };
+  return { printer: 'trade', why: special ? opts.map((x) => x.code).join(', ') + `, ${o.quantity} cards, not rushed` : `${o.quantity} cards, not rushed` };
+}

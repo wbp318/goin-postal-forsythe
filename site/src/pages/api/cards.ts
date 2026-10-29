@@ -52,10 +52,11 @@ export const PUT: APIRoute = async ({ request }) => {
   const { getCardOrder } = await import('../../lib/cardOrders');
   const o = await getCardOrder(env, String(b.order ?? ''));
   if (!o) return json({ error: 'No such order' }, 404);
-  if (b.action === 'printed' && o.status === 'paid') o.status = 'printed';
-  else if (b.action === 'picked_up' && (o.status === 'paid' || o.status === 'printed')) o.status = 'picked_up';
+  if (b.action === 'printed' && (o.status === 'paid' || o.status === 'sent')) o.status = 'printed';
+  else if (b.action === 'sent' && o.status === 'paid') { const kind = (['shop', 'trade', 'local'] as const).find((k) => k === b.printer) ?? 'trade'; o.status = 'sent'; o.printer = { kind, name: String(b.name ?? '').trim().slice(0, 60) || kind, sent_at: new Date().toISOString(), by: user.name, ref: String(b.ref ?? '').trim().slice(0, 60) || undefined }; }
+  else if (b.action === 'picked_up' && (o.status === 'paid' || o.status === 'sent' || o.status === 'printed')) o.status = 'picked_up';
   else return json({ error: `Cannot ${b.action} an order that is ${o.status}` }, 400);
   await saveCardOrder(env, o);
-  await logAudit(env, user, `card.${b.action}`, o.id);
+  await logAudit(env, user, `card.${b.action}`, o.id, o.printer && b.action === 'sent' ? `${o.printer.kind} ${o.printer.name}${o.printer.ref ? ` ref ${o.printer.ref}` : ''}` : undefined);
   return json({ status: o.status });
 };

@@ -3,7 +3,7 @@ import type { Design, CardOptionLine } from './cards';
 export interface CardOrder {
   id: string;             // CD-XXXXXX
   created_at: string;
-  status: 'awaiting_payment' | 'paid' | 'printed' | 'picked_up';
+  status: 'awaiting_payment' | 'paid' | 'sent' | 'printed' | 'picked_up';   // sent: out at a printer (T27)
   stripe_session_id?: string;
   paid_at?: string;
   customer: { name: string; email: string; phone: string };
@@ -15,6 +15,7 @@ export interface CardOrder {
   total?: number;         // price plus options plus tax plus fee; older orders have only price
   design: Design;
   notes: string;
+  printer?: { kind: 'shop' | 'trade' | 'local'; name: string; sent_at: string; by: string; ref?: string }; // where it went to be printed (T27)
 }
 
 export const cardTotal = (o: CardOrder) => o.total ?? o.price;

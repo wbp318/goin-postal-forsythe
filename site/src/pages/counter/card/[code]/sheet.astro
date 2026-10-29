@@ -28,7 +28,11 @@ const back = renderCard(o.design, 'back');
   </style>
 </head>
 <body>
-  <div class="bar">{o.id} · {o.quantity} cards{o.options?.length ? ' · ' + o.options.map((x) => x.name).join(', ') : ''} · print this page, then flip on the long edge for the backs. <button onclick="print()">Print</button></div>
+  <div class="bar">{o.id} · {o.quantity} cards{o.options?.length ? ' · ' + o.options.map((x) => x.name).join(', ') : ''} · print this page, then flip on the long edge for the backs. <button onclick="print()">Print</button> <button onclick="dl('front')">Front SVG</button> <button onclick="dl('back')">Back SVG</button> <span>For a trade printer: print to PDF from this page, or download the sides.</span></div>
+  <script define:vars={{ id: o.id }}>
+    // Download one side as an SVG file named by the order, for a printer's upload form (T27).
+    function dl(side) { const svg = document.querySelector(side === 'front' ? '.page:not(.back) .c svg' : '.page.back .c svg'); if (!svg) return; const blob = new Blob([svg.outerHTML], { type: 'image/svg+xml' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${id}-${side}.svg`; a.click(); }
+  </script>
   <div class="page">
     {Array.from({ length: 10 }).map(() => <div class="c" set:html={front} />)}
   </div>

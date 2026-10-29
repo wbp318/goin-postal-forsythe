@@ -3,11 +3,12 @@ export const prerender = false;
 import { env } from '../../../lib/env';
 import Base from '../../../layouts/Base.astro';
 import { getCardOrder } from '../../../lib/cardOrders';
-import { renderCard, chosenOptions } from '../../../lib/cards';
+import { renderCard, chosenOptions, routeCard, PRINTER_NAMES } from '../../../lib/cards';
 
 // Staff page for a card order. Already paid online through Stripe. The print sheet is at /sheet.
 const o = await getCardOrder(env, Astro.params.code ?? '');
 if (!o) return new Response('No such order', { status: 404 });
+const route = routeCard(o);
 ---
 <Base title={`Counter · ${o.id}`}>
   <section class="hero">
@@ -26,9 +27,18 @@ if (!o) return new Response('No such order', { status: 404 });
       <p><strong data-i18n="st.k.options">Options:</strong> {chosenOptions(o.options).map((x, i) => <span>{i ? ', ' : ''}<span data-i18n={`cards.opt.${x.code}`}>{x.name}</span>{x.price ? ` ($${x.price.toFixed(2)})` : ''}</span>)}</p>
       {o.notes && <p><strong data-i18n="st.k.notes">Notes:</strong> {o.notes}</p>}
       <p><a class="btn" href={`/counter/card/${o.id}/sheet`} target="_blank" data-i18n="st.k.sheet">Open print sheet (10 up, letter)</a></p>
+      <p><strong data-i18n="st.k.route">Print it:</strong> <span data-i18n={`st.k.printer.${route.printer}`}>{PRINTER_NAMES[route.printer]}</span> <span class="muted">({route.why})</span></p>
+      {o.printer && <p><strong data-i18n="st.k.sentto">Sent to</strong> {o.printer.name} · {o.printer.sent_at.slice(0, 10)} · {o.printer.by}{o.printer.ref ? ` · ${o.printer.ref}` : ''}</p>}
       <label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
-      {o.status === 'paid' && <p><button class="btn kraft" data-action="printed" data-i18n="st.printed">Mark printed</button></p>}
-      {(o.status === 'paid' || o.status === 'printed') && <p><button class="btn" data-action="picked_up" data-i18n="st.k.pickedup">Picked up</button></p>}
+      {o.status === 'paid' && <>
+        <div class="row">
+          <label><span data-i18n="st.k.printerkind">Printer</span> <select id="pkind"><option value="shop" selected={route.printer === 'shop'} data-i18n="st.k.printer.shop">In the shop (laser, 10-up sheet)</option><option value="trade" selected={route.printer === 'trade'} data-i18n="st.k.printer.trade">Trade printer, shipped in (4over)</option><option value="local" selected={route.printer === 'local'} data-i18n="st.k.printer.local">Sir Speedy Monroe (rush)</option></select></label>
+          <label><span data-i18n="st.k.printref">Their order number (optional)</span> <input id="pref" maxlength="60" /></label>
+        </div>
+        <p><button class="btn" data-action="sent" data-i18n="st.k.sent">Sent to the printer</button> <button class="btn kraft" data-action="printed" data-i18n="st.printed">Mark printed</button></p>
+      </>}
+      {o.status === 'sent' && <p><button class="btn kraft" data-action="printed" data-i18n="st.k.arrived">Cards arrived, mark printed</button></p>}
+      {(o.status === 'paid' || o.status === 'sent' || o.status === 'printed') && <p><button class="btn" data-action="picked_up" data-i18n="st.k.pickedup">Picked up</button></p>}
       <p id="msg"></p>
     </div>
   </div>
@@ -37,7 +47,7 @@ if (!o) return new Response('No such order', { status: 404 });
     const msg = document.getElementById('msg');
     document.querySelectorAll('[data-action]').forEach((b) => b.addEventListener('click', async () => {
       b.disabled = true;
-      const res = await fetch('/api/cards', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order: id, pin: document.getElementById('pin').value, action: b.dataset.action }) });
+      const res = await fetch('/api/cards', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order: id, pin: document.getElementById('pin').value, action: b.dataset.action, printer: document.getElementById('pkind')?.value, name: document.getElementById('pkind')?.selectedOptions[0]?.textContent, ref: document.getElementById('pref')?.value }) });
       const j = await res.json();
       if (!res.ok) { msg.textContent = j.error; b.disabled = false; return; }
       location.reload();
