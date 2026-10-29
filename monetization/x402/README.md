@@ -165,6 +165,29 @@ The resale plan in [`shipping-client/for-other-stores/README.md`](../../shipping
 | **Store-to-store settlement** | A parcel dropped at one PeterShip store and handed to another: the stores settle the handling fee between themselves in USDC automatically. | No invoices between stores. |
 | **Metered platform fee** | Instead of or alongside the $79 plan, a store pays PeterShip a cent per label by x402 as labels are made. | Zero-commitment tier for stores that will not sign a subscription. The facilitator fee is a tenth of a cent on a one-cent payment, so the margin holds. |
 
+## What is built (October 28, 2026, v1.42.0)
+
+The gate is in the store site, switched off until the receiving address is set. Nothing on the public pages changed; humans keep paying by card.
+
+| Route | Price | What it does |
+|---|---|---|
+| `GET /api/x402/prices` | free | The price list, the mode (off, mock, live), network and receiving address, how to pay, the refund rule |
+| `GET /api/x402/store` | $0.001 | Name, address, phone, hours, services |
+| `POST /api/x402/rates` | $0.01 | Retail rates for a parcel to an address, same engine as the website |
+| `GET /api/x402/track/:id` | $0.005 | Tracking events for a pickup code or tracking number |
+| `POST /api/x402/shipments` | the label | First call answers 402 with the exact price for the chosen rate; the paid retry buys the label and returns the PDF link, ZPL, tracking and pickup code |
+| `POST /api/x402/shipments/:id/void` | free | Within 24 hours, unused, with the purchase transaction and a reason; the refund is owed to the payer |
+
+How a call goes: the route answers `402 Payment Required` with the terms in the body and in a `PAYMENT-REQUIRED` header (x402 version 1 body, version 2 header name, so both kinds of client read it). The agent retries with its signed USDC transfer in `X-PAYMENT` (or `PAYMENT-SIGNATURE`). The Worker asks the facilitator to verify, then to settle, and only then does the work; the answer carries the receipt in `PAYMENT-RESPONSE`. If the facilitator cannot be reached the fallback URL is tried, then the agent gets a 503 and nothing is charged.
+
+Settle before you ship is built in: a label is bought only after settlement. If settlement succeeds and the carrier then refuses the label, the payment is marked **refund owed** and shown on the staff reports page with a Mark refunded button; the owner sends the USDC back from Kraken by hand. The same list carries voids. Every payment is a row in `x402_payments` (in the full data export too) and the reports page shows calls and dollars by endpoint for any date range.
+
+Three modes, from the secrets: **off** (nothing set, gated routes answer 503, so nothing is ever free by accident), **mock** (`X402_MOCK=1` on the dev server, `X-PAYMENT: mock` is accepted and nothing moves), **live** (`X402_PAY_TO` set to the store's Kraken USDC deposit address on `X402_NETWORK`, `base` by default; `X402_FACILITATOR` defaults to PayAI, `X402_FACILITATOR_FALLBACK` to x402.org).
+
+Not built yet, on purpose: the MCP server and the Agent.market and Bazaar listings (a week, once the gate is live and the first dozen calls have been watched), business-card renders (the endpoint does not exist yet), pay-per-crawl (a toggle in Cloudflare's dashboard, not code), and rate limits on the free `prices` route beyond Cloudflare's own.
+
+To switch it on: open the Kraken business account, copy the USDC deposit address for Base, `npx wrangler secret put X402_PAY_TO`, and set the accountant's recording method. Then call `GET /api/x402/prices` and it says `live`.
+
 ## What has to be true first
 
 ```mermaid

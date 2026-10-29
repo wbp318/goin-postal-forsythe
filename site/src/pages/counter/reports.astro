@@ -38,6 +38,7 @@ const monthStart = today.slice(0, 8) + '01';
       <div class="card"><h3 data-i18n="st.p.cost">Carriers charged</h3><p class="big" id="t-cost"></p></div>
       <div class="card"><h3 data-i18n="st.p.margin">Margin</h3><p class="big" id="t-margin"></p><p class="muted" id="t-pct"></p></div>
       <div class="card"><h3 data-i18n="st.p.addons">Add-ons sold</h3><p class="big" id="t-addons"></p><p class="muted" id="t-addons-n"></p></div>
+      <div class="card"><h3 data-i18n="st.p.x402">Agent payments (x402)</h3><p class="big" id="t-x402"></p><p class="muted" id="t-x402-n"></p><p class="err hidden" id="t-x402-owed"></p></div>
     </div>
 
     <div class="grid">
@@ -110,6 +111,15 @@ const monthStart = today.slice(0, 8) + '01';
       $('t-margin').textContent = usd(r.total.margin);
       $('t-addons').textContent = usd(r.addons.revenue);
       $('t-addons-n').textContent = r.addons.by_item.map((i: any) => `${i.name} × ${i.qty}`).join(' · ');
+      $('t-x402').textContent = r.x402 ? `$${r.x402.usd.toFixed(3)}` : '';
+      $('t-x402-n').textContent = r.x402 ? tf('st.p.x402n', { calls: r.x402.calls }) + (r.x402.by_endpoint.length ? ': ' + r.x402.by_endpoint.map((e: any) => `${e.endpoint} × ${e.calls}`).join(' · ') : '') : '';
+      const owed = $('t-x402-owed'); owed.innerHTML = ''; owed.classList.toggle('hidden', !r.x402?.refunds_owed?.length);
+      for (const p of r.x402?.refunds_owed ?? []) {
+        const line = document.createElement('div'); line.textContent = tf('st.p.x402owed', { amount: p.amount_usd.toFixed(2), to: p.payer ?? '?', id: p.shipment_id ?? p.endpoint }) + ' ';
+        const b = document.createElement('button'); b.className = 'btn small'; b.textContent = t('st.p.x402paid');
+        b.addEventListener('click', async () => { await fetch('/api/reports', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin(), from: field('from').value, to: field('to').value, action: 'x402_refunded', id: p.id }) }); form.requestSubmit(); });
+        line.appendChild(b); owed.appendChild(line);
+      }
       $('t-pct').textContent = r.total.revenue ? `${Math.round((r.total.margin / r.total.revenue) * 100)}${t('st.p.pct')}` : '';
       rows($('by-day'), r.by_day.map((d: any) => [d.day, d.shipments, usd(d.revenue), usd(d.cost), usd(d.margin)]));
       rows($('by-carrier'), r.by_carrier.map((d: any) => [d.carrier, d.shipments, usd(d.revenue), usd(d.cost), usd(d.margin)]));

@@ -26,6 +26,15 @@ TWILIO_ACCOUNT_SID=
 TWILIO_AUTH_TOKEN=
 TWILIO_FROM=
 
+# x402: software paying the store per request (monetization/x402/README.md). All blank = off (gated routes answer 503).
+# X402_MOCK=1 on the dev server accepts "X-PAYMENT: mock" and moves nothing. Live needs X402_PAY_TO, the store's USDC
+# deposit address at Kraken on the network below; the facilitator defaults to PayAI with x402.org as the fallback.
+X402_MOCK=1
+X402_PAY_TO=
+X402_NETWORK=base
+X402_FACILITATOR=
+X402_FACILITATOR_FALLBACK=
+
 # Stripe: dashboard > Developers > API keys (sk_test_ for testing). Webhook secret from Developers > Webhooks.
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=

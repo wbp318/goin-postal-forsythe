@@ -280,3 +280,20 @@ CREATE TABLE IF NOT EXISTS api_keys (
   last_used_at TEXT
 );
 CREATE INDEX IF NOT EXISTS api_keys_account ON api_keys(account_id, active);
+
+-- x402: payments software made per request in USDC (monetization/x402). One row per settled payment.
+CREATE TABLE IF NOT EXISTS x402_payments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  at TEXT NOT NULL,
+  endpoint TEXT NOT NULL,              -- store, rates, track, shipments
+  amount_usd REAL NOT NULL,
+  payer TEXT,                          -- the paying wallet address
+  network TEXT,
+  tx_hash TEXT,
+  facilitator TEXT,
+  status TEXT NOT NULL DEFAULT 'settled', -- settled, refund_owed, refunded
+  note TEXT,
+  shipment_id TEXT
+);
+CREATE INDEX IF NOT EXISTS x402_payments_at ON x402_payments(at);
+CREATE INDEX IF NOT EXISTS x402_payments_tx ON x402_payments(tx_hash);

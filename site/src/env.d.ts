@@ -22,6 +22,12 @@ interface Env {
   RESEND_API_KEY?: string; MAIL_FROM?: string; STAFF_EMAIL?: string;
   TWILIO_ACCOUNT_SID?: string; TWILIO_AUTH_TOKEN?: string; TWILIO_FROM?: string;
   STRIPE_SECRET_KEY?: string;
+  // x402, software paying per request (monetization/x402). Live when X402_PAY_TO is set; mock when X402_MOCK=1; off otherwise.
+  X402_PAY_TO?: string;       // the store's USDC receiving address (Kraken deposit address on X402_NETWORK)
+  X402_NETWORK?: string;      // base (default) or base-sepolia for testing
+  X402_FACILITATOR?: string;  // verify/settle service; default PayAI's hosted one
+  X402_FACILITATOR_FALLBACK?: string; // tried when the first cannot be reached; default x402.org (Coinbase)
+  X402_MOCK?: string;         // "1" accepts X-PAYMENT: mock on the dev server; never set it in production
   STRIPE_WEBHOOK_SECRET?: string;
   // Rates and labels. Easyship is the single-call fallback; each direct carrier switches on when its keys are present.
   EASYSHIP_TOKEN?: string;

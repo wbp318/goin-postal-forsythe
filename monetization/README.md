@@ -86,6 +86,8 @@ These are the big ones and the ones that need GP Brands' blessing. They turn For
 
 ## Letting software pay the store: x402
 
+**Built October 28, 2026 (v1.42.0):** the gate exists at `/api/x402` on the store site, off until Rin sets the receiving address. See the plan's "What is built" section.
+
 x402 is the HTTP payment protocol under the Linux Foundation that lets AI agents pay a website per request in USDC, with no account or card form. The store's rate quotes, labels, tracking and card renders can sit behind it in a day with Cloudflare's template, at a tenth of a cent per payment instead of Stripe's 30 cents plus 2.9%. Expect small money in 2027 and a head start when agents begin shipping parcels for people. The full plan, with prices per endpoint, fees against Stripe, revenue stages, the accounting and refund rules, and how it adds a zero-commitment tier to PeterShip for other stores, is in [`x402/README.md`](x402/README.md).
 
 ## A side idea: a Vice City shipping company in GTA roleplay

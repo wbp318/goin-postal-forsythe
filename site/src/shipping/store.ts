@@ -86,12 +86,13 @@ const mem = {
   printFailures: new Map<number, PrintFailure>(),
   heartbeats: new Map<string, AgentHeartbeat>(),
   apiKeys: [] as ApiKeyRow[],
+  x402: [] as X402PaymentRow[],
   seq: 1,
 };
 
 // ---- Export (T10) --------------------------------------------------------------------------------
 /** Every table in the schema, in schema order. The allow-list for the export; nothing else can be named. */
-export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys'] as const;
+export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments'] as const;
 export type ExportTable = typeof EXPORT_TABLES[number];
 const memTable = (name: ExportTable): unknown[] => {
   switch (name) {
@@ -116,6 +117,7 @@ const memTable = (name: ExportTable): unknown[] => {
     case 'notes': return mem.notes;
     case 'print_failures': return [...mem.printFailures.values()];
     case 'api_keys': return mem.apiKeys;
+    case 'x402_payments': return mem.x402;
     default: return [];
   }
 };
@@ -133,6 +135,42 @@ export async function exportCounts(env: Env): Promise<Record<string, number>> {
     out[t] = env.DB ? ((await env.DB.prepare(`SELECT COUNT(*) AS n FROM ${t}`).first<{ n: number }>())?.n ?? 0) : memTable(t).length;
   }
   return out;
+}
+
+// ---- x402 payments --------------------------------------------------------------------------------
+export interface X402PaymentRow { id: number; at: string; endpoint: string; amount_usd: number; payer: string | null; network: string | null; tx_hash: string | null; facilitator: string | null; status: string; note: string | null; shipment_id: string | null }
+export async function addX402Payment(env: Env, p: { endpoint: string; amount_usd: number; payer: string | null; network: string | null; tx_hash: string | null; facilitator: string | null; status: string; shipment_id: string | null }): Promise<X402PaymentRow> {
+  const row = { ...p, at: now(), note: null as string | null };
+  if (env.DB) {
+    const r = await env.DB.prepare('INSERT INTO x402_payments (at, endpoint, amount_usd, payer, network, tx_hash, facilitator, status, shipment_id) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9) RETURNING id').bind(row.at, row.endpoint, row.amount_usd, row.payer, row.network, row.tx_hash, row.facilitator, row.status, row.shipment_id).first<{ id: number }>();
+    return { id: r!.id, ...row };
+  }
+  const full = { id: mem.seq++, ...row }; mem.x402.push(full); return full;
+}
+export async function setX402PaymentShipment(env: Env, id: number, shipmentId: string) {
+  if (env.DB) { await env.DB.prepare('UPDATE x402_payments SET shipment_id = ?2 WHERE id = ?1').bind(id, shipmentId).run(); return; }
+  const p = mem.x402.find((x) => x.id === id); if (p) p.shipment_id = shipmentId;
+}
+export async function markX402Refund(env: Env, id: number, note: string) {
+  if (env.DB) { await env.DB.prepare("UPDATE x402_payments SET status = 'refund_owed', note = ?2 WHERE id = ?1").bind(id, note).run(); return; }
+  const p = mem.x402.find((x) => x.id === id); if (p) { p.status = 'refund_owed'; p.note = note; }
+}
+export async function markX402Refunded(env: Env, id: number) {
+  if (env.DB) { await env.DB.prepare("UPDATE x402_payments SET status = 'refunded' WHERE id = ?1 AND status = 'refund_owed'").bind(id).run(); return; }
+  const p = mem.x402.find((x) => x.id === id); if (p && p.status === 'refund_owed') p.status = 'refunded';
+}
+export async function findX402PaymentByTx(env: Env, tx: string): Promise<X402PaymentRow | null> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM x402_payments WHERE tx_hash = ?1 ORDER BY id DESC').bind(tx).first<X402PaymentRow>()) ?? null;
+  return [...mem.x402].reverse().find((x) => x.tx_hash === tx) ?? null;
+}
+/** Calls, dollars and refunds owed between two dates (inclusive days), for the reports page. */
+export async function x402Summary(env: Env, from: string, to: string): Promise<{ calls: number; usd: number; by_endpoint: { endpoint: string; calls: number; usd: number }[]; refunds_owed: X402PaymentRow[] }> {
+  const a = `${from}T00:00:00.000Z`, b = `${to}T23:59:59.999Z`;
+  const rows = env.DB ? (await env.DB.prepare('SELECT * FROM x402_payments WHERE at BETWEEN ?1 AND ?2 ORDER BY at').bind(a, b).all<X402PaymentRow>()).results : mem.x402.filter((x) => x.at >= a && x.at <= b);
+  const by = new Map<string, { endpoint: string; calls: number; usd: number }>();
+  for (const r of rows) { const e = by.get(r.endpoint) ?? { endpoint: r.endpoint, calls: 0, usd: 0 }; e.calls++; e.usd = Math.round((e.usd + r.amount_usd) * 1000) / 1000; by.set(r.endpoint, e); }
+  const owed = env.DB ? (await env.DB.prepare("SELECT * FROM x402_payments WHERE status = 'refund_owed' ORDER BY at").all<X402PaymentRow>()).results : mem.x402.filter((x) => x.status === 'refund_owed');
+  return { calls: rows.length, usd: Math.round(rows.reduce((s, r) => s + r.amount_usd, 0) * 1000) / 1000, by_endpoint: [...by.values()], refunds_owed: owed };
 }
 
 // ---- API keys (public API) -----------------------------------------------------------------------
