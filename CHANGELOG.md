@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.68.0] - 2026-10-30
+
+**storefront banner rebuilt from a design plan**
+
+The third generation of the print file in `designs/banner-107x39/`. The Oct 29 file was already true vectors, but the owners were not happy with the logo row, and a close look said why:
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.68.0) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.68.0) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.67.0...v1.68.0)
+
 ## [v1.67.0] - 2026-10-29
 
 **low-stock alerts and label resend from the account page**
