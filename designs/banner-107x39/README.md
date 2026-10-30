@@ -38,7 +38,7 @@ Carrier logos are the UPS, FedEx, USPS, DHL and Meest public vector marks. Each 
 
 ## Raster exports (`png/`)
 
-For phones, WhatsApp and quick previews. WhatsApp's built-in PDF viewer draws a tiny low-resolution preview that makes any PDF look soft, so judge quality from these or from the PDF opened in Acrobat at 400 percent.
+For phones, WhatsApp and quick previews. These are flattened on white; the PDF alone keeps the transparent background, which a dark-mode viewer shows as dark. WhatsApp's built-in PDF viewer draws a tiny low-resolution preview that makes any PDF look soft, so judge quality from these or from the PDF opened in Acrobat at 400 percent.
 
 | File | Size | Use |
 |---|---|---|

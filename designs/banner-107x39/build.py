@@ -232,8 +232,10 @@ def export(svg_path):
     print('PDF page %.1f x %.1f in, %d images' % (page.rect.width / 72, page.rect.height / 72, len(page.get_images())))
     png = os.path.join(HERE, 'png')
     os.makedirs(png, exist_ok=True)
-    page.get_pixmap(matrix=fitz.Matrix(4000 / page.rect.width, 4000 / page.rect.width), alpha=True).save(os.path.join(png, 'banner-107x39-preview-4000px.png'))
-    page.get_pixmap(dpi=150, alpha=True).save(os.path.join(png, 'banner-107x39-150dpi.png'))
+    # Rasters are flattened on white: a transparent PNG goes dark in a dark-mode phone or chat viewer,
+    # and the banner prints on white. Only the PDF keeps the transparent background.
+    page.get_pixmap(matrix=fitz.Matrix(4000 / page.rect.width, 4000 / page.rect.width), alpha=False).save(os.path.join(png, 'banner-107x39-preview-4000px.png'))
+    page.get_pixmap(dpi=150, alpha=False).save(os.path.join(png, 'banner-107x39-150dpi.png'))
     page.get_pixmap(dpi=150, alpha=False).save(os.path.join(png, 'banner-107x39-150dpi.jpg'), jpg_quality=92)
     print('wrote', pdf_path, 'and png/')
 
