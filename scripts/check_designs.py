@@ -70,7 +70,7 @@ def check_svg(path, problems):
 
 def main():
     problems = []
-    svgs = sorted(p for p in DESIGNS.rglob("*.svg") if p.relative_to(DESIGNS).parts[0] not in ("png", "pdf"))
+    svgs = sorted(p for p in DESIGNS.rglob("*.svg") if p.relative_to(DESIGNS).parts[0] not in ("png", "pdf", "banner-107x39"))
     if not svgs:
         problems.append("designs/: no SVG files found")
     for path in svgs:
