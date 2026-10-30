@@ -275,6 +275,18 @@ timeline
     Feb 1 : St. Frederick 2027 football program ads go on sale
 ```
 
+## First thing Oct 30: the 107 x 39 storefront banner
+
+The print file in `designs/banner-107x39/` is still not right (Oct 29 night). Rebuild it properly, in this order:
+
+1. **Load the design skill first.** The artifact-design guide plus the `frontend-design` plugin. Write the plan before touching files: colour tokens (the navy and the red), the headline face, the logo-row grid, mascot placement.
+2. **Say what is wrong with the current PDF**, in plain words, so the rebuild targets the real complaint. Open `banner-107x39.pdf` in Acrobat at 400 percent, not in WhatsApp.
+3. **Get the official mascot.** Ask corporate for the Goin' Postal mascot as AI, EPS or SVG. It is the only element still coming from the blurry original. Until then the traced one stays.
+4. **Rebuild the SVG in one pass from the plan**: headline outlines, the five carrier logos on one grid with the USPS eagle and wording treated as a single block, dividers and the bottom row aligned to that grid.
+5. **One render check, then export**: the 107 x 39 in vector PDF for the print shop, the 4000 px preview, the 150 dpi PNG and JPEG for phones.
+6. **Commit, push, and update** the README in that folder. Keep the three generations (original raster, auto-trace, rebuilt) clearly named.
+7. **Print-shop handoff:** send only `banner-107x39.pdf`, confirm 107 x 39 in with no scaling, transparent background, and ask them to zoom a letter edge before they print.
+
 ## Next up
 
 What gets built next, in order. None of it needs carrier keys.
@@ -383,6 +395,7 @@ flowchart LR
 
 ## Log
 
+- **Oct 29:** 107 x 39 banner: the original PDF turned out to be a 2079 px picture stretched over 107 inches. Traced it, then rebuilt it as true vectors (Impact outlines, official carrier logos, traced mascot) in `designs/banner-107x39/`. Owner still not satisfied with the logo row; rebuild with the design skill first thing Oct 30 (see the section above Next up).
 - **Oct 12:** Agenda created. St. Frederick and Neville Junior High research and designs started.
 - **Oct 12:** #0 done. Neville Junior High (1600 N 19th St, 0.4 mi, grades 7–8, Tigers) and St. Frederick (3300 Westminster Ave, 2.0 mi, grades 7–12, Warriors) confirmed. Fence banner and program ad made for each. Codes STFRED10 and NJH10 added to the Coupon Counter.
 - **Oct 12:** #4–#7 done. Coupon Counter now has Redeem, Results and Ad calendar tabs: returning-customer flags, cost per customer, a consent line customers must OK, and a shared calendar with 10 planned placements (no costs yet; estimates in notes). Contributors can read the calendar; only editors can change it.
