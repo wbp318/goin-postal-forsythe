@@ -12,8 +12,6 @@ DESIGN PLAN (the tokens everything below is built from)
   Canvas    4158 x 1512 units for 107 x 39 in (38.86 units per inch), transparent.
   Colour    NAVY   #002060  headline line 1, dividers, bottom row
             RED    #ED1C24  headline line 2, swoosh
-            KEY    #FFFFFF  keyline behind the headline so it stays legible where the
-                            mascot's parcel overlaps the letters
             The carrier marks keep their own brand colours; the mascot keeps its trace.
   Type      Headline: Arial Black, compressed to 76 percent and sloped 12 degrees, as
             the original's heavy oblique was. Bottom row: Arial Narrow Bold, tracked.
@@ -43,7 +41,7 @@ from fontTools.ttLib import TTFont  # noqa: E402
 from fontTools.pens.svgPathPen import SVGPathPen  # noqa: E402
 
 W, H = 4158, 1512
-NAVY, RED, KEY = '#002060', '#ED1C24', '#FFFFFF'
+NAVY, RED = '#002060', '#ED1C24'
 MARGIN = 180
 FONTS = {
     'display': 'C:/Windows/Fonts/ariblk.ttf',   # Arial Black
@@ -56,7 +54,6 @@ CAP1, CAP2 = 282, 272            # cap heights in canvas units
 BASE1, BASE2 = 457, 768          # baselines
 LINE2_RIGHT = 3270               # where line 2 ends; the mascot column starts past it, nothing overlaps
 SLOPE = -12                      # degrees
-KEYLINE = 26                     # white stroke width, half of it shows outside the letter
 
 # Swoosh
 SWOOSH = 'M 60 836 L 3300 824 C 2350 868, 1100 905, 60 905 Z'   # ends before the mascot column
@@ -144,7 +141,9 @@ def headline(face):
     p2, w2 = text_paths(face, LINE2, size2, sx)
     p1, w1 = text_paths(face, LINE1, size1, sx)
     x1 = MARGIN + (w2 - w1) / 2
-    common = 'stroke="%s" stroke-width="%s" stroke-linejoin="round" paint-order="stroke"' % (KEY, KEYLINE)
+    # No keyline: nothing overlaps the headline any more, and a white stroke shows as a faint
+    # box in some PDF viewers.
+    common = ''
 
     def line(paths, x, base, colour):
         return ('<g fill="%s" %s transform="translate(%s,%s) skewX(%s) scale(%s,1)">%s</g>'
