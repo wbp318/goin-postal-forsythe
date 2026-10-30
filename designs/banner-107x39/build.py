@@ -54,16 +54,16 @@ FONTS = {
 LINE1, LINE2 = 'YOUR ONE-STOP', 'SHIPPING CENTER'
 CAP1, CAP2 = 282, 272            # cap heights in canvas units
 BASE1, BASE2 = 457, 768          # baselines
-LINE2_RIGHT = 3190               # where line 2 ends; the mascot column starts past it, nothing overlaps
+LINE2_RIGHT = 3270               # where line 2 ends; the mascot column starts past it, nothing overlaps
 SLOPE = -12                      # degrees
 KEYLINE = 26                     # white stroke width, half of it shows outside the letter
 
 # Swoosh
-SWOOSH = 'M 60 836 L 3220 824 C 2300 868, 1100 905, 60 905 Z'   # ends before the mascot column
+SWOOSH = 'M 60 836 L 3300 824 C 2350 868, 1100 905, 60 905 Z'   # ends before the mascot column
 
 # Mascot
-MASCOT_HEIGHT = 800              # fits the column right of the headline, above the logo row
-MASCOT_LEFT, MASCOT_TOP = 3290, 50
+MASCOT_HEIGHT = 870              # fills the top-right corner, above the logo row
+MASCOT_LEFT, MASCOT_TOP = 3350, 20
 
 # Logo row
 ROW_CY = 1090
