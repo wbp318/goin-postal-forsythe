@@ -19,16 +19,16 @@ DESIGN PLAN (the tokens everything below is built from)
             the original's heavy oblique was. Bottom row: Arial Narrow Bold, tracked.
             All text is outlined; the files carry no fonts.
   Layout    One margin, MARGIN, on both sides. Everything hangs on it:
-              line 2 "SHIPPING CENTER" fills margin to margin minus the mascot's
-              parcel; line 1 "YOUR ONE-STOP" is centred over line 2 (as the original);
-              the swoosh runs under both and tapers out under the mascot's feet;
+              line 2 "SHIPPING CENTER" runs from the margin to the mascot column;
+              line 1 "YOUR ONE-STOP" is centred over line 2 (as the original);
+              the swoosh runs under both and tapers out before the mascot column;
               the logo row is five marks on one centre line, tall marks (UPS shield,
               USPS eagle plus wording as a single block) at TALL, wordmarks at their
               own heights, equal gaps, a divider bar centred in every gap;
               the bottom row is justified across the same margin-to-margin width
               with the same bars.
   Mascot    Traced from the original until corporate sends the vector (issue on
-            GitHub). Top right, parcel over the end of the headline, feet on the swoosh.
+            GitHub). Own column top right; nothing overlaps it and it overlaps nothing.
 """
 import argparse
 import os
@@ -54,16 +54,16 @@ FONTS = {
 LINE1, LINE2 = 'YOUR ONE-STOP', 'SHIPPING CENTER'
 CAP1, CAP2 = 282, 272            # cap heights in canvas units
 BASE1, BASE2 = 457, 768          # baselines
-LINE2_RIGHT = 3180               # where line 2 ends, so the mascot's parcel overlaps only the R
+LINE2_RIGHT = 3190               # where line 2 ends; the mascot column starts past it, nothing overlaps
 SLOPE = -12                      # degrees
 KEYLINE = 26                     # white stroke width, half of it shows outside the letter
 
 # Swoosh
-SWOOSH = 'M 60 836 L 3840 822 C 2700 870, 1200 905, 60 905 Z'
+SWOOSH = 'M 60 836 L 3220 824 C 2300 868, 1100 905, 60 905 Z'   # ends before the mascot column
 
 # Mascot
-MASCOT_HEIGHT = 896
-MASCOT_LEFT, MASCOT_TOP = 3140, 40
+MASCOT_HEIGHT = 800              # fits the column right of the headline, above the logo row
+MASCOT_LEFT, MASCOT_TOP = 3290, 50
 
 # Logo row
 ROW_CY = 1090
