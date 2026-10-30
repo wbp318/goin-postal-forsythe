@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh run watch *)",
+      "Bash(python scripts/check_designs.py)",
+      "Bash(python scripts/check_designs.py 2>&1)",
+      "Bash(python scripts/build_docs.py --check)",
+      "Bash(npx astro check)",
+      "Bash(npm run check)",
+      "Bash(npx wrangler whoami)",
+      "mcp__claude-in-chrome__tabs_context_mcp"
+    ]
+  }
+}
