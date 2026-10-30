@@ -22,3 +22,15 @@ Print-ready vector files for the big banner. Send the print shop **`banner-107x3
 - Headline font is Impact with a slight italic skew. The original used a similar condensed italic; the exact face is unknown.
 - Carrier logos: UPS, FedEx, USPS, DHL and Meest public vector marks. Each carrier's media page has brand-kit versions if a rep asks.
 - The build script that produced the rebuilt files is not kept here; the SVG is the source of truth. Edit it directly to change wording.
+
+## Raster exports (`png/`)
+
+For phones, WhatsApp and quick previews. WhatsApp's built-in PDF viewer draws a tiny low-resolution preview that makes any PDF look soft, so judge quality from these or from the PDF opened in Acrobat at 400 percent.
+
+| File | Size | Use |
+|---|---|---|
+| `banner-107x39-preview-4000px.png` | 4000 x 1458 px | Sharing and on-screen review |
+| `banner-107x39-150dpi.png` | 16051 x 5850 px | Full print resolution, 150 dpi at 107 x 39 in. Send on WhatsApp as a **document**, not a photo, or it gets recompressed |
+| `banner-107x39-150dpi.jpg` | same, JPEG | Same, for shops that only take JPEG |
+
+The PDF is still the file to print from. The PNG and JPEG are rendered from it.
