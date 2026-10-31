@@ -59,8 +59,8 @@ SLOPE = -12                      # degrees
 SWOOSH = 'M 60 836 L 3300 824 C 2350 868, 1100 905, 60 905 Z'   # ends before the mascot column
 
 # Mascot
-MASCOT_HEIGHT = 870              # fills the top-right corner, above the logo row
-MASCOT_LEFT, MASCOT_TOP = 3350, 20
+MASCOT_HEIGHT = 835              # fills the top-right corner, above the logo row, speed lines clear of the edge
+MASCOT_LEFT, MASCOT_TOP = 3400, 30
 
 # Logo row
 ROW_CY = 1090
