@@ -26,6 +26,9 @@ from PIL import Image, ImageFilter  # noqa: E402
 
 SCALE = 4
 MIN_SHARE = 0.0025      # a colour must cover this share of the picture to be kept
+# Colours that must survive exactly, sampled from the original: the parcel's two light blues and its cyan.
+# The median cut had been averaging the light blues into a grey-blue.
+PINNED = [(217, 234, 246), (200, 229, 246), (135, 225, 244)]
 WORK = os.path.join(HERE, 'png')
 
 
@@ -51,6 +54,7 @@ def clean(src):
     counts = Counter(i for i, m in zip(q.getdata(), opaque.getdata()) if m)
     total = sum(counts.values())
     cols = [tuple(pal[i * 3:i * 3 + 3]) for i, n in counts.items() if n / total > MIN_SHARE]
+    cols = [c for c in cols if all(sum((a - b) ** 2 for a, b in zip(c, pin)) > 24 ** 2 for pin in PINNED)] + PINNED
     pimg = Image.new('P', (1, 1))
     flat = [v for c in cols for v in c]
     pimg.putpalette(flat + [0] * (768 - len(flat)))
