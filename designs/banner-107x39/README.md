@@ -22,10 +22,10 @@ Print-ready vector files for the big banner. Send the print shop **`banner-107x3
 The plan is written at the top of `build.py` and everything is measured from it:
 
 - **Colours.** Navy `#002060` and red `#ED1C24`, sampled from the original. The Oct 29 file had drifted to a lighter navy and a darker red.
-- **Headline.** Arial Black, compressed to 76 percent and sloped 12 degrees, the closest match on hand to the original's heavy oblique. "SHIPPING CENTER" runs from the left margin to where the mascot's parcel starts; "YOUR ONE-STOP" is centred over it, as in the original. A white keyline sits behind the letters.
-- **Logo row.** The five marks sit on one centre line with equal gaps and a navy bar centred in every gap. The UPS shield and the USPS block (eagle plus wording, moved and scaled as one piece) are the tall marks; FedEx, DHL and Meest are wordmarks at their own heights.
+- **Headline.** Arial Black, compressed to 76 percent and sloped 12 degrees, the closest match on hand to the original's heavy oblique. both lines sit where they do in the original, "YOUR ONE-STOP" centred over "SHIPPING CENTER". A white keyline sits behind the letters.
+- **Logo row.** Every position is measured from the original: the five marks on its centre line, each at the width it had, equal gaps, a navy bar centred in every gap. The UPS shield and the USPS block (eagle plus wording, moved and scaled as one piece) are the tall marks; FedEx, DHL and Meest are wordmarks at their own heights.
 - **Bottom row.** Arial Narrow Bold, tracked, justified across the same width as the logo row with the same bars, so the two rows share their outer edges.
-- **Mascot.** Still the trace of the original, in its own column top right; the headline, swoosh and logo row all stop short of it, nothing overlaps. Oct 31: the parcel's panels recoloured from near-white to light blue, the empty lower-left panel and corner drawn in so the box is one continuous shape, and the trace's stray pale lines cut out (`parts/mascot.svg`, each change commented). The official vector from corporate is a drop-in replacement (GitHub issue).
+- **Mascot.** The straight trace of the original, at the original's size and position: top right, parcel over the end of the headline, feet on the swoosh. The official vector from corporate is a drop-in replacement (issue 16).
 
 Carrier logos are the UPS, FedEx, USPS, DHL and Meest public vector marks. Each carrier's media page has brand-kit versions if a rep asks.
 

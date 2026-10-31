@@ -42,7 +42,7 @@ from fontTools.pens.svgPathPen import SVGPathPen  # noqa: E402
 
 W, H = 4158, 1512
 NAVY, RED = '#002060', '#ED1C24'
-MARGIN = 180
+MARGIN = 136  # headline left edge, measured from the original
 FONTS = {
     'display': 'C:/Windows/Fonts/ariblk.ttf',   # Arial Black
     'row': 'C:/Windows/Fonts/ARIALNB.TTF',      # Arial Narrow Bold
@@ -52,27 +52,27 @@ FONTS = {
 LINE1, LINE2 = 'YOUR ONE-STOP', 'SHIPPING CENTER'
 CAP1, CAP2 = 282, 272            # cap heights in canvas units
 BASE1, BASE2 = 457, 768          # baselines
-LINE2_RIGHT = 3270               # where line 2 ends; the mascot column starts past it, nothing overlaps
+LINE2_RIGHT = 3225  # where line 2 ends in the original; the mascot's parcel overlaps the last letters as it did
 SLOPE = -12                      # degrees
 
 # Swoosh
-SWOOSH = 'M 60 836 L 3300 824 C 2350 868, 1100 905, 60 905 Z'   # ends before the mascot column
+SWOOSH = 'M 30 832 L 3808 838 C 2600 884, 1200 914, 30 914 Z'  # under the headline, tapering out under the mascot's feet, as the original
 
 # Mascot
-MASCOT_HEIGHT = 835              # fills the top-right corner, above the logo row, speed lines clear of the edge
-MASCOT_LEFT, MASCOT_TOP = 3400, 30
+MASCOT_HEIGHT = 894  # the original's size
+MASCOT_LEFT, MASCOT_TOP = 3089, 39  # the original's position
 
 # Logo row
-ROW_CY = 1090
-TALL = 365                       # UPS shield and the USPS block
-ROW_HEIGHTS = {'ups': TALL, 'fedex': 230, 'usps': TALL, 'dhl': 180, 'meest': 233}
+ROW_LEFT, ROW_RIGHT = 214, 3857  # logo row and bottom row edges, from the original
+ROW_CY = 1062  # logo row centre line, from the original
+ROW_HEIGHTS = {'ups': 358, 'fedex': 226, 'usps': 346, 'dhl': 158, 'meest': 239}  # each mark at the width it had in the original
 ROW_ORDER = ['ups', 'fedex', 'usps', 'dhl', 'meest']
-BAR_W, BAR_H = 16, 290
+BAR_W, BAR_H = 16, 292
 
 # Bottom row
 WORDS = ['DOMESTIC', 'INTERNATIONAL', 'PACK', 'SHIP', 'TRACK']
 ROW_CAP = 87
-ROW_BASE = 1405
+ROW_BASE = 1390
 ROW_TRACK = 0.10                 # letter spacing, em
 ROW_BAR_W, ROW_BAR_H = 14, 100
 
@@ -172,9 +172,9 @@ def logo_row():
     for name in ROW_ORDER:
         _, bb = part(name)
         widths[name] = (bb[2] - bb[0]) * ROW_HEIGHTS[name] / (bb[3] - bb[1])
-    gap = (W - 2 * MARGIN - sum(widths.values())) / (len(ROW_ORDER) - 1)
+    gap = (ROW_RIGHT - ROW_LEFT - sum(widths.values())) / (len(ROW_ORDER) - 1)
     out = []
-    x = MARGIN
+    x = ROW_LEFT
     for i, name in enumerate(ROW_ORDER):
         h = ROW_HEIGHTS[name]
         g, w = place(name, x, ROW_CY - h / 2, h)
@@ -190,9 +190,9 @@ def logo_row():
 def bottom_row(face):
     size = ROW_CAP / face.cap * face.upm
     rendered = [text_paths(face, w, size, 1.0, ROW_TRACK) for w in WORDS]
-    gap = (W - 2 * MARGIN - sum(w for _, w in rendered)) / (len(WORDS) - 1)
+    gap = (ROW_RIGHT - ROW_LEFT - sum(w for _, w in rendered)) / (len(WORDS) - 1)
     out = []
-    x = MARGIN
+    x = ROW_LEFT
     bar_top = ROW_BASE - ROW_CAP / 2 - ROW_BAR_H / 2
     for i, (paths, w) in enumerate(rendered):
         out.append('<g fill="%s" transform="translate(%s,%d)">%s</g>' % (NAVY, fmt(x), ROW_BASE, paths))
