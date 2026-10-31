@@ -1,49 +1,27 @@
 # 107 x 39 inch storefront banner: "Your One-Stop Shipping Center"
 
-Print-ready vector files for the big banner. Send the print shop **`banner-107x39.pdf`** (or the SVG if they ask for it).
+The print shop needs a vector file. **Send them `banner-107x39.pdf`.** It is the original banner picture, exactly as it was, traced to vectors so it stays sharp at 107 inches.
 
 | File | What it is | Give to the printer? |
 |---|---|---|
-| `banner-107x39.pdf` | Third generation (Oct 30): built from `build.py`. Headline and bottom row are font outlines, carrier logos are the official vector marks, mascot is traced. 107 x 39 in page, no fonts, no embedded image. | **Yes** |
-| `banner-107x39.svg` | Same artwork as SVG, transparent background. For Illustrator, Inkscape or a sign shop RIP. | If they want an editable file |
-| `build.py` and `parts/` | The build script and the six pieces it places (mascot and five logos). Change wording or spacing in the script and run it; it writes the SVG, the PDF and `png/`. | No |
-| `auto-trace-of-original.pdf` / `.svg` | First attempt: a straight trace of the original picture. Keeps the original's jagged edges. | No |
-| `original-raster.pdf` | The original file: one 2079 x 756 pixel picture stretched over 107 inches (about 19 dpi). This is why earlier prints looked blurry. | No |
+| `banner-107x39.pdf` | The original, vectorized. 107 x 39 in page, transparent background, 920 vector shapes, no pictures, no fonts. | **Yes** |
+| `banner-107x39.svg` | The same artwork as SVG, for Illustrator, Inkscape or a sign-shop RIP. | If they want an editable file |
+| `png/` | Previews rendered from the PDF, on white: 4000 px for sharing, 150 dpi PNG and JPEG for phones. Send on WhatsApp as a document, not a photo. | No |
+| `original-raster.pdf` | The file the shop had: one 2079 x 756 pixel picture stretched over 107 inches, about 19 dpi. This is why prints came out blurry. | No |
+| `vectorize.py` | The script that makes the PDF and SVG from `original-raster.pdf`. Run it again if the original ever changes. | No |
+| `rebuilt/` | A separate redesign built from fonts and the official carrier marks (`build.py`, `parts/`). Not what the shop gets unless Peter asks for it. | No |
+
+## How the vector file was made
+
+`vectorize.py` takes the picture out of the original PDF with its transparency, scales it up four times, snaps every pixel to the 55 colours that actually cover area in the picture (which removes the JPEG halos around every edge without losing a real colour), traces each colour to smooth vector shapes with VTracer, and puts the result on a 107 x 39 in page. Nothing is moved, redrawn or recoloured.
 
 ## Checklist at the print shop
 
 1. Hand over `banner-107x39.pdf`, not the original.
-2. Ask them to open it and zoom to 400 percent on a letter edge. It must stay razor sharp. If it goes soft or blocky, they opened the wrong file.
-3. Ask them to confirm the page size reads 107 x 39 in with no scaling.
+2. Ask them to confirm the page size reads 107 x 39 in with no scaling.
+3. Ask them to zoom to 400 percent on a letter edge. It must stay sharp. If it goes soft or blocky, they opened the wrong file.
 4. The background is transparent. Tell them what colour the banner material is, or ask for white.
-5. The mascot is the only traced element. It is clean at banner size, but if they want it smoother, the original Goin' Postal mascot vector from corporate would be a drop-in replacement.
 
-## How it is laid out (Oct 30 rebuild)
+## Open
 
-The plan is written at the top of `build.py` and everything is measured from it:
-
-- **Colours.** Navy `#002060` and red `#ED1C24`, sampled from the original. The Oct 29 file had drifted to a lighter navy and a darker red.
-- **Headline.** Arial Black, compressed to 76 percent and sloped 12 degrees, the closest match on hand to the original's heavy oblique. "SHIPPING CENTER" runs from the left margin to where the mascot's parcel starts; "YOUR ONE-STOP" is centred over it, as in the original. A white keyline sits behind the letters.
-- **Logo row.** The five marks sit on one centre line with equal gaps and a navy bar centred in every gap. The UPS shield and the USPS block (eagle plus wording, moved and scaled as one piece) are the tall marks; FedEx, DHL and Meest are wordmarks at their own heights.
-- **Bottom row.** Arial Narrow Bold, tracked, justified across the same width as the logo row with the same bars, so the two rows share their outer edges.
-- **Mascot.** Still the trace of the original, in its own column top right; the headline, swoosh and logo row all stop short of it, nothing overlaps. Oct 31: the parcel's panels recoloured from near-white to light blue, the empty lower-left panel and corner drawn in so the box is one continuous shape, and the trace's stray pale lines cut out (`parts/mascot.svg`, each change commented). The official vector from corporate is a drop-in replacement (GitHub issue).
-
-Carrier logos are the UPS, FedEx, USPS, DHL and Meest public vector marks. Each carrier's media page has brand-kit versions if a rep asks.
-
-## The three generations
-
-1. `original-raster.pdf`: the file the shop had, a picture at about 19 dpi.
-2. `auto-trace-of-original.*`: Oct 29, a trace. Vector, but it keeps every jagged edge.
-3. `banner-107x39.*`: Oct 29 rebuilt from fonts and logo marks; Oct 30 rebuilt again from `build.py` on one grid.
-
-## Raster exports (`png/`)
-
-For phones, WhatsApp and quick previews. These are flattened on white; the PDF alone keeps the transparent background, which a dark-mode viewer shows as dark. WhatsApp's built-in PDF viewer draws a tiny low-resolution preview that makes any PDF look soft, so judge quality from these or from the PDF opened in Acrobat at 400 percent.
-
-| File | Size | Use |
-|---|---|---|
-| `banner-107x39-preview-4000px.png` | 4000 x 1458 px | Sharing and on-screen review |
-| `banner-107x39-150dpi.png` | 16051 x 5850 px | Full print resolution, 150 dpi at 107 x 39 in. Send on WhatsApp as a **document**, not a photo, or it gets recompressed |
-| `banner-107x39-150dpi.jpg` | same, JPEG | Same, for shops that only take JPEG |
-
-The PDF is still the file to print from. The PNG and JPEG are rendered from it.
+The mascot's own vector from corporate would make the mascot cleaner still (GitHub issue 16). Until then the traced one is what prints, and it is clean at banner size.

@@ -34,7 +34,7 @@ import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(HERE, '..', '..', 'scripts'))
+sys.path.insert(0, os.path.join(HERE, '..', '..', '..', 'scripts'))
 import owner_guard  # noqa: E402,F401  stops unless the owner key is present
 
 from fontTools.ttLib import TTFont  # noqa: E402
@@ -223,7 +223,7 @@ def build_svg():
 
 def export(svg_path):
     import fitz
-    pdf_path = os.path.join(HERE, 'banner-107x39.pdf')
+    pdf_path = os.path.join(HERE, 'banner-107x39-rebuilt.pdf')
     doc = fitz.open(svg_path)
     open(pdf_path, 'wb').write(doc.convert_to_pdf())
     pdf = fitz.open(pdf_path)
@@ -243,7 +243,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--svg-only', action='store_true')
     args = ap.parse_args()
-    svg_path = os.path.join(HERE, 'banner-107x39.svg')
+    svg_path = os.path.join(HERE, 'banner-107x39-rebuilt.svg')
     open(svg_path, 'w', encoding='utf-8').write(build_svg())
     print('wrote', svg_path)
     if not args.svg_only:
