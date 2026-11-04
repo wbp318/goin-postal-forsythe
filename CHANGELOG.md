@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.81.0] - 2026-11-04
+
+**physical mailboxes run on their own**
+
+Peter: the top priority is taking physical mailbox customers by Friday, November 7. Physical boxes exist at one location only, so they do not need to live inside PeterShip, and a separate system gets them going faster. PeterShip itself is not deployed yet (the Cloudflare account is issue 4) and has no Stripe key (issue 3), so nothing built inside it could take a customer this week anyway.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.81.0) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.81.0) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.80.0...v1.81.0)
+
 ## [v1.80.0] - 2026-11-04
 
 **Scan their QR at the counter**
