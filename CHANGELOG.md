@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.73.0] - 2026-11-04
+
+**Address autofill on the ship page**
+
+Peter started testing the quote form and asked for address autofill. Two parts:
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.73.0) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.73.0) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.72.1...v1.73.0)
+
 ## [v1.72.1] - 2026-11-04
 
 **Español**
