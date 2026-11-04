@@ -57,3 +57,34 @@ describe('mail notifications', () => {
     expect((await store.lastMailboxNotices(env))['MB-NOTE01'].kind).toBe('mail');
   });
 });
+
+describe('mailbox mail log (T33)', () => {
+  it('logs items, lists what is in the box first, counts waiting, closes and reopens, and finds the holder\'s boxes', async () => {
+    const box = await store.createMailbox(env, { code: 'MB-LOG001', customer_id: null, customer_name: 'Log Holder', email: 'Holder@Example.com', phone: null, business_name: null, size: 'small', term: 'monthly', price: 15 });
+    await store.updateMailbox(env, box.code, { status: 'active', box_number: '12' });
+    const a = await store.addMailboxItem(env, { mailbox_code: box.code, kind: 'letter', sender: 'Entergy', note: null, photo_id: null, photo_type: null, arrived_by: 'Pat', notified: 1 });
+    const b = await store.addMailboxItem(env, { mailbox_code: box.code, kind: 'package', sender: 'Amazon', note: '2 boxes', photo_id: 'ab'.repeat(16), photo_type: 'image/jpeg', arrived_by: 'Pat', notified: 0 });
+    expect(a.status).toBe('arrived');
+    expect((await store.listMailboxItems(env, box.code)).map((i) => i.id)).toEqual([b.id, a.id]);
+    expect((await store.waitingMailboxItems(env))[box.code]).toBe(2);
+    expect((await store.getMailboxItemByPhoto(env, 'ab'.repeat(16)))?.id).toBe(b.id);
+    const closed = await store.updateMailboxItem(env, a.id, { status: 'picked_up', closed_at: '2026-11-05T00:00:00Z', closed_by: 'Pat' });
+    expect(closed?.status).toBe('picked_up');
+    const list = await store.listMailboxItems(env, box.code);
+    expect(list.map((i) => i.status)).toEqual(['arrived', 'picked_up']);
+    expect((await store.waitingMailboxItems(env))[box.code]).toBe(1);
+    expect((await store.updateMailboxItem(env, a.id, { status: 'arrived', closed_at: null, closed_by: null }))?.closed_at).toBeNull();
+    expect(await store.updateMailboxItem(env, 99999, { status: 'shredded' })).toBeNull();
+    // the holder finds the box by email, case-insensitive, and not somebody else's
+    expect((await store.mailboxesForCustomer(env, { id: 'nobody', email: 'holder@example.com' })).map((m) => m.code)).toEqual(['MB-LOG001']);
+    expect(await store.mailboxesForCustomer(env, { id: 'nobody', email: 'other@example.com' })).toEqual([]);
+    expect(store.EXPORT_TABLES).toContain('mailbox_items');
+  });
+  it('the notice text can carry the account link', async () => {
+    const m = await store.getMailbox(env, 'MB-LOG001');
+    const t = noticeText(m!, 'mail', 'from Entergy', 'https://example.com/account');
+    expect(t).toContain('box #12');
+    expect(t.endsWith('See what is in your box: https://example.com/account')).toBe(true);
+    expect(noticeText(m!, 'mail', '')).not.toContain('See what');
+  });
+});

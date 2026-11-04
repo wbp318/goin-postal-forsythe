@@ -4,13 +4,16 @@ import { env } from '../../lib/env';
 import { json } from '../../lib/validate';
 import { authenticate } from '../../lib/auth';
 import { priceMailbox, newMailboxCode } from '../../lib/mailboxes';
-import { createMailbox, getMailbox, updateMailbox, logAudit, upsertCustomer } from '../../shipping/store';
+import { createMailbox, getMailbox, updateMailbox, logAudit, upsertCustomer, addMailboxItem, getMailboxItem, getMailboxItemByPhoto, updateMailboxItem, MAILBOX_ITEM_STATUSES } from '../../shipping/store';
+import { saveImage, readImage } from '../../lib/photos';
 import { createMailboxCheckout, cancelSubscription } from '../../lib/stripe';
 import { notifyMailbox, KINDS, type NoticeKind } from '../../lib/mailboxNotify';
 
 // Mailbox subscriptions. POST: a customer picks a size and a term on /mailbox and goes to Stripe
 // Checkout in subscription mode. PUT: staff actions from /counter/mailbox/CODE (box number, Form
-// 1583, notes, cancel), PIN required and audited.
+// 1583, notes, cancel, and the mail log: item, item_status), PIN required and audited. GET ?photo=ID serves a
+// mail-log photo; the id is 32 random hex characters, the only protection an <img> tag can carry, the same
+// rule as intake photos.
 export const POST: APIRoute = async ({ request }) => {
   try {
     const b: any = await request.json().catch(() => ({}));
@@ -59,6 +62,34 @@ export const PUT: APIRoute = async ({ request }) => {
       const n = await notifyMailbox(env, m, kind, String(b.note ?? '').trim().slice(0, 120), user.name);
       await logAudit(env, user, `mailbox.${kind}`, m.code, n.note ?? undefined);
       return json({ ok: true, notice: n });
+    } else if (b.action === 'item') {
+      // The mail log (T33): one row per piece, with a photo when staff took one. The holder sees it signed in on
+      // /account. notify (default on) also sends the T12 text and email, with a link to the account page.
+      if (m.status === 'cancelled') throw new Error('This mailbox is cancelled');
+      const kind = (['letter', 'package', 'magazine', 'other'] as const).find((k) => k === b.kind) ?? 'letter';
+      const sender = String(b.sender ?? '').trim().slice(0, 80) || null;
+      const note = String(b.note ?? '').trim().slice(0, 200) || null;
+      const img = String(b.image ?? '');
+      const photo = img ? await saveImage(env, img) : null;
+      const notify = b.notify !== false && b.notify !== 'false' && b.notify !== 0;
+      const item = await addMailboxItem(env, { mailbox_code: m.code, kind, sender, note, photo_id: photo?.id ?? null, photo_type: photo?.type ?? null, arrived_by: user.name, notified: notify ? 1 : 0 });
+      let notice = null;
+      if (notify) {
+        const nk = kind === 'package' ? 'package' : kind === 'other' ? 'other' : 'mail';
+        notice = await notifyMailbox(env, m, nk, [sender ? `from ${sender}` : '', note].filter(Boolean).join(', ').slice(0, 120), user.name, `${env.SITE_URL}/account`);
+      }
+      await logAudit(env, user, 'mailbox.item', m.code, `${item.id} ${kind}${sender ? ` from ${sender}` : ''}${photo ? ', photo' : ''}${notify ? ', notified' : ''}`);
+      return json({ ok: true, item, notice });
+    } else if (b.action === 'item_status') {
+      const id = Number(b.id);
+      const status = (MAILBOX_ITEM_STATUSES as readonly string[]).includes(b.status) ? (b.status as typeof MAILBOX_ITEM_STATUSES[number]) : null;
+      if (!status) throw new Error('Pick a status');
+      const it = await getMailboxItem(env, id);
+      if (!it || it.mailbox_code !== m.code) throw new Error('No such item in this box');
+      const closed = status !== 'arrived';
+      const row = await updateMailboxItem(env, id, { status, closed_at: closed ? new Date().toISOString() : null, closed_by: closed ? user.name : null });
+      await logAudit(env, user, `mailbox.item.${status}`, m.code, String(id));
+      return json({ ok: true, item: row });
     } else if (b.action === 'note') {
       await updateMailbox(env, m.code, { notes: String(b.notes ?? '').trim().slice(0, 500) || null });
       await logAudit(env, user, 'mailbox.note', m.code);
@@ -73,4 +104,12 @@ export const PUT: APIRoute = async ({ request }) => {
   } catch (e: any) {
     return json({ error: e.message }, 400);
   }
+};
+
+export const GET: APIRoute = async ({ url }) => {
+  const id = url.searchParams.get('photo') ?? '';
+  const it = await getMailboxItemByPhoto(env, id);
+  const bytes = it ? await readImage(env, id) : null;
+  if (!it || !bytes) return new Response('Not found', { status: 404 });
+  return new Response(bytes, { headers: { 'Content-Type': it.photo_type ?? 'image/jpeg', 'Cache-Control': 'private, max-age=3600', 'X-Robots-Tag': 'noindex' } });
 };

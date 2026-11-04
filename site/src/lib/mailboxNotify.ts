@@ -9,16 +9,16 @@ export type NoticeKind = 'mail' | 'package' | 'other';
 export const KINDS: NoticeKind[] = ['mail', 'package', 'other'];
 
 /** The text of the message. Short, English, with the box number and the hours, because it leaves the building. */
-export function noticeText(m: Mailbox, kind: NoticeKind, note: string): string {
+export function noticeText(m: Mailbox, kind: NoticeKind, note: string, link?: string): string {
   const what = kind === 'mail' ? 'Mail' : kind === 'package' ? 'A package' : 'Something';
   const who = m.business_name || m.customer_name;
   const open = store.hours.filter((h) => h.open !== 'Closed').map((h) => `${h.days} ${h.open}`).join(', ');
-  return `${store.name}: ${what} arrived for ${who}${m.box_number ? ` in box #${m.box_number}` : ''}${note ? ` (${note})` : ''}. Pick it up at ${store.address}. ${open}.`.replace(/\s+/g, ' ');
+  return `${store.name}: ${what} arrived for ${who}${m.box_number ? ` in box #${m.box_number}` : ''}${note ? ` (${note})` : ''}. Pick it up at ${store.address}. ${open}.${link ? ` See what is in your box: ${link}` : ''}`.replace(/\s+/g, ' ');
 }
 
 /** Send the notice and record it. Mock senders only log, which the result says. */
-export async function notifyMailbox(env: Env, m: Mailbox, kind: NoticeKind, note: string, by: string): Promise<MailboxNotice & { text_mock?: boolean; email_mock?: boolean }> {
-  const text = noticeText(m, kind, note);
+export async function notifyMailbox(env: Env, m: Mailbox, kind: NoticeKind, note: string, by: string, link?: string): Promise<MailboxNotice & { text_mock?: boolean; email_mock?: boolean }> {
+  const text = noticeText(m, kind, note, link);
   let texted = 0, emailed = 0, text_mock: boolean | undefined, email_mock: boolean | undefined;
   const errors: string[] = [];
   if (m.phone && normalizePhone(m.phone).length >= 11) {

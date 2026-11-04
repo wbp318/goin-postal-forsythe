@@ -362,6 +362,28 @@ CREATE TABLE IF NOT EXISTS mailbox_notices (
 );
 CREATE INDEX IF NOT EXISTS mailbox_notices_box ON mailbox_notices(mailbox_code, at);
 
+-- Mailbox mail log (to-do T33, Informed Delivery for the store's boxes): one row per piece of mail
+-- or parcel staff put in a box, with an optional photo (bytes in KV under photo_id, like
+-- shipment_photos). The holder sees the rows and photos signed in on /account; staff close them
+-- when the mail leaves the box. arrived -> picked_up, forwarded, returned, shredded.
+CREATE TABLE IF NOT EXISTS mailbox_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  mailbox_code TEXT NOT NULL REFERENCES mailboxes(code),
+  kind TEXT NOT NULL,                  -- letter, package, magazine, other
+  sender TEXT,                         -- who it is from, as staff read it off the piece
+  note TEXT,
+  photo_id TEXT,                       -- 32 random hex characters, the KV key, or null
+  photo_type TEXT,                     -- image/jpeg or image/png
+  status TEXT NOT NULL DEFAULT 'arrived', -- arrived, picked_up, forwarded, returned, shredded
+  arrived_at TEXT NOT NULL,
+  arrived_by TEXT NOT NULL,
+  notified INTEGER NOT NULL DEFAULT 0, -- 1 when the text or email went with this row
+  closed_at TEXT,
+  closed_by TEXT
+);
+CREATE INDEX IF NOT EXISTS mailbox_items_box ON mailbox_items(mailbox_code, status, arrived_at);
+CREATE INDEX IF NOT EXISTS mailbox_items_photo ON mailbox_items(photo_id);
+
 -- Claims (to-do T13): a package lost, damaged or short. open -> filed -> approved/denied -> refunded -> closed.
 CREATE TABLE IF NOT EXISTS claims (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

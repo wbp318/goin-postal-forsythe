@@ -2,7 +2,7 @@
 export const prerender = false;
 import Base from '../../../layouts/Base.astro';
 import { env } from '../../../lib/env';
-import { getMailbox, listMailboxNotices } from '../../../shipping/store';
+import { getMailbox, listMailboxNotices, listMailboxItems } from '../../../shipping/store';
 import { store } from '../../../data/store';
 
 // Staff page for one mailbox subscription: record Form 1583 and the two IDs, give the box number,
@@ -10,6 +10,8 @@ import { store } from '../../../data/store';
 const m = await getMailbox(env, Astro.params.code ?? '');
 if (!m) return new Response('No such mailbox', { status: 404 });
 const notices = await listMailboxNotices(env, m.code);
+const items = await listMailboxItems(env, m.code, 30);
+const inbox = items.filter((i) => i.status === 'arrived'), gone = items.filter((i) => i.status !== 'arrived');
 const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '');
 ---
 <Base title={`Counter · ${m.code}`}>
@@ -31,6 +33,26 @@ const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString('en-US',
       <p id="nmsg" role="alert"></p>
       {notices.length > 0 && <ol class="timeline">{notices.map((n) => <li><time>{fmt(n.at)}</time><strong data-i18n={`st.m.kind.${n.kind}`}>{n.kind}</strong><span>{[n.note, n.by_name, n.texted ? 'texted' : '', n.emailed ? 'emailed' : '', n.error].filter(Boolean).join(' · ')}</span></li>)}</ol>}
       {m.stripe_subscription_id && <p class="muted">Stripe {m.stripe_subscription_id}</p>}
+    </div>
+    <div class="card" id="maillog">
+      <h3 data-i18n="st.mi.h3">Log what came in</h3>
+      <p class="muted" data-i18n="st.mi.lead">One row per piece, with a photo if you take one. The holder sees it signed in on their account page, like Informed Delivery. Tick notify to text and email them too.</p>
+      <form id="itemf" autocomplete="off">
+        <div class="row">
+          <label><span data-i18n="st.mi.kind">What</span> <select name="kind"><option value="letter" data-i18n="acct.mb.kind.letter">Letter</option><option value="package" data-i18n="acct.mb.kind.package">Package</option><option value="magazine" data-i18n="acct.mb.kind.magazine">Magazine</option><option value="other" data-i18n="acct.mb.kind.other">Something else</option></select></label>
+          <label><span data-i18n="st.mi.sender">From (as printed on it)</span> <input name="sender" maxlength="80" placeholder="Entergy" /></label>
+        </div>
+        <label><span data-i18n="st.mi.note">Note</span> <input name="note" maxlength="200" /></label>
+        <label><span data-i18n="st.mi.photo">Photo</span> <input id="itemphoto" type="file" accept="image/*" capture="environment" /></label>
+        <label><input type="checkbox" name="notify" checked /> <span data-i18n="st.mi.notify">Text and email the holder</span></label>
+        <p class="btnrow"><button class="btn" type="submit" data-i18n="st.mi.add">Put it in the box</button> <span id="imsg" role="alert"></span></p>
+      </form>
+      <h4><span data-i18n="st.mi.inbox">In the box</span> ({inbox.length})</h4>
+      {inbox.length === 0 && <p class="muted" data-i18n="acct.mb.nothing">Nothing waiting. We log each piece as it comes in.</p>}
+      <ul class="items">{inbox.map((i) => <li data-item={i.id}>{i.photo_id && <a href={`/api/mailbox?photo=${i.photo_id}`} target="_blank" rel="noopener"><img src={`/api/mailbox?photo=${i.photo_id}`} alt="" loading="lazy" style="max-height: 64px; max-width: 96px; vertical-align: middle; border-radius: 4px" /></a>} <strong data-i18n={`acct.mb.kind.${i.kind}`}>{i.kind}</strong>{i.sender ? <> <span data-i18n="acct.mb.from">from</span> {i.sender}</> : null}{i.note ? ` · ${i.note}` : ''} · <time>{fmt(i.arrived_at)}</time> · {i.arrived_by}{i.notified ? ' · notified' : ''}
+        <span class="btnrow"> <button class="btn small" type="button" data-status="picked_up" data-i18n="st.mi.pickedup">Picked up</button> <button class="btn small kraft" type="button" data-status="forwarded" data-i18n="st.mi.forwarded">Forwarded</button> <button class="btn small kraft" type="button" data-status="returned" data-i18n="st.mi.returned">Returned</button> <button class="btn small kraft" type="button" data-status="shredded" data-i18n="st.mi.shredded">Shredded</button></span></li>)}</ul>
+      {gone.length > 0 && <><h4 data-i18n="st.mi.gone">Left the box</h4>
+      <ol class="timeline">{gone.map((i) => <li data-item={i.id}><time>{fmt(i.closed_at)}</time><strong data-i18n={`acct.mb.status.${i.status}`}>{i.status.replace('_', ' ')}</strong><span><span data-i18n={`acct.mb.kind.${i.kind}`}>{i.kind}</span>{i.sender ? ` from ${i.sender}` : ''}{i.note ? ` · ${i.note}` : ''} · {fmt(i.arrived_at)} · {i.closed_by} <button class="btn small kraft" type="button" data-status="arrived" data-i18n="st.mi.reopen">Back in the box</button></span></li>)}</ol></>}
     </div>
     <form class="card" id="acts" autocomplete="off">
       <label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
@@ -54,6 +76,38 @@ const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString('en-US',
   </div>
   <script define:vars={{ code: m.code }}>
     const form = document.getElementById('acts'), msg = document.getElementById('msg');
+    const pin = () => document.getElementById('pin').value;
+    // The mail log: shrink the photo to 1280 px JPEG in the browser, send everything as JSON, reload.
+    async function shrink(file) {
+      const bmp = await createImageBitmap(file);
+      const scale = Math.min(1, 1280 / Math.max(bmp.width, bmp.height));
+      const c = document.createElement('canvas'); c.width = Math.round(bmp.width * scale); c.height = Math.round(bmp.height * scale);
+      c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+      let q = 0.82, out = c.toDataURL('image/jpeg', q);
+      while (out.length > 780_000 && q > 0.4) { q -= 0.1; out = c.toDataURL('image/jpeg', q); }
+      return out;
+    }
+    const itemf = document.getElementById('itemf'), imsg = document.getElementById('imsg');
+    itemf.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const btn = itemf.querySelector('button'); btn.disabled = true; imsg.className = ''; imsg.textContent = '…';
+      try {
+        const d = Object.fromEntries(new FormData(itemf).entries());
+        const file = document.getElementById('itemphoto').files[0];
+        const image = file ? await shrink(file) : '';
+        const res = await fetch('/api/mailbox', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, pin: pin(), action: 'item', kind: d.kind, sender: d.sender, note: d.note, image, notify: d.notify === 'on' }) });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.error);
+        location.reload();
+      } catch (e) { imsg.className = 'err'; imsg.textContent = e.message; btn.disabled = false; }
+    });
+    document.querySelectorAll('#maillog [data-status]').forEach((b) => b.addEventListener('click', async () => {
+      b.disabled = true;
+      const res = await fetch('/api/mailbox', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, pin: pin(), action: 'item_status', id: b.closest('[data-item]').dataset.item, status: b.dataset.status }) });
+      const j = await res.json();
+      if (!res.ok) { imsg.className = 'err'; imsg.textContent = j.error; b.disabled = false; return; }
+      location.reload();
+    }));
     document.querySelectorAll('[data-notice]').forEach((b) => b.addEventListener('click', async () => {
       b.disabled = true;
       const res = await fetch('/api/mailbox', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, pin: document.getElementById('pin').value, action: 'notice', kind: b.dataset.notice, note: document.getElementById('noticenote').value }) });

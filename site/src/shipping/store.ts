@@ -116,6 +116,10 @@ export interface ClaimRow {
 }
 /** Days after filing with the carrier before an unanswered claim is flagged. USPS and UPS usually answer inside this. */
 export const REMIND_DAYS = 30;
+export interface MailboxItem {
+  id: number; mailbox_code: string; kind: string; sender: string | null; note: string | null; photo_id: string | null; photo_type: string | null;
+  status: 'arrived' | 'picked_up' | 'forwarded' | 'returned' | 'shredded'; arrived_at: string; arrived_by: string; notified: number; closed_at: string | null; closed_by: string | null;
+}
 export interface MailboxNotice { id: number; mailbox_code: string; kind: string; note: string | null; by_name: string; at: string; texted: number; emailed: number; error: string | null }
 
 /** Guess the carrier from a barcode or tracking number. Good enough for drop-offs; the carrier confirms on scan. */
@@ -141,6 +145,7 @@ const mem = {
   returns: [] as ReturnRequest[],
   mailboxes: [] as Mailbox[],
   mailboxNotices: [] as MailboxNotice[],
+  mailboxItems: [] as MailboxItem[],
   claims: [] as ClaimRow[],
   pickups: [] as PickupRow[],
   photos: [] as PhotoRow[],
@@ -174,7 +179,7 @@ const mem = {
 
 // ---- Export (T10) --------------------------------------------------------------------------------
 /** Every table in the schema, in schema order. The allow-list for the export; nothing else can be named. */
-export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'mailboxes', 'mailbox_notices', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees'] as const;
+export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'mailboxes', 'mailbox_notices', 'mailbox_items', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees'] as const;
 export type ExportTable = typeof EXPORT_TABLES[number];
 const memTable = (name: ExportTable): unknown[] => {
   switch (name) {
@@ -203,6 +208,7 @@ const memTable = (name: ExportTable): unknown[] => {
     case 'return_requests': return mem.returns;
     case 'mailboxes': return mem.mailboxes;
     case 'mailbox_notices': return mem.mailboxNotices;
+    case 'mailbox_items': return mem.mailboxItems;
     case 'claims': return mem.claims;
     case 'pickups': return mem.pickups;
     case 'shipment_photos': return mem.photos;
@@ -1446,6 +1452,63 @@ export async function listMailboxNotices(env: Env, code: string, limit = 30): Pr
   return mem.mailboxNotices.filter((n) => n.mailbox_code === code).slice(0, limit);
 }
 /** The last notice per box, for the list page. */
+// ---- mailbox mail log (T33): what is in each box, with photos, for the holder's account page ----
+export const MAILBOX_ITEM_STATUSES = ['arrived', 'picked_up', 'forwarded', 'returned', 'shredded'] as const;
+export async function addMailboxItem(env: Env, x: { mailbox_code: string; kind: string; sender: string | null; note: string | null; photo_id: string | null; photo_type: string | null; arrived_by: string; notified: number }): Promise<MailboxItem> {
+  const row: Omit<MailboxItem, 'id'> = { ...x, status: 'arrived', arrived_at: now(), closed_at: null, closed_by: null };
+  let id: number;
+  if (env.DB) {
+    const r = await env.DB.prepare('INSERT INTO mailbox_items (mailbox_code, kind, sender, note, photo_id, photo_type, status, arrived_at, arrived_by, notified, closed_at, closed_by) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12) RETURNING id')
+      .bind(row.mailbox_code, row.kind, row.sender, row.note, row.photo_id, row.photo_type, row.status, row.arrived_at, row.arrived_by, row.notified, row.closed_at, row.closed_by).first<{ id: number }>();
+    id = r!.id;
+  } else id = mem.mailboxItems.length + 1;
+  const full = { ...row, id };
+  mem.mailboxItems.unshift(full);
+  return full;
+}
+export async function getMailboxItem(env: Env, id: number): Promise<MailboxItem | null> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM mailbox_items WHERE id = ?1').bind(id).first<MailboxItem>()) ?? null;
+  return mem.mailboxItems.find((i) => i.id === id) ?? null;
+}
+export async function getMailboxItemByPhoto(env: Env, photoId: string): Promise<MailboxItem | null> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM mailbox_items WHERE photo_id = ?1').bind(photoId).first<MailboxItem>()) ?? null;
+  return mem.mailboxItems.find((i) => i.photo_id === photoId) ?? null;
+}
+/** A box's items, newest first: everything still in the box, then the last `closedLimit` closed ones. */
+export async function listMailboxItems(env: Env, code: string, closedLimit = 50): Promise<MailboxItem[]> {
+  const all = env.DB
+    ? (await env.DB.prepare('SELECT * FROM mailbox_items WHERE mailbox_code = ?1 ORDER BY id DESC').bind(code).all<MailboxItem>()).results
+    : mem.mailboxItems.filter((i) => i.mailbox_code === code);
+  return [...all.filter((i) => i.status === 'arrived'), ...all.filter((i) => i.status !== 'arrived').slice(0, closedLimit)];
+}
+export async function updateMailboxItem(env: Env, id: number, patch: Partial<Pick<MailboxItem, 'status' | 'closed_at' | 'closed_by' | 'note' | 'sender' | 'notified'>>): Promise<MailboxItem | null> {
+  const it = await getMailboxItem(env, id);
+  if (!it) return null;
+  const keys = (Object.keys(patch) as (keyof typeof patch)[]).filter((k) => ['status', 'closed_at', 'closed_by', 'note', 'sender', 'notified'].includes(k));
+  if (!keys.length) return it;
+  const vals = Object.fromEntries(keys.map((k) => [k, patch[k] ?? null]));
+  if (env.DB) await env.DB.prepare(`UPDATE mailbox_items SET ${keys.map((k, i) => `${k} = ?${i + 2}`).join(', ')} WHERE id = ?1`).bind(id, ...keys.map((k) => patch[k] ?? null)).run();
+  const m = mem.mailboxItems.find((i) => i.id === id);
+  if (m) Object.assign(m, vals);
+  return { ...it, ...vals } as MailboxItem;
+}
+/** How many items are waiting in each box, keyed by code. Boxes with nothing waiting are absent. */
+export async function waitingMailboxItems(env: Env): Promise<Record<string, number>> {
+  const out: Record<string, number> = {};
+  if (env.DB) {
+    for (const r of (await env.DB.prepare("SELECT mailbox_code, COUNT(*) AS n FROM mailbox_items WHERE status = 'arrived' GROUP BY mailbox_code").all<{ mailbox_code: string; n: number }>()).results) out[r.mailbox_code] = r.n;
+  } else for (const i of mem.mailboxItems) if (i.status === 'arrived') out[i.mailbox_code] = (out[i.mailbox_code] ?? 0) + 1;
+  return out;
+}
+/** The boxes a signed-in customer holds: theirs by customer id, or signed up with the same email. Cancelled ones last. */
+export async function mailboxesForCustomer(env: Env, c: { id: string; email: string | null }): Promise<Mailbox[]> {
+  const email = (c.email ?? '').trim().toLowerCase();
+  const rows = env.DB
+    ? (await env.DB.prepare("SELECT * FROM mailboxes WHERE status != 'awaiting_payment' AND (customer_id = ?1 OR lower(email) = ?2) ORDER BY created_at DESC").bind(c.id, email).all<Mailbox>()).results
+    : mem.mailboxes.filter((m) => m.status !== 'awaiting_payment' && (m.customer_id === c.id || (email !== '' && m.email.toLowerCase() === email)));
+  return [...rows].sort((a, b) => Number(a.status === 'cancelled') - Number(b.status === 'cancelled'));
+}
+
 export async function lastMailboxNotices(env: Env): Promise<Record<string, MailboxNotice>> {
   const out: Record<string, MailboxNotice> = {};
   const rows = env.DB

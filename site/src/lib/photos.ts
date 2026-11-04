@@ -43,3 +43,16 @@ export async function deletePhoto(env: Env, id: string): Promise<boolean> {
   if (ok) await kv(env).delete(KEY(id));
   return ok;
 }
+
+// Images that belong to something other than a shipment (mailbox items, T33): same KV, same ids, same
+// size rule; the row that owns the id lives in the caller's table.
+export async function saveImage(env: Env, dataUrl: string): Promise<{ id: string; type: 'image/jpeg' | 'image/png'; bytes: number }> {
+  const { bytes, type } = decodeImage(dataUrl);
+  const id = newPhotoId();
+  await kv(env).put(KEY(id), bytes.buffer as ArrayBuffer, { expirationTtl: 60 * 60 * 24 * 365 });
+  return { id, type, bytes: bytes.length };
+}
+export async function readImage(env: Env, id: string): Promise<ArrayBuffer | null> {
+  if (!/^[0-9a-f]{32}$/.test(id)) return null;
+  return kv(env).get(KEY(id), 'arrayBuffer');
+}
