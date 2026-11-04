@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.77.0] - 2026-11-04
+
+**mailbox ID verification, scans to Azure, returns page cut**
+
+**ID verification for the physical boxes (T34).** A Commercial Mail Receiving Agency may only hand out a box after seeing two forms of ID (USPS PS Form 1583). Until now the counter page took a free-text note. Now the Form 1583 step on `/counter/mailbox/CODE` asks for each ID field by field: what it is (the Form 1583 list, in `site/src/lib/mailboxIds.ts`), who issued it, the last four of the number, the expiry, whether it shows the current home address, and a scan (photo or PDF). The API refuses the pair unless one carries a photo, they are different kinds, one shows the address and neither is expired; Social Security cards, credit cards and birth certificates are not on the list at all. Only the kind, issuer, last four and expiry are stored, never the whole number.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.77.0) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.77.0) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.76.1...v1.77.0)
+
 ## [v1.76.1] - 2026-11-04
 
 **Language picker order, Tiếng Việt second**
