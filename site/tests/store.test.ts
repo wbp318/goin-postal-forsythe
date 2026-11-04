@@ -162,7 +162,7 @@ describe('returns drop-off requests', () => {
 });
 
 describe("the buyer's figures (T24)", () => {
-  it('weeks, payment mix, account share, mailbox MRR and churn, claims', async () => {
+  it('weeks, payment mix, account share, claims', async () => {
     const cid = (await store.upsertCustomer(env, { name: 'Acq Co', email: 'acq@example.com' }))!;
     const acc = await store.addAccount(env, { customer_id: cid, business_name: 'Acq Co', discount_percent: 0, notes: '' });
     const a = order({ id: 'GP-ACQ1', created_at: '2030-01-07T10:00:00Z', source: 'counter' }); // a Tuesday
@@ -170,10 +170,6 @@ describe("the buyer's figures (T24)", () => {
     await store.recordShipment(env, { ...a, status: 'labeled', label: label('a1') } as any, label('a1'), 'account');
     await store.recordShipment(env, { ...b, status: 'labeled', label: label('b1') } as any, label('b1'), 'stripe');
     await store.billShipmentToAccount(env, 'GP-ACQ1', acc.id);
-    await store.createMailbox(env, { code: 'MB-ACQ1', customer_id: null, customer_name: 'B', email: 'b@example.com', phone: null, business_name: null, size: 'small', term: 'yearly', price: 150 });
-    await store.updateMailbox(env, 'MB-ACQ1', { status: 'active', started_at: '2029-12-01T00:00:00Z' });
-    await store.createMailbox(env, { code: 'MB-ACQ2', customer_id: null, customer_name: 'C', email: 'c@example.com', phone: null, business_name: null, size: 'large', term: 'monthly', price: 30 });
-    await store.updateMailbox(env, 'MB-ACQ2', { status: 'cancelled', started_at: '2029-12-01T00:00:00Z', cancelled_at: '2030-01-10T00:00:00Z' });
     await store.createClaim(env, { code: 'CL-ACQ1', shipment_id: 'GP-ACQ2', kind: 'lost', carrier: 'USPS', tracking_number: null, declared_usd: 50, postage_usd: 9, claimed_usd: 59, insured: 0, customer_name: null, customer_email: null, customer_phone: null, notes: null, by_name: 'T' });
     await store.updateClaim(env, 'CL-ACQ1', { status: 'refunded', customer_refund_usd: 40, refunded_at: '2030-01-20T00:00:00Z' });
     const f = await store.acquirerFigures(env, '2030-01-01', '2030-01-31');
@@ -182,21 +178,6 @@ describe("the buyer's figures (T24)", () => {
     expect(f.accounts.share).toBe(50);
     expect(f.mix.find((m) => m.source === 'account')?.shipments).toBe(1);
     expect(f.mix.find((m) => m.source === 'online')?.shipments).toBe(1);
-    expect(f.mailboxes).toMatchObject({ active: 1, cancelled: 1, mrr: 12.5, churn: 50 });
     expect(f.claims).toMatchObject({ refunded: 1, refunded_usd: 40 }); // opened counts by created_at, which is today, outside the 2030 range
-  });
-});
-
-describe('customer search by box number (v1.78.0)', () => {
-  it('finds the holder by "#12", "12" or the code, and every hit carries its box', async () => {
-    const id = await store.upsertCustomer(env, { name: 'Box Holder', email: 'holder12@example.com', phone: null });
-    const m = await store.createMailbox(env, { code: 'MB-BOX012', customer_id: id, customer_name: 'Box Holder', email: 'holder12@example.com', phone: null, business_name: null, size: 'small', term: 'monthly', price: 15 });
-    await store.updateMailbox(env, m.code, { status: 'active', box_number: '12' });
-    for (const q of ['#12', '12', 'mb-box012', 'holder12@']) {
-      const r = await store.searchCustomers(env, q);
-      expect(r.customers.map((c) => c.name), q).toContain('Box Holder');
-      expect(r.customers.find((c) => c.name === 'Box Holder')!.mailbox).toMatchObject({ code: 'MB-BOX012', box_number: '12', status: 'active' });
-    }
-    expect((await store.searchCustomers(env, '#99')).customers.find((c) => c.name === 'Box Holder')).toBeUndefined();
   });
 });

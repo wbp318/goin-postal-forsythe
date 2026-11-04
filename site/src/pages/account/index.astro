@@ -2,10 +2,9 @@
 export const prerender = false;
 import Base from '../../layouts/Base.astro';
 import { store } from '../../data/store';
-import { SCAN_FEE } from '../../lib/mailboxes';
 import { env } from '../../lib/env';
 import { consumeLoginToken, readSession, signSession, sessionCookie } from '../../lib/session';
-import { findCustomer, getCustomer, customerQuotes, listCustomerAddresses, accountForContact, accountOpenShipments, accountOpenFees, listStatements, pickupsForAccount, listReturnLinks, listProducts, listFulfillmentOrders, listApiKeys, mailboxesForCustomer, listMailboxItems, type MailboxItem } from '../../shipping/store';
+import { findCustomer, getCustomer, customerQuotes, listCustomerAddresses, accountForContact, accountOpenShipments, accountOpenFees, listStatements, pickupsForAccount, listReturnLinks, listProducts, listFulfillmentOrders, listApiKeys } from '../../shipping/store';
 
 // Customer account (T20): sign in by magic link, see saved addresses and past orders, ship again.
 const token = Astro.url.searchParams.get('token');
@@ -34,10 +33,6 @@ const stock = biz ? await listProducts(env, biz.id) : [];
 const fulfil = biz ? (await listFulfillmentOrders(env, biz.id, true)).slice(0, 20) : [];
 const keys = biz ? (await listApiKeys(env, biz.id)).filter((k) => k.active) : [];
 const fmt = (iso: string) => iso.slice(0, 10);
-// The holder's mailbox (T33, Informed Delivery for the store's boxes): each box, what is in it, with photos.
-const boxes = me ? await mailboxesForCustomer(env, me) : [];
-const boxItems: Record<string, MailboxItem[]> = {};
-for (const b of boxes) boxItems[b.code] = await listMailboxItems(env, b.code, 20);
 ---
 <Base title={`Your account · ${store.name}`} description="Sign in with your email, keep your addresses, see your orders, ship again in two clicks.">
   <section class="hero">
@@ -92,15 +87,6 @@ for (const b of boxes) boxItems[b.code] = await listMailboxItems(env, b.code, 20
         </form>
         <p id="msg" role="alert"></p>
       </div>
-      {boxes.map((b) => { const items = boxItems[b.code]; const inbox = items.filter((i) => i.status === 'arrived'); const gone = items.filter((i) => i.status !== 'arrived'); return <div class="card mailbox">
-        <h3><span data-i18n="acct.mb.h3">Your mailbox</span>{b.box_number ? ` #${b.box_number}` : ''}</h3>
-        <p class="muted"><span data-i18n="acct.mb.lead">What is in your box right now, with a photo when we took one. Come in during store hours to pick it up.</span> <span data-i18n="acct.mb.scanlead">Can't come in? Ask for a scan and we open it and put the pages here.</span> <span data-i18n={`mb.size.${b.size}`}>{b.size}</span> · <span data-i18n={`st.m.status.${b.status}`}>{b.status.replace('_', ' ')}</span>{b.current_period_end ? <> · <span data-i18n="st.m.th.renews">Renews</span> {fmt(b.current_period_end)}</> : null}</p>
-        {b.box_number ? <p><strong data-i18n="mb.done.addr">Your address is</strong> {b.business_name || b.customer_name}, {store.address.replace(/,\s*/, ` #${b.box_number}, `)}</p> : <p class="muted" data-i18n="acct.mb.nobox">Your box number comes at the counter once Form 1583 and the two IDs are done.</p>}
-        <h4><span data-i18n="acct.mb.waiting">In your box now</span> ({inbox.length})</h4>
-        {inbox.length === 0 && <p class="muted" data-i18n="acct.mb.nothing">Nothing waiting. We log each piece as it comes in.</p>}
-        <ul class="items">{inbox.map((i) => <li>{i.photo_id && <a href={`/api/mailbox?photo=${i.photo_id}`} target="_blank" rel="noopener"><img src={`/api/mailbox?photo=${i.photo_id}`} alt="" loading="lazy" style="max-height: 96px; max-width: 140px; vertical-align: middle; border-radius: 4px" /></a>} <strong data-i18n={`acct.mb.kind.${i.kind}`}>{i.kind}</strong>{i.sender ? <> <span data-i18n="acct.mb.from">from</span> {i.sender}</> : null}{i.note ? ` · ${i.note}` : ''} · {fmt(i.arrived_at)} {i.scan_id ? <a class="btn small" href={`/api/mailbox?photo=${i.scan_id}`} target="_blank" rel="noopener" data-i18n="acct.mb.readscan">Read the scan</a> : i.scan_requested_at ? <span class="muted" data-i18n="acct.mb.scanwait">scan requested, coming soon</span> : <button type="button" class="btn small kraft" data-scan={i.id}><span data-i18n="acct.mb.askscan">Ask for a scan</span>{SCAN_FEE ? ` ($${SCAN_FEE.toFixed(2)})` : ''}</button>}</li>)}</ul>
-        {gone.length > 0 && <><h4 data-i18n="acct.mb.history">Picked up and gone</h4><table class="list">{gone.map((i) => <tr><td>{fmt(i.arrived_at)}</td><td data-i18n={`acct.mb.kind.${i.kind}`}>{i.kind}</td><td>{i.sender ?? ''}</td><td data-i18n={`acct.mb.status.${i.status}`}>{i.status.replace('_', ' ')}</td><td>{i.closed_at ? fmt(i.closed_at) : ''}</td></tr>)}</table></>}
-      </div>; })}
       {biz && <div class="card" id="biz">
         <h3><span data-i18n="acct.biz.h3">Business account</span>: {biz.business_name}</h3>
         <p class="muted"><span data-i18n="acct.biz.lead">What the store keeps for your account. Labels are billed to your monthly statement; the counter makes keys and links for you.</span>{biz.discount_percent ? <> <span data-i18n="acct.biz.discount">Your discount:</span> {biz.discount_percent}%.</> : null}</p>
@@ -139,7 +125,6 @@ for (const b of boxes) boxItems[b.code] = await listMailboxItems(env, b.code, 20
     $('namef')?.addEventListener('submit', async (ev) => { ev.preventDefault(); const d = Object.fromEntries(new FormData(ev.target as HTMLFormElement).entries()); try { await api({ action: 'name', ...d }); msg().className = ''; msg().textContent = 'Saved.'; } catch (e: any) { msg().className = 'err'; msg().textContent = e.message; } });
     $('addf')?.addEventListener('submit', async (ev) => { ev.preventDefault(); const d = Object.fromEntries(new FormData(ev.target as HTMLFormElement).entries()) as Record<string, string>; try { await api({ action: 'save_address', label: d.label, address: { contact_name: d.contact_name, line_1: d.line_1, line_2: d.line_2, city: d.city, state: d.state, postal_code: d.postal_code } }); location.reload(); } catch (e: any) { msg().className = 'err'; msg().textContent = e.message; } });
     document.querySelectorAll<HTMLButtonElement>('[data-resend]').forEach((b) => b.addEventListener('click', async () => { b.disabled = true; try { await api({ action: 'resend_label', order: b.dataset.resend }); msg().className = ''; msg().textContent = 'Sent. Check your email.'; } catch (e: any) { msg().className = 'err'; msg().textContent = e.message; b.disabled = false; } }));
-    document.querySelectorAll<HTMLButtonElement>('[data-scan]').forEach((b) => b.addEventListener('click', async () => { b.disabled = true; try { await api({ action: 'mailbox_scan', id: b.dataset.scan }); location.reload(); } catch (e: any) { msg().className = 'err'; msg().textContent = e.message; b.disabled = false; } }));
     document.querySelectorAll<HTMLButtonElement>('[data-del]').forEach((b) => b.addEventListener('click', async () => { try { await api({ action: 'delete_address', id: b.dataset.del }); b.closest('li')!.remove(); } catch (e: any) { msg().className = 'err'; msg().textContent = e.message; } }));
   </script>
 </Base>

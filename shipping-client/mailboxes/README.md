@@ -1,5 +1,7 @@
 # Mailbox mail log: Informed Delivery for Goin' Postal boxes
 
+> **Superseded on November 5, 2026 (v1.81.0).** Physical mailboxes came out of PeterShip: they exist at one location only and needed to start this week. They now run on their own in [`physical-mailbox/`](../../physical-mailbox/README.md). Nothing below is in the running code any more; the v1.80.0 tag has it.
+
 The store is adding physical mailboxes. USPS Informed Delivery shows a home customer a scan of each
 envelope before the carrier arrives. This is the same promise for a Goin' Postal box: every piece of
 mail or parcel that staff put in a box gets a row, a photo when they take one, and a text or email;

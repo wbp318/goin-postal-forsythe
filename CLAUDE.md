@@ -7,6 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 A public repo for Goin' Postal Forsythe, a shipping store in Monroe, Louisiana. Two kinds of content:
 
 - `site/`: the store website (Astro 7 on Cloudflare) and **PeterShip**, the store's own shipping client (`site/src/shipping/`, the `/counter/*` staff pages, the `/api/*` routes). This is where nearly all code work happens. No PHP anywhere, deliberately.
+- `physical-mailbox/`: the store's physical mailbox rental, run on its own (not PeterShip): a register for LibreOffice Calc or Google Sheets and a printed intake packet. Filled registers hold customer data and are git-ignored.
 - Everything else is plans and marketing: `AGENDA.md` (the numbered agenda items and the T-numbered PeterShip to-do list, plus a dated log), `research/` (next-store site research), `monetization/`, `shipping-client/` (connectors, printer agent, LLC drafts, rate plans), `designs/`, and the root `README.md`.
 
 Owners are Peter (owner and manager, main decision maker) and Rin (investor). Address decision questions in plans to "Peter and Rin". Python scripts import `scripts/owner_guard.py` and stop unless `GOIN_POSTAL_OWNER` is set or `.owner-key` exists at the repo root.
@@ -42,7 +43,7 @@ Root-level CI also runs `node --check` on every `shipping-client/**/*.mjs` conne
 
 **i18n.** Every customer-facing string is a key in `src/i18n/strings.ts` (14 languages, English first), staff strings in `staff.ts`/`staff2.ts`/`staff3.ts`. Markup uses `data-i18n="key"`; scripts use `t('key')`/`tf()`. Keys must be unique across all four files. New strings need all 14 languages.
 
-**Pure helpers in `src/lib/`** (`batch.ts`, `fulfillment.ts`, `mailboxes.ts`, `pricing.ts`, `packing.ts`, ...) are tested directly in `tests/`; fee tables and thresholds live in `src/data/*.json` for the owners to edit.
+**Pure helpers in `src/lib/`** (`batch.ts`, `fulfillment.ts`, `pricing.ts`, `packing.ts`, `qr.ts`, ...) are tested directly in `tests/`; fee tables and thresholds live in `src/data/*.json` for the owners to edit.
 
 ## `shipping-client/`: PeterShip's off-site pieces and plans
 

@@ -40,6 +40,4 @@ interface Env {
   MEEST_API_URL?: string; MEEST_API_KEY?: string;
   // Street-address typeahead (v1.74.0): Google Places (New) key; blank means the US Census Bureau geocoder (free, US only). Issue 18.
   GOOGLE_PLACES_KEY?: string;
-  /** Azure Blob container SAS URL (create, read, write) for scanned mailbox IDs; blank keeps them in private KV. Issue 19. */
-  AZURE_ID_SCANS_SAS?: string;
 }

@@ -9,20 +9,20 @@ import Base from '../../layouts/Base.astro';
 <Base title="Counter · Customers">
   <section class="hero">
     <h1 data-i18n="st.c.h1">Customers</h1>
-    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/batch" data-i18n="st.nav.batch">Batch</a> · <a href="/counter/fulfillment" data-i18n="st.nav.fulfillment">Fulfillment</a> · <a href="/counter/pickups" data-i18n="st.nav.pickups">Pickups</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/accounts" data-i18n="st.nav.accounts">Accounts</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/scan" data-i18n="st.nav.scan">Scan a QR</a> · <a href="/counter/mailboxes" data-i18n="st.nav.mailboxes">Mailboxes</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/claims" data-i18n="st.nav.claims">Claims</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/close" data-i18n="st.nav.close">End of day</a> · <a href="/counter/invoices" data-i18n="st.nav.invoices">Invoices</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a> · <a href="/counter/staff" data-i18n="st.nav.staff">Staff</a> · <a href="/counter/export" data-i18n="st.nav.export">Export</a></p>
+    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/batch" data-i18n="st.nav.batch">Batch</a> · <a href="/counter/fulfillment" data-i18n="st.nav.fulfillment">Fulfillment</a> · <a href="/counter/pickups" data-i18n="st.nav.pickups">Pickups</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/accounts" data-i18n="st.nav.accounts">Accounts</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/scan" data-i18n="st.nav.scan">Scan a QR</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/claims" data-i18n="st.nav.claims">Claims</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/close" data-i18n="st.nav.close">End of day</a> · <a href="/counter/invoices" data-i18n="st.nav.invoices">Invoices</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a> · <a href="/counter/staff" data-i18n="st.nav.staff">Staff</a> · <a href="/counter/export" data-i18n="st.nav.export">Export</a></p>
     <p class="lead" data-i18n="st.c.lead">Who has shipped with us. Search by name, phone or email, see their history and addresses, and ship to the same place again in two taps.</p>
   </section>
 
   <div class="card">
     <form id="search" class="btnrow" autocomplete="off">
       <label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
-      <label><span data-i18n="st.c.search.label">Name, phone or email</span> <input id="q" autofocus minlength="2" placeholder="Jane, 318 555, jane@, #12" /></label>
+      <label><span data-i18n="st.c.search.label">Name, phone or email</span> <input id="q" autofocus minlength="2" placeholder="Jane, 318 555, jane@" /></label>
       <button class="btn" type="submit" data-i18n="st.c.search">Search</button>
       <button class="btn kraft" type="button" id="export" data-i18n="st.c.export">Download CSV of everyone</button>
     </form>
     <p id="msg" role="alert"></p>
     <table class="list hidden" id="table">
-      <thead><tr><th data-i18n="st.c.th.name">Name</th><th data-i18n="st.c.th.phone">Phone</th><th data-i18n="st.c.th.email">Email</th><th data-i18n="st.m.th.box">Box</th><th data-i18n="st.c.th.shipments">Shipments</th><th data-i18n="st.c.th.lastseen">Last seen</th><th></th></tr></thead>
+      <thead><tr><th data-i18n="st.c.th.name">Name</th><th data-i18n="st.c.th.phone">Phone</th><th data-i18n="st.c.th.email">Email</th><th data-i18n="st.c.th.shipments">Shipments</th><th data-i18n="st.c.th.lastseen">Last seen</th><th></th></tr></thead>
       <tbody></tbody>
     </table>
     <div id="unlinkedwrap" class="hidden">
@@ -88,7 +88,6 @@ import Base from '../../layouts/Base.astro';
           const tr = document.createElement('tr');
           const n = cell(tr, c.name); if (c.returning) { const b = document.createElement('strong'); b.className = 'muted'; b.textContent = ` · ${t('st.c.returning')}`; n.appendChild(b); }
           cell(tr, tel(c.phone)); cell(tr, c.email ?? '');
-          const bx = cell(tr, ''); if (c.mailbox) { bx.innerHTML = '<a></a>'; const a = bx.querySelector('a')!; a.href = `/counter/mailbox/${c.mailbox.code}`; a.textContent = c.mailbox.box_number ? `#${c.mailbox.box_number}` : c.mailbox.code; if (c.mailbox.status === 'past_due') { const w = document.createElement('strong'); w.className = 'err'; w.textContent = ` · ${t('st.m.status.past_due')}`; bx.appendChild(w); } }
           cell(tr, String(c.shipments)); cell(tr, fmt(c.last_seen_at));
           const td = cell(tr, ''); const b = document.createElement('button'); b.className = 'btn small'; b.textContent = t('st.open'); b.addEventListener('click', () => open(c.id)); td.appendChild(b);
           body.appendChild(tr);

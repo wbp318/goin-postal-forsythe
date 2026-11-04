@@ -11,7 +11,7 @@ const monthStart = today.slice(0, 8) + '01';
 <Base title="Counter · Reports">
   <section class="hero">
     <h1 data-i18n="st.p.h1">Reports</h1>
-    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/batch" data-i18n="st.nav.batch">Batch</a> · <a href="/counter/fulfillment" data-i18n="st.nav.fulfillment">Fulfillment</a> · <a href="/counter/pickups" data-i18n="st.nav.pickups">Pickups</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/accounts" data-i18n="st.nav.accounts">Accounts</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/scan" data-i18n="st.nav.scan">Scan a QR</a> · <a href="/counter/mailboxes" data-i18n="st.nav.mailboxes">Mailboxes</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/claims" data-i18n="st.nav.claims">Claims</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/close" data-i18n="st.nav.close">End of day</a> · <a href="/counter/invoices" data-i18n="st.nav.invoices">Invoices</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a> · <a href="/counter/staff" data-i18n="st.nav.staff">Staff</a> · <a href="/counter/export" data-i18n="st.nav.export">Export</a></p>
+    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/batch" data-i18n="st.nav.batch">Batch</a> · <a href="/counter/fulfillment" data-i18n="st.nav.fulfillment">Fulfillment</a> · <a href="/counter/pickups" data-i18n="st.nav.pickups">Pickups</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/accounts" data-i18n="st.nav.accounts">Accounts</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/scan" data-i18n="st.nav.scan">Scan a QR</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/claims" data-i18n="st.nav.claims">Claims</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/close" data-i18n="st.nav.close">End of day</a> · <a href="/counter/invoices" data-i18n="st.nav.invoices">Invoices</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a> · <a href="/counter/staff" data-i18n="st.nav.staff">Staff</a> · <a href="/counter/export" data-i18n="st.nav.export">Export</a></p>
     <p class="lead" data-i18n="st.p.lead">What shipped, what it cost, what we kept. From PeterShip's records: labels bought through the website and the counter. In-store POS sales are not here.</p>
   </section>
 
@@ -56,11 +56,9 @@ const monthStart = today.slice(0, 8) + '01';
 
     <div class="card" id="acq">
       <h3 data-i18n="st.p.acq">The numbers a buyer asks for</h3>
-      <p class="muted" data-i18n="st.p.acq.lead">Labels per week, where the money comes from, what business accounts bring, mailbox subscriptions and churn, claims. Same range as above.</p>
+      <p class="muted" data-i18n="st.p.acq.lead2">Labels per week, where the money comes from, what business accounts bring, claims. Same range as above.</p>
       <div class="tiles">
         <div class="card"><h3 data-i18n="st.p.acq.accshare">From business accounts</h3><p class="big" id="a-accshare"></p><p class="muted" id="a-accn"></p></div>
-        <div class="card"><h3 data-i18n="st.p.acq.mrr">Mailbox revenue a month</h3><p class="big" id="a-mrr"></p><p class="muted" id="a-boxes"></p></div>
-        <div class="card"><h3 data-i18n="st.p.acq.churn">Mailbox churn</h3><p class="big" id="a-churn"></p><p class="muted" id="a-churnn"></p></div>
         <div class="card"><h3 data-i18n="st.p.acq.claims">Claims</h3><p class="big" id="a-claims"></p><p class="muted" id="a-claimsn"></p></div>
         <div class="card"><h3 data-i18n="st.p.acq.bench">At or under Pirate Ship</h3><p class="big" id="a-bench"></p><p class="muted" id="a-benchn"></p></div>
       </div>
@@ -151,8 +149,6 @@ const monthStart = today.slice(0, 8) + '01';
       const a = r.acquirer;
       if (a) {
         $('a-accshare').textContent = `${a.accounts.share}%`; $('a-accn').textContent = tf('st.p.acq.accn', { n: a.accounts.by_account.length, ships: a.accounts.total.shipments, paid: usd(a.accounts.total.revenue) });
-        $('a-mrr').textContent = usd(a.mailboxes.mrr); $('a-boxes').textContent = tf('st.p.acq.boxes', { active: a.mailboxes.active, new: a.mailboxes.new, sizes: a.mailboxes.by_size.map((s: any) => `${s.size} ${s.active}`).join(', ') });
-        $('a-churn').textContent = `${a.mailboxes.churn}%`; $('a-churnn').textContent = tf('st.p.acq.churnn', { n: a.mailboxes.cancelled });
         $('a-claims').textContent = String(a.claims.opened); $('a-claimsn').textContent = tf('st.p.acq.claimsn', { n: a.claims.refunded, usd: usd(a.claims.refunded_usd) });
         $('a-bench').textContent = a.benchmark.quotes ? `${a.benchmark.share}%` : '–'; $('a-benchn').textContent = tf('st.p.acq.benchn', { n: a.benchmark.quotes, diff: a.benchmark.avg_diff == null ? '–' : (a.benchmark.avg_diff >= 0 ? '+' : '−') + usd(Math.abs(a.benchmark.avg_diff)) });
         rows($('a-week'), a.by_week.map((w: any) => [w.week, w.shipments, usd(w.revenue), usd(w.margin)]));

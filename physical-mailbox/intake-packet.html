@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Goin' Postal Forsythe: mailbox intake packet</title>
+<style>
+  @page { size: letter; margin: 0.6in; }
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 11.5pt; line-height: 1.4; color: #111; }
+  h1 { font-size: 20pt; margin: 0 0 4pt; color: #1f3a6e; }
+  h2 { font-size: 14pt; margin: 14pt 0 4pt; color: #1f3a6e; border-bottom: 2px solid #1f3a6e; padding-bottom: 2pt; }
+  .page { page-break-after: always; }
+  .page:last-child { page-break-after: auto; }
+  .sub { color: #444; margin: 0 0 10pt; }
+  ol, ul { margin: 4pt 0 8pt 18pt; padding: 0; }
+  li { margin: 3pt 0; }
+  .box { border: 1.5px solid #1f3a6e; padding: 6pt 10pt; margin: 8pt 0; }
+  .warn { border: 2px solid #9c0006; background: #fbeae9; padding: 6pt 10pt; margin: 8pt 0; }
+  .tick { display: inline-block; width: 11pt; height: 11pt; border: 1.2px solid #111; margin-right: 6pt; vertical-align: -1pt; }
+  .line { display: inline-block; border-bottom: 1px solid #111; min-width: 2.2in; height: 14pt; vertical-align: bottom; }
+  .line.short { min-width: 1in; } .line.long { min-width: 4.5in; }
+  table { width: 100%; border-collapse: collapse; margin: 6pt 0; }
+  td, th { border: 1px solid #555; padding: 5pt 6pt; text-align: left; vertical-align: top; }
+  th { background: #e8edf6; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12pt; }
+  .sig { margin-top: 16pt; }
+  .small { font-size: 9.5pt; color: #444; }
+  .draft { color: #9c0006; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<!-- 1 -->
+<div class="page">
+  <h1>Mailbox intake packet</h1>
+  <p class="sub">Goin' Postal Forsythe · 1800 Forsythe Ave Ste 2, Monroe, LA 71201 · For the counter. Print one packet per new customer from page 3 on.</p>
+
+  <h2>Before the first customer (Peter and Rin, once)</h2>
+  <div class="warn"><strong>Check first: is the store registered as a CMRA?</strong> A store that rents mailboxes is a Commercial Mail Receiving Agency and files <strong>PS Form 1583-A</strong> with the local postmaster. Goin' Postal stores usually are already. Call or visit the Monroe post office and confirm before taking a customer.</div>
+  <p><span class="tick"></span>CMRA registration (PS Form 1583-A) confirmed with the Monroe postmaster. Date: <span class="line short"></span></p>
+  <p><span class="tick"></span>Blank <strong>PS Form 1583</strong> printed. Get the current version from usps.com or the post office; USPS revised it in 2023. Keep 10 on hand.</p>
+  <p><span class="tick"></span>Prices set: small <span class="line short"></span> medium <span class="line short"></span> large <span class="line short"></span> a month. Type them on the Prices tab of the register.</p>
+  <p><span class="tick"></span>Every box numbered, its size written on the Boxes tab, two keys per box tagged with the box number.</p>
+  <p><span class="tick"></span>The register (<em>mailbox-register-TEMPLATE.xlsx</em>) copied to the counter PC and renamed <em>mailbox-register.xlsx</em>. It opens in LibreOffice Calc, or upload it to Google Sheets. Grey example rows deleted.</p>
+  <p><span class="tick"></span>Backup: copy the register to a USB stick or a private Google Drive at the end of each day. It holds customer details: never email it around, never put it on GitHub.</p>
+  <p><span class="tick"></span>A locked drawer or cabinet for the signed 1583s, agreements and ID copies.</p>
+  <p><span class="tick"></span>The service agreement on page 4 read and changed where it says <span class="draft">OWNERS</span>.</p>
+
+  <h2>Every week</h2>
+  <ul>
+    <li>Open the register, Holders tab. Anyone <strong>Overdue</strong>: call or text. <strong>Due soon</strong>: remind at pickup.</li>
+    <li><strong>EXPIRED</strong> in ID check: ask for a current ID at their next visit and type it over the old one.</li>
+  </ul>
+  <h2>Every quarter</h2>
+  <ul>
+    <li>USPS expects a CMRA to give the post office an alphabetical list of its mailbox customers each quarter (Domestic Mail Manual 508.1.8). Sort the Holders tab by Name, print the open ones, take it in. Confirm the dates with the postmaster.</li>
+  </ul>
+</div>
+
+<!-- 2 -->
+<div class="page">
+  <h1>A new mailbox customer</h1>
+  <p class="sub">About fifteen minutes. The customer must be here in person with two IDs.</p>
+  <ol>
+    <li><strong>Pick the size and term.</strong> Small, medium or large; monthly, or yearly (12 months for the price of 10).</li>
+    <li><strong>See two IDs</strong> (page 3 lists what counts). One must have a photo. One must show the current home address. Neither may be expired. Look at them yourself; a photo on a phone does not count.</li>
+    <li><strong>Copy both IDs</strong> on the counter scanner or copier. The copies go in the locked drawer with the 1583.</li>
+    <li><strong>Fill in PS Form 1583 together.</strong> The customer completes their part and signs. You fill in the CMRA part: the box number, the two IDs you saw, and sign as the agent. Every person who will collect mail from the box goes on the form, and each shows their own two IDs.</li>
+    <li><strong>The service agreement</strong> (page 4): the customer reads and signs. You sign.</li>
+    <li><strong>Take the first payment on the POS.</strong> Write the POS receipt number on the agreement.</li>
+    <li><strong>The register:</strong> Holders tab, a new row: the next code (MB-002, MB-003 ...), name, phone, email, size, term, start date, both IDs (type, <em>last 4 only</em>, expiry), 1583 signed date, your name. Payments tab: the date, the code, months covered, the amount, the receipt number. <strong>Ready for a box</strong> now says YES.</li>
+    <li><strong>Give the box.</strong> Pick a <em>Free</em> box of the right size on the Boxes tab. Type its number in the holder's Box # column. Hand over two keys and have them sign the key receipt (page 5).</li>
+    <li><strong>Tell them their address</strong> and write it on the back of their receipt:</li>
+  </ol>
+  <div class="box" style="font-size: 13pt;">
+    Their name or business<br>
+    1800 Forsythe Ave Ste 2 <strong>#BOX</strong><br>
+    Monroe, LA 71201
+  </div>
+  <p class="small">USPS requires a CMRA customer's address to carry "#" or "PMB" with the box number. Mail without it can be returned to the sender. The store already has "Ste 2", so ask the postmaster once which they want: "Ste 2 #101" on one line, or "PMB 101" on its own line above the street. Then cross out the one not used here.</p>
+  <ol start="10">
+    <li><strong>File the paper:</strong> the 1583, the ID copies, the agreement and the key receipt, stapled, in the locked drawer, under the box number.</li>
+  </ol>
+  <h2>Closing a box</h2>
+  <ol>
+    <li>Collect both keys. Hand over any mail still in the box.</li>
+    <li>Ask for a forwarding address and write it on their 1583.</li>
+    <li>Register: type the Closed date on their row. The box shows Free again.</li>
+    <li>Keep the paper file. USPS expects the CMRA to keep the 1583 after the box closes; confirm how long with the postmaster.</li>
+  </ol>
+</div>
+
+<!-- 3 -->
+<div class="page">
+  <h1>Which IDs count</h1>
+  <p class="sub">From PS Form 1583 (2023). Two IDs, two different kinds.</p>
+  <div class="two">
+    <div>
+      <h2>Photo IDs (one of these is required)</h2>
+      <ul>
+        <li>Driver's license or state ID card</li>
+        <li>Passport, or US passport card</li>
+        <li>Military or uniformed service ID</li>
+        <li>Government employee ID</li>
+        <li>University ID</li>
+        <li>Permanent resident card</li>
+        <li>Certificate of naturalization</li>
+        <li>Tribal ID</li>
+      </ul>
+    </div>
+    <div>
+      <h2>Second ID (or a second photo ID)</h2>
+      <ul>
+        <li>Current lease, mortgage or deed of trust</li>
+        <li>Voter registration card</li>
+        <li>Vehicle registration card</li>
+        <li>Home or vehicle insurance policy</li>
+        <li>Any photo ID from the list on the left, of a different kind</li>
+      </ul>
+    </div>
+  </div>
+  <div class="warn"><strong>Never accepted:</strong> Social Security card, credit or debit card, birth certificate. Not expired. One of the two must show the customer's current home address.</div>
+
+  <h2>Store copy: IDs seen</h2>
+  <table>
+    <tr><th style="width: 18%"></th><th>Type of ID</th><th style="width: 16%">Issued by</th><th style="width: 12%">Last 4</th><th style="width: 16%">Expires</th><th style="width: 12%">Home address?</th></tr>
+    <tr><td><strong>Photo ID</strong></td><td>&nbsp;</td><td></td><td></td><td></td><td>Yes / No</td></tr>
+    <tr><td><strong>Second ID</strong></td><td>&nbsp;</td><td></td><td></td><td></td><td>Yes / No</td></tr>
+  </table>
+  <p>Customer: <span class="line"></span> &nbsp; Box #: <span class="line short"></span> &nbsp; Code: MB-<span class="line short"></span></p>
+  <p>IDs checked in person by: <span class="line"></span> &nbsp; Date: <span class="line short"></span></p>
+  <p class="small">Write the last four characters only, never the whole ID number. The full copies stay in the locked drawer.</p>
+</div>
+
+<!-- 4 -->
+<div class="page">
+  <h1>Mailbox service agreement</h1>
+  <p class="sub"><span class="draft">DRAFT for Peter and Rin.</span> Change the parts marked <span class="draft">OWNERS</span>, then print. This is not legal advice; a lawyer can check it in an hour.</p>
+  <p>Goin' Postal Forsythe ("the store"), 1800 Forsythe Ave Ste 2, Monroe, LA 71201, rents mailbox number <span class="line short"></span> to the customer below.</p>
+  <ol>
+    <li><strong>Term and price.</strong> Size <span class="line short"></span>, paid <span class="tick"></span>monthly <span class="tick"></span>yearly, at $<span class="line short"></span> per term, starting <span class="line short"></span>. Payment is due before each term begins.</li>
+    <li><strong>Late payment.</strong> If a payment is more than <span class="draft">OWNERS: 15</span> days late, the store may stop putting mail in the box and hold it at the counter. After <span class="draft">OWNERS: 30</span> days the store may close the box under clause 7.</li>
+    <li><strong>What we accept.</strong> Letters, flats and parcels from any carrier. Parcels too big for the box are held at the counter for <span class="draft">OWNERS: 14</span> days. The store does not accept anything that needs a signature from the customer personally unless the customer has authorized the store on PS Form 1583. No perishables, hazardous items or anything illegal to mail.</li>
+    <li><strong>Your address.</strong> Use the box number with "#" or "PMB" as USPS requires. Mail without it may be returned to the sender.</li>
+    <li><strong>IDs and Form 1583.</strong> The customer has shown two IDs and signed PS Form 1583. Everyone who will collect mail is listed on it. The customer will tell the store and update the form when anything on it changes, and show a current ID when one on file expires.</li>
+    <li><strong>Keys.</strong> Two keys are issued. A lost key costs $<span class="draft">OWNERS: 25</span> for a lock change.</li>
+    <li><strong>Closing.</strong> Either side may close the box with <span class="draft">OWNERS: 30</span> days' notice. The keys come back. Mail that arrives after closing is handled as USPS rules for CMRAs require.</li>
+    <li><strong>Refunds.</strong> <span class="draft">OWNERS: no refunds for a partial month; a yearly term is refunded for unused whole months, less one month.</span></li>
+    <li><strong>Liability.</strong> The store takes reasonable care of mail in its keeping. It is not responsible for mail lost or damaged before it reaches the store, or for anything taken by someone the customer authorized.</li>
+  </ol>
+  <div class="two sig">
+    <div>Customer name: <span class="line"></span><br><br>Signature: <span class="line"></span><br><br>Date: <span class="line short"></span> &nbsp; Phone: <span class="line short"></span></div>
+    <div>For the store: <span class="line"></span><br><br>Signature: <span class="line"></span><br><br>POS receipt #: <span class="line short"></span></div>
+  </div>
+</div>
+
+<!-- 5 -->
+<div class="page">
+  <h1>Key receipt</h1>
+  <p>I received <strong>two keys</strong> to mailbox # <span class="line short"></span> at Goin' Postal Forsythe. I will return both when the box closes. A lost key means a lock change at the price in my agreement.</p>
+  <div class="two sig">
+    <div>Name: <span class="line"></span><br><br>Signature: <span class="line"></span><br><br>Date: <span class="line short"></span></div>
+    <div>Keys handed over by: <span class="line"></span><br><br>Key tag numbers: <span class="line short"></span> <span class="line short"></span></div>
+  </div>
+  <h2 style="margin-top: 30pt">Keys returned</h2>
+  <p>Both keys returned on <span class="line short"></span>. Received by <span class="line"></span>. Forwarding address: <span class="line long"></span></p>
+
+  <h2 style="margin-top: 30pt">For the customer: your mailbox</h2>
+  <div class="box" style="font-size: 13pt;">
+    Name: <span class="line"></span><br><br>
+    1800 Forsythe Ave Ste 2 # <span class="line short"></span><br>
+    Monroe, LA 71201<br><br>
+    Paid through: <span class="line short"></span> &nbsp; Store phone: <span class="line short"></span>
+  </div>
+  <p class="small">Cut this box out and give it to the customer, or write it on the back of their POS receipt.</p>
+</div>
+
+</body>
+</html>

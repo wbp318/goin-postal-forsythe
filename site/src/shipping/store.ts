@@ -66,31 +66,6 @@ export interface ReturnRequest {
   dropoff_id: number | null;
 }
 
-export interface Mailbox {
-  id: number;
-  code: string;
-  created_at: string;
-  customer_id: string | null;
-  customer_name: string;
-  email: string;
-  phone: string | null;
-  business_name: string | null;
-  size: string;
-  term: string;
-  price: number;
-  status: 'awaiting_payment' | 'active' | 'past_due' | 'cancelled';
-  stripe_customer_id: string | null;
-  stripe_subscription_id: string | null;
-  stripe_session_id: string | null;
-  started_at: string | null;
-  current_period_end: string | null;
-  cancelled_at: string | null;
-  box_number: string | null;
-  form_1583_at: string | null;
-  form_1583_by: string | null;
-  ids_seen: string | null;
-  notes: string | null;
-}
 
 export interface ProductRow { id: number; account_id: number; sku: string; name: string; weight_lb: number; length_in: number; width_in: number; height_in: number; value_usd: number; on_hand: number; bin: string | null; active: number; created_at: string; updated_at: string }
 export interface StockMove { id: number; product_id: number; account_id: number; at: string; qty: number; kind: 'received' | 'picked' | 'adjusted'; ref: string | null; by_name: string; note: string | null }
@@ -116,14 +91,7 @@ export interface ClaimRow {
 }
 /** Days after filing with the carrier before an unanswered claim is flagged. USPS and UPS usually answer inside this. */
 export const REMIND_DAYS = 30;
-export interface MailboxItem {
-  id: number; mailbox_code: string; kind: string; sender: string | null; note: string | null; photo_id: string | null; photo_type: string | null;
-  status: 'arrived' | 'picked_up' | 'forwarded' | 'returned' | 'shredded'; arrived_at: string; arrived_by: string; notified: number; closed_at: string | null; closed_by: string | null;
-  scan_requested_at: string | null; scan_id: string | null; scan_type: string | null; scanned_at: string | null; scanned_by: string | null;
-}
-export interface MailboxId { id: number; mailbox_code: string; slot: 'primary' | 'secondary'; kind: string; issuer: string; last4: string | null; expires: string | null; shows_address: number; verified_by: string; verified_at: string; replaced_at: string | null; scan_id: string | null; scan_type: string | null; scan_store: string | null }
 export interface QrScan { id: number; at: string; by_name: string; kind: string; carrier: string | null; host: string | null; outcome: string; note: string | null }
-export interface MailboxNotice { id: number; mailbox_code: string; kind: string; note: string | null; by_name: string; at: string; texted: number; emailed: number; error: string | null }
 
 /** Guess the carrier from a barcode or tracking number. Good enough for drop-offs; the carrier confirms on scan. */
 export function carrierFromBarcode(code: string): string | null {
@@ -147,10 +115,6 @@ const mem = {
   dropoffs: [] as Dropoff[],
   qrScans: [] as QrScan[],
   returns: [] as ReturnRequest[],
-  mailboxes: [] as Mailbox[],
-  mailboxNotices: [] as MailboxNotice[],
-  mailboxItems: [] as MailboxItem[],
-  mailboxIds: [] as MailboxId[],
   claims: [] as ClaimRow[],
   pickups: [] as PickupRow[],
   photos: [] as PhotoRow[],
@@ -184,7 +148,7 @@ const mem = {
 
 // ---- Export (T10) --------------------------------------------------------------------------------
 /** Every table in the schema, in schema order. The allow-list for the export; nothing else can be named. */
-export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'mailboxes', 'mailbox_notices', 'mailbox_items', 'mailbox_ids', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees'] as const;
+export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees'] as const;
 export type ExportTable = typeof EXPORT_TABLES[number];
 const memTable = (name: ExportTable): unknown[] => {
   switch (name) {
@@ -212,10 +176,6 @@ const memTable = (name: ExportTable): unknown[] => {
     case 'api_keys': return mem.apiKeys;
     case 'x402_payments': return mem.x402;
     case 'return_requests': return mem.returns;
-    case 'mailboxes': return mem.mailboxes;
-    case 'mailbox_notices': return mem.mailboxNotices;
-    case 'mailbox_items': return mem.mailboxItems;
-    case 'mailbox_ids': return mem.mailboxIds;
     case 'claims': return mem.claims;
     case 'pickups': return mem.pickups;
     case 'shipment_photos': return mem.photos;
@@ -878,7 +838,7 @@ export async function upsertCustomer(env: Env, c: { name: string; email?: string
   return row.id;
 }
 
-export interface CustomerHit extends CustomerRow { shipments: number; first_at: string | null; returning: boolean; mailbox: { code: string; box_number: string | null; status: string } | null }
+export interface CustomerHit extends CustomerRow { shipments: number; first_at: string | null; returning: boolean }
 
 /** Search by any part of the name, the email, or the digits of a phone number. */
 export async function searchCustomers(env: Env, q: string, limit = 50): Promise<{ customers: CustomerHit[]; unlinked: QuoteRow[] }> {
@@ -897,33 +857,14 @@ export async function searchCustomers(env: Env, q: string, limit = 50): Promise<
       .sort((a, b) => (b.last_seen_at ?? '').localeCompare(a.last_seen_at ?? '')).slice(0, limit);
     unlinked = [...mem.quotes.values()].filter((x) => !x.email && !x.phone && (x.customer_name ?? '').toLowerCase().includes(term.toLowerCase())).sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 20);
   }
-  // A box number ("12", "#12") or a mailbox code finds the holder too (v1.78.0), and every hit shows its box.
-  const boxTerm = term.replace(/^#/, '').trim();
-  const byBox = boxTerm ? (await listMailboxes(env)).filter((m) => m.status !== 'cancelled' && m.status !== 'awaiting_payment' && (m.box_number === boxTerm || m.code.toLowerCase() === boxTerm.toLowerCase())) : [];
-  for (const m of byBox) {
-    const c = (m.customer_id ? await getCustomer(env, m.customer_id) : null) ?? (await findCustomer(env, m.email, null));
-    if (c && !rows.some((r) => r.id === c.id)) rows.unshift(c);
-  }
-  const boxes = await mailboxesByCustomer(env, rows);
   const customers = await Promise.all(rows.map(async (c) => {
     const h = await customerQuotes(env, c);
     const real = h.filter((x) => x.status !== 'cancelled' && x.status !== 'voided');
-    return { ...c, shipments: real.length, first_at: real.length ? real[real.length - 1].created_at : null, returning: real.length > 1, mailbox: boxes.get(c.id) ?? null };
+    return { ...c, shipments: real.length, first_at: real.length ? real[real.length - 1].created_at : null, returning: real.length > 1 };
   }));
   return { customers, unlinked };
 }
 
-/** The live mailbox (active or past due) per customer, by customer id or the sign-up email. */
-async function mailboxesByCustomer(env: Env, rows: CustomerRow[]): Promise<Map<string, { code: string; box_number: string | null; status: string }>> {
-  const out = new Map<string, { code: string; box_number: string | null; status: string }>();
-  if (!rows.length) return out;
-  const all = (await listMailboxes(env)).filter((m) => m.status === 'active' || m.status === 'past_due');
-  for (const c of rows) {
-    const m = all.find((x) => x.customer_id === c.id) ?? all.find((x) => c.email && x.email.toLowerCase() === c.email.toLowerCase());
-    if (m) out.set(c.id, { code: m.code, box_number: m.box_number, status: m.status });
-  }
-  return out;
-}
 /** Every quote that belongs to this customer, newest first, with the shipment's tracking status when a label was bought. */
 export async function customerQuotes(env: Env, c: CustomerRow): Promise<(QuoteRow & { shipment_status: string | null; tracking_number: string | null })[]> {
   if (env.DB) {
@@ -946,10 +887,9 @@ export async function allCustomers(env: Env): Promise<CustomerHit[]> {
   const rows: CustomerRow[] = env.DB
     ? (await env.DB.prepare('SELECT * FROM customers ORDER BY last_seen_at DESC LIMIT 5000').all<CustomerRow>()).results
     : [...mem.customers.values()].sort((a, b) => (b.last_seen_at ?? '').localeCompare(a.last_seen_at ?? ''));
-  const boxes = await mailboxesByCustomer(env, rows);
   return Promise.all(rows.map(async (c) => {
     const real = (await customerQuotes(env, c)).filter((x) => x.status !== 'cancelled' && x.status !== 'voided');
-    return { ...c, shipments: real.length, first_at: real.length ? real[real.length - 1].created_at : null, returning: real.length > 1, mailbox: boxes.get(c.id) ?? null };
+    return { ...c, shipments: real.length, first_at: real.length ? real[real.length - 1].created_at : null, returning: real.length > 1 };
   }));
 }
 
@@ -1203,44 +1143,6 @@ export async function qrScanStats(env: Env, days = 30): Promise<{ scans: QrScan[
   for (const q of scans) if (q.outcome === 'turned_away') turned_away[q.carrier ?? 'unknown'] = (turned_away[q.carrier ?? 'unknown'] ?? 0) + 1;
   return { scans, turned_away, printed: scans.filter((q) => q.outcome === 'printed').length, total: scans.length };
 }
-// ---- mailbox subscriptions (agenda items 24, 29) --------------------------------------------
-const MB_COLS = ['code', 'created_at', 'customer_id', 'customer_name', 'email', 'phone', 'business_name', 'size', 'term', 'price', 'status', 'stripe_customer_id', 'stripe_subscription_id', 'stripe_session_id', 'started_at', 'current_period_end', 'cancelled_at', 'box_number', 'form_1583_at', 'form_1583_by', 'ids_seen', 'notes'] as const;
-export async function createMailbox(env: Env, m: { code: string; customer_id: string | null; customer_name: string; email: string; phone: string | null; business_name: string | null; size: string; term: string; price: number }): Promise<Mailbox> {
-  const row: Omit<Mailbox, 'id'> = { ...m, created_at: now(), status: 'awaiting_payment', stripe_customer_id: null, stripe_subscription_id: null, stripe_session_id: null, started_at: null, current_period_end: null, cancelled_at: null, box_number: null, form_1583_at: null, form_1583_by: null, ids_seen: null, notes: null };
-  if (env.DB) {
-    const r = await env.DB.prepare(`INSERT INTO mailboxes (${MB_COLS.join(', ')}) VALUES (${MB_COLS.map((_, i) => `?${i + 1}`).join(', ')}) RETURNING id`).bind(...MB_COLS.map((c) => row[c])).first<{ id: number }>();
-    return { id: r!.id, ...row };
-  }
-  const full = { id: mem.seq++, ...row };
-  mem.mailboxes.unshift(full);
-  return full;
-}
-export async function getMailbox(env: Env, code: string): Promise<Mailbox | null> {
-  const c = code.trim().toUpperCase();
-  if (!c) return null;
-  if (env.DB) return (await env.DB.prepare('SELECT * FROM mailboxes WHERE code = ?1').bind(c).first<Mailbox>()) ?? null;
-  return mem.mailboxes.find((m) => m.code === c) ?? null;
-}
-export async function getMailboxBySubscription(env: Env, sub: string): Promise<Mailbox | null> {
-  if (!sub) return null;
-  if (env.DB) return (await env.DB.prepare('SELECT * FROM mailboxes WHERE stripe_subscription_id = ?1').bind(sub).first<Mailbox>()) ?? null;
-  return mem.mailboxes.find((m) => m.stripe_subscription_id === sub) ?? null;
-}
-/** Every mailbox, newest first. Unpaid sign-ups older than a day are left out: the customer never finished Checkout. */
-export async function listMailboxes(env: Env): Promise<Mailbox[]> {
-  const stale = new Date(Date.now() - 86_400_000).toISOString();
-  if (env.DB) return (await env.DB.prepare("SELECT * FROM mailboxes WHERE NOT (status = 'awaiting_payment' AND created_at < ?1) ORDER BY created_at DESC, id DESC").bind(stale).all<Mailbox>()).results;
-  return mem.mailboxes.filter((m) => !(m.status === 'awaiting_payment' && m.created_at < stale)).sort((a, b) => b.created_at.localeCompare(a.created_at) || b.id - a.id);
-}
-export async function updateMailbox(env: Env, code: string, patch: Partial<Omit<Mailbox, 'id' | 'code' | 'created_at'>>): Promise<Mailbox | null> {
-  const m = await getMailbox(env, code);
-  if (!m) return null;
-  const keys = (Object.keys(patch) as (keyof typeof patch)[]).filter((k) => (MB_COLS as readonly string[]).includes(k) && !['code', 'created_at'].includes(k));
-  if (!keys.length) return m;
-  if (env.DB) await env.DB.prepare(`UPDATE mailboxes SET ${keys.map((k, i) => `${k} = ?${i + 2}`).join(', ')} WHERE code = ?1`).bind(m.code, ...keys.map((k) => patch[k] ?? null)).run();
-  else Object.assign(m, Object.fromEntries(keys.map((k) => [k, patch[k] ?? null])));
-  return { ...m, ...Object.fromEntries(keys.map((k) => [k, patch[k] ?? null])) } as Mailbox;
-}
 
 // ---- fulfillment at the store (to-do T29) ---------------------------------------------------------
 export function newFulfillmentCode() {
@@ -1484,135 +1386,7 @@ export async function updateClaim(env: Env, code: string, patch: Partial<Omit<Cl
   return { ...c, ...Object.fromEntries(keys.map((k) => [k, p[k] ?? null])) } as ClaimRow;
 }
 
-export async function addMailboxNotice(env: Env, n: Omit<MailboxNotice, 'id' | 'at'>): Promise<MailboxNotice> {
-  const row = { ...n, at: now() };
-  if (env.DB) {
-    const r = await env.DB.prepare('INSERT INTO mailbox_notices (mailbox_code, kind, note, by_name, at, texted, emailed, error) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8) RETURNING id')
-      .bind(row.mailbox_code, row.kind, row.note, row.by_name, row.at, row.texted, row.emailed, row.error).first<{ id: number }>();
-    return { id: r!.id, ...row };
-  }
-  const full = { id: mem.seq++, ...row };
-  mem.mailboxNotices.unshift(full);
-  return full;
-}
-/** A box's notices, newest first. */
-export async function listMailboxNotices(env: Env, code: string, limit = 30): Promise<MailboxNotice[]> {
-  if (env.DB) return (await env.DB.prepare('SELECT * FROM mailbox_notices WHERE mailbox_code = ?1 ORDER BY id DESC LIMIT ?2').bind(code, limit).all<MailboxNotice>()).results;
-  return mem.mailboxNotices.filter((n) => n.mailbox_code === code).slice(0, limit);
-}
-/** The last notice per box, for the list page. */
-// ---- mailbox ID verification (v1.77.0): the two IDs behind each Form 1583 -------------------------
-/** Record one ID in a slot. Any current ID in that slot is marked replaced first, so a box always has at most one live ID per slot. */
-export async function addMailboxId(env: Env, x: { mailbox_code: string; slot: 'primary' | 'secondary'; kind: string; issuer: string; last4: string | null; expires: string | null; shows_address: number; verified_by: string; scan_id?: string | null; scan_type?: string | null; scan_store?: string | null }): Promise<MailboxId> {
-  const at = now();
-  const row = { ...x, verified_at: at, replaced_at: null as string | null, scan_id: x.scan_id ?? null, scan_type: x.scan_type ?? null, scan_store: x.scan_store ?? null };
-  if (env.DB) {
-    await env.DB.prepare('UPDATE mailbox_ids SET replaced_at = ?3 WHERE mailbox_code = ?1 AND slot = ?2 AND replaced_at IS NULL').bind(x.mailbox_code, x.slot, at).run();
-    const r = await env.DB.prepare('INSERT INTO mailbox_ids (mailbox_code, slot, kind, issuer, last4, expires, shows_address, verified_by, verified_at, replaced_at, scan_id, scan_type, scan_store) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13) RETURNING id')
-      .bind(row.mailbox_code, row.slot, row.kind, row.issuer, row.last4, row.expires, row.shows_address, row.verified_by, row.verified_at, row.replaced_at, row.scan_id, row.scan_type, row.scan_store).first<{ id: number }>();
-    return { id: r!.id, ...row };
-  }
-  for (const o of mem.mailboxIds) if (o.mailbox_code === x.mailbox_code && o.slot === x.slot && !o.replaced_at) o.replaced_at = at;
-  const full = { id: mem.seq++, ...row };
-  mem.mailboxIds.unshift(full);
-  return full;
-}
-/** The live IDs on a box (primary first), or every row ever with all = true. */
-export async function listMailboxIds(env: Env, code: string, all = false): Promise<MailboxId[]> {
-  const rows = env.DB
-    ? (await env.DB.prepare('SELECT * FROM mailbox_ids WHERE mailbox_code = ?1 ORDER BY id DESC').bind(code).all<MailboxId>()).results
-    : mem.mailboxIds.filter((i) => i.mailbox_code === code);
-  return rows.filter((i) => all || !i.replaced_at).sort((a, b) => (a.slot === b.slot ? b.id - a.id : a.slot === 'primary' ? -1 : 1));
-}
-/** One ID row by id, for serving its scan. */
-export async function getMailboxId(env: Env, id: number): Promise<MailboxId | null> {
-  if (env.DB) return (await env.DB.prepare('SELECT * FROM mailbox_ids WHERE id = ?1').bind(id).first<MailboxId>()) ?? null;
-  return mem.mailboxIds.find((i) => i.id === id) ?? null;
-}
-/** Attach (or replace) the scanned copy of an ID. */
-export async function setMailboxIdScan(env: Env, id: number, scan: { scan_id: string; scan_type: string; scan_store: string }): Promise<void> {
-  if (env.DB) { await env.DB.prepare('UPDATE mailbox_ids SET scan_id = ?2, scan_type = ?3, scan_store = ?4 WHERE id = ?1').bind(id, scan.scan_id, scan.scan_type, scan.scan_store).run(); return; }
-  const r = mem.mailboxIds.find((i) => i.id === id);
-  if (r) Object.assign(r, scan);
-}
-/** Codes of boxes with a live ID past its expiry, for the list page's to-do. */
-export async function mailboxesWithExpiredIds(env: Env, today = now().slice(0, 10)): Promise<Set<string>> {
-  const rows = env.DB
-    ? (await env.DB.prepare('SELECT mailbox_code FROM mailbox_ids WHERE replaced_at IS NULL AND expires IS NOT NULL AND expires < ?1').bind(today).all<{ mailbox_code: string }>()).results
-    : mem.mailboxIds.filter((i) => !i.replaced_at && i.expires && i.expires < today);
-  return new Set(rows.map((r) => r.mailbox_code));
-}
-// ---- mailbox mail log (T33): what is in each box, with photos, for the holder's account page ----
-export const MAILBOX_ITEM_STATUSES = ['arrived', 'picked_up', 'forwarded', 'returned', 'shredded'] as const;
-export async function addMailboxItem(env: Env, x: { mailbox_code: string; kind: string; sender: string | null; note: string | null; photo_id: string | null; photo_type: string | null; arrived_by: string; notified: number }): Promise<MailboxItem> {
-  const row: Omit<MailboxItem, 'id'> = { ...x, status: 'arrived', arrived_at: now(), closed_at: null, closed_by: null, scan_requested_at: null, scan_id: null, scan_type: null, scanned_at: null, scanned_by: null };
-  let id: number;
-  if (env.DB) {
-    const r = await env.DB.prepare('INSERT INTO mailbox_items (mailbox_code, kind, sender, note, photo_id, photo_type, status, arrived_at, arrived_by, notified, closed_at, closed_by) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12) RETURNING id')
-      .bind(row.mailbox_code, row.kind, row.sender, row.note, row.photo_id, row.photo_type, row.status, row.arrived_at, row.arrived_by, row.notified, row.closed_at, row.closed_by).first<{ id: number }>();
-    id = r!.id;
-  } else id = mem.mailboxItems.length + 1;
-  const full = { ...row, id };
-  mem.mailboxItems.unshift(full);
-  return full;
-}
-export async function getMailboxItem(env: Env, id: number): Promise<MailboxItem | null> {
-  if (env.DB) return (await env.DB.prepare('SELECT * FROM mailbox_items WHERE id = ?1').bind(id).first<MailboxItem>()) ?? null;
-  return mem.mailboxItems.find((i) => i.id === id) ?? null;
-}
-/** The item that owns a photo or a scan id. */
-export async function getMailboxItemByPhoto(env: Env, photoId: string): Promise<MailboxItem | null> {
-  if (env.DB) return (await env.DB.prepare('SELECT * FROM mailbox_items WHERE photo_id = ?1 OR scan_id = ?1').bind(photoId).first<MailboxItem>()) ?? null;
-  return mem.mailboxItems.find((i) => i.photo_id === photoId || i.scan_id === photoId) ?? null;
-}
-/** A box's items, newest first: everything still in the box, then the last `closedLimit` closed ones. */
-export async function listMailboxItems(env: Env, code: string, closedLimit = 50): Promise<MailboxItem[]> {
-  const all = env.DB
-    ? (await env.DB.prepare('SELECT * FROM mailbox_items WHERE mailbox_code = ?1 ORDER BY id DESC').bind(code).all<MailboxItem>()).results
-    : mem.mailboxItems.filter((i) => i.mailbox_code === code);
-  return [...all.filter((i) => i.status === 'arrived'), ...all.filter((i) => i.status !== 'arrived').slice(0, closedLimit)];
-}
-export async function updateMailboxItem(env: Env, id: number, patch: Partial<Pick<MailboxItem, 'status' | 'closed_at' | 'closed_by' | 'note' | 'sender' | 'notified' | 'scan_requested_at' | 'scan_id' | 'scan_type' | 'scanned_at' | 'scanned_by'>>): Promise<MailboxItem | null> {
-  const it = await getMailboxItem(env, id);
-  if (!it) return null;
-  const keys = (Object.keys(patch) as (keyof typeof patch)[]).filter((k) => ['status', 'closed_at', 'closed_by', 'note', 'sender', 'notified', 'scan_requested_at', 'scan_id', 'scan_type', 'scanned_at', 'scanned_by'].includes(k));
-  if (!keys.length) return it;
-  const vals = Object.fromEntries(keys.map((k) => [k, patch[k] ?? null]));
-  if (env.DB) await env.DB.prepare(`UPDATE mailbox_items SET ${keys.map((k, i) => `${k} = ?${i + 2}`).join(', ')} WHERE id = ?1`).bind(id, ...keys.map((k) => patch[k] ?? null)).run();
-  const m = mem.mailboxItems.find((i) => i.id === id);
-  if (m) Object.assign(m, vals);
-  return { ...it, ...vals } as MailboxItem;
-}
-/** Items whose holder asked for a scan and nobody has scanned yet, oldest request first, across every box. */
-export async function scanRequests(env: Env): Promise<MailboxItem[]> {
-  if (env.DB) return (await env.DB.prepare('SELECT * FROM mailbox_items WHERE scan_requested_at IS NOT NULL AND scan_id IS NULL ORDER BY scan_requested_at').all<MailboxItem>()).results;
-  return mem.mailboxItems.filter((i) => i.scan_requested_at && !i.scan_id).sort((a, b) => a.scan_requested_at!.localeCompare(b.scan_requested_at!));
-}
-/** How many items are waiting in each box, keyed by code. Boxes with nothing waiting are absent. */
-export async function waitingMailboxItems(env: Env): Promise<Record<string, number>> {
-  const out: Record<string, number> = {};
-  if (env.DB) {
-    for (const r of (await env.DB.prepare("SELECT mailbox_code, COUNT(*) AS n FROM mailbox_items WHERE status = 'arrived' GROUP BY mailbox_code").all<{ mailbox_code: string; n: number }>()).results) out[r.mailbox_code] = r.n;
-  } else for (const i of mem.mailboxItems) if (i.status === 'arrived') out[i.mailbox_code] = (out[i.mailbox_code] ?? 0) + 1;
-  return out;
-}
-/** The boxes a signed-in customer holds: theirs by customer id, or signed up with the same email. Cancelled ones last. */
-export async function mailboxesForCustomer(env: Env, c: { id: string; email: string | null }): Promise<Mailbox[]> {
-  const email = (c.email ?? '').trim().toLowerCase();
-  const rows = env.DB
-    ? (await env.DB.prepare("SELECT * FROM mailboxes WHERE status != 'awaiting_payment' AND (customer_id = ?1 OR lower(email) = ?2) ORDER BY created_at DESC").bind(c.id, email).all<Mailbox>()).results
-    : mem.mailboxes.filter((m) => m.status !== 'awaiting_payment' && (m.customer_id === c.id || (email !== '' && m.email.toLowerCase() === email)));
-  return [...rows].sort((a, b) => Number(a.status === 'cancelled') - Number(b.status === 'cancelled'));
-}
 
-export async function lastMailboxNotices(env: Env): Promise<Record<string, MailboxNotice>> {
-  const out: Record<string, MailboxNotice> = {};
-  const rows = env.DB
-    ? (await env.DB.prepare('SELECT n.* FROM mailbox_notices n JOIN (SELECT mailbox_code, MAX(id) AS id FROM mailbox_notices GROUP BY mailbox_code) l ON l.id = n.id').all<MailboxNotice>()).results
-    : mem.mailboxNotices;
-  for (const n of rows) if (!out[n.mailbox_code]) out[n.mailbox_code] = n;
-  return out;
-}
 
 export async function getDropoff(env: Env, id: number): Promise<Dropoff | null> {
   if (env.DB) return (await env.DB.prepare('SELECT * FROM dropoffs WHERE id = ?1').bind(id).first<Dropoff>()) ?? null;
@@ -1742,7 +1516,6 @@ export interface AcquirerFigures {
   by_week: { week: string; shipments: number; revenue: number; margin: number }[];   // week = the Monday, YYYY-MM-DD
   mix: { source: string; shipments: number; revenue: number; share: number }[];      // pos, stripe, account, other
   accounts: { total: ReportLine; share: number; by_account: (ReportLine & { account_id: number; business_name: string })[] };
-  mailboxes: { active: number; new: number; cancelled: number; mrr: number; churn: number; by_size: { size: string; active: number }[] };
   claims: { opened: number; refunded: number; refunded_usd: number };
   benchmark: { quotes: number; at_or_under: number; share: number; avg_diff: number | null };  // against Pirate Ship (T26)
 }
@@ -1750,14 +1523,12 @@ export async function acquirerFigures(env: Env, from: string, to: string): Promi
   const start = `${from}T00:00:00.000Z`, end = `${to}T23:59:59.999Z`;
   const r2 = (n: number) => Math.round(n * 100) / 100;
   type S = { id: string; created_at: string; cost: number; price: number; paid_via: string | null; account_id: number | null; business_name: string | null };
-  let ships: S[]; let boxes: Mailbox[]; let claims: ClaimRow[];
+  let ships: S[]; let claims: ClaimRow[];
   if (env.DB) {
     ships = (await env.DB.prepare(`SELECT s.id, s.created_at, s.cost, s.price, s.paid_via, b.account_id, a.business_name FROM shipments s LEFT JOIN shipment_billing b ON b.shipment_id = s.id LEFT JOIN accounts a ON a.id = b.account_id WHERE s.created_at BETWEEN ?1 AND ?2 AND s.status != 'voided'`).bind(start, end).all<S>()).results;
-    boxes = (await env.DB.prepare("SELECT * FROM mailboxes WHERE status != 'awaiting_payment'").all<Mailbox>()).results;
     claims = (await env.DB.prepare('SELECT * FROM claims WHERE created_at BETWEEN ?1 AND ?2 OR (refunded_at BETWEEN ?1 AND ?2)').bind(start, end).all<ClaimRow>()).results;
   } else {
     ships = [...mem.shipments.values()].filter((s) => s.created_at >= start && s.created_at <= end && s.status !== 'voided').map((s) => { const b = mem.billing.get(s.id); const a = b ? mem.accounts.find((x) => x.id === b.account_id) : null; return { id: s.id, created_at: s.created_at, cost: s.cost, price: s.price, paid_via: s.paid_via, account_id: b?.account_id ?? null, business_name: a?.business_name ?? null }; });
-    boxes = mem.mailboxes.filter((m) => m.status !== 'awaiting_payment');
     claims = mem.claims.filter((c) => (c.created_at >= start && c.created_at <= end) || (c.refunded_at != null && c.refunded_at >= start && c.refunded_at <= end));
   }
   const line = (): ReportLine => ({ shipments: 0, revenue: 0, cost: 0, margin: 0 });
@@ -1776,17 +1547,11 @@ export async function acquirerFigures(env: Env, from: string, to: string): Promi
     if (!mix.has(src)) mix.set(src, line()); add(mix.get(src)!, s);
     if (s.account_id != null) { add(accountTotal, s); if (!accts.has(s.account_id)) accts.set(s.account_id, { ...line(), account_id: s.account_id, business_name: s.business_name ?? `#${s.account_id}` }); add(accts.get(s.account_id)!, s); }
   }
-  const activeAtStart = boxes.filter((m) => (m.started_at ?? m.created_at) < start && !(m.cancelled_at && m.cancelled_at < start)).length;
-  const active = boxes.filter((m) => m.status === 'active' || m.status === 'past_due');
-  const monthly = (m: Mailbox) => (m.term === 'yearly' ? m.price / 12 : m.price);
-  const cancelled = boxes.filter((m) => m.cancelled_at && m.cancelled_at >= start && m.cancelled_at <= end).length;
-  const bySize = new Map<string, number>(); for (const m of active) bySize.set(m.size, (bySize.get(m.size) ?? 0) + 1);
   const refunded = claims.filter((c) => c.refunded_at && c.refunded_at >= start && c.refunded_at <= end);
   return {
     by_week: [...weeks].sort(([a], [b]) => a.localeCompare(b)).map(([week, l]) => ({ week, shipments: l.shipments, revenue: r2(l.revenue), margin: r2(l.margin) })),
     mix: [...mix].map(([source, l]) => ({ source, shipments: l.shipments, revenue: r2(l.revenue), share: total.revenue ? r2(l.revenue / total.revenue * 100) : 0 })).sort((a, b) => b.revenue - a.revenue),
     accounts: { total: round(accountTotal), share: total.revenue ? r2(accountTotal.revenue / total.revenue * 100) : 0, by_account: [...accts.values()].map(round).sort((a, b) => b.revenue - a.revenue) },
-    mailboxes: { active: active.length, new: boxes.filter((m) => m.started_at && m.started_at >= start && m.started_at <= end).length, cancelled, mrr: r2(active.reduce((a, m) => a + monthly(m), 0)), churn: activeAtStart ? r2(cancelled / activeAtStart * 100) : 0, by_size: [...bySize].map(([size, n]) => ({ size, active: n })) },
     claims: { opened: claims.filter((c) => c.created_at >= start && c.created_at <= end).length, refunded: refunded.length, refunded_usd: r2(refunded.reduce((a, c) => a + (c.customer_refund_usd ?? 0), 0)) },
     benchmark: await benchmarkSummary(env, start, end),
   };

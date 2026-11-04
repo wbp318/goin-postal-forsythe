@@ -50,7 +50,7 @@ export const defaults: StoreFacts = {
     { key: "meest", name: "Meest to Ukraine and Eastern Europe", blurb: "Parcels to Ukraine, Poland, the Baltics, Moldova, Georgia, Armenia and Central Asia by air or by sea, at the Meest agent rate. Quote online, bring the box in.", link: "/ship" },
     { key: "pack", name: "Packing", blurb: "Bring it in loose. We box, cushion and label it so it arrives in one piece." },
     { key: "returns", name: "Returns drop-off", blurb: "Amazon, UPS, FedEx and USPS returns. We print the label from your phone, box it, and scan it in so you have proof.", link: "/returns" },
-    { key: "mailbox", name: "Mailbox rental", blurb: "A real street address, package acceptance from every carrier, and text alerts.", link: "/mailbox" },
+    { key: "mailbox", name: "Mailbox rental", blurb: "A real street address and package acceptance from every carrier. Sign up at the counter with two IDs." },
     { key: "print", name: "Printing and copies", blurb: "Flyers, banners and everyday copies, often same day. Design your own business cards online.", link: "/cards" },
     { key: "notary", name: "Notary", blurb: "Notary on call. Phone ahead and we will have one here when you arrive." },
     { key: "shred", name: "Shredding", blurb: "Drop off a bag or a box. Secure, by the pound." },
