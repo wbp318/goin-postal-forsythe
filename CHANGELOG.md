@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.70.0] - 2026-11-04
+
+**PeterShip on the front page, the Fireworks look**
+
+Peter asked for three things this morning: PeterShip more prominent on the home page, a dedicated landing page, and a site that looks like it was made with Adobe Fireworks.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.70.0) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.70.0) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.69.0...v1.70.0)
+
 ## [v1.69.0] - 2026-11-04
 
 **Etsy connector (T28)**
