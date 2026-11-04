@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.71.1] - 2026-11-04
+
+**Developer page in 14 languages, version badge from package.json**
+
+**`/developers` framing strings.** The page's own words now go through the site's string tables in all fourteen languages: the version word in the title, the three buttons (OpenAPI 3.1 JSON, Guide with curl examples, Ask for a key), Before you start, Base URL, Auth, Request, Response, the Field and Type table headings, required, Errors, Webhook, Objects, and the Shopify note. Sixteen keys. The endpoint summaries, field descriptions and error texts stay in English on purpose: they come out of `openapi.json` at build time, and a developer's code, editor and the HTTP protocol are in English anyway, which is how Shopify and Stripe do it too.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.71.1) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.71.1) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.71.0...v1.71.1)
+
 ## [v1.71.0] - 2026-11-04
 
 **Meest as the fifth carrier, the manual up to date, notary study guides**
