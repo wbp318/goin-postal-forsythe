@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.69.0] - 2026-11-04
+
+**Etsy connector (T28)**
+
+The fourth marketplace connector, in the same shape as the Shopify, Square and eBay ones: a standalone Node 24 script with no packages in `shipping-client/etsy-connector/`.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.69.0) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.69.0) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.68.0...v1.69.0)
+
 ## [v1.68.0] - 2026-10-30
 
 **storefront banner rebuilt from a design plan**
