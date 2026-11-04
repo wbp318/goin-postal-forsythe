@@ -26,7 +26,7 @@ const cur = (p: string) => (here === p || (p !== '/' && here.startsWith(p + '/')
         <a class="brand" href="/">Goin' Postal <span>{brandRest}</span></a>
         <nav>
           <a href="/petership" class="ps-tab" aria-current={cur('/petership')} data-i18n="nav.petership">PeterShip</a>
-          <a href="/ship" aria-current={cur('/ship')} data-i18n="nav.ship">Ship</a>
+          <a href="/ship" aria-current={cur('/ship')} data-i18n="home.cta">Ship a package</a>
           <a href="/track" aria-current={cur('/track')} data-i18n="nav.track">Track</a>
           <a href="/cards" aria-current={cur('/cards')} data-i18n="nav.cards">Business cards</a>
           <a href="/returns" aria-current={cur('/returns')} data-i18n="nav.returns">Returns</a>
