@@ -66,6 +66,21 @@ CREATE TABLE IF NOT EXISTS dropoffs (
 );
 CREATE INDEX IF NOT EXISTS dropoffs_barcode ON dropoffs(barcode);
 
+-- QR scans at the counter (v1.80.0): every QR a customer showed instead of a label, what it was, and
+-- whether the store could print it or had to send them elsewhere. The turn-aways are the evidence for
+-- the UPS Access Point label-printing ask (shipping-client/qr-returns/).
+CREATE TABLE IF NOT EXISTS qr_scans (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  at TEXT NOT NULL,
+  by_name TEXT NOT NULL,
+  kind TEXT NOT NULL,                  -- url, ups, fedex, usps, amazon, other (src/lib/qr.ts)
+  carrier TEXT,                        -- UPS, FedEx, USPS, or what staff picked
+  host TEXT,                           -- the link's host, when it was a link
+  outcome TEXT NOT NULL,               -- printed, turned_away, label_emailed, other
+  note TEXT
+);
+CREATE INDEX IF NOT EXISTS qr_scans_at ON qr_scans(at);
+
 CREATE TABLE IF NOT EXISTS retail_rules (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   scope TEXT NOT NULL,                 -- default, carrier, service

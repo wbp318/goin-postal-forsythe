@@ -1,0 +1,136 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+import { COUNTER_SCRIPT, WHERE_TO_GO } from '../../lib/qr';
+
+// "Scan their QR" (v1.80.0). A customer holds up a QR code instead of a label. The tablet camera (or a
+// photo, or pasted text) reads it in the browser with jsQR; /api/scan says what it is; staff print the
+// label when it is a link, or say where to go and log the turn-away. The last 30 days' counts sit at
+// the bottom: that is what Peter takes to the UPS rep (shipping-client/qr-returns/).
+---
+<Base title="Counter · Scan their QR">
+  <section class="hero">
+    <h1 data-i18n="st.sc.h1">Scan their QR</h1>
+    <p class="lead" data-i18n="st.sc.lead">A customer shows a QR code instead of a label. Point the camera at it, or paste the text. If it is a link to a label, print it here for the fee. If it is a carrier code we cannot redeem, say where to go and log it: the log is what we take to UPS.</p>
+    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/batch" data-i18n="st.nav.batch">Batch</a> · <a href="/counter/fulfillment" data-i18n="st.nav.fulfillment">Fulfillment</a> · <a href="/counter/pickups" data-i18n="st.nav.pickups">Pickups</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/accounts" data-i18n="st.nav.accounts">Accounts</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/scan" data-i18n="st.nav.scan">Scan a QR</a> · <a href="/counter/mailboxes" data-i18n="st.nav.mailboxes">Mailboxes</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/claims" data-i18n="st.nav.claims">Claims</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/close" data-i18n="st.nav.close">End of day</a> · <a href="/counter/invoices" data-i18n="st.nav.invoices">Invoices</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a> · <a href="/counter/staff" data-i18n="st.nav.staff">Staff</a> · <a href="/counter/export" data-i18n="st.nav.export">Export</a></p>
+  </section>
+  <div class="grid">
+    <div class="card">
+      <label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
+      <p class="btnrow"><button class="btn" type="button" id="camOn" data-i18n="st.sc.camera">Use the camera</button> <button class="btn kraft" type="button" id="camOff" hidden data-i18n="st.sc.stop">Stop the camera</button></p>
+      <video id="cam" playsinline muted hidden style="width: 100%; max-height: 320px; background: #000; border-radius: 3px"></video>
+      <canvas id="frame" hidden></canvas>
+      <label><span data-i18n="st.sc.photo">Or a photo of the code</span> <input id="photo" type="file" accept="image/*" capture="environment" /></label>
+      <label><span data-i18n="st.sc.paste">Or paste what the code says</span> <textarea id="text" rows="2" maxlength="2000"></textarea></label>
+      <p class="btnrow"><button class="btn" type="button" id="readBtn" data-i18n="st.sc.read">Read it</button> <span id="msg" role="alert"></span></p>
+    </div>
+    <div class="card hidden" id="result">
+      <p><strong data-i18n="st.sc.what">What it is</strong>: <span id="kind"></span></p>
+      <p id="link" hidden><a id="open" href="#" target="_blank" rel="noopener" class="btn" data-i18n="st.sc.open">Open the link</a></p>
+      <p><strong data-i18n="st.sc.say">What to say</strong>: <em id="say"></em></p>
+      <p id="where" class="muted" hidden></p>
+      <div class="row">
+        <label><span data-i18n="st.sc.carrier">Carrier</span> <select id="carrier"><option value=""></option><option>UPS</option><option>FedEx</option><option>USPS</option><option>DHL</option><option>Other</option></select></label>
+        <label><span data-i18n="st.sc.note">Note (optional)</span> <input id="note" maxlength="200" /></label>
+      </div>
+      <p class="btnrow"><button class="btn" type="button" data-outcome="printed" data-i18n="st.sc.printed">Printed it</button> <button class="btn" type="button" data-outcome="turned_away" data-i18n="st.sc.turned">Had to send them elsewhere</button> <button class="btn kraft" type="button" data-outcome="label_emailed" data-i18n="st.sc.emailed">They emailed us a label instead</button> <span id="lmsg" role="alert"></span></p>
+    </div>
+    <div class="card" id="stats">
+      <h3 data-i18n="st.sc.month">The last 30 days</h3>
+      <p><strong data-i18n="st.sc.stat.turned">Sent elsewhere</strong>: <span id="turned">…</span> · <strong data-i18n="st.sc.stat.printed">Printed here</strong>: <span id="printed">…</span></p>
+      <h4 data-i18n="st.sc.say">What to say</h4>
+      <ul>{(Object.keys(COUNTER_SCRIPT) as (keyof typeof COUNTER_SCRIPT)[]).map((k) => <li><strong>{k}</strong>: {COUNTER_SCRIPT[k]}</li>)}</ul>
+      <ul>{(Object.keys(WHERE_TO_GO) as (keyof typeof WHERE_TO_GO)[]).map((k) => <li><strong>{k}</strong>: {WHERE_TO_GO[k]}</li>)}</ul>
+    </div>
+  </div>
+  <script>
+    import jsQR from 'jsqr';
+    import { t } from '../../i18n';
+    const $ = (id: string) => document.getElementById(id)!;
+    const pin = () => ($('pin') as HTMLInputElement).value;
+    const msg = $('msg'), lmsg = $('lmsg');
+    const api = async (body: Record<string, unknown>) => {
+      const res = await fetch('/api/scan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin(), ...body }) });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error);
+      return j;
+    };
+    let lastText = '', lastRead: any = null;
+
+    async function show(text: string) {
+      lastText = text;
+      msg.className = ''; msg.textContent = '…';
+      try {
+        const { read } = await api({ action: 'read', text });
+        lastRead = read;
+        $('kind').textContent = [read.kind, read.carrier, read.host].filter(Boolean).join(' · ');
+        $('say').textContent = read.advice;
+        const link = $('link'), open = $('open') as HTMLAnchorElement;
+        link.hidden = !read.url; if (read.url) open.href = read.url;
+        const where = $('where'); where.hidden = !read.carrier;
+        if (read.carrier) where.textContent = `${read.carrier}: ${({ UPS: 'The UPS Store', FedEx: 'FedEx Office, FedEx Ship Center or Walgreens', USPS: 'a Post Office with Label Broker' } as any)[read.carrier]}`;
+        ($('carrier') as HTMLSelectElement).value = read.carrier ?? '';
+        $('result').classList.remove('hidden');
+        msg.textContent = '';
+      } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    }
+
+    // Decoding happens in the browser: a frame from the camera, or a picture, through jsQR.
+    function decode(img: CanvasImageSource, w: number, h: number): string | null {
+      const c = $('frame') as HTMLCanvasElement; c.width = w; c.height = h;
+      const ctx = c.getContext('2d', { willReadFrequently: true })!; ctx.drawImage(img, 0, 0, w, h);
+      const d = ctx.getImageData(0, 0, w, h);
+      return jsQR(d.data, w, h)?.data ?? null;
+    }
+    let stream: MediaStream | null = null, timer = 0;
+    const video = $('cam') as HTMLVideoElement;
+    $('camOn').addEventListener('click', async () => {
+      if (!navigator.mediaDevices?.getUserMedia) { msg.className = 'err'; msg.textContent = t('st.sc.nocam'); return; }
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        video.srcObject = stream; video.hidden = false; await video.play();
+        $('camOn').hidden = true; $('camOff').hidden = false;
+        timer = window.setInterval(() => {
+          if (!video.videoWidth) return;
+          const text = decode(video, video.videoWidth, video.videoHeight);
+          if (text && text !== lastText) { stop(); show(text); }
+        }, 400);
+      } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    });
+    function stop() {
+      window.clearInterval(timer); stream?.getTracks().forEach((x) => x.stop()); stream = null;
+      video.hidden = true; $('camOn').hidden = false; $('camOff').hidden = true;
+    }
+    $('camOff').addEventListener('click', stop);
+    $('photo').addEventListener('change', async () => {
+      const file = ($('photo') as HTMLInputElement).files?.[0]; if (!file) return;
+      const bmp = await createImageBitmap(file);
+      const scale = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+      const text = decode(bmp, Math.round(bmp.width * scale), Math.round(bmp.height * scale));
+      if (!text) { msg.className = 'err'; msg.textContent = t('st.sc.noqr'); return; }
+      ($('text') as HTMLTextAreaElement).value = text;
+      show(text);
+    });
+    $('readBtn').addEventListener('click', () => { const v = ($('text') as HTMLTextAreaElement).value.trim(); if (v) show(v); });
+
+    document.querySelectorAll<HTMLButtonElement>('[data-outcome]').forEach((b) => b.addEventListener('click', async () => {
+      b.disabled = true; lmsg.className = ''; lmsg.textContent = '…';
+      try {
+        await api({ action: 'log', text: lastText, kind: lastRead?.kind, carrier: ($('carrier') as HTMLSelectElement).value, outcome: b.dataset.outcome, note: ($('note') as HTMLInputElement).value });
+        lmsg.textContent = t('st.sc.logged');
+        $('result').classList.add('hidden'); ($('text') as HTMLTextAreaElement).value = ''; ($('note') as HTMLInputElement).value = ''; lastText = '';
+        loadStats();
+      } catch (e: any) { lmsg.className = 'err'; lmsg.textContent = e.message; }
+      b.disabled = false;
+    }));
+    async function loadStats() {
+      if (!pin()) return;
+      try {
+        const s = await api({ action: 'stats' });
+        $('turned').textContent = `${Object.values(s.turned_away as Record<string, number>).reduce((a, b) => a + b, 0)} (${Object.entries(s.turned_away).map(([k, v]) => `${k} ${v}`).join(', ') || '0'})`;
+        $('printed').textContent = String(s.printed);
+      } catch {}
+    }
+    $('pin').addEventListener('change', loadStats);
+  </script>
+</Base>

@@ -122,6 +122,7 @@ export interface MailboxItem {
   scan_requested_at: string | null; scan_id: string | null; scan_type: string | null; scanned_at: string | null; scanned_by: string | null;
 }
 export interface MailboxId { id: number; mailbox_code: string; slot: 'primary' | 'secondary'; kind: string; issuer: string; last4: string | null; expires: string | null; shows_address: number; verified_by: string; verified_at: string; replaced_at: string | null; scan_id: string | null; scan_type: string | null; scan_store: string | null }
+export interface QrScan { id: number; at: string; by_name: string; kind: string; carrier: string | null; host: string | null; outcome: string; note: string | null }
 export interface MailboxNotice { id: number; mailbox_code: string; kind: string; note: string | null; by_name: string; at: string; texted: number; emailed: number; error: string | null }
 
 /** Guess the carrier from a barcode or tracking number. Good enough for drop-offs; the carrier confirms on scan. */
@@ -144,6 +145,7 @@ const mem = {
   events: new Map<string, (TrackingEvent & { id: number })[]>(),
   jobs: [] as PrintJob[],
   dropoffs: [] as Dropoff[],
+  qrScans: [] as QrScan[],
   returns: [] as ReturnRequest[],
   mailboxes: [] as Mailbox[],
   mailboxNotices: [] as MailboxNotice[],
@@ -182,7 +184,7 @@ const mem = {
 
 // ---- Export (T10) --------------------------------------------------------------------------------
 /** Every table in the schema, in schema order. The allow-list for the export; nothing else can be named. */
-export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'mailboxes', 'mailbox_notices', 'mailbox_items', 'mailbox_ids', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees'] as const;
+export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'mailboxes', 'mailbox_notices', 'mailbox_items', 'mailbox_ids', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees'] as const;
 export type ExportTable = typeof EXPORT_TABLES[number];
 const memTable = (name: ExportTable): unknown[] => {
   switch (name) {
@@ -190,6 +192,7 @@ const memTable = (name: ExportTable): unknown[] => {
     case 'shipments': return [...mem.shipments.values()];
     case 'tracking_events': return [...mem.events.entries()].flatMap(([shipment_id, evs]) => (evs as any[]).map((e) => ({ shipment_id, ...e })));
     case 'dropoffs': return [...mem.dropoffs.values()];
+    case 'qr_scans': return mem.qrScans;
     case 'retail_rules': return mem.rules ? [mem.rules] : [];
     case 'staff': return mem.staff;
     case 'print_queue': return [...mem.jobs.values()];
@@ -1178,6 +1181,28 @@ export async function markReturnServed(env: Env, code: string, dropoff_id: numbe
   return { ...r, status: 'served', served_at: t, dropoff_id };
 }
 
+// ---- QR scans at the counter (v1.80.0) ------------------------------------------------------------
+export async function logQrScan(env: Env, x: Omit<QrScan, 'id' | 'at'>): Promise<QrScan> {
+  const row = { ...x, at: now() };
+  if (env.DB) {
+    const r = await env.DB.prepare('INSERT INTO qr_scans (at, by_name, kind, carrier, host, outcome, note) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7) RETURNING id')
+      .bind(row.at, row.by_name, row.kind, row.carrier, row.host, row.outcome, row.note).first<{ id: number }>();
+    return { id: r!.id, ...row };
+  }
+  const full = { id: mem.seq++, ...row };
+  mem.qrScans.unshift(full);
+  return full;
+}
+/** The last `days` days of scans, newest first, and the counts the UPS ask needs: turned away by carrier. */
+export async function qrScanStats(env: Env, days = 30): Promise<{ scans: QrScan[]; turned_away: Record<string, number>; printed: number; total: number }> {
+  const since = new Date(Date.now() - days * 86_400_000).toISOString();
+  const scans = env.DB
+    ? (await env.DB.prepare('SELECT * FROM qr_scans WHERE at >= ?1 ORDER BY id DESC LIMIT 500').bind(since).all<QrScan>()).results
+    : mem.qrScans.filter((q) => q.at >= since);
+  const turned_away: Record<string, number> = {};
+  for (const q of scans) if (q.outcome === 'turned_away') turned_away[q.carrier ?? 'unknown'] = (turned_away[q.carrier ?? 'unknown'] ?? 0) + 1;
+  return { scans, turned_away, printed: scans.filter((q) => q.outcome === 'printed').length, total: scans.length };
+}
 // ---- mailbox subscriptions (agenda items 24, 29) --------------------------------------------
 const MB_COLS = ['code', 'created_at', 'customer_id', 'customer_name', 'email', 'phone', 'business_name', 'size', 'term', 'price', 'status', 'stripe_customer_id', 'stripe_subscription_id', 'stripe_session_id', 'started_at', 'current_period_end', 'cancelled_at', 'box_number', 'form_1583_at', 'form_1583_by', 'ids_seen', 'notes'] as const;
 export async function createMailbox(env: Env, m: { code: string; customer_id: string | null; customer_name: string; email: string; phone: string | null; business_name: string | null; size: string; term: string; price: number }): Promise<Mailbox> {
