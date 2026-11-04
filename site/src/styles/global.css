@@ -341,6 +341,12 @@ footer { margin-top: 24px; padding: 10px 0; border-top: 3px double var(--kraft);
 .ps-step b { width: 36px; height: 36px; font-size: 1.1rem; }
 @media (max-width: 700px) { .ps-steps { grid-template-columns: 1fr; } }
 .hero { padding: 0; }
+/* street typeahead (v1.74.0) */
+.typeahead { position: relative; }
+.suggest { position: absolute; left: 0; right: 0; z-index: 20; margin: 2px 0 0; padding: 0; list-style: none; background: var(--paper); border: 1px solid #7f8796; border-radius: 3px; box-shadow: 3px 3px 6px var(--shadow); max-height: 16rem; overflow-y: auto; }
+.suggest li { padding: 8px 12px; cursor: pointer; font-weight: 400; border-bottom: 1px solid var(--hair); }
+.suggest li:last-child { border-bottom: 0; }
+.suggest li:hover, .suggest li[aria-selected="true"] { background: var(--navy); color: #fff; }
 .hero .ps-kicker { color: var(--kraft-d); font-family: var(--fw-display); font-weight: 700; text-shadow: none; margin: 10px 0 0; }
 .hero h2 { border-bottom: 0; }
 .hero p.lead { font-size: 1.05rem; margin: 0 0 10px; }

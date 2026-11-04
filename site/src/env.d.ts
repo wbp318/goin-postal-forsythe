@@ -38,4 +38,6 @@ interface Env {
   DHL_API_KEY?: string; DHL_API_SECRET?: string; DHL_ACCOUNT_NUMBER?: string; DHL_SANDBOX?: string;
   // Meest America (v1.71.0): rates come from src/data/meest-rates.json with no keys; these two switch label purchase from the counter to Meest's API once Meest grants access (issue 17).
   MEEST_API_URL?: string; MEEST_API_KEY?: string;
+  // Street-address typeahead (v1.74.0): Google Places (New) key; blank means the US Census Bureau geocoder (free, US only). Issue 18.
+  GOOGLE_PLACES_KEY?: string;
 }

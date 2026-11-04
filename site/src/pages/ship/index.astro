@@ -25,7 +25,7 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
     <fieldset>
       <legend data-i18n="ship.where">Where is it going?</legend>
       <label><span data-i18n="ship.recipient">Recipient name</span> <input name="contact_name" required autocomplete="shipping name" /></label>
-      <label><span data-i18n="ship.street">Street address</span> <input name="line_1" required maxlength="35" autocomplete="shipping address-line1" /></label>
+      <label class="typeahead"><span data-i18n="ship.street">Street address</span> <input name="line_1" required maxlength="35" autocomplete="shipping address-line1" placeholder="1800 Forsythe Ave, Monroe" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="addrList" /><ul id="addrList" class="suggest" role="listbox" hidden></ul></label>
       <label><span data-i18n="ship.apt">Apt, suite (optional)</span> <input name="line_2" maxlength="35" autocomplete="shipping address-line2" /></label>
       <div class="row">
         <label><span data-i18n="ship.city">City</span> <input name="city" required autocomplete="shipping address-level2" /></label>
@@ -118,6 +118,38 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
     // Address autofill (v1.73.0): a five-digit US ZIP fills the city and state through /api/zip; the
     // autocomplete attributes above let the browser offer its saved addresses for the rest.
     const zipEl = f.querySelector('[name=postal_code]') as HTMLInputElement, cityEl = f.querySelector('[name=city]') as HTMLInputElement, stateEl = f.querySelector('[name=state]') as HTMLInputElement;
+    // Street typeahead (v1.74.0): what is typed in the street box goes to /api/address-suggest; picking a
+    // suggestion fills street, city, state and ZIP. Arrow keys and Enter work; Escape closes.
+    const streetEl = f.querySelector('[name=line_1]') as HTMLInputElement, list = document.getElementById('addrList') as HTMLUListElement;
+    let items: any[] = [], active = -1, timer = 0, seq = 0;
+    const close = () => { list.hidden = true; list.innerHTML = ''; items = []; active = -1; streetEl.setAttribute('aria-expanded', 'false'); };
+    const choose = (i: number) => { const s = items[i]; if (!s) return; streetEl.value = s.line_1; if (s.city) cityEl.value = s.city; if (s.state) stateEl.value = s.state; if (s.postal_code) zipEl.value = s.postal_code; lastZip = zipEl.value.slice(0, 5); close(); (f.querySelector('[name=line_2]') as HTMLInputElement).focus(); };
+    const paint = () => { list.querySelectorAll('li').forEach((li, i) => li.setAttribute('aria-selected', String(i === active))); };
+    streetEl.addEventListener('input', () => {
+      const q = streetEl.value.trim();
+      clearTimeout(timer);
+      if (q.length < 4 || /^\d+\s?$/.test(q)) { close(); return; }
+      timer = window.setTimeout(async () => {
+        const mine = ++seq;
+        try {
+          const j = await (await fetch(`/api/address-suggest?q=${encodeURIComponent(q)}&country=${encodeURIComponent(countrySel.value)}`)).json();
+          if (mine !== seq) return;
+          items = j.suggestions ?? [];
+          if (!items.length) { close(); return; }
+          list.innerHTML = items.map((s: any, i: number) => `<li role="option" data-i="${i}" aria-selected="false">${s.label.replace(/</g, '&lt;')}</li>`).join('');
+          list.hidden = false; active = -1; streetEl.setAttribute('aria-expanded', 'true');
+        } catch { close(); }
+      }, 250);
+    });
+    list.addEventListener('mousedown', (e) => { const li = (e.target as HTMLElement).closest('li'); if (li) { e.preventDefault(); choose(Number(li.dataset.i)); } });
+    streetEl.addEventListener('keydown', (e) => {
+      if (list.hidden) return;
+      if (e.key === 'ArrowDown') { e.preventDefault(); active = Math.min(active + 1, items.length - 1); paint(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); active = Math.max(active - 1, 0); paint(); }
+      else if (e.key === 'Enter' && active >= 0) { e.preventDefault(); choose(active); }
+      else if (e.key === 'Escape') close();
+    });
+    streetEl.addEventListener('blur', () => setTimeout(close, 150));
     let lastZip = '';
     zipEl.addEventListener('input', async () => {
       const z = zipEl.value.trim().slice(0, 5);

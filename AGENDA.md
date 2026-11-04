@@ -384,6 +384,7 @@ flowchart LR
 
 ## Log
 
+- **Nov 5 (evening):** Street typeahead on the ship page, v1.74.0: type the street, pick the address, every field fills. `/api/address-suggest` uses Google Places (New) once `GOOGLE_PLACES_KEY` exists (issue 18), the US Census Bureau geocoder (free, official, house numbers; street plus city or ZIP) until then; Photon was tried and took four to seven seconds a call. No Monroe bias: recipients are anywhere.
 - **Nov 5 (later still):** Address autofill on the ship page, v1.73.0: browser autocomplete tokens on every address field, and a US ZIP fills city and state through `/api/zip` (Zippopotam lookup cached in KV, state prefix table as the fallback).
 - **Nov 5 (later):** The language picker says Español, not Español (RD). v1.72.1.
 - **Nov 5:** One door into PeterShip, v1.72.0: the first tab is Ship a package (the quote form, with the PeterShip kicker above its title), About PeterShip moved to the end of the nav, and the developer page now translates the spec text too: every summary and description in `openapi.json` has a row in `src/i18n/api.ts` keyed by its English text, with a test that fails when the spec gains a string without one.
