@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.79.0] - 2026-11-04
+
+**return address on the ship page**
+
+Peter: "we gotta add return address to petership /ship. how did we miss that." Every online quote was priced from the store's address and the label named the store as the sender.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.79.0) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.79.0) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.78.0...v1.79.0)
+
 ## [v1.78.0] - 2026-11-04
 
 **staff sign-in page, box numbers on Customers**
