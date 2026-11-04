@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.71.0] - 2026-11-04
+
+**Meest as the fifth carrier, the manual up to date, notary study guides**
+
+**Meest America (to-do T32).** The store is a Meest agent and the Meest mark is on the banner, so Meest now sits beside USPS, UPS, FedEx and DHL on every quote to a country Meest serves: Ukraine, Poland, Lithuania, Latvia, Estonia, Moldova, Georgia, Armenia, Kazakhstan, Uzbekistan, Kyrgyzstan, Czechia, Slovakia, Hungary, Romania and Bulgaria. Two services: Meest Air (7 to 14 days) and Meest Economy by sea (30 to 45 days) where offered. Rates come from `site/src/data/meest-rates.json`, the agent rate sheet the owners edit, a base plus a price per pound per country, weight rounded up to the pound with a one-pound minimum. The numbers in it are placeholders until the owners paste the real sheet (issue 17). Because the sheet needs no key, Meest shows in mock mode and on the live site alike, and never counts toward the demo or Easyship decisions in the engine.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.71.0) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.71.0) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.70.1...v1.71.0)
+
 ## [v1.70.1] - 2026-11-04
 
 **The older look**
