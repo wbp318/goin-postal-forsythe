@@ -6,7 +6,7 @@
 
 export const LANGS = [
   { code: 'en', name: 'English' },
-  { code: 'es', name: 'Español (RD)' },
+  { code: 'es', name: 'Español' },
   { code: 'vi', name: 'Tiếng Việt' },
   { code: 'lo', name: 'ລາວ' },
   { code: 'km', name: 'ខ្មែរ' },
