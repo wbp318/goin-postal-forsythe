@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.72.0] - 2026-11-04
+
+**Developer page fully in 14 languages, one door into PeterShip**
+
+**Spec text translated.** Peter switched the developer page to Spanish and saw the framing change while the instructions stayed English. Now every summary, description and error text in `openapi.json` (61 strings) has a row in `src/i18n/api.ts`, keyed by its exact English text, in all fourteen languages. The page tags each spec string with its own text as the key and the browser swaps it on a language change; the two descriptions that carry code use `data-i18n-html`, which rebuilds the backticked code spans after the swap. A new test fails whenever the spec gains a string that has no row, so the page cannot drift back to English.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.72.0) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.72.0) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.71.2...v1.72.0)
+
 ## [v1.71.2] - 2026-11-04
 
 **Ship tab relabelled**
