@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.78.0] - 2026-11-04
+
+**staff sign-in page, box numbers on Customers**
+
+**Staff sign-in.** `/counter` was a 404; typing it was the natural thing to do and it went nowhere. Now every page's footer has **Staff sign-in**, which opens `/counter`: type the PIN, see your name and role, and pick any counter page from the list. Each page still asks for the PIN in its own box.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.78.0) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.78.0) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.77.0...v1.78.0)
+
 ## [v1.77.0] - 2026-11-04
 
 **mailbox ID verification, scans to Azure, returns page cut**
