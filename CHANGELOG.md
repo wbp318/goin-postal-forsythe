@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.75.0] - 2026-11-04
+
+**Mailbox mail log, Informed Delivery for Goin' Postal boxes**
+
+The store is adding physical mailboxes, and the holders should get what USPS Informed Delivery gives a home customer: a picture of what is in the box before they drive over, and a record of what happened to it. This release builds that on the database PeterShip already runs on (Cloudflare D1 for the rows, KV for the photos) rather than a second one in AWS. The plan in [`shipping-client/mailboxes/README.md`](https://github.com/wbp318/goin-postal-forsythe/blob/main/shipping-client/mailboxes/README.md) weighs the three options and carries the decisions for Peter and Rin.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.75.0) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.75.0) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.74.0...v1.75.0)
+
 ## [v1.74.0] - 2026-11-04
 
 **Street typeahead on the ship page**
