@@ -14,6 +14,7 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
 ---
 <Base title={`Ship a package · ${store.name}`} description="Compare USPS, UPS, FedEx and DHL rates and buy a label online. Print at home or show a QR code at the counter.">
   <section class="hero">
+    <p class="ps-kicker" data-i18n="home.ps.kicker">PeterShip, our shipping counter on the web</p>
     <h1 data-i18n="ship.h1">Ship a package</h1>
     <p class="lead" data-i18n="ship.lead">Compare USPS, UPS, FedEx and DHL in one place. Pay online and print at home, or show us the QR code and we print it at the counter.</p>
     {cancelled && <p class="card" data-i18n="ship.cancelled">Payment was cancelled. Your quote is below if you want to try again.</p>}

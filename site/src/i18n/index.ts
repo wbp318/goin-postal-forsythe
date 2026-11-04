@@ -3,8 +3,13 @@
 // data-i18n-ph swaps a placeholder. Scripts call t('key') for strings they build themselves.
 import { STRINGS as SITE, LANGS, type Lang } from './strings';
 import { STAFF } from './staff';
+import { API_STRINGS } from './api';
 
-const STRINGS = { ...SITE, ...STAFF };
+const STRINGS = { ...SITE, ...STAFF, ...API_STRINGS };
+
+const esc = (x: string) => x.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+/** Escaped text with `code` spans, for the few strings that carry code (the developer page). */
+export const codeHtml = (x: string) => esc(x).replace(/`([^`]+)`/g, '<code>$1</code>');
 
 const KEY = 'gp-lang';
 export { LANGS };
@@ -44,7 +49,8 @@ export function apply(lang: Lang = currentLang(), root: ParentNode = document) {
   document.documentElement.lang = HTML_LANG[lang];
   root.querySelectorAll<HTMLElement>('[data-i18n]').forEach((el) => {
     const key = el.dataset.i18n!;
-    if (STRINGS[key]) el.textContent = t(key, lang);
+    if (!STRINGS[key]) return;
+    if ('i18nHtml' in el.dataset) el.innerHTML = codeHtml(t(key, lang)); else el.textContent = t(key, lang);
   });
   root.querySelectorAll<HTMLElement>('[data-i18n-ph]').forEach((el) => {
     const key = el.dataset.i18nPh!;

@@ -25,8 +25,7 @@ const cur = (p: string) => (here === p || (p !== '/' && here.startsWith(p + '/')
       <div class="wrap">
         <a class="brand" href="/">Goin' Postal <span>{brandRest}</span></a>
         <nav>
-          <a href="/petership" class="ps-tab" aria-current={cur('/petership')} data-i18n="nav.petership">PeterShip</a>
-          <a href="/ship" aria-current={cur('/ship')} data-i18n="home.cta">Ship a package</a>
+          <a href="/ship" class="ps-tab" aria-current={cur('/ship')} data-i18n="home.cta">Ship a package</a>
           <a href="/track" aria-current={cur('/track')} data-i18n="nav.track">Track</a>
           <a href="/cards" aria-current={cur('/cards')} data-i18n="nav.cards">Business cards</a>
           <a href="/returns" aria-current={cur('/returns')} data-i18n="nav.returns">Returns</a>
@@ -35,6 +34,7 @@ const cur = (p: string) => (here === p || (p !== '/' && here.startsWith(p + '/')
           <a href="/#hours" data-i18n="nav.hours">Hours</a>
           <a href="/contact" aria-current={cur('/contact')} data-i18n="nav.contact">Contact</a>
           <a href="/account" aria-current={cur('/account')} data-i18n="nav.account">Account</a>
+          <a href="/petership" aria-current={cur('/petership')} data-i18n="nav.about">About PeterShip</a>
           {Astro.url.pathname.startsWith('/counter') && store.siblings && store.siblings.length > 0 && (
             <select id="storeSwitch" aria-label="Store" title="Store">
               <option value="">{store.name}</option>

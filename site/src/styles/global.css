@@ -341,6 +341,7 @@ footer { margin-top: 24px; padding: 10px 0; border-top: 3px double var(--kraft);
 .ps-step b { width: 36px; height: 36px; font-size: 1.1rem; }
 @media (max-width: 700px) { .ps-steps { grid-template-columns: 1fr; } }
 .hero { padding: 0; }
+.hero .ps-kicker { color: var(--kraft-d); font-family: var(--fw-display); font-weight: 700; text-shadow: none; margin: 10px 0 0; }
 .hero h2 { border-bottom: 0; }
 .hero p.lead { font-size: 1.05rem; margin: 0 0 10px; }
 .ps-audience { gap: 12px; margin: 12px 0; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
