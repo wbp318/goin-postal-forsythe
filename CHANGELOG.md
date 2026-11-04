@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.76.1] - 2026-11-04
+
+**Language picker order, Tiếng Việt second**
+
+The menu now lists English, Tiếng Việt, Afrikaans, Español, Français, Português and Nederlands first, then the rest in the old order. v1.76.0 had Afrikaans ahead of Vietnamese; the owners wanted Vietnamese second. Nothing else changed.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.76.1) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.76.1) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.76.0...v1.76.1)
+
 ## [v1.76.0] - 2026-11-04
 
 **Open-and-scan for mailboxes, language picker label and order**
