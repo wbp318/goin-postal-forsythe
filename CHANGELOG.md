@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.80.0] - 2026-11-04
+
+**Scan their QR at the counter**
+
+The big one from the counter: customers show a QR code on their phone instead of a label and have to be sent to The UPS Store. A label-less code is a token only the carrier's own retail software redeems (The UPS Store for UPS, FedEx Office and Walgreens for FedEx, Post Offices with Label Broker for USPS), and no API redeems someone else's, so PeterShip cannot build around it. What it can do is print the codes that are really links, keep the rest from walking out, and count the ones it cannot help, which is the case for the program. Plan in `shipping-client/qr-returns/README.md`.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.80.0) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.80.0) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.79.0...v1.80.0)
+
 ## [v1.79.0] - 2026-11-04
 
 **return address on the ship page**
