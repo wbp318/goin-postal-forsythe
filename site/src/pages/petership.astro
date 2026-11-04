@@ -1,0 +1,63 @@
+---
+// PeterShip landing page (v1.70.0): what the store's own shipping client does, for walk-up
+// customers, online sellers, developers and other stores. Every string is in src/i18n/strings.ts.
+import Base from '../layouts/Base.astro';
+import { store } from '../data/store';
+---
+<Base title={`PeterShip · ${store.name}`} description="PeterShip is Goin' Postal Forsythe's own shipping software: compare USPS, UPS, FedEx and DHL, buy labels online, business accounts, batch shipping, returns, pickups and a public API.">
+  <section class="ps-hero" aria-labelledby="ps-h1">
+    <span class="ps-badge">Monroe, LA</span>
+    <p class="ps-kicker" data-i18n="home.ps.kicker">PeterShip, our shipping counter on the web</p>
+    <p class="ps-mark" aria-hidden="true">Peter<span>Ship</span></p>
+    <h1 id="ps-h1" data-i18n="ps.h1">The shipping counter that fits in your pocket.</h1>
+    <p class="lead" data-i18n="ps.lead">PeterShip is Goin' Postal Forsythe's own shipping software. Walk-up customers, online sellers and other stores all use the same thing we use at the counter.</p>
+    <div class="ps-cta">
+      <a class="btn big kraft" href="/ship" data-i18n="home.cta">Ship a package</a>
+      <a class="btn" href="/contact" data-i18n="ps.cta2">Ask about a business account</a>
+    </div>
+  </section>
+
+  <div class="ps-audience">
+    <div class="card">
+      <h3 data-i18n="ps.walk.h">For anyone with a box</h3>
+      <p data-i18n="ps.walk.b">One quote shows USPS, UPS, FedEx and DHL. Pay by card online. Print at home or show the QR code and we print it. Every label is tracked and you get an email when it is delivered.</p>
+    </div>
+    <div class="card" id="sellers">
+      <h3 data-i18n="ps.sell.h">For online sellers</h3>
+      <p data-i18n="ps.sell.b">A business account gets a discount on every label, one monthly statement, a CSV upload that ships a whole stack at once, prepaid return labels for your customers, and pickups from your door.</p>
+    </div>
+    <div class="card">
+      <h3 data-i18n="ps.conn.h">Your shop, connected</h3>
+      <p data-i18n="ps.conn.b">Orders from Shopify, Square, eBay and Etsy can flow straight into our queue, and the tracking number flows back to your buyer the moment the label prints.</p>
+    </div>
+    <div class="card">
+      <h3 data-i18n="ps.ful.h">We can hold your stock</h3>
+      <p data-i18n="ps.ful.b">Send us your inventory. Each order is picked, packed and shipped the day it comes in, and the fees show on the same monthly statement.</p>
+    </div>
+    <div class="card">
+      <h3 data-i18n="ps.dev.h">Built for developers too</h3>
+      <p data-i18n="ps.dev.b">A public API with a key per account, signed webhooks and an OpenAPI spec.</p>
+      <p style="margin-top:10px"><a href="/developers" data-i18n="ps.dev.link">Read the API docs</a></p>
+    </div>
+    <div class="card">
+      <h3 data-i18n="ps.stores.h">For other shipping stores</h3>
+      <p data-i18n="ps.stores.b">PeterShip runs our whole counter: labels, printing, drop-offs, mailboxes, claims, end-of-day, reports. If you run a shipping store, talk to us.</p>
+      <p style="margin-top:10px"><a href="/contact" data-i18n="nav.contact">Contact</a></p>
+    </div>
+  </div>
+
+  <section>
+    <h2 data-i18n="ps.list.h">What is inside</h2>
+    <ul class="ps-list">
+      <li data-i18n="ps.f1">Rates from four carriers in one quote</li>
+      <li data-i18n="ps.f2">Pay online or at the counter</li>
+      <li data-i18n="ps.f3">Labels printed at home or on our printer</li>
+      <li data-i18n="ps.f4">Tracking and an email when it is delivered</li>
+      <li data-i18n="ps.f5">Returns drop-off with a receipt</li>
+      <li data-i18n="ps.f6">Business accounts and monthly statements</li>
+      <li data-i18n="ps.f7">Batch shipping from a CSV</li>
+      <li data-i18n="ps.f8">Scheduled pickups and a text when the driver is on the way</li>
+    </ul>
+    <p class="ps-made" data-i18n="ps.made">Made in Monroe, Louisiana, by the people who pack your boxes.</p>
+  </section>
+</Base>

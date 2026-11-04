@@ -4,11 +4,34 @@ import StoreInfo from '../components/StoreInfo.astro';
 import { store } from '../data/store';
 ---
 <Base title={store.name}>
-  <section class="hero">
-    <h1 data-i18n="home.h1">Ship it, pack it, print it. One stop on Forsythe.</h1>
+  <section class="ps-hero" aria-labelledby="ps-h1">
+    <span class="ps-badge">v1.70</span>
+    <p class="ps-kicker" data-i18n="home.ps.kicker">PeterShip, our shipping counter on the web</p>
+    <p class="ps-mark" aria-hidden="true">Peter<span>Ship</span></p>
+    <h1 id="ps-h1" data-i18n="home.ps.h1">Compare every carrier and buy your label online.</h1>
+    <p class="lead" data-i18n="home.ps.lead">Enter the address and the box, see USPS, UPS, FedEx and DHL side by side, pay by card, then print at home or show us the QR code at the counter.</p>
+    <div class="ps-cta">
+      <a class="btn big kraft" href="/ship" data-i18n="home.cta">Ship a package</a>
+      <a class="plain" href="/petership" data-i18n="home.ps.more">Everything PeterShip does</a>
+    </div>
+    <ol class="ps-steps">
+      <li class="ps-step"><b>1</b><span data-i18n="home.ps.s1">Type the address and the box size</span></li>
+      <li class="ps-step"><b>2</b><span data-i18n="home.ps.s2">Pick the carrier and the price you like</span></li>
+      <li class="ps-step"><b>3</b><span data-i18n="home.ps.s3">Print at home, or show the QR code at the counter</span></li>
+    </ol>
+  </section>
+
+  <nav class="ps-links" aria-label="PeterShip">
+    <a href="/track" data-i18n="home.ps.track">Track a package</a>
+    <a href="/returns" data-i18n="home.ps.returns">Drop off a return</a>
+    <a href="/account" data-i18n="home.ps.account">Your account</a>
+    <a href="/petership#sellers" data-i18n="home.ps.sellers">For online sellers</a>
+  </nav>
+
+  <section class="hero" style="padding-top:24px">
+    <h2 data-i18n="home.h1" style="font-size:clamp(1.6rem, 4vw, 2.4rem); margin-top:0">Ship it, pack it, print it. One stop on Forsythe.</h2>
     <p class="lead" data-i18n="home.lead">Your neighborhood shipping store at 1800 Forsythe Ave in Monroe. Every major carrier, honest rates, and people who pack it right.</p>
-    <a class="btn" href="/ship" data-i18n="home.cta">Ship a package</a>
-    <a class="btn kraft" href="#hours" style="margin-left:8px" data-i18n="home.hours">Hours and directions</a>
+    <a class="btn kraft" href="#hours" data-i18n="home.hours">Hours and directions</a>
   </section>
 
   <section id="services">
