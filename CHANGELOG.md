@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.74.0] - 2026-11-04
+
+**Street typeahead on the ship page**
+
+Peter wants to type the street and have the whole address fill. Now the street box drops down up to five full addresses as he types; a click, or the arrow keys and Enter, fills street, city, state and ZIP and moves the cursor to the apartment box. Escape closes it; the recipient name field still triggers the browser's own saved-address autofill from v1.73.0.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.74.0) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.74.0) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.73.0...v1.74.0)
+
 ## [v1.73.0] - 2026-11-04
 
 **Address autofill on the ship page**
