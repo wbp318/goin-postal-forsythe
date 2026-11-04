@@ -11,12 +11,6 @@
   --hair: #d4d0c7;
   color-scheme: light;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --ink: #eef1f6; --muted: #aab3c2; --bg: #0a1430; --paper: #132447; --hair: #2a3b62; --blue: #8fb0ff;
-    color-scheme: dark;
-  }
-}
 *, *::before, *::after { box-sizing: border-box; }
 html { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 18px; line-height: 1.6; }
 html[data-size="0"] { font-size: 16px; }
@@ -209,9 +203,6 @@ html:root[data-contrast="high"] .rate:has(input:checked) { background: #fff8d6; 
   --stripe: #e1ded6;     /* pinstripe over the page background */
   --shadow: rgba(0, 0, 0, .28);
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) { --stripe: #0e1a3b; --gloss-hi: #8fb6ff; --gloss-lo: #2a56d6; --tab-hi: #2f4f94; --tab-lo: #0c1a3c; --shadow: rgba(0, 0, 0, .6); }
-}
 html { font-family: var(--fw-body); }
 h1, h2, h3, .brand, .btn, nav a, .ps-step b { font-family: var(--fw-display); }
 body { background: repeating-linear-gradient(135deg, var(--bg) 0 7px, var(--stripe) 7px 8px); }
@@ -241,7 +232,6 @@ nav #lang, .size { border-radius: 6px; box-shadow: inset 0 1px 0 rgba(255, 255, 
 /* cards and panels: an offset drop shadow and a one-pixel top highlight */
 .card, fieldset, .label { box-shadow: inset 0 1px 0 #fff, 3px 3px 6px var(--shadow); border-radius: 8px; }
 .card h3 { font-size: 1.3rem; color: var(--navy); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .card, :root:not([data-theme="light"]) fieldset { box-shadow: 3px 3px 6px var(--shadow); } :root:not([data-theme="light"]) .card h3 { color: var(--ink); } }
 
 /* PeterShip panel on the home page and the landing page */
 .ps-hero { position: relative; overflow: hidden; margin: 28px 0 8px; padding: 36px 32px 32px; border-radius: 16px; color: #fff; background: linear-gradient(to bottom, #2f58c8 0%, #1d4ed8 48%, #12349a 52%, #0f1d3a 100%); border: 1px solid #0a1430; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), 4px 4px 10px var(--shadow); }
@@ -261,7 +251,6 @@ nav #lang, .size { border-radius: 6px; box-shadow: inset 0 1px 0 rgba(255, 255, 
 .ps-links { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin: 22px 0 8px; }
 .ps-links a { display: block; padding: 16px 18px; text-decoration: none; color: var(--navy); font-family: var(--fw-display); font-weight: 800; font-size: 1.12rem; border-radius: 10px; background: linear-gradient(to bottom, #ffffff, #ebe8e1 49%, #e1ddd4 51%, #f1eee8); border: 1px solid #a8a296; box-shadow: inset 0 1px 0 #fff, 3px 3px 6px var(--shadow); text-shadow: 0 1px 0 #fff; }
 .ps-links a:hover { background: linear-gradient(to bottom, #ffffff, #f3f0ea 49%, #ebe7df 51%, #f8f6f2); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .ps-links a { color: var(--ink); background: linear-gradient(to bottom, #2a3f6e, #1a2d57 49%, #132447 51%, #1a2d57); border-color: #0a1430; text-shadow: none; } }
 .ps-audience { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); margin: 24px 0; }
 .ps-audience .card h3 { padding-bottom: 8px; border-bottom: 2px solid var(--kraft); }
 .ps-list { columns: 2; column-gap: 32px; max-width: 60rem; padding-left: 1.3rem; }
@@ -283,3 +272,78 @@ html:root[data-contrast="high"] .ps-step { background: #000; border-color: #fff;
 html:root[data-contrast="high"] .ps-step b, html:root[data-contrast="high"] .ps-badge { background: #ffd166; color: #000; }
 html:root[data-contrast="high"] .ps-links a { background: #fff; color: #0000cc; border: 2px solid #000; }
 html:root[data-contrast="high"] .card, html:root[data-contrast="high"] fieldset, html:root[data-contrast="high"] .label { box-shadow: none; }
+
+
+/* ---- The older look (v1.70.1) ----
+   Peter's second note: still too modern, too much space at the sides, a bit patchy. So: one light
+   theme only (no dark mode, like a 2005 site), a wide fixed page with thin gutters, small corner
+   radii, thin borders, tight spacing, a utility bar under the tabs, a rule under every heading,
+   and a right-hand sidebar on the home page. Everything here overrides what is above it. */
+:root { color-scheme: light; }
+.wrap { max-width: 1200px; padding: 0 12px; }
+html { line-height: 1.45; }
+h1, h2, h3 { letter-spacing: 0; }
+h2 { font-size: 1.45rem; margin: 1.1rem 0 .5rem; padding-bottom: 3px; border-bottom: 2px solid var(--kraft); color: var(--navy); }
+h3 { font-size: 1.15rem; margin: 0 0 6px; }
+p { margin: 0 0 .7rem; }
+section { margin: 0; }
+
+/* header: brand and tabs in one bar, the switches on a thin utility bar under it */
+header.top .wrap { min-height: 0; padding-top: 8px; gap: 8px 16px; align-items: flex-end; }
+.brand { font-size: 1.3rem; padding-bottom: 8px; }
+nav { gap: 0 2px; padding: 0; }
+nav a { font-size: .98rem; min-height: 36px; padding: 6px 12px; border-radius: 4px 4px 0 0; margin: 0; }
+nav .a11y, nav #lang { order: 9; }
+.a11y { flex-basis: 100%; justify-content: flex-start; gap: 4px; padding: 5px 0; border-top: 1px solid rgba(255, 255, 255, .25); }
+.a11y-label { font-size: .85rem; }
+.size { min-width: 34px; min-height: 30px; padding: 2px 7px; font-size: .9rem; border-radius: 3px; border-width: 1px; }
+nav #lang { min-height: 30px; padding: 3px 6px; font-size: .9rem; border-radius: 3px; border-width: 1px; max-width: 11rem; margin: 0 0 4px 8px; }
+
+/* boxes: small radius, thin border, short hard shadow */
+.card, fieldset, .label, .ps-links a, .ps-hero, .ps-step, .thumb, .tool, .tab, input, textarea, select { border-radius: 3px; }
+.card, fieldset, .label { border: 1px solid #b9b4a8; padding: 12px 14px; box-shadow: 2px 2px 0 #cfcabf; }
+.card p { margin: 0; }
+.grid { gap: 12px; margin: 10px 0 16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.btn { padding: 9px 16px; min-height: 40px; font-size: 1rem; border-radius: 4px; }
+.btn.big { font-size: 1.15rem; padding: 12px 22px; border-radius: 5px; }
+input, textarea, select { min-height: 42px; padding: 8px 10px; border-width: 1px; border-color: #7f8796; }
+footer { margin-top: 24px; padding: 10px 0; border-top: 3px double var(--kraft); background: #dedad2; font-size: .9rem; }
+
+/* home page: content on the left, a sidebar on the right, like the sites older folks grew up with */
+.home { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; margin-top: 12px; }
+.home-side { display: grid; gap: 12px; }
+.home-side .card, .home-side .label { margin: 0; }
+.side-title { margin: 0; padding: 6px 10px; font-family: var(--fw-display); font-size: 1rem; color: #fff; background: linear-gradient(to bottom, var(--tab-hi), var(--tab-lo)); border: 1px solid #0a1430; border-radius: 3px 3px 0 0; text-shadow: 0 -1px 0 rgba(0, 0, 0, .6); }
+.side-box { border: 1px solid #b9b4a8; border-top: 0; background: var(--paper); padding: 8px 10px; box-shadow: 2px 2px 0 #cfcabf; }
+.side-box .label { border: 0; box-shadow: none; padding: 0; background: none; font-family: inherit; font-size: .98rem; }
+.side-box .label dt { margin-top: 6px; }
+.side-box iframe { border-radius: 0; height: 220px; }
+.ps-links { display: grid; gap: 0; margin: 0; }
+.ps-links a { padding: 8px 10px; font-size: 1rem; font-family: var(--fw-display); border: 0; border-bottom: 1px solid #e3dfd6; border-radius: 0; background: none; box-shadow: none; text-shadow: none; color: var(--blue); text-decoration: underline; text-underline-offset: 3px; }
+.ps-links a:last-child { border-bottom: 0; }
+.ps-links a:hover { background: #f4f1ea; }
+.ps-links a::before { content: "\00bb"; margin-right: 8px; color: var(--kraft); font-weight: 800; }
+@media (max-width: 860px) { .home { grid-template-columns: 1fr; } }
+
+/* the PeterShip panel, tighter and squarer */
+.ps-hero { margin: 0 0 12px; padding: 18px 20px 16px; border-radius: 4px; }
+.ps-hero::before { border-radius: 4px 4px 0 0; inset: 0 0 55% 0; }
+.ps-kicker { font-size: .95rem; margin: 0 0 2px; }
+.ps-mark { font-size: clamp(2rem, 4.5vw, 3rem); -webkit-box-reflect: below -10px linear-gradient(transparent 60%, rgba(255, 255, 255, .25)); }
+.ps-hero h1 { font-size: clamp(1.3rem, 2.4vw, 1.7rem); margin: 16px 0 6px; }
+.ps-hero p.lead { font-size: 1.02rem; margin: 0 0 12px; max-width: none; }
+.ps-cta { gap: 10px; }
+.ps-badge { top: 10px; right: 10px; padding: 4px 10px; font-size: .85rem; transform: rotate(4deg); }
+.ps-steps { gap: 8px; margin: 12px 0 0; grid-template-columns: repeat(3, 1fr); }
+.ps-step { grid-template-columns: 36px 1fr; gap: 8px; padding: 8px 10px; font-size: .95rem; border-radius: 3px; }
+.ps-step b { width: 36px; height: 36px; font-size: 1.1rem; }
+@media (max-width: 700px) { .ps-steps { grid-template-columns: 1fr; } }
+.hero { padding: 0; }
+.hero h2 { border-bottom: 0; }
+.hero p.lead { font-size: 1.05rem; margin: 0 0 10px; }
+.ps-audience { gap: 12px; margin: 12px 0; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.ps-audience .card h3 { border-bottom: 1px solid var(--hair); padding-bottom: 4px; }
+.ps-list { margin: 6px 0; }
+.ps-list li { margin-bottom: 4px; }
+.ps-made { margin: 14px 0 0; }
+@media (max-width: 600px) { .hero .btn { margin: 6px 0 0 !important; } }

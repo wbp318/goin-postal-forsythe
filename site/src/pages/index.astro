@@ -4,53 +4,62 @@ import StoreInfo from '../components/StoreInfo.astro';
 import { store } from '../data/store';
 ---
 <Base title={store.name}>
-  <section class="ps-hero" aria-labelledby="ps-h1">
-    <span class="ps-badge">v1.70</span>
-    <p class="ps-kicker" data-i18n="home.ps.kicker">PeterShip, our shipping counter on the web</p>
-    <p class="ps-mark" aria-hidden="true">Peter<span>Ship</span></p>
-    <h1 id="ps-h1" data-i18n="home.ps.h1">Compare every carrier and buy your label online.</h1>
-    <p class="lead" data-i18n="home.ps.lead">Enter the address and the box, see USPS, UPS, FedEx and DHL side by side, pay by card, then print at home or show us the QR code at the counter.</p>
-    <div class="ps-cta">
-      <a class="btn big kraft" href="/ship" data-i18n="home.cta">Ship a package</a>
-      <a class="plain" href="/petership" data-i18n="home.ps.more">Everything PeterShip does</a>
+  <div class="home">
+    <div class="home-main">
+      <section class="ps-hero" aria-labelledby="ps-h1">
+        <span class="ps-badge">v1.70</span>
+        <p class="ps-kicker" data-i18n="home.ps.kicker">PeterShip, our shipping counter on the web</p>
+        <p class="ps-mark" aria-hidden="true">Peter<span>Ship</span></p>
+        <h1 id="ps-h1" data-i18n="home.ps.h1">Compare every carrier and buy your label online.</h1>
+        <p class="lead" data-i18n="home.ps.lead">Enter the address and the box, see USPS, UPS, FedEx and DHL side by side, pay by card, then print at home or show us the QR code at the counter.</p>
+        <div class="ps-cta">
+          <a class="btn big kraft" href="/ship" data-i18n="home.cta">Ship a package</a>
+          <a class="plain" href="/petership" data-i18n="home.ps.more">Everything PeterShip does</a>
+        </div>
+        <ol class="ps-steps">
+          <li class="ps-step"><b>1</b><span data-i18n="home.ps.s1">Type the address and the box size</span></li>
+          <li class="ps-step"><b>2</b><span data-i18n="home.ps.s2">Pick the carrier and the price you like</span></li>
+          <li class="ps-step"><b>3</b><span data-i18n="home.ps.s3">Print at home, or show the QR code at the counter</span></li>
+        </ol>
+      </section>
+
+      <section class="hero">
+        <h2 data-i18n="home.h1">Ship it, pack it, print it. One stop on Forsythe.</h2>
+        <p class="lead" data-i18n="home.lead">Your neighborhood shipping store at 1800 Forsythe Ave in Monroe. Every major carrier, honest rates, and people who pack it right.</p>
+      </section>
+
+      <section id="services">
+        <h2 data-i18n="home.services">Services</h2>
+        <div class="grid">
+          {store.services.map(s => (
+            <div class="card"><h3>{s.link ? <a href={s.link} data-i18n={`svc.${s.key}.n`}>{s.name}</a> : <span data-i18n={`svc.${s.key}.n`}>{s.name}</span>}</h3><p data-i18n={`svc.${s.key}.b`}>{s.blurb}</p></div>
+          ))}
+        </div>
+      </section>
     </div>
-    <ol class="ps-steps">
-      <li class="ps-step"><b>1</b><span data-i18n="home.ps.s1">Type the address and the box size</span></li>
-      <li class="ps-step"><b>2</b><span data-i18n="home.ps.s2">Pick the carrier and the price you like</span></li>
-      <li class="ps-step"><b>3</b><span data-i18n="home.ps.s3">Print at home, or show the QR code at the counter</span></li>
-    </ol>
-  </section>
 
-  <nav class="ps-links" aria-label="PeterShip">
-    <a href="/track" data-i18n="home.ps.track">Track a package</a>
-    <a href="/returns" data-i18n="home.ps.returns">Drop off a return</a>
-    <a href="/account" data-i18n="home.ps.account">Your account</a>
-    <a href="/petership#sellers" data-i18n="home.ps.sellers">For online sellers</a>
-  </nav>
-
-  <section class="hero" style="padding-top:24px">
-    <h2 data-i18n="home.h1" style="font-size:clamp(1.6rem, 4vw, 2.4rem); margin-top:0">Ship it, pack it, print it. One stop on Forsythe.</h2>
-    <p class="lead" data-i18n="home.lead">Your neighborhood shipping store at 1800 Forsythe Ave in Monroe. Every major carrier, honest rates, and people who pack it right.</p>
-    <a class="btn kraft" href="#hours" data-i18n="home.hours">Hours and directions</a>
-  </section>
-
-  <section id="services">
-    <h2 data-i18n="home.services">Services</h2>
-    <div class="grid">
-      {store.services.map(s => (
-        <div class="card"><h3>{s.link ? <a href={s.link} data-i18n={`svc.${s.key}.n`}>{s.name}</a> : <span data-i18n={`svc.${s.key}.n`}>{s.name}</span>}</h3><p data-i18n={`svc.${s.key}.b`}>{s.blurb}</p></div>
-      ))}
-    </div>
-  </section>
-
-  <section>
-    <h2 data-i18n="home.findus">Find us</h2>
-    <div class="grid">
-      <StoreInfo />
-      <div class="card">
-        <iframe title={`Map to ${store.name}`} width="100%" height="280" style="border:0;border-radius:8px" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
-          src={`https://www.google.com/maps?q=${encodeURIComponent(store.address)}&output=embed`}></iframe>
+    <aside class="home-side">
+      <div>
+        <h2 class="side-title" data-i18n="nav.petership">PeterShip</h2>
+        <nav class="side-box ps-links" aria-label="PeterShip">
+          <a href="/ship" data-i18n="home.cta">Ship a package</a>
+          <a href="/track" data-i18n="home.ps.track">Track a package</a>
+          <a href="/returns" data-i18n="home.ps.returns">Drop off a return</a>
+          <a href="/account" data-i18n="home.ps.account">Your account</a>
+          <a href="/petership#sellers" data-i18n="home.ps.sellers">For online sellers</a>
+        </nav>
       </div>
-    </div>
-  </section>
+      <div>
+        <h2 class="side-title" data-i18n="home.hours">Hours and directions</h2>
+        <div class="side-box"><StoreInfo /></div>
+      </div>
+      <div>
+        <h2 class="side-title" data-i18n="home.findus">Find us</h2>
+        <div class="side-box">
+          <iframe title={`Map to ${store.name}`} width="100%" height="220" style="border:0;display:block" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+            src={`https://www.google.com/maps?q=${encodeURIComponent(store.address)}&output=embed`}></iframe>
+        </div>
+      </div>
+    </aside>
+  </div>
 </Base>
