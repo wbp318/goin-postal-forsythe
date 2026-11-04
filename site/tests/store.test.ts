@@ -186,3 +186,17 @@ describe("the buyer's figures (T24)", () => {
     expect(f.claims).toMatchObject({ refunded: 1, refunded_usd: 40 }); // opened counts by created_at, which is today, outside the 2030 range
   });
 });
+
+describe('customer search by box number (v1.78.0)', () => {
+  it('finds the holder by "#12", "12" or the code, and every hit carries its box', async () => {
+    const id = await store.upsertCustomer(env, { name: 'Box Holder', email: 'holder12@example.com', phone: null });
+    const m = await store.createMailbox(env, { code: 'MB-BOX012', customer_id: id, customer_name: 'Box Holder', email: 'holder12@example.com', phone: null, business_name: null, size: 'small', term: 'monthly', price: 15 });
+    await store.updateMailbox(env, m.code, { status: 'active', box_number: '12' });
+    for (const q of ['#12', '12', 'mb-box012', 'holder12@']) {
+      const r = await store.searchCustomers(env, q);
+      expect(r.customers.map((c) => c.name), q).toContain('Box Holder');
+      expect(r.customers.find((c) => c.name === 'Box Holder')!.mailbox).toMatchObject({ code: 'MB-BOX012', box_number: '12', status: 'active' });
+    }
+    expect((await store.searchCustomers(env, '#99')).customers.find((c) => c.name === 'Box Holder')).toBeUndefined();
+  });
+});

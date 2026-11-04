@@ -16,13 +16,13 @@ import Base from '../../layouts/Base.astro';
   <div class="card">
     <form id="search" class="btnrow" autocomplete="off">
       <label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
-      <label><span data-i18n="st.c.search.label">Name, phone or email</span> <input id="q" autofocus minlength="2" placeholder="Jane, 318 555, jane@" /></label>
+      <label><span data-i18n="st.c.search.label">Name, phone or email</span> <input id="q" autofocus minlength="2" placeholder="Jane, 318 555, jane@, #12" /></label>
       <button class="btn" type="submit" data-i18n="st.c.search">Search</button>
       <button class="btn kraft" type="button" id="export" data-i18n="st.c.export">Download CSV of everyone</button>
     </form>
     <p id="msg" role="alert"></p>
     <table class="list hidden" id="table">
-      <thead><tr><th data-i18n="st.c.th.name">Name</th><th data-i18n="st.c.th.phone">Phone</th><th data-i18n="st.c.th.email">Email</th><th data-i18n="st.c.th.shipments">Shipments</th><th data-i18n="st.c.th.lastseen">Last seen</th><th></th></tr></thead>
+      <thead><tr><th data-i18n="st.c.th.name">Name</th><th data-i18n="st.c.th.phone">Phone</th><th data-i18n="st.c.th.email">Email</th><th data-i18n="st.m.th.box">Box</th><th data-i18n="st.c.th.shipments">Shipments</th><th data-i18n="st.c.th.lastseen">Last seen</th><th></th></tr></thead>
       <tbody></tbody>
     </table>
     <div id="unlinkedwrap" class="hidden">
@@ -87,7 +87,9 @@ import Base from '../../layouts/Base.astro';
         for (const c of customers) {
           const tr = document.createElement('tr');
           const n = cell(tr, c.name); if (c.returning) { const b = document.createElement('strong'); b.className = 'muted'; b.textContent = ` · ${t('st.c.returning')}`; n.appendChild(b); }
-          cell(tr, tel(c.phone)); cell(tr, c.email ?? ''); cell(tr, String(c.shipments)); cell(tr, fmt(c.last_seen_at));
+          cell(tr, tel(c.phone)); cell(tr, c.email ?? '');
+          const bx = cell(tr, ''); if (c.mailbox) { bx.innerHTML = '<a></a>'; const a = bx.querySelector('a')!; a.href = `/counter/mailbox/${c.mailbox.code}`; a.textContent = c.mailbox.box_number ? `#${c.mailbox.box_number}` : c.mailbox.code; if (c.mailbox.status === 'past_due') { const w = document.createElement('strong'); w.className = 'err'; w.textContent = ` · ${t('st.m.status.past_due')}`; bx.appendChild(w); } }
+          cell(tr, String(c.shipments)); cell(tr, fmt(c.last_seen_at));
           const td = cell(tr, ''); const b = document.createElement('button'); b.className = 'btn small'; b.textContent = t('st.open'); b.addEventListener('click', () => open(c.id)); td.appendChild(b);
           body.appendChild(tr);
         }

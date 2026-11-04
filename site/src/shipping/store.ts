@@ -875,7 +875,7 @@ export async function upsertCustomer(env: Env, c: { name: string; email?: string
   return row.id;
 }
 
-export interface CustomerHit extends CustomerRow { shipments: number; first_at: string | null; returning: boolean }
+export interface CustomerHit extends CustomerRow { shipments: number; first_at: string | null; returning: boolean; mailbox: { code: string; box_number: string | null; status: string } | null }
 
 /** Search by any part of the name, the email, or the digits of a phone number. */
 export async function searchCustomers(env: Env, q: string, limit = 50): Promise<{ customers: CustomerHit[]; unlinked: QuoteRow[] }> {
@@ -894,14 +894,33 @@ export async function searchCustomers(env: Env, q: string, limit = 50): Promise<
       .sort((a, b) => (b.last_seen_at ?? '').localeCompare(a.last_seen_at ?? '')).slice(0, limit);
     unlinked = [...mem.quotes.values()].filter((x) => !x.email && !x.phone && (x.customer_name ?? '').toLowerCase().includes(term.toLowerCase())).sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 20);
   }
+  // A box number ("12", "#12") or a mailbox code finds the holder too (v1.78.0), and every hit shows its box.
+  const boxTerm = term.replace(/^#/, '').trim();
+  const byBox = boxTerm ? (await listMailboxes(env)).filter((m) => m.status !== 'cancelled' && m.status !== 'awaiting_payment' && (m.box_number === boxTerm || m.code.toLowerCase() === boxTerm.toLowerCase())) : [];
+  for (const m of byBox) {
+    const c = (m.customer_id ? await getCustomer(env, m.customer_id) : null) ?? (await findCustomer(env, m.email, null));
+    if (c && !rows.some((r) => r.id === c.id)) rows.unshift(c);
+  }
+  const boxes = await mailboxesByCustomer(env, rows);
   const customers = await Promise.all(rows.map(async (c) => {
     const h = await customerQuotes(env, c);
     const real = h.filter((x) => x.status !== 'cancelled' && x.status !== 'voided');
-    return { ...c, shipments: real.length, first_at: real.length ? real[real.length - 1].created_at : null, returning: real.length > 1 };
+    return { ...c, shipments: real.length, first_at: real.length ? real[real.length - 1].created_at : null, returning: real.length > 1, mailbox: boxes.get(c.id) ?? null };
   }));
   return { customers, unlinked };
 }
 
+/** The live mailbox (active or past due) per customer, by customer id or the sign-up email. */
+async function mailboxesByCustomer(env: Env, rows: CustomerRow[]): Promise<Map<string, { code: string; box_number: string | null; status: string }>> {
+  const out = new Map<string, { code: string; box_number: string | null; status: string }>();
+  if (!rows.length) return out;
+  const all = (await listMailboxes(env)).filter((m) => m.status === 'active' || m.status === 'past_due');
+  for (const c of rows) {
+    const m = all.find((x) => x.customer_id === c.id) ?? all.find((x) => c.email && x.email.toLowerCase() === c.email.toLowerCase());
+    if (m) out.set(c.id, { code: m.code, box_number: m.box_number, status: m.status });
+  }
+  return out;
+}
 /** Every quote that belongs to this customer, newest first, with the shipment's tracking status when a label was bought. */
 export async function customerQuotes(env: Env, c: CustomerRow): Promise<(QuoteRow & { shipment_status: string | null; tracking_number: string | null })[]> {
   if (env.DB) {
@@ -924,9 +943,10 @@ export async function allCustomers(env: Env): Promise<CustomerHit[]> {
   const rows: CustomerRow[] = env.DB
     ? (await env.DB.prepare('SELECT * FROM customers ORDER BY last_seen_at DESC LIMIT 5000').all<CustomerRow>()).results
     : [...mem.customers.values()].sort((a, b) => (b.last_seen_at ?? '').localeCompare(a.last_seen_at ?? ''));
+  const boxes = await mailboxesByCustomer(env, rows);
   return Promise.all(rows.map(async (c) => {
     const real = (await customerQuotes(env, c)).filter((x) => x.status !== 'cancelled' && x.status !== 'voided');
-    return { ...c, shipments: real.length, first_at: real.length ? real[real.length - 1].created_at : null, returning: real.length > 1 };
+    return { ...c, shipments: real.length, first_at: real.length ? real[real.length - 1].created_at : null, returning: real.length > 1, mailbox: boxes.get(c.id) ?? null };
   }));
 }
 
