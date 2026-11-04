@@ -33,15 +33,15 @@ const refName = (x: any) => (x?.$ref ? x.$ref.split('/').pop() : null);
 ---
 <Base title={`API for developers · ${store.name}`} description="The PeterShip public API: rates, labels, tracking, batches and pickups for business accounts, with an OpenAPI 3.1 spec.">
   <section class="hero">
-    <h1>PeterShip API, version {s.info.version}</h1>
+    <h1>PeterShip API, <span data-i18n="dev.version">version</span> {s.info.version}</h1>
     <p class="lead">{s.info.summary}</p>
-    <p class="btnrow"><a class="btn" href="/openapi.json" download>OpenAPI 3.1 JSON</a> <a class="btn kraft" href="https://github.com/wbp318/goin-postal-forsythe/blob/main/shipping-client/api/README.md" target="_blank" rel="noopener">Guide with curl examples</a> <a class="btn kraft" href="/contact">Ask for a key</a></p>
+    <p class="btnrow"><a class="btn" href="/openapi.json" download data-i18n="dev.json">OpenAPI 3.1 JSON</a> <a class="btn kraft" href="https://github.com/wbp318/goin-postal-forsythe/blob/main/shipping-client/api/README.md" target="_blank" rel="noopener" data-i18n="dev.guide">Guide with curl examples</a> <a class="btn kraft" href="/contact" data-i18n="dev.key">Ask for a key</a></p>
   </section>
   <div class="card">
-    <h3>Before you start</h3>
+    <h3 data-i18n="dev.before">Before you start</h3>
     <p set:html={s.info.description.replace(/`([^`]+)`/g, '<code>$1</code>')} />
-    <p><strong>Base URL:</strong> <code>{s.servers[0].url}</code>. {s.servers[0].description}</p>
-    <p><strong>Auth:</strong> <code>Authorization: Bearer psk_…</code>. {s.components.securitySchemes.bearer.description}.</p>
+    <p><strong data-i18n="dev.base">Base URL:</strong> <code>{s.servers[0].url}</code>. {s.servers[0].description}</p>
+    <p><strong data-i18n="dev.auth">Auth:</strong> <code>Authorization: Bearer psk_…</code>. {s.components.securitySchemes.bearer.description}.</p>
   </div>
   {ops.map(({ path, method, op }) => {
     const body = op.requestBody?.content?.['application/json']?.schema;
@@ -53,27 +53,27 @@ const refName = (x: any) => (x?.$ref ? x.$ref.split('/').pop() : null);
         <p>{op.summary}</p>
         {op.parameters?.length > 0 && <p class="muted">{op.parameters.map((p: any) => { const d = deref(p); return `${d.in} ${d.name}${d.required ? ' (required)' : ''}: ${typeOf(d.schema)}${d.description ? ', ' + d.description : ''}`; }).join(' · ')}</p>}
         {body && <>
-          <h4>Request</h4>
-          <table class="list"><thead><tr><th>Field</th><th>Type</th><th></th></tr></thead><tbody>{props(body).map((f) => <tr><td><code>{f.name}</code>{f.required && <span class="muted"> required</span>}</td><td>{f.type}</td><td class="muted">{f.desc}</td></tr>)}</tbody></table>
+          <h4 data-i18n="dev.request">Request</h4>
+          <table class="list"><thead><tr><th data-i18n="dev.field">Field</th><th data-i18n="dev.type">Type</th><th></th></tr></thead><tbody>{props(body).map((f) => <tr><td><code>{f.name}</code>{f.required && <span class="muted"> <span data-i18n="dev.required">required</span></span>}</td><td>{f.type}</td><td class="muted">{f.desc}</td></tr>)}</tbody></table>
         </>}
         {ok && <>
-          <h4>Response {ok[0]}</h4>
+          <h4><span data-i18n="dev.response">Response</span> {ok[0]}</h4>
           <p class="muted">{ok[1].description}</p>
-          {okSchema && props(okSchema).length > 0 && <table class="list"><thead><tr><th>Field</th><th>Type</th><th></th></tr></thead><tbody>{props(okSchema).map((f) => <tr><td><code>{f.name}</code></td><td>{f.type}</td><td class="muted">{f.desc}</td></tr>)}</tbody></table>}
+          {okSchema && props(okSchema).length > 0 && <table class="list"><thead><tr><th data-i18n="dev.field">Field</th><th data-i18n="dev.type">Type</th><th></th></tr></thead><tbody>{props(okSchema).map((f) => <tr><td><code>{f.name}</code></td><td>{f.type}</td><td class="muted">{f.desc}</td></tr>)}</tbody></table>}
         </>}
-        <p class="muted">Errors: {Object.entries<any>(op.responses).filter(([code]) => !code.startsWith('2')).map(([code, r]) => `${code} ${deref(r).description}`).join(' · ')}</p>
+        <p class="muted"><span data-i18n="dev.errors">Errors:</span> {Object.entries<any>(op.responses).filter(([code]) => !code.startsWith('2')).map(([code, r]) => `${code} ${deref(r).description}`).join(' · ')}</p>
       </div>
     );
   })}
   <div class="card" id="webhooks">
-    <h3>Webhook <code>shipment.tracking</code></h3>
+    <h3><span data-i18n="dev.webhook">Webhook</span> <code>shipment.tracking</code></h3>
     <p>{s.webhooks['shipment.tracking'].post.summary}.</p>
     <p class="muted" set:html={s.webhooks['shipment.tracking'].post.description.replace(/`([^`]+)`/g, '<code>$1</code>')} />
-    <table class="list"><thead><tr><th>Field</th><th>Type</th></tr></thead><tbody>{props(s.webhooks['shipment.tracking'].post.requestBody.content['application/json'].schema).map((f) => <tr><td><code>{f.name}</code></td><td>{f.type}</td></tr>)}</tbody></table>
+    <table class="list"><thead><tr><th data-i18n="dev.field">Field</th><th data-i18n="dev.type">Type</th></tr></thead><tbody>{props(s.webhooks['shipment.tracking'].post.requestBody.content['application/json'].schema).map((f) => <tr><td><code>{f.name}</code></td><td>{f.type}</td></tr>)}</tbody></table>
   </div>
   <div class="card" id="schemas">
-    <h3>Objects</h3>
-    {Object.entries(schemas).map(([name, sch]) => <details><summary><code>{name}</code>{(sch as any).description ? <span class="muted"> {(sch as any).description}</span> : null}</summary><table class="list"><tbody>{props(sch).map((f) => <tr><td><code>{f.name}</code>{f.required && <span class="muted"> required</span>}</td><td>{f.type}</td><td class="muted">{f.desc}</td></tr>)}</tbody></table></details>)}
+    <h3 data-i18n="dev.objects">Objects</h3>
+    {Object.entries(schemas).map(([name, sch]) => <details><summary><code>{name}</code>{(sch as any).description ? <span class="muted"> {(sch as any).description}</span> : null}</summary><table class="list"><tbody>{props(sch).map((f) => <tr><td><code>{f.name}</code>{f.required && <span class="muted"> <span data-i18n="dev.required">required</span></span>}</td><td>{f.type}</td><td class="muted">{f.desc}</td></tr>)}</tbody></table></details>)}
   </div>
-  <p class="muted">{refName(null) ?? ''}A listed Shopify app (OAuth) is on the to-do list; today a Shopify shop connects with the custom-app token the connector README describes.</p>
+  <p class="muted" data-i18n="dev.shopify">A listed Shopify app (OAuth) is on the to-do list; today a Shopify shop connects with the custom-app token the connector README describes.</p>
 </Base>

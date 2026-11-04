@@ -3,10 +3,13 @@
 // customers, online sellers, developers and other stores. Every string is in src/i18n/strings.ts.
 import Base from '../layouts/Base.astro';
 import { store } from '../data/store';
+import pkg from '../../package.json';
+// The badge shows the release the site is running; bump site/package.json with every tag (CLAUDE.md release flow).
+const version = 'v' + pkg.version;
 ---
 <Base title={`PeterShip · ${store.name}`} description="PeterShip is Goin' Postal Forsythe's own shipping software: compare USPS, UPS, FedEx and DHL, buy labels online, business accounts, batch shipping, returns, pickups and a public API.">
   <section class="ps-hero" aria-labelledby="ps-h1">
-    <span class="ps-badge">Monroe, LA</span>
+    <span class="ps-badge">{version}</span>
     <p class="ps-kicker" data-i18n="home.ps.kicker">PeterShip, our shipping counter on the web</p>
     <p class="ps-mark" aria-hidden="true">Peter<span>Ship</span></p>
     <h1 id="ps-h1" data-i18n="ps.h1">The shipping counter that fits in your pocket.</h1>

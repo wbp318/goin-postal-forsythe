@@ -58,6 +58,7 @@ When a feature ships, update the matching plan's step table and the "What is bui
 Every finished piece of work gets a tag and a GitHub release with full detail, and the docs are updated in the same commit: the `AGENDA.md` to-do row and dated log line, `site/README.md` feature list, the relevant `shipping-client/*/README.md`, and Mermaid charts where the flow changed (validate with `npx -y @mermaid-js/mermaid-cli@11`). Release flow:
 
 ```
+# first: set "version" in site/package.json to X.Y.Z (the home page badge reads it)
 git tag vX.Y.Z && git push origin main vX.Y.Z
 python scripts/release_notes.py vX.Y.Z --body narrative.md > full.md   # narrative + linked changelog of every file changed
 gh release create vX.Y.Z --title "vX.Y.Z: ..." --notes-file full.md
