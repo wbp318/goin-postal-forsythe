@@ -77,7 +77,7 @@ Every marketplace above sells its own labels at commercial rates (eBay, Etsy, Sh
 | 1 ✅ v1.62.1 | eBay, Square, WooCommerce and Amazon order exports read by the batch importer, so any seller on those platforms ships a stack today by CSV | Done | Nothing |
 | 2 ✅ v1.64.0 | Square connector (seller token, orders poll, tracking push), the easiest live one | Done: `shipping-client/square-connector/` | A Square seller to test with |
 | 3 ✅ v1.66.0 | eBay connector (developer account, OAuth, Sell Fulfillment API) | Done: `shipping-client/ebay-connector/`; runs once the keyset and a seller's refresh token exist | eBay developer program approval in the company's name (the LLC, item 57) |
-| 4 | Etsy connector (OAuth, app approval) | 3 days once approved | Etsy app approval |
+| 4 ✅ v1.69.0 | Etsy connector (OAuth with PKCE, app approval, receipts and tracking) | Done: `shipping-client/etsy-connector/`; runs once the app is approved and a seller has consented | Etsy app approval in the company's name (the LLC, item 57) |
 | 5 ✅ v1.63.0 | Inventory and the pick list: `products`, receiving, stock per order | Done | A first fulfillment customer to use it |
 | 6 ✅ v1.63.0 (first form) | Packing station: Pick, pack and ship buys the label, takes the stock and prints; scanning the SKU and the box barcode comes with the scanner (issue 5) | Done | |
 | 7 ✅ v1.63.0 | Fulfillment fees on the statement | Done | |
@@ -89,7 +89,7 @@ Steps 2 to 4 are to-do T28; 5 to 7 are T29; 8 and 9 stay where they are.
 ## Decisions for Peter and Rin
 
 1. Offer fulfillment (holding stock) at all, or only labels and drop-offs? It needs shelf space at the store and someone packing every morning.
-2. Which connector first after Square: eBay (most local resellers) or Etsy (most local makers)?
+2. ~~Which connector first after Square: eBay or Etsy?~~ Both are written (v1.66.0, v1.69.0); which seller to test with first is the open question.
 3. The fulfillment price list: pick and pack, storage per bin, receiving. The numbers above are a starting point under ShipBob.
 4. Register the developer accounts (eBay, Etsy, Amazon) under the LLC once it exists, so the integrations belong to the company a buyer buys.
 

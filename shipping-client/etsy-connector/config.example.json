@@ -1,0 +1,13 @@
+{
+  "petership_url": "https://goinpostalforsythe.com",
+  "petership_key": "psk_paste_the_key_here",
+  "etsy_keystring": "paste_the_app_keystring_from_etsy.com/developers",
+  "etsy_refresh_token": "paste_the_first_refresh_token_from_the_consent_flow",
+  "etsy_shop_id": "",
+  "service": "cheapest",
+  "default_parcel": { "length_in": 10, "width_in": 8, "height_in": 4, "min_weight_lb": 0.5, "weight_per_item_lb": 0.5 },
+  "products": { "CANDLE-8OZ": { "length_in": 6, "width_in": 6, "height_in": 6, "weight_lb": 1.2 } },
+  "insure_over_usd": 100,
+  "notify_buyer": true,
+  "dry_run": true
+}
