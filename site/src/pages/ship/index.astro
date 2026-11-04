@@ -23,6 +23,18 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
   {me && <p class="card"><span data-i18n="acct.hello">Signed in as</span> <strong>{me.name}</strong> · <a href="/account" data-i18n="acct.h1">Your account</a>{saved.length > 0 && <> · <label><span data-i18n="acct.useaddr">Ship to a saved address</span> <select id="savedSel"><option value="">…</option>{saved.map((a) => <option value={a.id} selected={a.id === wantTo}>{a.label}: {a.to.contact_name}, {a.to.city}</option>)}</select></label></>}</p>}
   <form id="quote" class="ship-form">
     <fieldset>
+      <legend data-i18n="ship.from">Return address (who is sending it)</legend>
+      <p class="muted" data-i18n="ship.from.lead">Printed on the label as the sender. The carrier brings the package back here if it cannot be delivered.</p>
+      <label><span data-i18n="ship.sender">Your name</span> <input name="from_contact_name" required maxlength="35" autocomplete="name" value={me?.name ?? ''} /></label>
+      <label><span data-i18n="ship.street">Street address</span> <input name="from_line_1" required maxlength="35" autocomplete="address-line1" /></label>
+      <label><span data-i18n="ship.apt">Apt, suite (optional)</span> <input name="from_line_2" maxlength="35" autocomplete="address-line2" /></label>
+      <div class="row">
+        <label><span data-i18n="ship.city">City</span> <input name="from_city" required autocomplete="address-level2" /></label>
+        <label><span data-i18n="ship.state">State</span> <input name="from_state" required placeholder="LA" maxlength="2" autocomplete="address-level1" /></label>
+        <label><span data-i18n="ship.zip">ZIP / postal code</span> <input name="from_postal_code" required autocomplete="postal-code" inputmode="numeric" maxlength="10" /></label>
+      </div>
+    </fieldset>
+    <fieldset>
       <legend data-i18n="ship.where">Where is it going?</legend>
       <label><span data-i18n="ship.recipient">Recipient name</span> <input name="contact_name" required autocomplete="shipping name" /></label>
       <label class="typeahead"><span data-i18n="ship.street">Street address</span> <input name="line_1" required maxlength="35" autocomplete="shipping address-line1" placeholder="1800 Forsythe Ave, Monroe" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="addrList" /><ul id="addrList" class="suggest" role="listbox" hidden></ul></label>
@@ -162,6 +174,20 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
       } catch {}
     });
 
+    // The return address's ZIP fills its city and state the same way.
+    const fromZip = f.querySelector('[name=from_postal_code]') as HTMLInputElement, fromCity = f.querySelector('[name=from_city]') as HTMLInputElement, fromState = f.querySelector('[name=from_state]') as HTMLInputElement;
+    let lastFromZip = '';
+    fromZip.addEventListener('input', async () => {
+      const z = fromZip.value.trim().slice(0, 5);
+      if (!/^\d{5}$/.test(z) || z === lastFromZip) return;
+      lastFromZip = z;
+      try {
+        const j = await (await fetch(`/api/zip?zip=${z}`)).json();
+        if (j.city && !fromCity.value) fromCity.value = j.city;
+        if (j.state && !fromState.value) fromState.value = j.state;
+      } catch {}
+    });
+
     let payload: any = null;
     let picked: string | null = null;
     let pickedPrice = 0;
@@ -185,6 +211,8 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
       const d = Object.fromEntries(new FormData(f).entries()) as Record<string, string>;
       const country = d.country_alpha2 === 'OTHER' ? d.country_other.toUpperCase() : d.country_alpha2;
       return {
+        online: true,
+        origin: { contact_name: d.from_contact_name, line_1: d.from_line_1, line_2: d.from_line_2, city: d.from_city, state: d.from_state, postal_code: d.from_postal_code, country_alpha2: 'US' },
         destination: { contact_name: d.contact_name, line_1: d.line_1, line_2: d.line_2, city: d.city, state: d.state, postal_code: d.postal_code, country_alpha2: country },
         parcel: { weight_lb: d.weight_lb, length_in: d.length_in, width_in: d.width_in, height_in: d.height_in, description: d.description, value_usd: d.value_usd },
       };
