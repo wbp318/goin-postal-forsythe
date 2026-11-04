@@ -7,9 +7,11 @@ import { sendEmail } from '../../shipping/notify';
 import { store } from '../../data/store';
 import { upsertCustomer, getCustomer, findCustomer, saveCustomerAddress, deleteCustomerAddress, setCustomerName, normalizePhone, logAudit } from '../../shipping/store';
 import { getOrder, saveOrder } from '../../lib/orders';
+import { mailboxesForCustomer, getMailboxItem, updateMailboxItem } from '../../shipping/store';
 
 // Customer accounts (T20). login { email } emails a magic link; the rest need the session cookie:
-// name { name }, save_address { label, address }, delete_address { id }, logout.
+// name { name }, save_address { label, address }, delete_address { id }, mailbox_scan { id } (ask the store to open
+// and scan one piece in the holder's own box, v1.76.0), logout.
 export const POST: APIRoute = async ({ request }) => {
   const b: any = await request.json().catch(() => ({}));
   try {
@@ -59,6 +61,16 @@ export const POST: APIRoute = async ({ request }) => {
       await saveOrder(env, { ...o, emailed_at: new Date().toISOString() });
       await logAudit(env, { id: null, name: `Customer ${c.name}` }, 'label.email', o.id, `${c.email} (from the account page)`);
       return json({ ok: true, mock });
+    }
+    if (b.action === 'mailbox_scan') {
+      const it = await getMailboxItem(env, Number(b.id));
+      const mine = it ? (await mailboxesForCustomer(env, c)).find((m) => m.code === it.mailbox_code && m.status !== 'cancelled') : null;
+      if (!it || !mine) return json({ error: 'No such item in your box' }, 404);
+      if (it.status !== 'arrived') return json({ error: 'That piece has already left the box' }, 400);
+      if (it.scan_id) return json({ ok: true, item: it });
+      const row = it.scan_requested_at ? it : await updateMailboxItem(env, it.id, { scan_requested_at: new Date().toISOString() });
+      if (!it.scan_requested_at) await logAudit(env, { id: null, name: `Customer ${c.name}` }, 'mailbox.item.scan_requested', it.mailbox_code, String(it.id));
+      return json({ ok: true, item: row });
     }
     if (b.action === 'delete_address') {
       const ok = await deleteCustomerAddress(env, c.id, Number(b.id));

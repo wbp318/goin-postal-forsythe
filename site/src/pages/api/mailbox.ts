@@ -5,7 +5,7 @@ import { json } from '../../lib/validate';
 import { authenticate } from '../../lib/auth';
 import { priceMailbox, newMailboxCode } from '../../lib/mailboxes';
 import { createMailbox, getMailbox, updateMailbox, logAudit, upsertCustomer, addMailboxItem, getMailboxItem, getMailboxItemByPhoto, updateMailboxItem, MAILBOX_ITEM_STATUSES } from '../../shipping/store';
-import { saveImage, readImage } from '../../lib/photos';
+import { saveImage, readImage, saveScan } from '../../lib/photos';
 import { createMailboxCheckout, cancelSubscription } from '../../lib/stripe';
 import { notifyMailbox, KINDS, type NoticeKind } from '../../lib/mailboxNotify';
 
@@ -80,6 +80,18 @@ export const PUT: APIRoute = async ({ request }) => {
       }
       await logAudit(env, user, 'mailbox.item', m.code, `${item.id} ${kind}${sender ? ` from ${sender}` : ''}${photo ? ', photo' : ''}${notify ? ', notified' : ''}`);
       return json({ ok: true, item, notice });
+    } else if (b.action === 'scan') {
+      // Open-and-scan (v1.76.0): the contents of one piece, as an image or PDF, for the holder's account page. With or without
+      // a request from the holder. The holder is told by text and email; the fee is SCAN_FEE, taken at the counter or on the statement.
+      const id = Number(b.id);
+      const it = await getMailboxItem(env, id);
+      if (!it || it.mailbox_code !== m.code) throw new Error('No such item in this box');
+      const scan = await saveScan(env, String(b.image ?? ''));
+      const row = await updateMailboxItem(env, id, { scan_id: scan.id, scan_type: scan.type, scanned_at: new Date().toISOString(), scanned_by: user.name, scan_requested_at: it.scan_requested_at ?? new Date().toISOString() });
+      let notice = null;
+      if (b.notify !== false && b.notify !== 'false') notice = await notifyMailbox(env, m, 'other', `scan ready${it.sender ? ` of the ${it.kind} from ${it.sender}` : ''}`, user.name, `${env.SITE_URL}/account`);
+      await logAudit(env, user, 'mailbox.item.scan', m.code, `${id} ${scan.type} ${scan.bytes} bytes`);
+      return json({ ok: true, item: row, notice });
     } else if (b.action === 'item_status') {
       const id = Number(b.id);
       const status = (MAILBOX_ITEM_STATUSES as readonly string[]).includes(b.status) ? (b.status as typeof MAILBOX_ITEM_STATUSES[number]) : null;
@@ -111,5 +123,6 @@ export const GET: APIRoute = async ({ url }) => {
   const it = await getMailboxItemByPhoto(env, id);
   const bytes = it ? await readImage(env, id) : null;
   if (!it || !bytes) return new Response('Not found', { status: 404 });
-  return new Response(bytes, { headers: { 'Content-Type': it.photo_type ?? 'image/jpeg', 'Cache-Control': 'private, max-age=3600', 'X-Robots-Tag': 'noindex' } });
+  const type = it.scan_id === id ? it.scan_type ?? 'application/pdf' : it.photo_type ?? 'image/jpeg';
+  return new Response(bytes, { headers: { 'Content-Type': type, 'Cache-Control': 'private, max-age=3600', 'X-Robots-Tag': 'noindex' } });
 };

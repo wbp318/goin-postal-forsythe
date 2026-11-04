@@ -4,7 +4,7 @@ The store is adding physical mailboxes. USPS Informed Delivery shows a home cust
 envelope before the carrier arrives. This is the same promise for a Goin' Postal box: every piece of
 mail or parcel that staff put in a box gets a row, a photo when they take one, and a text or email;
 the holder signs in on the website and sees what is waiting, what was picked up, and what left the
-box some other way. Built as PeterShip to-do **T33**, released **v1.75.0** on November 5, 2026.
+box some other way. Built as PeterShip to-do **T33**, released **v1.75.0** on November 5, 2026; open-and-scan added in **v1.76.0** the same night.
 
 Related: [`site/README.md`](../../site/README.md) (the running code), the mailbox subscription
 pages (v1.47.0) and the one-tap notices (T12, v1.50.0) they build on, and
@@ -39,6 +39,15 @@ box, its size and status, the renewal date, the full street address with the box
 
 The text and email that go out when staff log a piece end with "See what is in your box:" and the
 account link, so the customer taps straight through.
+
+**Open-and-scan (v1.76.0).** Each piece waiting has **Ask for a scan** with the fee next to it
+(`scan_fee` in `site/src/data/mailboxes.json`, $2 until the owners say otherwise, $0 makes it free).
+Staff see **SCAN REQUESTED** on the row and a **Scans asked for** list at the top of
+`/counter/mailboxes`, open the piece, scan it on the counter scanner or photograph the pages, and
+**Upload scan** (JPEG, PNG or PDF up to 4 MB). The holder gets the text and email again, and the row
+now says **Read the scan**. Staff can upload a scan without a request, for the holder who phoned.
+The fee is taken at the counter or put on a business account's statement; nothing is charged by the
+software yet.
 
 ```mermaid
 flowchart LR
@@ -93,18 +102,18 @@ stateDiagram-v2
 | Parcels | Tracking status only | Logged the same way as letters, with the photo |
 | When | The morning of delivery | The moment it goes in the box, with a text |
 | What happened to it after | Nothing | Picked up, forwarded, returned, shredded, with the date and who did it |
-| Forwarding and scanning | No | Not yet: see the decisions below |
+| Open-and-scan | No | Yes: the holder asks on the account page, staff upload an image or PDF, $2 |
+| Forwarding | No | Not yet: see the decisions below |
 
 ## Decisions for Peter and Rin
 
 1. **Photograph everything, or only parcels and anything that looks important?** A photo of every
    envelope is the Informed Delivery feel and takes about five seconds a piece. The form works either
    way; the lead text on the counter page can say which.
-2. **Open-and-scan and forwarding as paid services.** The rows are there; what is missing is a
-   button for the holder to ask for one ("scan this", "forward my mail this week") and a price.
-   Competitors charge $2 to $5 a scan and postage plus $3 to $5 a forward. Say yes and it is the next
-   T-item: a request on the account page, a queue on the counter page, the fee on the statement or a
-   Stripe charge.
+2. **Scan fee and forwarding.** Open-and-scan is built (v1.76.0) at $2 in `mailboxes.json`;
+   competitors charge $2 to $5, so confirm or change it, and say whether it should be charged by card
+   on the account page (a Stripe line like the add-ons) rather than at the counter. Forwarding ("mail
+   me this week's pile") is the same shape and the next T-item if wanted: postage plus $3 to $5.
 3. **How long to keep the photos.** Now a year, then KV drops them (the row stays). Thirty days is
    enough for most holders and keeps the storage bill at zero forever.
 4. **Shred rules.** Staff can mark a piece shredded today. A written policy (how many days unclaimed,
@@ -121,5 +130,7 @@ stateDiagram-v2
 | 4 | Log what came in, In the box, Left the box on the box page; Waiting column on the list | `site/src/pages/counter/mailbox/[code].astro`, `mailboxes.astro` | ✅ v1.75.0 |
 | 5 | Your mailbox card on the account page, 14 languages | `site/src/pages/account/index.astro`, `i18n/strings.ts`, `staff3.ts` | ✅ v1.75.0 |
 | 6 | Text and email carry the account link | `site/src/lib/mailboxNotify.ts` | ✅ v1.75.0 |
-| 7 | Scan and forward requests with a price | | ⏳ decision 2 |
+| 7 | Open-and-scan: Ask for a scan on the account page, Scans asked for on the counter list, Upload scan (image or PDF), Read the scan, fee in `mailboxes.json` | `account/index.astro`, `api/account.ts` `mailbox_scan`, `api/mailbox.ts` `scan`, `counter/mailboxes.astro` | ✅ v1.76.0 |
+| 7b | Forwarding requests with postage plus a fee | | ⏳ decision 2 |
+| 7c | Charge the scan fee by card on the account page | | ⏳ decision 2 |
 | 8 | Holder-side notification preferences (text only, email only, off) | | ⏳ after 7 |

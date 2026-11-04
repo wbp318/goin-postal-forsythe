@@ -2,13 +2,14 @@
 export const prerender = false;
 import Base from '../../layouts/Base.astro';
 import { env } from '../../lib/env';
-import { listMailboxes, lastMailboxNotices, waitingMailboxItems } from '../../shipping/store';
+import { listMailboxes, lastMailboxNotices, waitingMailboxItems, scanRequests } from '../../shipping/store';
 
 // Staff page: every mailbox subscription, newest first. Paid online through Stripe; the box number
 // and Form 1583 happen here. Open one for the actions.
 const all = await listMailboxes(env);
 const last = await lastMailboxNotices(env);
 const waiting = await waitingMailboxItems(env);
+const scans = await scanRequests(env);
 const todo = all.filter((m) => m.status === 'active' && (!m.form_1583_at || !m.box_number));
 const fmt = (iso: string | null) => (iso ? iso.slice(0, 10) : '');
 ---
@@ -18,6 +19,10 @@ const fmt = (iso: string | null) => (iso ? iso.slice(0, 10) : '');
     <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/batch" data-i18n="st.nav.batch">Batch</a> · <a href="/counter/fulfillment" data-i18n="st.nav.fulfillment">Fulfillment</a> · <a href="/counter/pickups" data-i18n="st.nav.pickups">Pickups</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/accounts" data-i18n="st.nav.accounts">Accounts</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/mailboxes" data-i18n="st.nav.mailboxes">Mailboxes</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/claims" data-i18n="st.nav.claims">Claims</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/close" data-i18n="st.nav.close">End of day</a> · <a href="/counter/invoices" data-i18n="st.nav.invoices">Invoices</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a> · <a href="/counter/staff" data-i18n="st.nav.staff">Staff</a> · <a href="/counter/export" data-i18n="st.nav.export">Export</a></p>
     <p class="lead" data-i18n="st.m.lead">Subscriptions paid on the website. Stripe charges the renewals. When the customer comes in: check two IDs, record Form 1583, then give the box number. Nothing here takes money.</p>
   </section>
+  {scans.length > 0 && <div class="card">
+    <h3 data-i18n="st.mi.scanreqs">Scans asked for</h3>
+    <ul>{scans.map((i) => <li><a href={`/counter/mailbox/${i.mailbox_code}#maillog`}>{i.mailbox_code}</a> · <span data-i18n={`acct.mb.kind.${i.kind}`}>{i.kind}</span>{i.sender ? ` from ${i.sender}` : ''} · {fmt(i.scan_requested_at)}</li>)}</ul>
+  </div>}
   {todo.length > 0 && <div class="card">
     <h3 data-i18n="st.m.todo">Paid, waiting on the counter</h3>
     <ul>{todo.map((m) => <li><a href={`/counter/mailbox/${m.code}`}>{m.code}</a> · {m.customer_name} · <span data-i18n={`mb.size.${m.size}`}>{m.size}</span> · {!m.form_1583_at ? <span data-i18n="st.m.need1583">needs Form 1583</span> : <span data-i18n="st.m.needbox">needs a box number</span>}</li>)}</ul>

@@ -379,10 +379,16 @@ CREATE TABLE IF NOT EXISTS mailbox_items (
   arrived_by TEXT NOT NULL,
   notified INTEGER NOT NULL DEFAULT 0, -- 1 when the text or email went with this row
   closed_at TEXT,
-  closed_by TEXT
+  closed_by TEXT,
+  scan_requested_at TEXT,              -- the holder pressed Ask for a scan on /account (v1.76.0)
+  scan_id TEXT,                        -- the scan of the contents, in KV like the photo
+  scan_type TEXT,                      -- image/jpeg, image/png or application/pdf
+  scanned_at TEXT,
+  scanned_by TEXT
 );
 CREATE INDEX IF NOT EXISTS mailbox_items_box ON mailbox_items(mailbox_code, status, arrived_at);
 CREATE INDEX IF NOT EXISTS mailbox_items_photo ON mailbox_items(photo_id);
+CREATE INDEX IF NOT EXISTS mailbox_items_scan ON mailbox_items(scan_id);
 
 -- Claims (to-do T13): a package lost, damaged or short. open -> filed -> approved/denied -> refunded -> closed.
 CREATE TABLE IF NOT EXISTS claims (

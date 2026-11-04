@@ -56,3 +56,17 @@ export async function readImage(env: Env, id: string): Promise<ArrayBuffer | nul
   if (!/^[0-9a-f]{32}$/.test(id)) return null;
   return kv(env).get(KEY(id), 'arrayBuffer');
 }
+
+/** A scan of the contents (v1.76.0): JPEG, PNG or a PDF from the counter scanner, up to SCAN_MAX_BYTES. */
+export const SCAN_MAX_BYTES = 4_000_000;
+export async function saveScan(env: Env, dataUrl: string): Promise<{ id: string; type: 'image/jpeg' | 'image/png' | 'application/pdf'; bytes: number }> {
+  const m = /^data:(image\/jpeg|image\/png|application\/pdf);base64,([A-Za-z0-9+/=]+)$/.exec(dataUrl);
+  if (!m) throw new Error('The scan must be a JPEG, PNG or PDF');
+  const bin = atob(m[2]);
+  if (bin.length > SCAN_MAX_BYTES) throw new Error('That scan is too big; 4 MB is the limit');
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  const id = newPhotoId();
+  await kv(env).put(KEY(id), bytes.buffer as ArrayBuffer, { expirationTtl: 60 * 60 * 24 * 365 });
+  return { id, type: m[1] as 'image/jpeg' | 'image/png' | 'application/pdf', bytes: bytes.length };
+}

@@ -11,6 +11,8 @@ export interface MailboxSize { id: MailboxSizeId; name: string; fits: string; mo
 export const SIZES: MailboxSize[] = (sizesFile as { sizes: MailboxSize[] }).sizes;
 /** A year costs this many months. 12 for the price of 10. */
 export const YEAR_MONTHS = (sizesFile as { year_months: number }).year_months;
+/** What an open-and-scan costs the holder, in dollars. 0 makes it free. */
+export const SCAN_FEE = (sizesFile as { scan_fee?: number }).scan_fee ?? 0;
 
 export const sizeById = (id: string) => SIZES.find((s) => s.id === id) ?? null;
 

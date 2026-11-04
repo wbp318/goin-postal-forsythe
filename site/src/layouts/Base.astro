@@ -1,6 +1,9 @@
 ---
 import '../styles/global.css';
 import { LANGS } from '../i18n/strings';
+// The picker's order: English, then Afrikaans, Vietnamese, Spanish, French, Portuguese and Dutch at the top (the owners' ask), the rest as listed.
+const LANG_MENU_TOP = ['en', 'af', 'vi', 'es', 'fr', 'pt', 'nl'];
+const LANG_MENU_ORDER: string[] = [...LANG_MENU_TOP, ...LANGS.map((l) => l.code).filter((c) => !LANG_MENU_TOP.includes(c))];
 import { store } from '../data/store';
 interface Props { title: string; description?: string }
 const { title, description = `Shipping, packing, mailboxes and printing at ${store.address}.` } = Astro.props;
@@ -41,8 +44,9 @@ const cur = (p: string) => (here === p || (p !== '/' && here.startsWith(p + '/')
               {store.siblings.map((s) => <option value={s.url}>{s.name}</option>)}
             </select>
           )}
-          <select id="lang" aria-label="Language" title="Language">
-            {LANGS.map((l) => <option value={l.code}>{l.name}</option>)}
+          <label class="lang-label" for="lang"><span lang="en">Language</span> / <span lang="vi">Ngôn ngữ</span></label>
+          <select id="lang" aria-label="Language / Ngôn ngữ" title="Language / Ngôn ngữ">
+            {[...LANGS].sort((a, b) => LANG_MENU_ORDER.indexOf(a.code) - LANG_MENU_ORDER.indexOf(b.code)).map((l) => <option value={l.code}>{l.name}</option>)}
           </select>
           <span class="a11y" role="group" aria-label="Text size">
             <span class="a11y-label" data-i18n="a11y.text">Text size</span>

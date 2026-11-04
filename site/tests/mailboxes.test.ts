@@ -88,3 +88,19 @@ describe('mailbox mail log (T33)', () => {
     expect(noticeText(m!, 'mail', '')).not.toContain('See what');
   });
 });
+
+describe('open-and-scan (v1.76.0)', () => {
+  it('a request is queued across boxes, the scan clears it, and the scan id finds the item', async () => {
+    const box = (await store.listMailboxes(env)).find((m) => m.code === 'MB-LOG001')!;
+    const it = await store.addMailboxItem(env, { mailbox_code: box.code, kind: 'letter', sender: 'IRS', note: null, photo_id: null, photo_type: null, arrived_by: 'Pat', notified: 1 });
+    expect(it.scan_requested_at).toBeNull();
+    await store.updateMailboxItem(env, it.id, { scan_requested_at: '2026-11-05T01:00:00Z' });
+    expect((await store.scanRequests(env)).map((i) => i.id)).toEqual([it.id]);
+    const scanned = await store.updateMailboxItem(env, it.id, { scan_id: 'cd'.repeat(16), scan_type: 'application/pdf', scanned_at: '2026-11-05T02:00:00Z', scanned_by: 'Pat' });
+    expect(scanned?.scan_type).toBe('application/pdf');
+    expect(await store.scanRequests(env)).toEqual([]);
+    expect((await store.getMailboxItemByPhoto(env, 'cd'.repeat(16)))?.id).toBe(it.id);
+    const { SCAN_FEE } = await import('../src/lib/mailboxes');
+    expect(SCAN_FEE).toBeGreaterThanOrEqual(0);
+  });
+});

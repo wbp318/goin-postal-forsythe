@@ -683,4 +683,8 @@ export const STAFF3: Record<string, T> = {
   'st.mi.shredded': s('Shredded', 'Triturado', 'Đã hủy', 'ທຳລາຍ', 'កាត់បំផ្លាញ', '파쇄', '粉碎', '粉碎', '裁断', 'ทำลาย', 'Triturado', 'Versnipperd', 'Versnipper', 'Déchiqueté'),
   'st.mi.reopen': s('Back in the box', 'De vuelta al buzón', 'Trả lại hộp', 'ກັບຄືນຕູ້', 'ត្រឡប់ក្នុងប្រអប់', '사서함으로 되돌리기', '放回邮箱', '放返郵箱', '私書箱に戻す', 'กลับเข้าตู้', 'De volta à caixa', 'Terug in de postbus', 'Terug in die posbus', 'Remettre dans la boîte'),
   'st.m.th.waiting': s('Waiting', 'Pendiente', 'Đang chờ', 'ລໍຖ້າ', 'រង់ចាំ', '대기', '待取', '待攞', '待受取', 'รอรับ', 'Esperando', 'Wachtend', 'Wag', 'En attente'),
+  'st.mi.scanreq': s('SCAN REQUESTED', 'ESCANEO PEDIDO', 'YÊU CẦU QUÉT', 'ຂໍສະແກນ', 'សុំស្កេន', '스캔 요청', '申请扫描', '申請掃描', 'スキャン依頼', 'ขอสแกน', 'DIGITALIZAÇÃO PEDIDA', 'SCAN AANGEVRAAGD', 'SKANDERING GEVRA', 'BALAYAGE DEMANDÉ'),
+  'st.mi.scanned': s('scanned', 'escaneado', 'đã quét', 'ສະແກນແລ້ວ', 'បានស្កេន', '스캔됨', '已扫描', '已掃描', 'スキャン済み', 'สแกนแล้ว', 'digitalizado', 'gescand', 'geskandeer', 'balayé'),
+  'st.mi.upload': s('Upload scan', 'Subir escaneo', 'Tải bản quét', 'ອັບໂຫຼດສະແກນ', 'ផ្ទុកស្កេនឡើង', '스캔 올리기', '上传扫描', '上載掃描', 'スキャンを上げる', 'อัปโหลดสแกน', 'Enviar digitalização', 'Scan uploaden', 'Laai skandering op', 'Téléverser le balayage'),
+  'st.mi.scanreqs': s('Scans asked for', 'Escaneos pedidos', 'Yêu cầu quét', 'ສະແກນທີ່ຂໍ', 'ស្កេនដែលបានសុំ', '스캔 요청 목록', '待处理的扫描申请', '待處理嘅掃描申請', 'スキャン依頼', 'คำขอสแกน', 'Digitalizações pedidas', 'Aangevraagde scans', 'Skanderings gevra', 'Balayages demandés'),
 };

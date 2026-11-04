@@ -109,6 +109,7 @@ input[type=radio], input[type=checkbox] { width: auto; margin-right: 6px; vertic
 .swatch:has(input:checked) span { outline: 3px solid var(--blue); outline-offset: 2px; }
 
 /* language picker */
+nav .lang-label { color: #fff; font-size: .9rem; font-weight: 700; margin: 0 6px 0 0; white-space: nowrap; }
 nav #lang { margin: 0; background: var(--navy); color: #fff; border: 2px solid #ffffff99; border-radius: 8px; padding: 8px 10px; min-height: 44px; font: inherit; font-size: 1rem; width: auto; max-width: 13rem; }
 
 /* ---- readability for older eyes ---- */

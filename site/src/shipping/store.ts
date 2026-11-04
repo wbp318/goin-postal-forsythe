@@ -119,6 +119,7 @@ export const REMIND_DAYS = 30;
 export interface MailboxItem {
   id: number; mailbox_code: string; kind: string; sender: string | null; note: string | null; photo_id: string | null; photo_type: string | null;
   status: 'arrived' | 'picked_up' | 'forwarded' | 'returned' | 'shredded'; arrived_at: string; arrived_by: string; notified: number; closed_at: string | null; closed_by: string | null;
+  scan_requested_at: string | null; scan_id: string | null; scan_type: string | null; scanned_at: string | null; scanned_by: string | null;
 }
 export interface MailboxNotice { id: number; mailbox_code: string; kind: string; note: string | null; by_name: string; at: string; texted: number; emailed: number; error: string | null }
 
@@ -1455,7 +1456,7 @@ export async function listMailboxNotices(env: Env, code: string, limit = 30): Pr
 // ---- mailbox mail log (T33): what is in each box, with photos, for the holder's account page ----
 export const MAILBOX_ITEM_STATUSES = ['arrived', 'picked_up', 'forwarded', 'returned', 'shredded'] as const;
 export async function addMailboxItem(env: Env, x: { mailbox_code: string; kind: string; sender: string | null; note: string | null; photo_id: string | null; photo_type: string | null; arrived_by: string; notified: number }): Promise<MailboxItem> {
-  const row: Omit<MailboxItem, 'id'> = { ...x, status: 'arrived', arrived_at: now(), closed_at: null, closed_by: null };
+  const row: Omit<MailboxItem, 'id'> = { ...x, status: 'arrived', arrived_at: now(), closed_at: null, closed_by: null, scan_requested_at: null, scan_id: null, scan_type: null, scanned_at: null, scanned_by: null };
   let id: number;
   if (env.DB) {
     const r = await env.DB.prepare('INSERT INTO mailbox_items (mailbox_code, kind, sender, note, photo_id, photo_type, status, arrived_at, arrived_by, notified, closed_at, closed_by) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12) RETURNING id')
@@ -1470,9 +1471,10 @@ export async function getMailboxItem(env: Env, id: number): Promise<MailboxItem 
   if (env.DB) return (await env.DB.prepare('SELECT * FROM mailbox_items WHERE id = ?1').bind(id).first<MailboxItem>()) ?? null;
   return mem.mailboxItems.find((i) => i.id === id) ?? null;
 }
+/** The item that owns a photo or a scan id. */
 export async function getMailboxItemByPhoto(env: Env, photoId: string): Promise<MailboxItem | null> {
-  if (env.DB) return (await env.DB.prepare('SELECT * FROM mailbox_items WHERE photo_id = ?1').bind(photoId).first<MailboxItem>()) ?? null;
-  return mem.mailboxItems.find((i) => i.photo_id === photoId) ?? null;
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM mailbox_items WHERE photo_id = ?1 OR scan_id = ?1').bind(photoId).first<MailboxItem>()) ?? null;
+  return mem.mailboxItems.find((i) => i.photo_id === photoId || i.scan_id === photoId) ?? null;
 }
 /** A box's items, newest first: everything still in the box, then the last `closedLimit` closed ones. */
 export async function listMailboxItems(env: Env, code: string, closedLimit = 50): Promise<MailboxItem[]> {
@@ -1481,16 +1483,21 @@ export async function listMailboxItems(env: Env, code: string, closedLimit = 50)
     : mem.mailboxItems.filter((i) => i.mailbox_code === code);
   return [...all.filter((i) => i.status === 'arrived'), ...all.filter((i) => i.status !== 'arrived').slice(0, closedLimit)];
 }
-export async function updateMailboxItem(env: Env, id: number, patch: Partial<Pick<MailboxItem, 'status' | 'closed_at' | 'closed_by' | 'note' | 'sender' | 'notified'>>): Promise<MailboxItem | null> {
+export async function updateMailboxItem(env: Env, id: number, patch: Partial<Pick<MailboxItem, 'status' | 'closed_at' | 'closed_by' | 'note' | 'sender' | 'notified' | 'scan_requested_at' | 'scan_id' | 'scan_type' | 'scanned_at' | 'scanned_by'>>): Promise<MailboxItem | null> {
   const it = await getMailboxItem(env, id);
   if (!it) return null;
-  const keys = (Object.keys(patch) as (keyof typeof patch)[]).filter((k) => ['status', 'closed_at', 'closed_by', 'note', 'sender', 'notified'].includes(k));
+  const keys = (Object.keys(patch) as (keyof typeof patch)[]).filter((k) => ['status', 'closed_at', 'closed_by', 'note', 'sender', 'notified', 'scan_requested_at', 'scan_id', 'scan_type', 'scanned_at', 'scanned_by'].includes(k));
   if (!keys.length) return it;
   const vals = Object.fromEntries(keys.map((k) => [k, patch[k] ?? null]));
   if (env.DB) await env.DB.prepare(`UPDATE mailbox_items SET ${keys.map((k, i) => `${k} = ?${i + 2}`).join(', ')} WHERE id = ?1`).bind(id, ...keys.map((k) => patch[k] ?? null)).run();
   const m = mem.mailboxItems.find((i) => i.id === id);
   if (m) Object.assign(m, vals);
   return { ...it, ...vals } as MailboxItem;
+}
+/** Items whose holder asked for a scan and nobody has scanned yet, oldest request first, across every box. */
+export async function scanRequests(env: Env): Promise<MailboxItem[]> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM mailbox_items WHERE scan_requested_at IS NOT NULL AND scan_id IS NULL ORDER BY scan_requested_at').all<MailboxItem>()).results;
+  return mem.mailboxItems.filter((i) => i.scan_requested_at && !i.scan_id).sort((a, b) => a.scan_requested_at!.localeCompare(b.scan_requested_at!));
 }
 /** How many items are waiting in each box, keyed by code. Boxes with nothing waiting are absent. */
 export async function waitingMailboxItems(env: Env): Promise<Record<string, number>> {
