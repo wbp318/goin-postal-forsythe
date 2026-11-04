@@ -44,6 +44,7 @@ What the store can do on USPS is **match** Pirate Ship, by buying its labels thr
 | **USPS Connect Local** | Next-day (some places same-day) delivery of packages entered at the local post office, priced from about $4 for under 5 lb, 4.9 percent higher since January 2026. Pirate Ship does not offer it. For a Monroe seller sending to Monroe, West Monroe, Ruston or Bastrop it is cheaper than any Ground Advantage label. | Roughly half of a zone 1 Ground Advantage label | A USPS Connect Local agreement for the store and a `connect-local` service in the USPS adapter; the packing advisor routes local ZIPs to it |
 | **Cubic pricing by default** | Ground Advantage and Priority Mail Cubic price by box size, not weight, for dense packages up to 20 lb; 2026 raised the maximum length to 22 in. Pirate Ship offers it, but most sellers never pick it. PeterShip's packing advisor (T2) already knows the box; it can pick the cubic tier every time. | Often $1 to $4 a label on small heavy boxes | Cubic tiers in the rating engine and the advisor choosing them |
 | **International through DHL Express** | Pirate Ship is domestic only. The store's DHL account (or Easyship until then) wins every international quote by default. | Whole-category win | Already in PeterShip |
+| **Ukraine and Eastern Europe through Meest** | The store is a Meest agent. Meest Air and Meest Economy (sea) at the agent rate are far under any express carrier to Ukraine, Poland, the Baltics, Moldova, the Caucasus and Central Asia, and nobody else in Monroe quotes them online. | Whole-category win | Done v1.71.0 from the agent rate sheet (`site/src/data/meest-rates.json`, issue 17); counter-finished parcels until Meest grants API access |
 | **Labels at cost for accounts** | Pirate Ship's margin is zero, so an account price above cost loses on price. The store can set its retail rules to cost plus zero on USPS for business accounts and make its money on what Pirate Ship cannot sell: boxes, packing, insurance, pickups, mailboxes, drop-off receipts. | Matches Pirate Ship on the label; the store earns $2 to $10 on the visit | A rule per account scope in the retail rules (today the discount is a percent off retail; add "at cost") |
 | **No printer, no tape, no trip to the post office** | Pirate Ship customers print their own labels and drive to the post office. The store prints, packs, scans and gives a receipt. For a seller doing ten a week, that is an hour. | Not a rate, but it is why they will pay the same price here | Already built: batch shipping (T11), drop-off receipts (N4) |
 
@@ -57,7 +58,8 @@ flowchart TD
   W -->|"light"| GA["Ground Advantage<br/>through a platform adapter<br/>= Pirate Ship's cost"]:::cloud
   Q --> I{"International?"}
   I -->|yes| DH["DHL Express<br/>Pirate Ship has none"]:::cloud
-  CL & CU & UP & GA & DH --> RR["Retail rules<br/>accounts: at cost<br/>walk-ins: margin"]:::local
+  I -->|"yes, a Meest country"| ME["Meest Air or Economy<br/>agent rate sheet"]:::cloud
+  CL & CU & UP & GA & DH & ME --> RR["Retail rules<br/>accounts: at cost<br/>walk-ins: margin"]:::local
   RR --> B["Benchmark line on the quote:<br/>Pirate Ship would be $X"]:::you
   classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
   classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff

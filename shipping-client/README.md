@@ -1,10 +1,111 @@
 # PeterShip
 
-PeterShip is the store's own shipping client. A plan for replacing Easyship with software the store owns: rating, labels, tracking, drop-offs and reports for USPS, UPS, FedEx and DHL, built on the same Cloudflare stack as the website. The same thing ShippingEasy, Easyship and GP Rate Pro do, but ours. PeterShip is proprietary, see [LICENSE](LICENSE); it is not under the repository's Apache license.
+PeterShip is the store's own shipping client. A plan for replacing Easyship with software the store owns: rating, labels, tracking, drop-offs and reports for USPS, UPS, FedEx, DHL and Meest, built on the same Cloudflare stack as the website. The same thing ShippingEasy, Easyship and GP Rate Pro do, but ours. PeterShip is proprietary, see [LICENSE](LICENSE); it is not under the repository's Apache license.
 
-Item 44 in [`AGENDA.md`](../AGENDA.md) tracks it. Everything that can be built without carrier keys is built and running in mock mode: the rating engine (Phase 2), the print queue and printer agent (Phase 3), tracking, poll, exceptions and customer updates (Phase 4), and drop-off capture, reports, the quote queue, customer lookup, the price rules editor, drop-off receipts, returns, insurance and add-ons (Phase 5). The counter app that needs no carrier keys is complete. Releases v1.16.0 through v1.42.0, October 21 to 28, 2026. See [What is built so far](#what-is-built-so-far). What remains waits on the owners' carrier accounts (Phase 1).
+Item 44 in [`AGENDA.md`](../AGENDA.md) tracks it. Everything that can be built without carrier keys is built and running in mock mode: the rating engine (Phase 2), the print queue and printer agent (Phase 3), tracking, poll, exceptions and customer updates (Phase 4), and drop-off capture, reports, the quote queue, customer lookup, the price rules editor, drop-off receipts, returns, insurance and add-ons (Phase 5), then the revenue batch, batch shipping, claims, pickups, customer accounts, fulfillment, the public API and the marketplace connectors. Since v1.71.0 Meest America is a fifth carrier, quoted from an owner-edited rate sheet. The counter app that needs no carrier keys is complete. Releases v1.16.0 through v1.71.0, October 21 to November 4, 2026. See [What is built so far](#what-is-built-so-far). What remains waits on the owners' carrier accounts (Phase 1).
 
-New to this? [The long version](#the-long-version-how-petership-works-and-how-to-run-it) further down explains every word, every file, how to run it on your own computer, a screen-by-screen test script, what happens to one shipment from quote to delivery, and the go-live list in order. It is written for Peter, Rin and William and assumes none of this has been seen before.
+New to this? [Instructions](#instructions-how-to-run-and-test-petership) right below says how to run it and has the screen-by-screen test script. [The long version](#the-long-version-how-petership-works-and-how-to-run-it) further down explains every word, every file, what happens to one shipment from quote to delivery, and the go-live list in order. It is written for Peter, Rin and William and assumes none of this has been seen before.
+
+## Instructions: how to run and test PeterShip
+
+### Run it
+
+You need Node.js 22 or newer and Git (section 4 of the long version says how to install them and how to open a terminal). Then, in a terminal:
+
+```
+git clone https://github.com/wbp318/goin-postal-forsythe.git
+cd goin-postal-forsythe/site
+npm install
+cp .dev.vars.example .dev.vars
+npm run db:local
+npm run dev
+```
+
+Open http://localhost:4321. The staff PIN on every `/counter/` page is **1234** (`COUNTER_PIN=1234` in `.dev.vars`). On Windows PowerShell, if `cp` complains, use `Copy-Item .dev.vars.example .dev.vars`.
+
+| Command | When |
+|---|---|
+| `npm run db:local` | Once at the start, and again after any change to `site/db/schema.sql`. It is safe to repeat. |
+| `npm test` | Before pushing: `astro check`, the Vitest suite and the build, the same as CI. `npm run test:unit` runs only the tests, in a few seconds. |
+| `git pull` then `npm run dev` | Coming back later, to pick up changes and start again. |
+
+**What mock mode means.** `.dev.vars.example` has every key blank except the PIN, so nothing real is reached. Rates are demo rates with a note saying so; labels are fake; the Pay button skips Stripe and lands on the paid page; emails and texts are written to the terminal window as `[mock email]` and `[mock text]`; the Meest rates come from the placeholder sheet; and no money moves anywhere. Every screen still works, which is the point: the whole counter can be tried before a single carrier account exists. Without `npm run db:local` the store falls back to memory and forgets everything when the server stops.
+
+### Walk through every screen
+
+Do these in order the first time; each one leaves something for the next to find. Everything is fake. The customer pages are listed first, then the counter pages. "PIN" means type 1234 in the Staff PIN box.
+
+**Customer pages**
+
+**1. Home, `/`.** The PeterShip panel is at the top: "Compare every carrier and buy your label online", three steps, and the buttons Ship a package and Everything PeterShip does. Below it the services (Shipping, Meest to Ukraine and Eastern Europe, Returns drop-off, Mailbox rental, Printing, Notary on call, Shredding), and a sidebar on the right with PeterShip links, Hours and directions, and Find us. In the header: the language picker (14 languages), the store picker, text size A− to A+++, and a High contrast button. Press High contrast: the page changes and stays that way on this device; press it again to go back.
+
+**2. The landing page, `/petership`.** Press the PeterShip tab. Six cards: For anyone with a box, For online sellers, Your shop connected, We can hold your stock, Built for developers too (Read the API docs), For other shipping stores. Under "What is inside", eight lines. Buttons Ship a package and Ask about a business account.
+
+**3. A customer quotes and pays, `/ship`.** Fill in any US address, weight 2 lb, 10 by 8 by 4 inches, press **Get rates**. Demo rates appear under Rates with a note saying they are demo rates, one card per carrier and service. Pick one: the buy form opens with your email, Insure it for the full value, the online convenience fee line, the total, and Text me when it ships. Press **Pay and get label**. In mock mode Stripe is skipped and you land on `/ship/done`: "Paid. Your label is ready", a pickup code like `GP-7K3M9Q`, Download label (PDF), the tracking number with Track this package, and a QR code under "Can't print? Show this at the counter". Go back, do it again with Canada as the country: the button reads **Reserve and pay at the counter** and the done page says "Reserved. See you at the counter". That reserved order is what the queue is for.
+
+**4. A Meest parcel, `/ship`.** Quote a 5 lb box to Kyiv, country Ukraine (under "Meest (air or sea, at the agent rate)" in the country list). The rates include **Meest Air** (7 to 14 days) and **Meest Economy (sea)** (30 to 45 days) beside USPS, UPS, FedEx and DHL. Pick Meest Air and press Reserve and pay at the counter. The done page says Reserved. Now open `/counter/GP-XXXXXX` for that code, PIN, and press **Rung up on the POS. Buy label**: a red line appears under the buttons, "Meest parcel: finished at the counter in the Meest agent portal (customs list, recipient phone). Bring the box in." Reload the customer's done page: it now says "Meest parcels are finished at the counter: bring the box in and we enter it in the Meest system with the customs list. Your payment is on file under the code below." There is no PDF label for Meest; the label is made in the portal. Poland, the Baltics and Moldova offer both services; the other countries offer Meest Air only.
+
+**5. Tracking, `/track`.** Type the pickup code from step 3 in "Pickup code or tracking number" and press **Track**. The status (Label created, In transit, Out for delivery, Delivered) and a History list. In mock mode a fake scan advances once an hour. `/track?q=GP-XXXXXX` is the link customers get on the done page.
+
+**6. Your account, `/account`.** Type the email you used in step 3 and press **Email me a sign-in link**. "Check your email for the link", and on the dev server a "(dev: open it)" link beside it; press it. Signed in: the You card with Save and Sign out; Saved addresses with Add address and Ship to this address; Your orders with the order from step 3 and **Email me the label again** (the email goes to the terminal). If the email belongs to a business account (step 23) a Business account section follows: discount, Unbilled so far, Statements, Pickups, Your returns link, Your stock on our shelf, Orders we ship for you, API keys.
+
+**7. Returns drop-off, `/returns`.** Name, phone, email, which carrier the return label is for, how the label is (on the package, on my phone, a QR code), I need a box, press **I'm coming in**. The done page says "We're expecting you", gives a code, what to pay at the counter, and a QR. Step 20 serves it.
+
+**8. Mailbox, `/mailbox`.** Pick a box size and Monthly or Yearly, type name, email and phone, tick the Form 1583 box, press **Pay and reserve my box**. Stripe is skipped; the done page says "Paid. Come in to finish setting it up" with a code and a QR. Step 21 finishes it.
+
+**9. Business cards, `/cards`.** Pick a color and a layout. Click text on the card and type; drag it; try the Back tab, Undo, Download PNG (free). Under "3. Order and pay": quantity, paper, finish, corners, Ready when, your name and email, **Pay and order**. The done page says "Paid. We are printing your cards" with a code like `CD-3DBY5A`. Step 30 prints them.
+
+**10. A merchant's return link, `/return/TOKEN`.** Needs a link from step 23. Open it: "Return an item to BUSINESS", order number, what is coming back, box size, where the package is, press **Email me the label**. "Your label is on its way to your email" with Download label (PDF); the email is in the terminal. The label lands on the account's statement.
+
+**11. Developers, `/developers` and `/openapi.json`.** The public API, one card per endpoint (me, rates, shipments, batches, stock, fulfillment orders, pickups) with request and response tables, the webhook, and the objects. OpenAPI 3.1 JSON opens `/openapi.json`; `tests/openapi.test.ts` fails if the two disagree with the route.
+
+**12. Contact, `/contact`.** Name, email, phone, what are you shipping, **Send**. It posts to Formspree, so sending fails until the Formspree ID is set (issue 6). That is expected.
+
+**Counter pages**
+
+**13. The queue, `/counter/queue`.** PIN, your initials, **Show queue**. The first line says whether the printer agent is online, OFFLINE, or not set up. The Canadian reservation from step 3 is listed with how long it has waited (red after twenty minutes). Press **Rung up. Buy label** (pretending the POS took the money): "label bought" and three buttons appear. **Print at the counter** queues it for the agent. **Mark printed** finishes it. **Email label** asks for an address and the email goes to the terminal. **Void** and **Cancel** each ask for a reason first. Finished orders sit under Finished in the last day.
+
+**14. A walk-up.** Scroll to Walk-up. Customer name and mobile, the recipient, the box, **Get rates**, pick one, **Add to queue**: the row appears at the top with your initials, at exactly the website's price. Under the rates: the Pirate Ship line ("Pirate Ship would charge about $X ... ours is $Y"), the packing advisor (quote 2 lb in a 20 by 16 by 12 box: billed as 24 lb by USPS, 28 by UPS, with **Use this box** which fills the medium box and re-quotes), and Add-ons (type value 650: Insurance for the declared value with its fee, then boxes and packing with quantities and Total to ring up on the POS). Address checks: 1 Main St, Dallas, LA 75201 gives a red line that 75201 belongs to TX, with Use this address anyway; PO Box 9, Monroe, LA 71201 gives USPS only.
+
+**15. A return label.** Tick **This is a return**. Type a Dallas address as the sender, leave Comes back to on Us, Get rates, Add to queue: the row reads "Return from Dallas, TX to Goin' Postal Forsythe". Buy label, then Email label to the sender.
+
+**16. The order page, `/counter/GP-XXXXXX`.** What scanning the customer's QR opens. The same buttons as the queue row plus Open label to print, the Email the label to field, Lost or damaged? Open a claim, Notes with **Add note**, and Photos: pick a file, a caption, **Add photo**. A Meest order shows the red note from step 4.
+
+**17. Batch shipping, `/counter/batch`.** PIN, pick an account (from step 23), a service for every row, the default box, then **Blank template** to download the CSV, fill two rows (or paste them), **Check and rate**: "N rows read as a Shopify/Etsy/our-columns file, N ready to buy, $X in labels", one row per line with its price, the Pirate Ship price and OK or the error in red. **Buy N labels** confirms, buys them, bills the account, prints them in file order and offers Download the results CSV. eBay, Amazon, Square and WooCommerce order files are read the same way.
+
+**18. Fulfillment, `/counter/fulfillment`.** PIN, the account, **Show**. Under Stock on the shelf, Add a product (SKU, name, bin A3, weight, size, value), then **Receive** a quantity. Under Add an order by hand, a recipient and "SKU × 2", **Add an order by hand**. **Pick list** shows what to pull by bin; **Pick, pack and ship** buys the label on the store's rates and reports "shipped as GP-..., service $price, pick and pack $fee". **Charge this month's storage** bills the bins. Low stock is emailed to the account when a product runs down.
+
+**19. Pickups, `/counter/pickups`.** PIN, the account, a date, Morning or Afternoon, packages, the address and phone, **Schedule a pickup**: "Pickup PK-... scheduled". Under Route for, pick the date and **Show**: the day's stops with **On the way** (texts the account, in the terminal), **Picked up** (asks how many packages came back), **Missed** and **Cancel**.
+
+**20. Drop-offs, `/counter/dropoff`.** PIN, type a tracking number (a UPS one starts with `1Z`, 18 characters; a USPS one is 22 digits starting with 9), Carrier on Guess from the barcode (or pick USPS, UPS, FedEx, DHL, Meest or Amazon), a name and phone, leave **Print a receipt at the counter** ticked, tick **Text the receipt**, press **Accept drop-off**: "Accepted UPS 1Z..., receipt no. N", the receipt queued for the agent, the text in the terminal. Under Returns coming in, the request from step 7 has **Use**, which fills the form and says what to charge on the POS. At the end of the day press **UPS picked up** (or USPS, FedEx, DHL, Meest): every drop-off for that carrier is stamped as handed over. Each recent row has Print again, Text again and a Receipt link.
+
+**21. The receipt, `/counter/receipt/ID`.** Press the Receipt link from step 20. PIN, **Show**: the slip with the store, the carrier, the receipt number, the barcode and the "we handed this package to the carrier" text. **Print this page** for the browser, **Print at the counter** for the agent.
+
+**22. Mailboxes, `/counter/mailboxes` and `/counter/mailbox/CODE`.** The box from step 8 is under Paid, waiting on the counter as "needs Form 1583". Open it: PIN, type the IDs seen, **Record Form 1583**; then a box number and **Give this box**; the page now shows the holder's new address. **Mail in** and **Package in** (with "2 boxes from Amazon" as the note) text and email the holder, in the terminal, and the list page shows the last notice. **Cancel the subscription** asks for a reason.
+
+**23. Business accounts, `/counter/accounts`.** PIN, **Show**. Under Open an account: a business name, 10 percent, a contact with an email, **Open an account**. Open it: Discount with Save, Issue the statement for a month (emails it, raises a Stripe invoice with a pay link once Stripe is set up, Mark paid when the cheque comes), Unbilled shipments, API keys (**Make a key**: the `psk_` key and the webhook secret are shown once), and Returns portal (**Make a returns link** gives the `/return/TOKEN` address for step 10). Back on the queue, type a walk-up and pick the account under Bill to a business account: the price drops and the button reads **Bill to account. Buy label**; nothing is rung up on the POS and the shipment sits under Unbilled.
+
+**24. Customers, `/counter/customers`.** PIN, part of the walk-up's name or phone, **Search**. One row with the number of shipments and a returning badge after two. **Open**: contact details, Notes with Add note, Addresses with **Ship here again** (jumps to the queue with the walk-up form filled from that order) and every shipment with a Track link. **Download CSV of everyone** is keyed by phone, the key the Coupon Counter uses. Walk-ups with no phone and no email are listed separately, found by name only.
+
+**25. Exceptions, `/counter/exceptions`.** PIN, **Show list**: carrier problems, returns to sender, labels not scanned after three days, nothing moving for seven. A fresh install says "Nothing needs attention". **Check carriers now** runs the tracking refresh and reports how many were checked.
+
+**26. Claims, `/counter/claims` and `/counter/claim/CODE`.** PIN, a code from step 13, What happened (Lost, Damaged, Contents missing), an amount, **Open a claim**. On the claim page: a carrier claim number and **Filed with the carrier**; then the amount the carrier paid and **Approved** or **Denied**; then Refund, Refund via (POS, Stripe, Account credit, Check), Email the customer, **Record the refund**; **Close the claim**. The list turns a filed claim yellow after thirty days with "call the carrier". The photos from step 16 show on the claim.
+
+**27. Reports, `/counter/reports`.** PIN, **Today** or a range, **Run report**. Tiles for shipments, what customers paid, what carriers charged, margin, add-ons sold and agent payments; tables by day, carrier and service; busiest hours and days; customers and returning customers; drop-offs; **Download CSV**. Under "The numbers a buyer asks for": business accounts, mailbox revenue and churn, claims, and **At or under Pirate Ship** with the average difference on USPS ground quotes; then by week, where it was paid, and by business account. In mock mode the margin is zero because the fake adapter reports its price as its cost.
+
+**28. End of day, `/counter/close`.** PIN, **Show the day**. Four tiles: POS should show, Paid online (Stripe), Labels sold, Refunds owed; the tables under them list every void with where to refund it. Under Cash drawer type the opening float, POS cash and card sales, paid out, cash and card tips, and the cash counted: it says Over or Short and the deposit. A note, leave Print the Z-report ticked, **Close the day**: the figures freeze under your name and the Z-report goes to the counter printer. Past closes have Open and Print again. Closing needs a manager or owner.
+
+**29. Carrier invoices, `/counter/invoices`.** PIN, **Download a sample invoice to try**, open it in Invoice CSV: "N rows read". Check the guessed columns and the Carrier (USPS, UPS, FedEx, DHL or Meest), name the audit, **Check the invoice**: Carrier billed, We expected, To dispute, flagged lines first. **Save this audit**, then **Dispute** on a line with the claim number, and **Download flagged lines** for the carrier.
+
+**30. Prices, `/counter/rules`.** PIN, **Show rules**. The Default and carriers table has a row each for USPS, UPS, FedEx, DHL and Meest. Put 20 in Default percent and 1 in Default flat fee, tick Rules are on, **Preview**: each sample rate's carrier cost, price now and price after. **Save rules**, then quote on `/ship` again: the new prices. Untick and Save to go back. Under Add-ons and insurance: the four insurance numbers, the online fee, the sales tax percent, and the catalog of boxes and packing; change the small box, **Save add-ons**, and the next walk-up quote shows it. A counter PIN can look but not save.
+
+**31. People, `/counter/staff`.** PIN, **Show**: "Signed in as Counter (shared PIN)". Under Add a person, add Rin as owner, Peter as manager, a counter person as counter, each with a PIN. Sign in on the queue with the counter PIN and run a walk-up: the Audit log here shows it with that name. Reset PIN and Deactivate take effect on the next request.
+
+**32. Export, `/counter/export`.** Owner PIN, **Show what is there**: every table with its row count and a CSV button each. **Download everything (JSON)** is the whole database plus the online orders. Both land in the audit log.
+
+**33. Cards at the counter, `/counter/card/CD-XXXXXX` and its sheet.** Open the code from step 9: status, the number of cards, paid online, and a Print it line suggesting the printer. Pick the Printer (In the shop, Trade printer, Sir Speedy), an order number, **Sent to the printer**; later **Cards arrived, mark printed**, then **Picked up**. **Open print sheet (10 up, letter)** shows ten fronts on a letter page and the backs on a second, with Print, Front SVG and Back SVG.
+
+**34. The printer agent.** Read [`printer-agent/README.md`](printer-agent/README.md): copy the folder to the counter PC, put the site address and `PRINTER_KEY` in its JSON file, `node agent.mjs --test` prints a test label, `node agent.mjs` leaves it running. The queue page's first line turns to "Printer agent online" and the jobs from steps 13, 20 and 28 print.
 
 ## What is built so far
 
@@ -45,11 +146,14 @@ flowchart LR
   E --> UP["ups adapter"]:::local
   E --> F["fedex adapter"]:::local
   E --> D["dhl adapter"]:::local
+  E --> M["meest adapter<br/>rate sheet, no API yet"]:::local
   E --> ES["easyship adapter<br/>BRIDGE ONLY: asked for a carrier<br/>only while that carrier has no keys;<br/>never called once all four are live"]:::local
   U -.->|when keys set| UA["USPS APIs v3"]:::cloud
   UP -.->|when keys set| UPA["UPS REST"]:::cloud
   F -.->|when keys set| FA["FedEx REST"]:::cloud
   D -.->|when keys set| DA["MyDHL API"]:::cloud
+  M --> MR["meest-rates.json<br/>owner-edited"]:::local
+  M -.->|"when MEEST_API_KEY is set"| MA["Meest API"]:::cloud
   ES -.->|"only while EASYSHIP_TOKEN is set"| ESA["Easyship"]:::cloud
   C["/api/compare<br/>PIN, parity test"]:::local --> E
   classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
@@ -92,7 +196,7 @@ flowchart LR
 | PeterShip LLC: the plan to put the software in a Louisiana company owned by the three license holders (Peter Ho and Rin Ho of Ouachita Parish, William Parker of East Carroll Parish), with drafts of the operating agreement, the IP assignment, the software license back to the store and the filing checklist; attorney review before signing | [`llc/`](llc/README.md) | Plan and drafts, Oct 29 |
 | Rates below Pirate Ship: where a single store can and cannot beat platform rates, the levers (own UPS and FedEx account, USPS Connect Local, cubic tiers, DHL for international, labels at cost for accounts), the build order and the decisions for Peter and Rin | [`rates/`](rates/README.md) | Plan, Oct 29 |
 | Multi-store (to-do T8, first form): one deployment per store, same code. Store facts (name, address, phone, ship-from, hours, services) come from the `STORE_JSON` secret laid over the Forsythe defaults; each store has its own KV, D1 and secrets through a `wrangler.jsonc` environment or its own Cloudflare project; `scripts/new-store.py` writes the facts file and prints the commands. Prices, add-ons, staff, accounts and every record are per store because they live in that store's database. A shared database with a store column (true tenancy, for a franchisor dashboard across stores) is the second form and waits until there is a second store | `src/data/store.ts`, `stores/`, `scripts/new-store.py`, `wrangler.jsonc` | Done in its first form |
-| Automated tests (to-do T7): a Vitest suite in `site/tests/`, 46 tests across six files, run by `npm run test:unit` and by CI on every push beside the type-check and the build. The libraries are tested directly and the store is tested against its memory fallback, so the same code the pages call runs with no database. Writing it caught one bug: the Z-report's POS line wrapped on a narrow receipt printer | `site/tests/`, `vitest.config.ts`, `.github/workflows/ci.yml` | Done; grows with every feature |
+| Automated tests (to-do T7): a Vitest suite in `site/tests/`, 115 tests across 21 files, run by `npm run test:unit` and by CI on every push beside the type-check and the build. The libraries are tested directly and the store is tested against its memory fallback, so the same code the pages call runs with no database. Writing it caught one bug: the Z-report's POS line wrapped on a narrow receipt printer | `site/tests/`, `vitest.config.ts`, `.github/workflows/ci.yml` | Done; grows with every feature |
 | Offline resilience (to-do T6): the staff pages open from the browser's last copy when the shop's internet is down (a service worker on `/counter/` only); the queue shows its last list with the time and a warning; drop-off scans go into an outbox on the device with their real time and are sent in order when the connection returns, marked "scanned while offline". Buying labels still needs the internet | `public/counter-sw.js`, queue and drop-off pages, `scanned_at` on `POST /api/dropoff` | Done |
 | Printer agent hardening (to-do T5): the agent sends a heartbeat every twenty seconds and the queue page says online with the printer and the last job, or OFFLINE after two minutes; a job that fails five times is reported and set aside instead of silently skipped, listed on the queue page with its error and a Retry button; receipts and Z-reports can go to a till-roll receipt printer as ESC/POS when `RECEIPT_FORMAT=escpos` is set (`node agent.mjs --test-receipt` prints a test slip), otherwise they stay 4 by 6 ZPL on the Zebra | `agent.mjs`, `print_failures` table, `status`, `retry`, `heartbeat` and `failed` on `POST /api/print`, `escpos()` in `receipt.ts` | Done, untested against a real printer (issue 5) |
 | Address validation (to-do T4): on every quote and before every label, with no carrier account: ZIP shape, ZIP prefix against the state typed (USPS prefix ranges per state, so 75201 with LA is caught), PO boxes (UPS and FedEx dropped from the rates, with a note), military and territory addresses, a street line with no number, an apartment building with no unit number. Errors stop an online order; at the counter staff can override after reading. The carriers' address APIs plug into `validateWithCarrier()` when issue 12 is done | `src/lib/address.ts`, `address` in `POST /api/rates`, checks in `/api/orders` and `/api/queue` | Done; carrier-standardized addresses wait on issue 12 |
@@ -109,6 +213,32 @@ flowchart LR
 | Customer lookup: search by any part of a name, an email or phone digits; every shipment newest first with tracking status; address book from past orders with Ship here again, which fills the walk-up form; returning badge after two shipments; CSV of everyone keyed by phone for the Coupon Counter. A `customers` row is created or refreshed on every order save, matched on email, else mobile; walk-ups with neither stay unlinked and are found by name | `/counter/customers`, `POST /api/customers`, `customers` table, `shipments.customer_id` | Done |
 | Void and cancel: a bought label is voided with its carrier (Easyship cancel, USPS, UPS, FedEx, DHL void routed by label id) and the shipment marked voided so it leaves the reports; an unbought quote is cancelled | `POST /api/counter` `void` and `cancel` | Done in mock mode |
 | Customer updates: email through Resend and text through Twilio when a shipment is first scanned, out for delivery, delivered, in trouble or returned. One message per status. Opt-in box and mobile number on the ship form. Staff email on exceptions | `site/src/shipping/notify.ts`, `shipment_contacts` and `notifications` tables | Done, logs instead of sending until the Resend and Twilio keys are set |
+| Online convenience fee and a paid text-updates line, two fast wins from the monetization plan (agenda 45) | `src/lib/addons.ts`, `/ship` | Done Oct 29, v1.43.0 |
+| Card designer upsells: paper stock, finish, rounded corners and rush pickup, priced on the server, each a line on the Stripe checkout and the counter print sheet | `/cards`, `src/lib/cards.ts` | Done Oct 29, v1.44.0 |
+| Sales tax on online orders (cards, boxes, packing), needed before the first real card order (agenda 50) | `src/lib/tax.ts`, Stripe checkout | Done Oct 29, v1.45.0. The rate is an owner follow-up |
+| Returns drop-off form online and the counter's returns-coming-in list, the online half of agenda 27 | `/returns`, `/returns/done`, `/counter/dropoff` | Done Oct 29, v1.46.0 |
+| Mailbox subscriptions sold online, monthly or yearly through Stripe, box number given at the counter after Form 1583 (agenda 24 and 29) | `/mailbox`, `/counter/mailboxes`, `/counter/mailbox/CODE`, `mailboxes` table | Done Oct 29, v1.47.0 |
+| Batch shipping (to-do T11): a business account's orders as one CSV, every row checked and priced, labels bought in one click and printed in order, billed to the account | `/counter/batch`, `src/lib/batch.ts`, `POST /api/batch` | Done Oct 29, v1.49.0 |
+| Mailbox mail notices (to-do T12): Mail in and Package in buttons on the box page send the text or email the `/mailbox` page promises | `/counter/mailbox/CODE`, `notify.ts` | Done Oct 29, v1.50.0 |
+| Claims (to-do T13): lost, damaged or short packages from open to refunded, with a thirty-day flag | `/counter/claims`, `/counter/claim/CODE`, `claims` table | Done Oct 29, v1.51.0 |
+| Pickup scheduling for business accounts (to-do T15): a pickup list per day, the driver's route and On the way texts | `/counter/pickups`, `POST /api/pickups`, `pickups` table | Done Oct 29, v1.52.0 |
+| Intake photos (to-do T17): photos taken before packing, kept on the order and shown on the claim page | `/counter/CODE`, `photos` table | Done Oct 29, v1.53.0 |
+| Cash drawer and tips in the end-of-day close (to-do T18) | `/counter/close`, `src/lib/close.ts` | Done Oct 29, v1.54.0 |
+| Customer accounts online (to-do T20): magic-link login, saved addresses, order history, repeat orders in two clicks | `/account`, `src/lib/session.ts`, `POST /api/account` | Done Oct 29, v1.55.0 |
+| Delivered email asks for a Google review once `reviewUrl` is set in the store facts (to-do T21, agenda 25) | `notify.ts`, `src/data/store.ts` | Done Oct 29, v1.56.0 |
+| Merchant returns portal (to-do T22): a return link per business account, its customers make prepaid return labels from it and the labels go on the statement | `/return/TOKEN`, `/counter/accounts` | Done Oct 29, v1.57.0 |
+| Store switcher (to-do T23): a store select in the counter header when the store facts list siblings, opening the same page on the other store's deployment | `src/data/store.ts`, counter pages, `scripts/new-store.py` | Done Oct 29, v1.58.0 |
+| The numbers a buyer asks for (to-do T24): volume, revenue, margin, repeat rate and accounts for a date range, under the reports | `/counter/reports`, `store.report()` | Done Oct 29, v1.59.0 |
+| OpenAPI spec and a developers page for the public API (to-do T25); a test fails if the spec and the route disagree | `public/openapi.json`, `/developers`, `tests/openapi.test.ts` | Done Oct 29, v1.60.0 |
+| Pirate Ship benchmark on every quote (to-do T26, rates plan step 6): the difference against Pirate Ship's published price, logged and shown on the reports page | `src/lib/benchmark.ts`, `/counter/reports` | Done Oct 29, v1.61.0 |
+| Card print routing (to-do T27): the counter card page suggests the printer (shop, trade printer or Sir Speedy), Sent to the printer with a reference, Cards arrived marks printed; Front and Back SVG downloads on the sheet | `/counter/card/CODE` | Done Oct 29, v1.62.0 |
+| Marketplace CSV imports: eBay, Amazon, Square and WooCommerce order files on the batch page, beside the plan for the connectors (agenda 58) | `/counter/batch`, `src/lib/batch.ts`, [`connectors/`](connectors/README.md) | Done Oct 29, v1.62.1 |
+| Fulfillment at the store (to-do T29): a business account keeps stock on the shelf, its orders come in, the store picks, packs and ships on its rates and the fees go on the statement | `/counter/fulfillment`, `src/lib/fulfillment.ts` | Done Oct 29, v1.63.0 |
+| Seller dashboard (to-do T30): everything the counter keeps for a business account, shown to the account's contact on `/account` | `/account`, `POST /api/account` | Done Oct 29, v1.65.0 |
+| Low-stock alerts and label resend from the account page (to-do T31) | `/account`, `/counter/fulfillment`, `notify.ts` | Done Oct 29, v1.67.0 |
+| PeterShip on the home page, a `/petership` landing page and a PeterShip nav tab, the Fireworks look across the site, high contrast as an opt-in | `/`, `/petership`, `src/layouts/Base.astro`, `src/styles/global.css` | Done Nov 4, v1.70.0 |
+| The older look: one light theme, no dark mode, a 1200 px page with thin gutters, tabs in one row with a utility bar, 3 px corners and hard shadows, a sidebar on the home page | `src/layouts/Base.astro`, `src/styles/global.css`, `/` | Done Nov 4, v1.70.1 |
+| Meest America as a fifth carrier: rates from the owner-edited sheet `meest-rates.json` (base plus per pound per country: Ukraine, Poland, the Baltics, Moldova, Georgia, Armenia, Kazakhstan, Uzbekistan, Kyrgyzstan, Czechia, Slovakia, Hungary, Romania, Bulgaria; Meest Air 7 to 14 days and Meest Economy by sea 30 to 45 days where offered), quoted on every international quote beside USPS, UPS, FedEx and DHL; the label is finished at the counter in the Meest agent portal until Meest grants API access, when `MEEST_API_URL` and `MEEST_API_KEY` switch the adapter to the API. Meest is also in the price rules carrier list, the drop-off carrier select and picked up button, the invoice carrier select and the OpenAPI enum. The notary service is now on call | `src/shipping/providers/meest.ts`, `src/data/meest-rates.json`, `tests/meest.test.ts` | Done Nov 4, v1.71.0. The real rate sheet is issue 17 |
 
 Customers see service, price and days only. Cost and the provider that answered stay on the server.
 
@@ -212,6 +342,7 @@ site/
     providers/ups.ts
     providers/fedex.ts
     providers/dhl.ts
+    providers/meest.ts          Meest America: prices from src/data/meest-rates.json, the API when its keys exist
     providers/easyship.ts       the fallback that covers all four with one account, and mock mode
     store.ts                    every read and write to D1, with an in-memory copy when D1 is absent
     poll.ts                     refresh tracking for open shipments and send customer updates
@@ -300,49 +431,7 @@ If `npm run dev` says something about `D1_ERROR: no such table`, you skipped `np
 
 ### 5. Walk through every screen
 
-Do these in order the first time; each one leaves something for the next to find. Everything is fake: no money moves and no label is real.
-
-**5a. A customer quotes and reserves online.** Open `/ship`. Fill in any US address, weight 2 lb, 10 by 8 by 4 inches, Get rates. Five demo rates appear with a note saying they are demo rates. Pick one, type an email, Continue. In mock mode Stripe is skipped and you land on the done page with a pickup code like `GP-7K3M9Q` and a QR code. Now go back, do it again with Canada as the country: the button reads Reserve, and the done page says the order is reserved for payment at the counter. That reserved order is what the queue is for.
-
-**5b. The queue.** Open `/counter/queue`, PIN 1234, Show queue. The Canadian reservation is listed with how long it has been waiting. This is the screen the tablet should sit on all day. Press **Rung up. Buy label** on it (pretending the POS took the money): the status changes to Label bought and three buttons appear. **Print at the counter** puts it in the print queue for the printer agent. **Mark printed** finishes it. **Void** cancels the label with the carrier and asks you to confirm first; the order then shows under Finished in the last day as Voided.
-
-**5c. A walk-up.** Still on `/counter/queue`, scroll down to Walk-up. This is the form for a person standing at the counter. Type their name and mobile number, the recipient, the box. Get rates, pick one, Add to queue. The new row appears at the top of the queue in a few seconds with your initials on it, and the price is exactly what the website would have quoted, because it is the same code. Ring it up on the POS, press Buy label, print.
-
-**5c-2. A return label.** Still in the walk-up form, tick **This is a return**. The form now asks where the package is now (the sender, US only) and where it comes back to: us, or another address such as a local shop's. Type a Dallas address as the sender, leave Comes back to on Us, Get rates, pick one, Add to queue. The queue row reads "Return from Dallas, TX to Goin' Postal Forsythe". Ring it up on the POS as usual (the business standing at the counter is paying for their customer's return), press Buy label, then **Email label**: it asks for the address, and the sender gets the label link, the tracking number, what to do with the box and the tracking page. In mock mode the email is written to the terminal window instead. Email label is on every bought label, for anyone who would rather print at home.
-
-**5c-5. Address checks.** Type a walk-up to 1 Main St, Dallas, LA 75201 and Get rates: a red line says ZIP 75201 belongs to TX, not LA, and Add to queue refuses until you fix it or press Use this address anyway after the customer confirms. Try PO Box 9, Monroe, LA 71201: only USPS rates appear, with a note that UPS and FedEx cannot deliver to a PO box. Try 500 Riverside Apartments with no apartment number: a warning asks for the unit. On the Ship page customers see the same lines and cannot override an error.
-
-**5c-4. The packing advisor.** Quote a walk-up at 2 lb in a 20 by 16 by 12 box. Under the rates a line says the actual weight is 2 lb but USPS bills 24 lb and UPS 28 lb, that size is setting the price, that the large box fits, and that a medium box would cut the billed weight by about 14 lb if the item fits. Press Use this box: the medium box goes on the add-ons at one, the dimensions change to 16 by 12 by 10, and the rates refresh at the lower weight. On the Ship page a customer typing the same box sees one line saying the same thing in plain words. This is the conversation a good counter has anyway; now the numbers are on the screen.
-
-**5c-3. Insurance and a box.** Quote a walk-up with a value of $650. Under the rates an Add-ons box appears: insurance for the declared value with its fee (the carrier covers the first $100 free, then $1.25 per $100 with a $2.75 minimum, until the owners change those numbers), and the catalog of boxes, packing and services with a quantity each. Tick insurance, put 1 on a medium box and 1 on Pack it for me, and the Total to ring up on the POS updates as you go. Add to queue: the queue row shows the total, the order page lists every line with the total to ring up, and after Buy label the reports' Add-ons sold card counts them. On the Ship page the same insurance box appears to customers with the running total; boxes are not offered online because the customer is printing at home. Quote a $30 box instead and the insurance line is replaced by a note that the carrier covers it.
-
-**5d. Customers.** Open `/counter/customers` (each customer has a Notes box in their detail: "always wants signature", "pays by cheque"), PIN, type part of the name or phone number you used in 5c. One row comes back with the number of shipments and a returning badge once they have two. Open shows contact details, every shipment with its status, and the address book. **Ship here again** jumps to the queue with the walk-up form already filled in from that earlier order; check the weight and size, Get rates, done. **Download CSV of everyone** gives a spreadsheet keyed by phone number, the same key the Coupon Counter uses, so the owners can see who is a regular.
-
-A walk-up with no phone and no email cannot be tied to a person (two John Smiths must not merge), so those appear in a separate list under the search results, found by name only.
-
-**5e. The order page.** Any `GP-` code opens `/counter/GP-XXXXXX`. This is what scanning the customer's QR code opens on the tablet. It has the same buttons as the queue row plus Open label to print, for a browser print when the agent is not running.
-
-**5f. Drop-offs.** Open `/counter/dropoff`. Type a tracking number (a UPS one starts with `1Z`, 18 characters; a USPS one is 22 digits starting with 9) and Accept. The carrier is guessed from the number's shape. Leave **Print a receipt** ticked and a 4 by 6 slip with the barcode comes out of the counter printer as soon as you accept (in mock mode it is queued and the message says no agent is running; the Receipt link under the entry shows the same slip for the browser). Tick **Text the receipt** when the customer typed a mobile number and they get it as a message too; until the Twilio keys are set it is written to the terminal instead. Each recent entry has Print again and Text again. At the end of the day press the carrier's **picked up** button and every drop-off for that carrier is stamped as handed over. When a customer calls saying their return never moved, this page and their receipt are the answer to "did you really drop it here?"
-
-**5g. Tracking.** Open `/track?q=GP-XXXXXX` with the code from 5b or 5c after its label was bought. In mock mode a fake sequence of scans advances once an hour so the page has something to show. Customers get this link on the done page in all 14 languages. The staff pages follow the same picker, so a counter worker who prefers Spanish or Vietnamese sees the queue in it.
-
-**5h. Exceptions.** Open `/counter/exceptions`. It lists anything a human should look at: carrier exceptions, returns to sender, labels bought three days ago and never scanned, no movement for a week. Nothing will be there on a fresh install. **Check carriers now** runs the tracking refresh on demand.
-
-**5i. Reports.** Open `/counter/reports`, pick today. Shipments, what customers paid, what carriers charged, margin, by day, carrier and service; busiest hours and weekdays; returning customers; drop-offs; and a CSV of every shipment for reconciling the carrier's invoice. In mock mode the margin is zero because the fake adapter reports its price as its cost.
-
-**5j. Prices.** Open `/counter/rules`. Below the price rules is Add-ons and insurance: the four insurance numbers and the catalog, with Save add-ons. Change the small box to $2.99, save, quote a walk-up, and the new price is in the list. It says nothing has been saved yet and shows the file's rules: everything at zero, switched off. Put 20 in Default percent and 1 in Default flat fee, tick Rules are on, press Preview: the table shows each sample rate's carrier cost, the price now (equal to cost) and the price after (cost plus 20 percent plus a dollar, rounded up to .99). Save, then go back to `/ship` and quote the same box: the new prices. Come back, untick Rules are on, Save, and the Ship page is back to cost. In real life the numbers are copied from Rate Pro so that the website and the counter can never disagree.
-
-**5h-2. Business accounts.** Open `/counter/accounts` as a manager or owner and open an account for a local shop: business name, 10 percent, a contact with an email. Back on the queue, type a walk-up for them and pick the account under Bill to a business account: the rate list is the normal one, but the queue row shows the discounted price with the business name in front, and the Buy label button reads Bill to account. Press it and the label is bought with nothing rung up on the POS. On the account page the shipment sits under Unbilled; Issue the statement for this month emails it to the contact (in mock mode, to the terminal window) and, once Stripe is set up, raises a Stripe invoice with a pay link. Mark paid when the cheque arrives. The end-of-day close shows these under Billed to business accounts, separate from the POS figure.
-
-**5i-2. End of day.** Open `/counter/close`. The four cards are what matter at closing time: what the POS should show from PeterShip (the counter-paid labels and extras, less any counter refund owed today), what Stripe took online, labels sold, and refunds owed. The tables under them break the day down and list every void with where to refund it (POS or the Stripe dashboard). Compare the POS card with the drawer, type a note if they differ, tick Print the Z-report and press Close the day: the figures are frozen under your name and the Z-report prints. Past closes stay in the list below with Open and Print again. Closing is for managers and owners; anyone can look.
-
-**5j-2. Carrier invoices.** Open `/counter/invoices` with a manager or owner PIN and press Download a sample invoice: a CSV built from your own test shipments with a few deliberate overcharges. Open it with the Invoice CSV field, check that the tracking and amount columns were guessed right, press Check the invoice. The three cards say what the carrier billed, what we expected and what to dispute; the table lists the flagged lines first. Press Save this audit, then Dispute on a line and type a claim number; Download flagged lines gives the spreadsheet to send the carrier. In real life the CSV comes from the carrier's billing site every week, and this is the ten-minute job that catches the $18 address corrections and the labels they billed after we voided them.
-
-**5k-0. People.** Open `/counter/staff` with the shared PIN 1234. It says you are signed in as Counter (shared PIN) and asks you to add yourself. Add Rin as an owner with a PIN of her choosing, Peter as a manager, a counter person as counter. Sign out by clearing the PIN box, sign in with the counter PIN on `/counter/queue`, and run a walk-up: the Audit log on the staff page now shows that walk-up with that person's name. Try the counter PIN on `/counter/rules`: it can look but not save. Reset a PIN, deactivate someone, and watch the old PIN stop working at once.
-
-**5k. The printer agent.** Read `shipping-client/printer-agent/README.md`. The queue page's first line says whether the agent is online and when it last printed; a job the printer could not do appears there with a Retry button. In short: copy the folder to the counter PC, put the site address and the `PRINTER_KEY` in its JSON file, `node agent.mjs --test` prints a test label, `node agent.mjs` leaves it running. It polls the print queue every three seconds and refreshes tracking every ten minutes. Nothing inbound reaches the shop; the agent only makes outbound requests.
-
-**5l. Export.** Open `/counter/export` with the owner PIN and press Show what is there: every table, what it holds in plain words, and how many rows. CSV on a row downloads that table for Excel or Numbers; Download everything gives one JSON file with every table and the website orders. Both land in the audit log. Keep a copy somewhere outside Cloudflare now and then; it is the store's own records.
+The screen-by-screen test script now lives at the top of this file, under [Instructions: how to run and test PeterShip](#instructions-how-to-run-and-test-petership).
 
 ### 6. What happens to one shipment, start to finish
 
@@ -494,7 +583,7 @@ What it does not replace: the Goin' Postal POS. In-person money still runs there
 mindmap
   root((PeterShip))
     Rating
-      Four carriers in one call
+      Four carriers in one call, plus Meest from the rate sheet
       Dimensional weight
       Surcharges and zones
       Retail markup rules
@@ -537,7 +626,10 @@ mindmap
 flowchart LR
   subgraph FRONT["What people use"]
     W["Website /ship<br/>customers"]:::you
+    PS["/petership<br/>landing page"]:::you
     K["Counter app<br/>staff, tablet"]:::you
+    AC["Accounts /account<br/>customers and sellers"]:::you
+    API["Public API<br/>and connectors"]:::you
   end
   subgraph CORE["PeterShip on Cloudflare Workers"]
     Q["Rating engine<br/>normalize, dim weight,<br/>surcharges, markup"]:::local
@@ -551,8 +643,13 @@ flowchart LR
     P["UPS"]:::cloud
     F["FedEx"]:::cloud
     D["DHL Express"]:::cloud
+    ME["Meest<br/>agent portal"]:::cloud
   end
   W --> Q
+  PS --> W
+  AC --> Q
+  API --> Q
+  API --> L
   K --> Q
   K --> L
   Q --> A
@@ -562,6 +659,7 @@ flowchart LR
   A --> P
   A --> F
   A --> D
+  A -.->|"rate sheet today,<br/>label in the portal"| ME
   Q --- DB
   L --- DB
   T --- DB
@@ -583,8 +681,9 @@ The website already has the customer side, Stripe, orders in KV, the done page w
 | UPS | UPS account number in the store's name | UPS Developer Portal (OAuth 2.0): Rating, Shipping, Tracking, Pickup | Self-serve, production access after a test | PDF, ZPL, GIF | Negotiated rates need the account linked to the app. |
 | FedEx | FedEx account number | FedEx Developer Portal REST: Rates, Ship, Track, Pickup | Self-serve, production keys after certification checklist | PDF, ZPL, PNG | Web Services goes maintenance-only July 2026, REST is the target. |
 | DHL Express | DHL Express account | MyDHL API: Rates, Shipments, Tracking, Pickups | DHL approves API access per account, slowest of the four | PDF, ZPL | Customs documents are built into the shipment call. |
+| Meest America | Meest agent account | None yet. Rates come from `site/src/data/meest-rates.json`, which the owners edit (issue 17); `MEEST_API_URL` and `MEEST_API_KEY` switch the adapter to the API when Meest grants access | Meest grants API access per agent | Printed from the agent portal | Ukraine, Poland, the Baltics, Moldova, Georgia, Armenia, Kazakhstan, Uzbekistan, Kyrgyzstan, Czechia, Slovakia, Hungary, Romania and Bulgaria. Meest Air 7 to 14 days, Meest Economy by sea 30 to 45 days where offered. The label is finished at the counter in the portal. |
 
-All four are free to call. Costs are postage only.
+All four carrier APIs are free to call. Costs are postage only. Meest costs nothing to quote either; the rate sheet is a file.
 
 ## Phases
 

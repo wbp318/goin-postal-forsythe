@@ -128,7 +128,7 @@ Inside Claude Code the same commands work with a `!` in front, for example `! np
 
 ### Step 5: open it
 
-Go to **http://localhost:4321** in any browser. Chrome, Opera, Edge, Safari and Firefox all work. The home page should appear in high contrast with the text size switch set to A+. Every edit you make to a file under `site/src` shows in the browser within a second, no restart needed.
+Go to **http://localhost:4321** in any browser. Chrome, Opera, Edge, Safari and Firefox all work. The home page should appear in the glossy look with the PeterShip panel at the top and a sidebar on the right. High contrast is a button in the header; press it once and the page stays that way on that device. Every edit you make to a file under `site/src` shows in the browser within a second, no restart needed.
 
 ### Step 6: what to test, and what should happen
 
@@ -138,10 +138,12 @@ The site runs in **test mode** because no keys are set: shipping rates are sampl
 |---|---|---|
 | Home, services, hours, map | http://localhost:4321 | Six service cards, the hours block, the map pinned on 1800 Forsythe Ave Ste 2 |
 | Language picker | header of any page | Pick Español (RD) or any of the 13. Every page stays in that language until you change it |
-| Text size and contrast | header of any page | A− to A+++ changes the whole site. High contrast is on by default; turn it off and it stays off on that device |
+| Text size and contrast | header of any page | A− to A+++ changes the whole site. The glossy look is the default. High contrast is a button in the header; press it and the choice is remembered on that device |
+| PeterShip landing page | http://localhost:4321/petership | Press the PeterShip tab. The page says what PeterShip does for anyone with a box, for online sellers, for connected shops and for developers, with Ship a package and Ask about a business account buttons |
 | Quote a package | http://localhost:4321/ship | Fill the address and parcel, press Get rates. Five sample rates appear with a yellow test-mode note |
 | Buy a domestic label | same page | Pick a rate, enter any email, press Pay and get label. You land on a done page with a pickup code like GP-7K3M9Q, a Download label link and a QR code |
 | Reserve an international label | same page, country Canada | The button reads Reserve and pay at the counter. The done page says Reserved |
+| Meest quote | same page, country Ukraine (under Meest in the country list) | Get rates shows Meest Air (7 to 14 days) and Meest Economy (sea, 30 to 45 days) beside the other carriers. Reserve, then on the counter page press Rung up on the POS, buy label: the order page shows a red note that the parcel is finished at the counter in the Meest portal, and the customer's done page says the same |
 | Staff counter page | scan the QR, or open http://localhost:4321/counter/GP-XXXXXX with your code | Shows the order. PIN is **1234**. For a reserved order, press Rung up on the POS, buy label. For a paid one, Mark printed |
 | Staff queue | http://localhost:4321/counter/queue | PIN 1234, Show queue. Your reserved order is listed. Type a walk-up in below, Get rates, pick one, Add to queue; it appears at the top. Try Buy label, Print at the counter, Void and Cancel |
 | Return label | http://localhost:4321/counter/queue | In the walk-up form tick This is a return, type a Dallas address as the sender, Get rates, Add to queue. Buy label, then Email label with any address; the email text appears in the terminal window |
@@ -806,21 +808,25 @@ The repo is public, but both pages are private. They open only for people the ow
 
 The public website lives in [`site/`](site/README.md) and is built with [Astro](https://astro.build) on Cloudflare. It was started on October 21, 2026, the day a serious PHP exploit was disclosed, and PHP is deliberately not used anywhere. The marketing pages are plain static HTML. The shipping flow runs as a few Cloudflare functions.
 
-Rates and payments are kept separate on purpose, and there are two ways to pay. Easyship, which the store already uses, quotes USPS, UPS, FedEx and DHL and buys the label. Online, Stripe takes the card. In the shop, the Goin' Postal POS takes the card or cash, because the franchise requires it, and staff press one button to tell the site the order is rung up. None of the three knows about the others, so any one can be replaced on its own.
+Rates and payments are kept separate on purpose, and there are two ways to pay. PeterShip's rating engine quotes USPS, UPS, FedEx, DHL and Meest: each carrier through its own adapter once the store's keys for it exist, Easyship as the bridge for any carrier that has no adapter yet, and Meest from a rate sheet the owners edit. The same engine buys the label from whichever adapter quoted it. Online, Stripe takes the card. In the shop, the Goin' Postal POS takes the card or cash, because the franchise requires it, and staff press one button to tell the site the order is rung up. None of the three knows about the others, so any one can be replaced on its own.
 
 ```mermaid
 flowchart LR
-  C["Customer on /ship"]:::you -->|address, weight, size| R["Easyship rates<br/>USPS · UPS · FedEx · DHL"]:::cloud
-  R --> C
+  C["Customer on /ship"]:::you -->|address, weight, size| E["PeterShip rating engine<br/>USPS · UPS · FedEx · DHL · Meest"]:::local
+  E -.->|when keys set| CA["Carrier APIs<br/>USPS, UPS, FedEx, DHL"]:::cloud
+  E -.->|carriers with no adapter| ES["Easyship<br/>bridge"]:::cloud
+  E -->|Meest| RS["meest-rates.json<br/>owner-edited rate sheet"]:::local
+  E --> C
   C -->|picks a rate| O{"Domestic?"}:::local
   O -->|yes| P["Stripe Checkout<br/>online card"]:::cloud
-  P -->|paid| L["Easyship buys label"]:::cloud
+  P -->|paid| L["Engine buys the label<br/>from the adapter that quoted it"]:::local
   O -->|no, international| RES["Reserved"]:::local
   L --> D["Done page<br/>PDF label + QR code<br/>+ pickup code"]:::you
   RES --> D
   D -->|scan QR| K["Counter page<br/>staff PIN"]:::local
   K -->|international| POS["Goin' Postal POS<br/>in-person card or cash"]:::local
   POS -->|staff press Rung up| L
+  L -.->|Meest| MP["Meest agent portal<br/>label finished at the counter"]:::cloud
   K --> PR["Shop printer"]:::local
   classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
   classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
@@ -830,7 +836,7 @@ flowchart LR
 | Page | What's on it |
 |---|---|
 | Home | Hero, six service cards, a shipping-label style hours block, and a map |
-| Ship | Address and parcel form, rates from all four carriers side by side, pay online or reserve |
+| Ship | Address and parcel form, rates from USPS, UPS, FedEx, DHL and Meest side by side, pay online or reserve |
 | Done | Label PDF to print at home, a QR code and a pickup code for printing at the counter |
 | Counter | Staff-only view of an order, opened by scanning the QR. For international orders: ring up on the POS, press the button to buy the label. Then mark printed |
 | Business cards | Vistaprint-style designer: 12 layouts in 12 color schemes, 6 typefaces, click any text on the card to edit it, drag it, resize it, add text and logos, front and back, undo and redo, free PNG download, pay by card online and pick up in the shop. Order-form upsells: thick or linen stock, gloss or soft-touch finish, rounded corners, rush pickup, each a priced line on the Stripe checkout and on the counter's print sheet |
@@ -895,7 +901,7 @@ With no keys in `.dev.vars` everything runs in mock mode: placeholder rates, a f
 
 ## PeterShip, our own shipping client
 
-PeterShip replaces Easyship with software the store owns, doing what ShippingEasy, Easyship and GP Rate Pro do: rating, labels, tracking, drop-off capture, a counter app and reports for USPS, UPS, FedEx and DHL, on the same Cloudflare stack as the website. The full plan, with the carrier requirements, phases, timeline, costs, risks and the decisions Rin needs to make first, is in [`shipping-client/README.md`](shipping-client/README.md). The printer agent for the counter PC has its own page at [`shipping-client/printer-agent/README.md`](shipping-client/printer-agent/README.md). What it saves against Easyship and Rate Pro, about $40 to $85 a month in fees plus any Rate Pro subscription, with no hardware to pay back because the shop already owns a thermal label printer, is worked out at three volumes in [`shipping-client/costs/README.md`](shipping-client/costs/README.md). Agenda item 44. PeterShip is proprietary under [`shipping-client/LICENSE`](shipping-client/LICENSE).
+PeterShip replaces Easyship with software the store owns, doing what ShippingEasy, Easyship and GP Rate Pro do: rating, labels, tracking, drop-off capture, a counter app and reports for USPS, UPS, FedEx, DHL and Meest, on the same Cloudflare stack as the website. The full plan, with the carrier requirements, phases, timeline, costs, risks and the decisions Rin needs to make first, is in [`shipping-client/README.md`](shipping-client/README.md). The printer agent for the counter PC has its own page at [`shipping-client/printer-agent/README.md`](shipping-client/printer-agent/README.md). What it saves against Easyship and Rate Pro, about $40 to $85 a month in fees plus any Rate Pro subscription, with no hardware to pay back because the shop already owns a thermal label printer, is worked out at three volumes in [`shipping-client/costs/README.md`](shipping-client/costs/README.md). Agenda item 44. PeterShip is proprietary under [`shipping-client/LICENSE`](shipping-client/LICENSE).
 
 **Selling PeterShip to Goin' Postal** (October 29, 2026, item 59, [`shipping-client/gp-brands/`](shipping-client/gp-brands/README.md)): GP Brands sells every franchisee GP Rate Pro, a Windows quoting program with no website, no API and no export. PeterShip does what Rate Pro does from any browser, adds the store's website with the same prices, and earns the store money Rate Pro cannot (mailboxes, accounts, returns, fulfillment, cards). The plan lays out the feature table, the pitch in order, four deal shapes (a per-store license GP Brands bills, an acquisition of PeterShip, LLC, an exclusive license with a buy option, or a bundle where Rate Pro's carrier contracts feed PeterShip and solve the rates problem), the six things to have ready first (the LLC, live carrier keys, thirty days of numbers, a second store, a leave-behind, the written ask that also carries issue 11's franchise-agreement question), the risks, and four decisions for Peter and Rin.
 
@@ -921,6 +927,10 @@ flowchart LR
 About three months from carrier access to switch-over. Carrier APIs cost nothing beyond postage. The one question to settle before building the counter app is whether GP Brands lets a franchisee quote and ship outside Rate Pro.
 
 Built so far, all running in mock mode until the carrier keys arrive: the rating engine with five adapters, a D1 store for shipments, a public tracking page at `/track` in 13 languages, a print queue with a [printer agent](shipping-client/printer-agent/README.md) for the counter PC, drop-off capture at `/counter/dropoff`, a tracking poll that runs from the agent and from a scheduled GitHub Action, a staff exceptions list at `/counter/exceptions`, staff reports at `/counter/reports` (daily shipments and margin, busiest hours, returning customers, CSV for the carrier invoice), and customer email and text updates (Resend and Twilio, opt-in on the ship form) that log instead of send until their keys exist.
+
+## Becoming a notary
+
+The website says "Notary on call", which means sending customers to someone else. [`notary/`](notary/README.md) (November 4, 2026) is the path to one of the owners or a staff member holding a Louisiana notary commission: the qualifications, the pre-assessment and the statewide exam at LSU (open book to the official guide, pass rate around 20 percent), the $50,000 bond that replaced the $10,000 bond and the insurance option on February 1, 2026, the oath filed with the parish clerk of court, the annual report, and what a civil-law notary may do. A full [study guide](notary/study-guide.md) by subject with practice questions and a twelve-week plan, pages for [East Carroll](notary/east-carroll.md) and [Ouachita](notary/ouachita.md) parishes (registrar, clerk of court, prep classes), a printable [checklist](notary/checklist.md), decisions for Peter and Rin, and a list of figures to confirm with the Secretary of State because no 2026 or 2027 exam dates were published when it was written.
 
 ## Monetization plan
 
@@ -1002,6 +1012,7 @@ flowchart LR
   ST --> STC["costs/README.md<br/>every service and its price"]
   R --> SC["shipping-client/README.md<br/>PeterShip, our own<br/>shipping software"]
   R --> MO["monetization/README.md<br/>every way to earn<br/>from the site"]
+  R --> NO["notary/README.md<br/>becoming a Louisiana notary:<br/>study guide, parish pages, checklist"]
   R --> RS["research/<br/>where the next store goes"]
   RS --> RS1["florida/README.md"]
   RS --> RS2["other-states/README.md"]

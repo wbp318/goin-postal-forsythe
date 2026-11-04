@@ -68,3 +68,6 @@ DHL_API_KEY=
 DHL_API_SECRET=
 DHL_ACCOUNT_NUMBER=
 DHL_SANDBOX=1
+# Meest America: rates need no key (src/data/meest-rates.json). Set both to buy labels through Meest's API; blank means the counter finishes Meest parcels in the agent portal.
+MEEST_API_URL=
+MEEST_API_KEY=

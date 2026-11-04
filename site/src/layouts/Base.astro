@@ -83,7 +83,7 @@ const cur = (p: string) => (here === p || (p !== '/' && here.startsWith(p + '/')
       contrast(get('gp-contrast') === '1'); // off unless the visitor turned it on (v1.70.0: the glossy look is the default; High contrast is one click away)
       document.querySelectorAll<HTMLElement>('.size[data-size]').forEach((b) => b.addEventListener('click', () => size(b.dataset.size!)));
       document.getElementById('contrast')!.addEventListener('click', () => contrast(root.dataset.contrast !== 'high'));
-      document.getElementById('lang')!.addEventListener('change', (e) => setLang((e.target as HTMLSelectElement).value as Lang));
+      document.getElementById('lang')!.addEventListener('change', (e) => { const el = e.target as HTMLSelectElement; setLang(el.value as Lang); el.blur(); });
     </script>
       <script>
       // Store switcher (T23): the same counter page on the other store's deployment.

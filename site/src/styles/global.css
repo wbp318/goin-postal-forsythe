@@ -297,6 +297,8 @@ nav .a11y, nav #lang { order: 9; }
 .a11y { flex-basis: 100%; justify-content: flex-start; gap: 4px; padding: 5px 0; border-top: 1px solid rgba(255, 255, 255, .25); }
 .a11y-label { font-size: .85rem; }
 .size { min-width: 34px; min-height: 30px; padding: 2px 7px; font-size: .9rem; border-radius: 3px; border-width: 1px; }
+nav #lang option { color: var(--ink); background: #fff; }
+nav #lang:focus-visible, .size:focus-visible, nav a:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
 nav #lang { min-height: 30px; padding: 3px 6px; font-size: .9rem; border-radius: 3px; border-width: 1px; max-width: 11rem; margin: 0 0 4px 8px; }
 
 /* boxes: small radius, thin border, short hard shadow */
@@ -347,3 +349,11 @@ footer { margin-top: 24px; padding: 10px 0; border-top: 3px double var(--kraft);
 .ps-list li { margin-bottom: 4px; }
 .ps-made { margin: 14px 0 0; }
 @media (max-width: 600px) { .hero .btn { margin: 6px 0 0 !important; } }
+
+/* Scripts Trebuchet and Verdana do not cover: borrow a face with the glyphs so no letter falls back to a heavier font */
+html[lang="vi"] { --fw-display: "Segoe UI", Tahoma, Arial, sans-serif; --fw-body: "Segoe UI", Tahoma, Arial, sans-serif; }
+html[lang="lo"], html[lang="km"], html[lang="th"] { --fw-display: "Leelawadee UI", "Segoe UI", "Lao UI", "Khmer UI", Tahoma, sans-serif; --fw-body: "Leelawadee UI", "Segoe UI", "Lao UI", "Khmer UI", Tahoma, sans-serif; }
+html[lang="ko"] { --fw-display: "Malgun Gothic", "Segoe UI", sans-serif; --fw-body: "Malgun Gothic", "Segoe UI", sans-serif; }
+html[lang="zh-Hans"] { --fw-display: "Microsoft YaHei", "Segoe UI", sans-serif; --fw-body: "Microsoft YaHei", "Segoe UI", sans-serif; }
+html[lang="zh-Hant-HK"] { --fw-display: "Microsoft JhengHei", "Segoe UI", sans-serif; --fw-body: "Microsoft JhengHei", "Segoe UI", sans-serif; }
+html[lang="ja"] { --fw-display: "Yu Gothic UI", Meiryo, "Segoe UI", sans-serif; --fw-body: "Yu Gothic UI", Meiryo, "Segoe UI", sans-serif; }

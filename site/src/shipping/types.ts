@@ -1,7 +1,7 @@
 // PeterShip, the store's own shipping client. Shared shapes. Every carrier adapter maps to and from these,
 // so the rating engine, the pages and the counter never see a carrier's own format.
 
-export type CarrierId = 'usps' | 'ups' | 'fedex' | 'dhl' | 'easyship';
+export type CarrierId = 'usps' | 'ups' | 'fedex' | 'dhl' | 'meest' | 'easyship';
 
 export interface Address {
   contact_name: string;
@@ -29,7 +29,7 @@ export interface Parcel {
 /** One service a customer can pick. `id` is "<carrier>:<service code>" and is the only thing the browser sends back. */
 export interface Rate {
   id: string;
-  carrier: 'USPS' | 'UPS' | 'FedEx' | 'DHL';
+  carrier: 'USPS' | 'UPS' | 'FedEx' | 'DHL' | 'Meest';
   service: string;
   cost: number;           // what the carrier charges the store
   total_charge: number;   // what the customer pays, after retail rules
@@ -50,6 +50,7 @@ export interface Label {
   tracking_page_url: string | null;
   cost: number;
   customs_url?: string | null;
+  counter_note?: string | null;  // a label the counter finishes by hand (Meest until its API exists)
 }
 
 export interface TrackingEvent {

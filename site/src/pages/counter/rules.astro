@@ -109,7 +109,7 @@ import Base from '../../layouts/Base.astro';
     const pin = () => ($('pin') as HTMLInputElement).value;
     const msg = $('msg'), source = $('source'), form = $('rules') as HTMLFormElement, ferr = $('ferr');
     const carriersBody = $('carriers').querySelector('tbody')!, servicesBody = $('services').querySelector('tbody')!;
-    const CARRIERS = ['USPS', 'UPS', 'FedEx', 'DHL'];
+    const CARRIERS = ['USPS', 'UPS', 'FedEx', 'DHL', 'Meest'];
     const money = (n: number) => `$${Number(n).toFixed(2)}`;
     let owner = true;
 

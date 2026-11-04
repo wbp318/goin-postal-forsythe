@@ -35,6 +35,7 @@ const photos = await listPhotos(env, order.id);
       {order.account_name && <p><strong data-i18n="st.b.account">Business account:</strong> {order.account_name}{order.discount_percent ? ` (${order.discount_percent}% off)` : ''}</p>}
       {order.status === 'reserved' && order.account_id && <p><button class="btn" data-action="bill" data-i18n="st.b.bill">Bill to account. Buy label</button></p>}
       {order.status === 'reserved' && !order.account_id && <p><button class="btn" data-action="paid" data-i18n="st.buy.long">Rung up on the POS. Buy label</button></p>}
+      {order.label?.counter_note && <p class="err">{order.label.counter_note}</p>}
       {order.label?.label_url && <p><a class="btn" href={order.label.label_url} target="_blank" rel="noopener" data-i18n="st.openlabel">Open label to print</a></p>}
       {order.label && <p><button class="btn" data-print="counter" data-i18n="st.print">Print at the counter</button> <span class="muted" data-i18n="st.sendsprinter">sends it to the label printer</span></p>}
       {order.label && <p><label><span data-i18n="st.emailto">Email the label to</span> <input id="email" type="email" value={order.email} placeholder="name@example.com" /></label> <button class="btn kraft" data-email data-i18n="st.emaillabel">Email label</button>{order.emailed_at && <span class="muted"> <span data-i18n="st.lastsent">last sent</span> {order.emailed_at}</span>}</p>}

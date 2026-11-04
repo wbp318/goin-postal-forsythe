@@ -36,4 +36,6 @@ interface Env {
   UPS_CLIENT_ID?: string; UPS_CLIENT_SECRET?: string; UPS_ACCOUNT_NUMBER?: string; UPS_SANDBOX?: string;
   FEDEX_CLIENT_ID?: string; FEDEX_CLIENT_SECRET?: string; FEDEX_ACCOUNT_NUMBER?: string; FEDEX_SANDBOX?: string;
   DHL_API_KEY?: string; DHL_API_SECRET?: string; DHL_ACCOUNT_NUMBER?: string; DHL_SANDBOX?: string;
+  // Meest America (v1.71.0): rates come from src/data/meest-rates.json with no keys; these two switch label purchase from the counter to Meest's API once Meest grants access (issue 17).
+  MEEST_API_URL?: string; MEEST_API_KEY?: string;
 }

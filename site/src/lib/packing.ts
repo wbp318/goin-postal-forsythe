@@ -9,7 +9,7 @@ import { billableWeightLb, dimWeightLb, lengthPlusGirth } from '../shipping/dim'
 export interface BoxOption { code: string; name: string; price: number; dims: [number, number, number] }
 export interface PackingAdvice {
   actual_lb: number;
-  billable: { carrier: 'USPS' | 'UPS' | 'FedEx' | 'DHL'; lb: number; dimensional: boolean }[];
+  billable: { carrier: 'USPS' | 'UPS' | 'FedEx' | 'DHL' | 'Meest'; lb: number; dimensional: boolean }[];
   dim_applies: boolean;             // at least one carrier bills more than the actual weight
   oversize: boolean;                // length plus girth over 130 inches
   fits: BoxOption | null;           // the smallest stocked box the parcel fits in
