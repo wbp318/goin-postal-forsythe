@@ -2,16 +2,19 @@
 export const prerender = false;
 import Base from '../../../layouts/Base.astro';
 import { env } from '../../../lib/env';
-import { getMailbox, listMailboxNotices, listMailboxItems } from '../../../shipping/store';
+import { getMailbox, listMailboxNotices, listMailboxItems, listMailboxIds } from '../../../shipping/store';
+import { ID_KINDS, NEVER_ACCEPTED, idExpired } from '../../../lib/mailboxIds';
 import { store } from '../../../data/store';
 
-// Staff page for one mailbox subscription: record Form 1583 and the two IDs, give the box number,
-// notes, cancel. Payment already happened on Stripe and renews there.
+// Staff page for one mailbox subscription: check the two IDs against the Form 1583 rules (v1.77.0),
+// record the form, give the box number, notes, cancel. Payment already happened on Stripe and renews there.
 const m = await getMailbox(env, Astro.params.code ?? '');
 if (!m) return new Response('No such mailbox', { status: 404 });
 const notices = await listMailboxNotices(env, m.code);
 const items = await listMailboxItems(env, m.code, 30);
-const inbox = items.filter((i) => i.status === 'arrived'), gone = items.filter((i) => i.status !== 'arrived');
+const ids = await listMailboxIds(env, m.code);
+const scanWhere = env.AZURE_ID_SCANS_SAS ? 'ID scans go to the owners\' private Azure container. Reading one takes the PIN and is logged.' : 'ID scans stay in private storage on the site, never behind a link. Reading one takes the PIN and is logged.';
+const inbox = items.filter((i) => i.status === 'arrived');
 const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '');
 ---
 <Base title={`Counter · ${m.code}`}>
@@ -24,7 +27,12 @@ const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString('en-US',
     <div class="card">
       <p><strong data-i18n="st.o.customer">Customer:</strong> {m.customer_name}{m.business_name ? ` (${m.business_name})` : ''} · {m.email}{m.phone ? ` · ${m.phone}` : ''}{m.customer_id && <> · <a href={`/counter/customers?q=${encodeURIComponent(m.email)}`} data-i18n="st.nav.customers">Customers</a></>}</p>
       <p><strong data-i18n="st.m.th.box">Box</strong> {m.box_number ? <strong>#{m.box_number}</strong> : <span class="muted" data-i18n="st.m.nobox">not given yet</span>}{m.box_number && <> · <span data-i18n="mb.done.addr">Your address is</span> {m.business_name || m.customer_name}, {store.address.replace(/,\s*/, ` #${m.box_number}, `)}</>}</p>
-      <p><strong>Form 1583</strong> {m.form_1583_at ? <><span data-i18n="st.m.recorded">recorded</span> {fmt(m.form_1583_at)} ({m.form_1583_by}) · {m.ids_seen}</> : <span class="muted" data-i18n="st.m.need1583">needs Form 1583</span>}</p>
+      <p><strong>Form 1583</strong> {m.form_1583_at ? <><span data-i18n="st.m.recorded">recorded</span> {fmt(m.form_1583_at)} ({m.form_1583_by})</> : <span class="muted" data-i18n="st.m.need1583">needs Form 1583</span>}</p>
+      {ids.length > 0 && <><h4 data-i18n="st.id.onfile">IDs on file</h4>
+      <ul>{ids.map((i) => <li><strong data-i18n={`st.id.${i.slot}`}>{i.slot === 'primary' ? 'Photo ID' : 'Second ID'}</strong>: {i.issuer} <span data-i18n={`st.idk.${i.kind}`}>{i.kind}</span>{i.last4 ? ` …${i.last4}` : ''}{i.expires && <> · <span data-i18n="st.id.expires">Expires</span> {i.expires}</>}{i.shows_address ? <> · <span data-i18n="st.id.address">Shows the current home address</span></> : null} · <span data-i18n="st.id.checked">checked</span> {fmt(i.verified_at)} ({i.verified_by}){idExpired(i.expires) && <> · <strong class="err" data-i18n="st.id.expired">EXPIRED: the holder must bring a current one</strong></>}
+        <span class="btnrow" data-idrow={i.id}> {i.scan_id ? <button class="btn small kraft" type="button" data-idview data-i18n="st.id.view">View the scan</button> : <label class="btn small kraft" style="cursor: pointer"><span data-i18n="st.id.upscan">Upload the scan</span> <input type="file" accept="image/*,application/pdf" data-idscan style="display: none" /></label>}</span></li>)}</ul>
+      <p class="muted" data-i18n={env.AZURE_ID_SCANS_SAS ? 'st.id.where.azure' : 'st.id.where.kv'}>{scanWhere}</p></>}
+      {m.form_1583_at && ids.length === 0 && m.ids_seen && <p class="muted">{m.ids_seen}</p>}
       {m.notes && <p><strong data-i18n="st.k.notes">Notes:</strong> <span style="white-space: pre-line">{m.notes}</span></p>}
       <h3 data-i18n="st.m.arrived">Something arrived</h3>
       <p class="muted" data-i18n="st.m.arrived.lead">One tap texts the holder (when there is a phone) and emails them, and keeps the time here.</p>
@@ -51,17 +59,45 @@ const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString('en-US',
       {inbox.length === 0 && <p class="muted" data-i18n="acct.mb.nothing">Nothing waiting. We log each piece as it comes in.</p>}
       <ul class="items">{inbox.map((i) => <li data-item={i.id}>{i.photo_id && <a href={`/api/mailbox?photo=${i.photo_id}`} target="_blank" rel="noopener"><img src={`/api/mailbox?photo=${i.photo_id}`} alt="" loading="lazy" style="max-height: 64px; max-width: 96px; vertical-align: middle; border-radius: 4px" /></a>} <strong data-i18n={`acct.mb.kind.${i.kind}`}>{i.kind}</strong>{i.sender ? <> <span data-i18n="acct.mb.from">from</span> {i.sender}</> : null}{i.note ? ` · ${i.note}` : ''} · <time>{fmt(i.arrived_at)}</time> · {i.arrived_by}{i.notified ? ' · notified' : ''}
         {i.scan_id ? <> · <a href={`/api/mailbox?photo=${i.scan_id}`} target="_blank" rel="noopener" data-i18n="st.mi.scanned">scanned</a> {fmt(i.scanned_at)}</> : i.scan_requested_at ? <> · <strong class="err" data-i18n="st.mi.scanreq">SCAN REQUESTED</strong> {fmt(i.scan_requested_at)}</> : null}
-        <span class="btnrow"> <label class="btn small kraft" style="cursor: pointer"><span data-i18n="st.mi.upload">Upload scan</span> <input type="file" accept="image/*,application/pdf" data-scanfile style="display: none" /></label> <button class="btn small" type="button" data-status="picked_up" data-i18n="st.mi.pickedup">Picked up</button> <button class="btn small kraft" type="button" data-status="forwarded" data-i18n="st.mi.forwarded">Forwarded</button> <button class="btn small kraft" type="button" data-status="returned" data-i18n="st.mi.returned">Returned</button> <button class="btn small kraft" type="button" data-status="shredded" data-i18n="st.mi.shredded">Shredded</button></span></li>)}</ul>
-      {gone.length > 0 && <><h4 data-i18n="st.mi.gone">Left the box</h4>
-      <ol class="timeline">{gone.map((i) => <li data-item={i.id}><time>{fmt(i.closed_at)}</time><strong data-i18n={`acct.mb.status.${i.status}`}>{i.status.replace('_', ' ')}</strong><span><span data-i18n={`acct.mb.kind.${i.kind}`}>{i.kind}</span>{i.sender ? ` from ${i.sender}` : ''}{i.note ? ` · ${i.note}` : ''} · {fmt(i.arrived_at)} · {i.closed_by} <button class="btn small kraft" type="button" data-status="arrived" data-i18n="st.mi.reopen">Back in the box</button></span></li>)}</ol></>}
+        <span class="btnrow"> <label class="btn small kraft" style="cursor: pointer"><span data-i18n="st.mi.upload">Upload scan</span> <input type="file" accept="image/*,application/pdf" data-scanfile style="display: none" /></label></span></li>)}</ul>
     </div>
     <form class="card" id="acts" autocomplete="off">
       <label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
       {m.status !== 'cancelled' && !m.form_1583_at && <>
-        <p class="muted" data-i18n="st.m.1583.lead">Check a photo ID and a second ID, fill in USPS Form 1583 with the customer, keep the store's copy. Then note what you saw here.</p>
-        <label><span data-i18n="st.m.ids">IDs seen (type and last digits)</span> <input name="ids" maxlength="200" placeholder="LA DL ...1234, insurance card" /></label>
+        <p class="muted" data-i18n="st.id.lead">Two IDs, as USPS Form 1583 asks: one with a photo, one showing the current home address, neither expired. Only the kind, the issuer, the last four and the expiry are kept here, never the whole number. Fill in the paper form with the customer and keep the store copy.</p>
+        <p class="muted"><span data-i18n="st.id.never">Never accepted:</span> {NEVER_ACCEPTED.join(', ')}.</p>
+        {(['primary', 'secondary'] as const).map((slot) => <fieldset class="idset" data-slot={slot}>
+          <legend data-i18n={`st.id.${slot}`}>{slot === 'primary' ? 'Photo ID' : 'Second ID'}</legend>
+          <div class="row">
+            <label><span data-i18n="st.id.kind">What is it</span> <select name={`${slot}.kind`}><option value=""></option>{ID_KINDS.filter((k) => slot === 'secondary' || k.photo).map((k) => <option value={k.id} data-i18n={`st.idk.${k.id}`}>{k.name}</option>)}</select></label>
+            <label><span data-i18n="st.id.issuer">Issued by (state, country, insurer, landlord)</span> <input name={`${slot}.issuer`} maxlength="40" placeholder={slot === 'primary' ? 'LA' : 'State Farm'} /></label>
+          </div>
+          <div class="row">
+            <label><span data-i18n="st.id.last4">Last 4 of the number</span> <input name={`${slot}.last4`} maxlength="4" inputmode="numeric" autocomplete="off" /></label>
+            <label><span data-i18n="st.id.expires">Expires</span> <input name={`${slot}.expires`} type="date" /></label>
+          </div>
+          <label><input type="checkbox" name={`${slot}.shows_address`} /> <span data-i18n="st.id.address">Shows the current home address</span></label>
+          <label><span data-i18n="st.id.scan">Scan of the ID (photo or PDF, kept in secure storage)</span> <input type="file" name={`${slot}.image`} accept="image/*,application/pdf" capture="environment" /></label>
+        </fieldset>)}
         <p><button class="btn" type="button" data-action="form1583" data-i18n="st.m.record1583">Record Form 1583</button></p>
       </>}
+      {m.status !== 'cancelled' && m.form_1583_at && <details class="idreplace">
+        <summary data-i18n="st.id.replace">Replace this ID</summary>
+        <fieldset class="idset" data-slot="replace">
+          <div class="row">
+            <label><span data-i18n="st.id.primary">Photo ID</span>/<span data-i18n="st.id.secondary">Second ID</span> <select name="replace.slot"><option value="primary" data-i18n="st.id.primary">Photo ID</option><option value="secondary" data-i18n="st.id.secondary">Second ID</option></select></label>
+            <label><span data-i18n="st.id.kind">What is it</span> <select name="replace.kind"><option value=""></option>{ID_KINDS.map((k) => <option value={k.id} data-i18n={`st.idk.${k.id}`}>{k.name}</option>)}</select></label>
+          </div>
+          <div class="row">
+            <label><span data-i18n="st.id.issuer">Issued by (state, country, insurer, landlord)</span> <input name="replace.issuer" maxlength="40" /></label>
+            <label><span data-i18n="st.id.last4">Last 4 of the number</span> <input name="replace.last4" maxlength="4" inputmode="numeric" autocomplete="off" /></label>
+            <label><span data-i18n="st.id.expires">Expires</span> <input name="replace.expires" type="date" /></label>
+          </div>
+          <label><input type="checkbox" name="replace.shows_address" /> <span data-i18n="st.id.address">Shows the current home address</span></label>
+          <label><span data-i18n="st.id.scan">Scan of the ID (photo or PDF, kept in secure storage)</span> <input type="file" name="replace.image" accept="image/*,application/pdf" capture="environment" /></label>
+          <p><button class="btn" type="button" data-action="id_replace" data-i18n="st.id.save">Save the new ID</button></p>
+        </fieldset>
+      </details>}
       {m.status !== 'cancelled' && m.form_1583_at && !m.box_number && <>
         <label><span data-i18n="st.m.boxnum">Box number</span> <input name="box_number" maxlength="10" inputmode="numeric" /></label>
         <p><button class="btn" type="button" data-action="box" data-i18n="st.m.givebox">Give this box</button></p>
@@ -75,6 +111,11 @@ const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString('en-US',
       <p id="msg" role="alert"></p>
     </form>
   </div>
+  <style>
+    .idset { border: 1px solid var(--line, #bbb); padding: 8px 12px; margin: 8px 0 }
+    .idset legend { font-weight: bold }
+    .idreplace summary { cursor: pointer; margin: 8px 0 }
+  </style>
   <script define:vars={{ code: m.code }}>
     const form = document.getElementById('acts'), msg = document.getElementById('msg');
     const pin = () => document.getElementById('pin').value;
@@ -88,6 +129,29 @@ const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString('en-US',
       while (out.length > 780_000 && q > 0.4) { q -= 0.1; out = c.toDataURL('image/jpeg', q); }
       return out;
     }
+    // An ID scan: images shrunk like photos, PDFs as they are (4 MB limit on the server).
+    const asDataUrl = (file) => file.type === 'application/pdf' ? new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = no; r.readAsDataURL(file); }) : shrink(file);
+    document.querySelectorAll('[data-idrow] [data-idscan]').forEach((inp) => inp.addEventListener('change', async () => {
+      const file = inp.files[0]; if (!file) return;
+      msg.className = ''; msg.textContent = '…';
+      try {
+        const res = await fetch('/api/mailbox', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, pin: pin(), action: 'id_scan', id: inp.closest('[data-idrow]').dataset.idrow, image: await asDataUrl(file) }) });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.error);
+        location.reload();
+      } catch (e) { msg.className = 'err'; msg.textContent = e.message; }
+    }));
+    document.querySelectorAll('[data-idrow] [data-idview]').forEach((b) => b.addEventListener('click', async () => {
+      msg.className = ''; msg.textContent = '…';
+      try {
+        const res = await fetch('/api/mailbox', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, pin: pin(), action: 'id_scan_read', id: b.closest('[data-idrow]').dataset.idrow }) });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.error);
+        const blob = await (await fetch(j.data)).blob();
+        window.open(URL.createObjectURL(blob), '_blank', 'noopener');
+        msg.textContent = '';
+      } catch (e) { msg.className = 'err'; msg.textContent = e.message; }
+    }));
     const itemf = document.getElementById('itemf'), imsg = document.getElementById('imsg');
     itemf.addEventListener('submit', async (ev) => {
       ev.preventDefault();
@@ -114,13 +178,6 @@ const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString('en-US',
         location.reload();
       } catch (e) { imsg.className = 'err'; imsg.textContent = e.message; }
     }));
-    document.querySelectorAll('#maillog [data-status]').forEach((b) => b.addEventListener('click', async () => {
-      b.disabled = true;
-      const res = await fetch('/api/mailbox', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, pin: pin(), action: 'item_status', id: b.closest('[data-item]').dataset.item, status: b.dataset.status }) });
-      const j = await res.json();
-      if (!res.ok) { imsg.className = 'err'; imsg.textContent = j.error; b.disabled = false; return; }
-      location.reload();
-    }));
     document.querySelectorAll('[data-notice]').forEach((b) => b.addEventListener('click', async () => {
       b.disabled = true;
       const res = await fetch('/api/mailbox', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, pin: document.getElementById('pin').value, action: 'notice', kind: b.dataset.notice, note: document.getElementById('noticenote').value }) });
@@ -130,7 +187,14 @@ const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString('en-US',
     }));
     form.querySelectorAll('[data-action]').forEach((b) => b.addEventListener('click', async () => {
       b.disabled = true;
-      const d = Object.fromEntries(new FormData(form).entries());
+      // "primary.kind" style names become nested objects: { primary: { kind } }. The ID form sends two of them.
+      const d = {};
+      for (const [k, v] of new FormData(form).entries()) {
+        const [a, c] = k.split('.');
+        const val = v instanceof File ? (v.size ? await asDataUrl(v) : '') : v;
+        if (c) (d[a] ??= {})[c] = val; else d[a] = val;
+      }
+      if (d.replace) { d.slot = d.replace.slot; d.id = d.replace; delete d.replace; }
       const res = await fetch('/api/mailbox', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, pin: document.getElementById('pin').value, action: b.dataset.action, ...d }) });
       const j = await res.json();
       if (!res.ok) { msg.className = 'err'; msg.textContent = j.error; b.disabled = false; return; }

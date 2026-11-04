@@ -73,3 +73,6 @@ MEEST_API_URL=
 MEEST_API_KEY=
 # Street-address typeahead on the ship page: a Google Places (New) API key with Places API enabled. Blank uses the US Census Bureau geocoder (free, no key, US only).
 GOOGLE_PLACES_KEY=
+# Scanned mailbox IDs (v1.77.0): an Azure Blob container SAS URL with create, read and write, on the owners'
+# storage account (issue 19). Blank keeps the scans in the private ORDERS KV namespace instead.
+AZURE_ID_SCANS_SAS=

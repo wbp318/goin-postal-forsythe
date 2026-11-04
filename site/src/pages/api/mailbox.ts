@@ -4,14 +4,16 @@ import { env } from '../../lib/env';
 import { json } from '../../lib/validate';
 import { authenticate } from '../../lib/auth';
 import { priceMailbox, newMailboxCode } from '../../lib/mailboxes';
-import { createMailbox, getMailbox, updateMailbox, logAudit, upsertCustomer, addMailboxItem, getMailboxItem, getMailboxItemByPhoto, updateMailboxItem, MAILBOX_ITEM_STATUSES } from '../../shipping/store';
+import { cleanId, checkIds, checkId, describeId, type IdSeen } from '../../lib/mailboxIds';
+import { saveIdScan, readIdScan, toDataUrl } from '../../lib/idscans';
+import { createMailbox, getMailbox, updateMailbox, logAudit, upsertCustomer, addMailboxItem, addMailboxId, listMailboxIds, getMailboxId, setMailboxIdScan, getMailboxItem, getMailboxItemByPhoto, updateMailboxItem, MAILBOX_ITEM_STATUSES } from '../../shipping/store';
 import { saveImage, readImage, saveScan } from '../../lib/photos';
 import { createMailboxCheckout, cancelSubscription } from '../../lib/stripe';
 import { notifyMailbox, KINDS, type NoticeKind } from '../../lib/mailboxNotify';
 
 // Mailbox subscriptions. POST: a customer picks a size and a term on /mailbox and goes to Stripe
 // Checkout in subscription mode. PUT: staff actions from /counter/mailbox/CODE (box number, Form
-// 1583, notes, cancel, and the mail log: item, item_status), PIN required and audited. GET ?photo=ID serves a
+// 1583 with the two IDs checked, id_replace, notes, cancel, and the mail log: item, item_status), PIN required and audited. GET ?photo=ID serves a
 // mail-log photo; the id is 32 random hex characters, the only protection an <img> tag can carry, the same
 // rule as intake photos.
 export const POST: APIRoute = async ({ request }) => {
@@ -51,10 +53,49 @@ export const PUT: APIRoute = async ({ request }) => {
       await updateMailbox(env, m.code, { box_number: box });
       await logAudit(env, user, 'mailbox.box', m.code, `box ${box}`);
     } else if (b.action === 'form1583') {
-      const ids = String(b.ids ?? '').trim().slice(0, 200);
-      if (!ids) throw new Error('Note the two IDs seen (type and last digits)');
+      // ID verification (v1.77.0): the two IDs field by field, checked against the Form 1583 rules
+      // (photo ID, different second ID, one with the current address, nothing expired) before the
+      // form is recorded. Kind, issuer, last four and expiry are kept; the whole number never is.
+      const primary = cleanId(b.primary), secondary = cleanId(b.secondary);
+      const problems = checkIds(primary, secondary);
+      if (problems.length) throw new Error(problems.join('. '));
+      // The scanned copy of each ID, when the counter scanned it: Azure Blob or private KV, never a URL.
+      const scans = { primary: b.primary?.image ? await saveIdScan(env, String(b.primary.image)) : null, secondary: b.secondary?.image ? await saveIdScan(env, String(b.secondary.image)) : null };
+      for (const [slot, id] of [['primary', primary], ['secondary', secondary]] as const)
+        await addMailboxId(env, { mailbox_code: m.code, slot, kind: id.kind, issuer: id.issuer, last4: id.last4 || null, expires: id.expires || null, shows_address: id.shows_address ? 1 : 0, verified_by: user.name, scan_id: scans[slot]?.id, scan_type: scans[slot]?.type, scan_store: scans[slot]?.store });
+      const ids = `${describeId(primary)}; ${describeId(secondary)}`.slice(0, 200);
       await updateMailbox(env, m.code, { form_1583_at: new Date().toISOString(), ids_seen: ids, form_1583_by: user.name });
       await logAudit(env, user, 'mailbox.form1583', m.code, ids);
+    } else if (b.action === 'id_replace') {
+      // A renewed or replacement ID in one slot (an expired license, a new lease). Same rules, and the
+      // pair is re-checked with the other live ID so the box never ends up without an address ID.
+      if (!m.form_1583_at) throw new Error('Record Form 1583 first');
+      const slot = b.slot === 'secondary' ? 'secondary' : 'primary';
+      const id = cleanId(b.id);
+      const other = (await listMailboxIds(env, m.code)).find((i) => i.slot !== slot);
+      const seen = (i: typeof other): IdSeen => ({ kind: i!.kind, issuer: i!.issuer, last4: i!.last4 ?? '', expires: i!.expires ?? '', shows_address: !!i!.shows_address });
+      const problems = other ? (slot === 'primary' ? checkIds(id, seen(other)) : checkIds(seen(other), id)) : checkId(id, slot);
+      if (problems.length) throw new Error(problems.join('. '));
+      const scan = b.id?.image ? await saveIdScan(env, String(b.id.image)) : null;
+      await addMailboxId(env, { mailbox_code: m.code, slot, kind: id.kind, issuer: id.issuer, last4: id.last4 || null, expires: id.expires || null, shows_address: id.shows_address ? 1 : 0, verified_by: user.name, scan_id: scan?.id, scan_type: scan?.type, scan_store: scan?.store });
+      const ids = (await listMailboxIds(env, m.code)).map((i) => describeId(seen(i))).join('; ').slice(0, 200);
+      await updateMailbox(env, m.code, { ids_seen: ids });
+      await logAudit(env, user, 'mailbox.id_replace', m.code, `${slot}: ${describeId(id)}`);
+    } else if (b.action === 'id_scan') {
+      // The scanned copy of an ID already on file (the scanner was busy when the form was recorded).
+      const row = await getMailboxId(env, Number(b.id));
+      if (!row || row.mailbox_code !== m.code) throw new Error('No such ID on this box');
+      const scan = await saveIdScan(env, String(b.image ?? ''));
+      await setMailboxIdScan(env, row.id, { scan_id: scan.id, scan_type: scan.type, scan_store: scan.store });
+      await logAudit(env, user, 'mailbox.id_scan', m.code, `${row.slot} ${scan.type} ${scan.bytes} bytes (${scan.store})`);
+    } else if (b.action === 'id_scan_read') {
+      // Reading a scan takes the PIN and is audited, and the bytes come back inline: no link ever points at an ID.
+      const row = await getMailboxId(env, Number(b.id));
+      if (!row || row.mailbox_code !== m.code || !row.scan_id) throw new Error('No scan on file for that ID');
+      const bytes = await readIdScan(env, { scan_id: row.scan_id, scan_type: row.scan_type ?? '', scan_store: row.scan_store ?? 'kv' });
+      if (!bytes) throw new Error('The scan is missing from storage');
+      await logAudit(env, user, 'mailbox.id_scan.read', m.code, row.slot);
+      return json({ ok: true, type: row.scan_type, data: toDataUrl(bytes, row.scan_type ?? 'application/octet-stream') });
     } else if (b.action === 'notice') {
       // Mail in, package in: text and email the holder, keep the row. Works on any box that is not cancelled.
       if (m.status === 'cancelled') throw new Error('This mailbox is cancelled');

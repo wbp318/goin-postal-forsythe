@@ -2,7 +2,7 @@
 export const prerender = false;
 import Base from '../../layouts/Base.astro';
 import { env } from '../../lib/env';
-import { listMailboxes, lastMailboxNotices, waitingMailboxItems, scanRequests } from '../../shipping/store';
+import { listMailboxes, lastMailboxNotices, waitingMailboxItems, scanRequests, mailboxesWithExpiredIds } from '../../shipping/store';
 
 // Staff page: every mailbox subscription, newest first. Paid online through Stripe; the box number
 // and Form 1583 happen here. Open one for the actions.
@@ -10,7 +10,8 @@ const all = await listMailboxes(env);
 const last = await lastMailboxNotices(env);
 const waiting = await waitingMailboxItems(env);
 const scans = await scanRequests(env);
-const todo = all.filter((m) => m.status === 'active' && (!m.form_1583_at || !m.box_number));
+const expired = await mailboxesWithExpiredIds(env);
+const todo = all.filter((m) => m.status === 'active' && (!m.form_1583_at || !m.box_number || expired.has(m.code)));
 const fmt = (iso: string | null) => (iso ? iso.slice(0, 10) : '');
 ---
 <Base title="Counter · Mailboxes">
@@ -25,7 +26,7 @@ const fmt = (iso: string | null) => (iso ? iso.slice(0, 10) : '');
   </div>}
   {todo.length > 0 && <div class="card">
     <h3 data-i18n="st.m.todo">Paid, waiting on the counter</h3>
-    <ul>{todo.map((m) => <li><a href={`/counter/mailbox/${m.code}`}>{m.code}</a> · {m.customer_name} · <span data-i18n={`mb.size.${m.size}`}>{m.size}</span> · {!m.form_1583_at ? <span data-i18n="st.m.need1583">needs Form 1583</span> : <span data-i18n="st.m.needbox">needs a box number</span>}</li>)}</ul>
+    <ul>{todo.map((m) => <li><a href={`/counter/mailbox/${m.code}`}>{m.code}</a> · {m.customer_name} · <span data-i18n={`mb.size.${m.size}`}>{m.size}</span> · {!m.form_1583_at ? <span data-i18n="st.m.need1583">needs Form 1583</span> : !m.box_number ? <span data-i18n="st.m.needbox">needs a box number</span> : <strong class="err" data-i18n="st.m.needid">an ID has expired</strong>}</li>)}</ul>
   </div>}
   <p class="card"><label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label> <span class="muted" data-i18n="st.m.quick">Mail in and Package in text and email the holder straight from this list.</span> <span id="qmsg"></span></p>
   <table class="list">

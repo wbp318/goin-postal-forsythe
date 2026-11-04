@@ -118,7 +118,15 @@ stateDiagram-v2
    enough for most holders and keeps the storage bill at zero forever.
 4. **Shred rules.** Staff can mark a piece shredded today. A written policy (how many days unclaimed,
    junk mail only unless the holder asked) belongs on the mailbox agreement so nobody argues later.
-5. **Re-run the schema** on the live D1 once (issue filed alongside the release).
+5. **Re-run the schema** on the live D1 once (issue filed alongside the release). v1.77.0 adds `mailbox_ids`: run it again.
+6. **Where the ID scans live.** Built two ways (v1.77.0): a private Azure Blob container when
+   `AZURE_ID_SCANS_SAS` is set (issue 20: make the storage account, one private container, a SAS with
+   create, read and write, paste the URL into the Cloudflare secrets), or the site's private KV with no
+   key at all. An on-site copy (a locked folder on the counter PC) is the same bytes pulled by the
+   printer agent on a schedule; say the word and it is a flag on `agent.mjs`. Whichever it is, nothing
+   is ever behind a link: reading a scan takes the PIN and writes an audit row.
+7. **Trim the mail log.** Done (v1.77.0, T35): Peter took Picked up, Forwarded, Returned and Shredded and
+   the Left the box list off the box page. The statuses stay in the table and the API for when they return.
 
 ## What is built
 
@@ -133,4 +141,6 @@ stateDiagram-v2
 | 7 | Open-and-scan: Ask for a scan on the account page, Scans asked for on the counter list, Upload scan (image or PDF), Read the scan, fee in `mailboxes.json` | `account/index.astro`, `api/account.ts` `mailbox_scan`, `api/mailbox.ts` `scan`, `counter/mailboxes.astro` | ✅ v1.76.0 |
 | 7b | Forwarding requests with postage plus a fee | | ⏳ decision 2 |
 | 7c | Charge the scan fee by card on the account page | | ⏳ decision 2 |
+| 8 | ID verification: `mailbox_ids` table, the Form 1583 rules, scans to Azure Blob or private KV, expiry flags, Replace this ID, View the scan | `site/src/lib/mailboxIds.ts`, `idscans.ts`, `api/mailbox.ts`, `counter/mailbox/[code].astro` | ✅ v1.77.0 |
+| 9 | Mail log trimmed: no status buttons, no Left the box | `counter/mailbox/[code].astro` | ✅ v1.77.0 |
 | 8 | Holder-side notification preferences (text only, email only, off) | | ⏳ after 7 |

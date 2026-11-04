@@ -362,6 +362,28 @@ CREATE TABLE IF NOT EXISTS mailbox_notices (
 );
 CREATE INDEX IF NOT EXISTS mailbox_notices_box ON mailbox_notices(mailbox_code, at);
 
+-- Mailbox ID verification (v1.77.0): the two IDs behind each PS Form 1583, one row per ID. Only the
+-- kind, issuer, last four characters and expiry are kept, never the whole number. A replaced ID
+-- (expired, renewed) gets replaced_at and a fresh row takes its slot. The scanned copy of each ID
+-- lives outside D1 (Azure Blob with AZURE_ID_SCANS_SAS, else private KV); only its name is here.
+CREATE TABLE IF NOT EXISTS mailbox_ids (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  mailbox_code TEXT NOT NULL REFERENCES mailboxes(code),
+  slot TEXT NOT NULL,                  -- primary (photo ID), secondary
+  kind TEXT NOT NULL,                  -- drivers_license, passport, lease, ... (src/lib/mailboxIds.ts)
+  issuer TEXT NOT NULL,
+  last4 TEXT,
+  expires TEXT,                        -- YYYY-MM-DD, or null when the kind has no expiry
+  shows_address INTEGER NOT NULL DEFAULT 0,
+  verified_by TEXT NOT NULL,
+  verified_at TEXT NOT NULL,
+  replaced_at TEXT,
+  scan_id TEXT,                        -- 32 hex: the scanned copy, in Azure Blob or private KV (src/lib/idscans.ts)
+  scan_type TEXT,                      -- image/jpeg, image/png, application/pdf
+  scan_store TEXT                      -- azure, kv
+);
+CREATE INDEX IF NOT EXISTS mailbox_ids_box ON mailbox_ids(mailbox_code, replaced_at);
+
 -- Mailbox mail log (to-do T33, Informed Delivery for the store's boxes): one row per piece of mail
 -- or parcel staff put in a box, with an optional photo (bytes in KV under photo_id, like
 -- shipment_photos). The holder sees the rows and photos signed in on /account; staff close them

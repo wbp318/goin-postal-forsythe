@@ -121,6 +121,7 @@ export interface MailboxItem {
   status: 'arrived' | 'picked_up' | 'forwarded' | 'returned' | 'shredded'; arrived_at: string; arrived_by: string; notified: number; closed_at: string | null; closed_by: string | null;
   scan_requested_at: string | null; scan_id: string | null; scan_type: string | null; scanned_at: string | null; scanned_by: string | null;
 }
+export interface MailboxId { id: number; mailbox_code: string; slot: 'primary' | 'secondary'; kind: string; issuer: string; last4: string | null; expires: string | null; shows_address: number; verified_by: string; verified_at: string; replaced_at: string | null; scan_id: string | null; scan_type: string | null; scan_store: string | null }
 export interface MailboxNotice { id: number; mailbox_code: string; kind: string; note: string | null; by_name: string; at: string; texted: number; emailed: number; error: string | null }
 
 /** Guess the carrier from a barcode or tracking number. Good enough for drop-offs; the carrier confirms on scan. */
@@ -147,6 +148,7 @@ const mem = {
   mailboxes: [] as Mailbox[],
   mailboxNotices: [] as MailboxNotice[],
   mailboxItems: [] as MailboxItem[],
+  mailboxIds: [] as MailboxId[],
   claims: [] as ClaimRow[],
   pickups: [] as PickupRow[],
   photos: [] as PhotoRow[],
@@ -180,7 +182,7 @@ const mem = {
 
 // ---- Export (T10) --------------------------------------------------------------------------------
 /** Every table in the schema, in schema order. The allow-list for the export; nothing else can be named. */
-export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'mailboxes', 'mailbox_notices', 'mailbox_items', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees'] as const;
+export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'mailboxes', 'mailbox_notices', 'mailbox_items', 'mailbox_ids', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees'] as const;
 export type ExportTable = typeof EXPORT_TABLES[number];
 const memTable = (name: ExportTable): unknown[] => {
   switch (name) {
@@ -210,6 +212,7 @@ const memTable = (name: ExportTable): unknown[] => {
     case 'mailboxes': return mem.mailboxes;
     case 'mailbox_notices': return mem.mailboxNotices;
     case 'mailbox_items': return mem.mailboxItems;
+    case 'mailbox_ids': return mem.mailboxIds;
     case 'claims': return mem.claims;
     case 'pickups': return mem.pickups;
     case 'shipment_photos': return mem.photos;
@@ -1453,6 +1456,47 @@ export async function listMailboxNotices(env: Env, code: string, limit = 30): Pr
   return mem.mailboxNotices.filter((n) => n.mailbox_code === code).slice(0, limit);
 }
 /** The last notice per box, for the list page. */
+// ---- mailbox ID verification (v1.77.0): the two IDs behind each Form 1583 -------------------------
+/** Record one ID in a slot. Any current ID in that slot is marked replaced first, so a box always has at most one live ID per slot. */
+export async function addMailboxId(env: Env, x: { mailbox_code: string; slot: 'primary' | 'secondary'; kind: string; issuer: string; last4: string | null; expires: string | null; shows_address: number; verified_by: string; scan_id?: string | null; scan_type?: string | null; scan_store?: string | null }): Promise<MailboxId> {
+  const at = now();
+  const row = { ...x, verified_at: at, replaced_at: null as string | null, scan_id: x.scan_id ?? null, scan_type: x.scan_type ?? null, scan_store: x.scan_store ?? null };
+  if (env.DB) {
+    await env.DB.prepare('UPDATE mailbox_ids SET replaced_at = ?3 WHERE mailbox_code = ?1 AND slot = ?2 AND replaced_at IS NULL').bind(x.mailbox_code, x.slot, at).run();
+    const r = await env.DB.prepare('INSERT INTO mailbox_ids (mailbox_code, slot, kind, issuer, last4, expires, shows_address, verified_by, verified_at, replaced_at, scan_id, scan_type, scan_store) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13) RETURNING id')
+      .bind(row.mailbox_code, row.slot, row.kind, row.issuer, row.last4, row.expires, row.shows_address, row.verified_by, row.verified_at, row.replaced_at, row.scan_id, row.scan_type, row.scan_store).first<{ id: number }>();
+    return { id: r!.id, ...row };
+  }
+  for (const o of mem.mailboxIds) if (o.mailbox_code === x.mailbox_code && o.slot === x.slot && !o.replaced_at) o.replaced_at = at;
+  const full = { id: mem.seq++, ...row };
+  mem.mailboxIds.unshift(full);
+  return full;
+}
+/** The live IDs on a box (primary first), or every row ever with all = true. */
+export async function listMailboxIds(env: Env, code: string, all = false): Promise<MailboxId[]> {
+  const rows = env.DB
+    ? (await env.DB.prepare('SELECT * FROM mailbox_ids WHERE mailbox_code = ?1 ORDER BY id DESC').bind(code).all<MailboxId>()).results
+    : mem.mailboxIds.filter((i) => i.mailbox_code === code);
+  return rows.filter((i) => all || !i.replaced_at).sort((a, b) => (a.slot === b.slot ? b.id - a.id : a.slot === 'primary' ? -1 : 1));
+}
+/** One ID row by id, for serving its scan. */
+export async function getMailboxId(env: Env, id: number): Promise<MailboxId | null> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM mailbox_ids WHERE id = ?1').bind(id).first<MailboxId>()) ?? null;
+  return mem.mailboxIds.find((i) => i.id === id) ?? null;
+}
+/** Attach (or replace) the scanned copy of an ID. */
+export async function setMailboxIdScan(env: Env, id: number, scan: { scan_id: string; scan_type: string; scan_store: string }): Promise<void> {
+  if (env.DB) { await env.DB.prepare('UPDATE mailbox_ids SET scan_id = ?2, scan_type = ?3, scan_store = ?4 WHERE id = ?1').bind(id, scan.scan_id, scan.scan_type, scan.scan_store).run(); return; }
+  const r = mem.mailboxIds.find((i) => i.id === id);
+  if (r) Object.assign(r, scan);
+}
+/** Codes of boxes with a live ID past its expiry, for the list page's to-do. */
+export async function mailboxesWithExpiredIds(env: Env, today = now().slice(0, 10)): Promise<Set<string>> {
+  const rows = env.DB
+    ? (await env.DB.prepare('SELECT mailbox_code FROM mailbox_ids WHERE replaced_at IS NULL AND expires IS NOT NULL AND expires < ?1').bind(today).all<{ mailbox_code: string }>()).results
+    : mem.mailboxIds.filter((i) => !i.replaced_at && i.expires && i.expires < today);
+  return new Set(rows.map((r) => r.mailbox_code));
+}
 // ---- mailbox mail log (T33): what is in each box, with photos, for the holder's account page ----
 export const MAILBOX_ITEM_STATUSES = ['arrived', 'picked_up', 'forwarded', 'returned', 'shredded'] as const;
 export async function addMailboxItem(env: Env, x: { mailbox_code: string; kind: string; sender: string | null; note: string | null; photo_id: string | null; photo_type: string | null; arrived_by: string; notified: number }): Promise<MailboxItem> {
