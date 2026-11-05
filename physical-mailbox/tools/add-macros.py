@@ -11,7 +11,8 @@ It starts a hidden LibreOffice with a throwaway profile, then:
   4. binds Open Document (land on the Counter tab) and Save Document Done (the day's backup copy),
   5. saves physical-mailbox/mailbox-register-TEMPLATE.ods,
   6. reopens that file and runs every macro function against it (add a customer, a payment, IDs, a box,
-     the call list, the USPS list, a backup, closing a box), then closes it without saving.
+     the call list, the USPS list, a backup, closing a box, the Measure tab and Boxes from measurements),
+     then closes it without saving.
 It exits non-zero if any check fails.
 """
 import os, sys, time, shutil, subprocess, tempfile, datetime as dt
@@ -40,7 +41,8 @@ BUTTONS = [
     ('Find a customer', 'btnFind', 'By code, box number or part of a name. Jumps to their row on the Holders tab.'),
     ('Close a box', 'btnCloseBox', 'Keys back: writes today as the Closed date and the forwarding address. The box shows Free again.'),
     ('Call list', 'btnCallList', 'Everyone overdue, due within a week, or with an ID to fix, worst first, with what to do. Print it with Ctrl+P.'),
-    ('USPS quarterly list', 'btnUSPSList', 'Every open box in name order, the list USPS expects each quarter. Print it and take it to the post office.'),
+    ('USPS quarterly list', 'btnUSPSList', 'Every open box in name order, to check before the quarterly USPS certification (Jan 15, Apr 15, Jul 15, Oct 15). Print it if the postmaster wants paper.'),
+    ('Boxes from measurements', 'btnBoxesFromMeasure', 'After measuring on the Measure tab: adds every measured box to the Boxes tab with its store size. A box someone holds keeps its size.'),
     ('Save and back up', 'btnBackup', 'Saves, and puts a dated copy in Documents\\Mailbox backups. Saving with Ctrl+S makes the day\'s copy too.'),
 ]
 # setFormula takes Calc's own syntax: $Sheet.$A$1 (a dot, not Excel's Sheet!A1) and ; between arguments.
@@ -53,6 +55,9 @@ COUNTS = [
     ('Ready, waiting on a box', '=COUNTIFS($Holders.$X$2:$X$301;"YES";$Holders.$B$2:$B$301;"";$Holders.$Z$2:$Z$301;"")'),
     ('Taken this month ($)', '=SUMIFS($Payments.$E$2:$E$1201;$Payments.$A$2:$A$1201;">="&DATE(YEAR(TODAY());MONTH(TODAY());1))'),
 ]
+
+
+ERRORS = ('#NAME?', '#VALUE!', '#REF!', '#DIV/0!', '#N/A', '#NUM!', '#NULL!', 'Err:')  # not '#' alone: '#10 envelope'
 
 
 def pv(name, value):
@@ -155,7 +160,7 @@ def test(desktop):
     h, p, b = s.getByName('Holders'), s.getByName('Payments'), s.getByName('Boxes')
     c = s.getByName('Counter')
     form = s.getByName('Counter').DrawPage.Forms.getByIndex(0)
-    check('eight buttons, each bound to a macro', form.getCount() == 8 and all(form.getScriptEvents(i)[0].ScriptCode.startswith('vnd.sun.star.script:Standard.Mailbox.btn') for i in range(form.getCount())), form.getCount())
+    check('nine buttons, each bound to a macro', form.getCount() == len(BUTTONS) == 9 and all(form.getScriptEvents(i)[0].ScriptCode.startswith('vnd.sun.star.script:Standard.Mailbox.btn') for i in range(form.getCount())), form.getCount())
     check('the macro module is in the document', doc.BasicLibraries.getByName('Standard').hasByName('Mailbox'))
     check('the Counter tab is first', s.getByIndex(0).Name == 'Counter', s.getByIndex(0).Name)
     check('a bad name is refused', str(run('AddCustomer', 'X', '', '', 'S', 'Monthly')).startswith('!'))
@@ -199,18 +204,41 @@ def test(desktop):
     bad = [(i, c.getCellByPosition(1, 3 + i).getError()) for i in range(len(COUNTS)) if c.getCellByPosition(1, 3 + i).getError()]
     check('every Counter count calculates', not bad, bad)
     check('the Counter counts are right after the test (1 open box, 2 Free)', c.getCellByPosition(1, 3).getValue() == 1 and c.getCellByPosition(1, 4).getValue() == 2, (c.getCellByPosition(1, 3).getValue(), c.getCellByPosition(1, 4).getValue()))
-    for name in ('Holders', 'Payments', 'Boxes'):
+    # Measure tab: rows from 14 (index 13); A box, B-D inches, E cubic, F USPS size, H store size, J check, K-O fits
+    m = s.getByName('Measure')
+    M = lambda col, row: m.getCellByPosition(col, row)
+    check('Measure: a 5 x 5.5 x 14.75 box is 406 cubic inches, USPS size 2, Small, matches Boxes',
+          (M(4, 13).getValue(), M(5, 13).getValue(), M(7, 13).getString(), M(9, 13).getString()) == (406, 2, 'Small', 'OK'),
+          (M(4, 13).getValue(), M(5, 13).getValue(), M(7, 13).getString(), M(9, 13).getString()))
+    check('Measure: an 11 x 5.5 box takes a 9 x 12 envelope, not a Medium Flat Rate Box',
+          (M(5, 15).getValue(), M(11, 15).getString(), M(13, 15).getString()) == (3, 'yes', 'no'),
+          (M(5, 15).getValue(), M(11, 15).getString(), M(13, 15).getString()))
+    for col, v in ((0, 301), (1, 22.5), (2, 12), (3, 14.75)):
+        M(col, 16).setValue(v)
+    for col, v in ((1, 11), (2, 11)):
+        M(col, 13).setValue(v); M(col, 15).setValue(v)   # 101 (held by the example) and 201 (Free) measure Large
+    doc.calculateAll()
+    check('Measure: a new 22.5 x 12 box is USPS size 5, Large, not on Boxes yet',
+          (M(5, 16).getValue(), M(7, 16).getString(), M(9, 16).getString()) == (5, 'Large', 'add to Boxes'),
+          (M(5, 16).getValue(), M(7, 16).getString(), M(9, 16).getString()))
+    res = run('BoxesFromMeasure')
+    check('Boxes from measurements: 1 added, 1 Free box resized, 1 held box left alone', res == '1,1,1', res)
+    sizes = {b.getCellByPosition(0, i).getString(): b.getCellByPosition(1, i).getString() for i in range(1, 6)}
+    check('the Boxes tab has 301 Large and 201 Large, and 101 kept Small', (sizes.get('301'), sizes.get('201'), sizes.get('101')) == ('Large', 'Large', 'Small'), sizes)
+    check('Check says OK for 301 and flags 101', (M(9, 16).getString(), M(9, 13).getString()) == ('OK', 'Boxes says Small'), (M(9, 16).getString(), M(9, 13).getString()))
+    check('running it again changes nothing', run('BoxesFromMeasure') == '0,0,1')
+    for name in ('Holders', 'Payments', 'Boxes', 'Measure'):
         sh = s.getByName(name)
-        rng = sh.getCellRangeByPosition(0, 1, 27 if name == 'Holders' else 8, 40)
+        rng = sh.getCellRangeByPosition(0, 1, {'Holders': 27, 'Measure': 23}.get(name, 8), 40)
         bad = [(name, cc, rr) for rr in range(40) for cc in range(rng.Columns.Count) if rng.getCellByPosition(cc, rr).getError()]
         check(f'no formula errors on {name}', not bad, bad[:3])
     errs = []
-    for name in ('Holders', 'Payments', 'Boxes', 'Counter'):
+    for name in ('Holders', 'Payments', 'Boxes', 'Counter', 'Measure'):
         sh = s.getByName(name)
         cur = sh.createCursor(); cur.gotoEndOfUsedArea(False)
         last = cur.RangeAddress.EndRow
         data = sh.getCellRangeByPosition(0, 0, cur.RangeAddress.EndColumn, min(last, 60)).getDataArray()
-        errs += [(name, r, v) for r, line in enumerate(data) for v in line if isinstance(v, str) and v.startswith(('#', 'Err:'))]
+        errs += [(name, r, v) for r, line in enumerate(data) for v in line if isinstance(v, str) and v.startswith(ERRORS)]
     check('no formula errors', not errs, errs[:3])
     doc.close(True)
     shutil.rmtree(bdir, ignore_errors=True)

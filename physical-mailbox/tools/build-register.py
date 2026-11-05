@@ -65,7 +65,10 @@ lines = [
     ("Type the Closed date on the holder's row and collect the key. The box shows Free on the Boxes tab again.", base),
     ("", base),
     ("Every quarter", bold),
-    ("USPS expects a CMRA to give the post office an alphabetical list of its mailbox customers each quarter (Domestic Mail Manual 508.1.8). Sort the Holders tab by Name, print the open ones, take it to the Monroe post office. Confirm the dates with the postmaster.", base),
+    ("USPS: the store certifies its customer list each quarter (Domestic Mail Manual 508 1.8.3: by January 15, April 15, July 15 and October 15), in USPS's online CMRA Customer Registration Database or the way the Monroe postmaster says. Counter tab, USPS quarterly list: every open box in name order, to check against before certifying. Confirm how Monroe does it with the postmaster.", base),
+    ("", base),
+    ("Box sizes", bold),
+    ("Measure tab: measure every box once, the USPS way. It works out the USPS size and the store size, and its button on the Counter tab fills the Boxes tab.", base),
     ("", base),
     ("Prices", bold),
     ("The prices on the Prices tab are placeholders from the website (src/data/mailboxes.json). Peter and Rin set the real ones there; every formula follows.", base),
@@ -258,6 +261,95 @@ for cell in ('B2', 'B3', 'B4'):
     rule(pr, cell, 'decimal', '0', '1000', 'between', title='Monthly price', error='Type the monthly price in dollars, like 15.')
 rule(pr, 'B7', 'whole', '1', '12', 'between', title='Months a year costs', error='A whole number from 1 to 12. 10 means 12 months for the price of 10.')
 wb.move_sheet('Boxes', offset=-1)
+
+# ---------- Measure (v1.82.2) ----------
+# USPS sets no size for a CMRA's private mailboxes (DMM 508 1.8 says nothing on it). Its PO Box chart
+# (DMM 508 4.1.3: sizes 1 to 5 by cubic inches) is the standard way to name a box size, so each box is
+# measured once and sized the USPS way. The measurement table starts at MT (header row); the reference
+# tables sit to its right from column S. add-macros.py and Mailbox.bas (M_* constants) use these positions.
+me = wb.create_sheet('Measure')
+MT = 13                      # header row of the measurement table; boxes from row MT+1
+MLAST = MT + ROWS            # last box row
+steps = [
+    ('Measuring the boxes', title),
+    ("USPS sets no size for a store's private mailboxes, but its PO Box chart (sizes 1 to 5, by cubic inches, on the right) is the standard way to name one. Measure every box once, before the first customer and whenever boxes are added.", base),
+    ('1. Tape measure, in inches, door open. Width and height: the door opening at its tightest point (the frame lip, not the wall behind it). Depth: from the front of the opening to the back wall, less anything that sticks in (a hinge, the lock bolt).', base),
+    ('2. Fractions as decimals: 1/8 = .125, 1/4 = .25, 3/8 = .375, 1/2 = .5, 5/8 = .625, 3/4 = .75, 7/8 = .875. Round down: a box is only as big as its tightest spot.', base),
+    ('3. One row per door, by the number on the door. A bank of identical boxes: measure one, then copy its three numbers down to the rest.', base),
+    ('4. The sheet works out the cubic inches, the USPS size and the store size. Which USPS sizes count as Small, Medium and Large is for Peter and Rin: the yellow Store size cells in the chart on the right. The prices follow from the Prices tab.', base),
+    ('5. The Fits columns say yes when that item goes in flat without bending (the item sizes are on the right; change them if yours differ). Use them for the Fits words on the Prices tab and to answer "will my packages fit?".', base),
+    ('6. Counter tab, Boxes from measurements: copies every measured box and its store size to the Boxes tab. It never changes the size of a box someone holds. Check says OK when both tabs agree.', base),
+    ('Parcels too big for the box: USPS sets no rule for a private mailbox; the service agreement (OWNERS terms) says how long the store holds them at the counter.', grey),
+]
+for i, (t, f) in enumerate(steps, 1):
+    me.merge_cells(start_row=i, start_column=1, end_row=i, end_column=17)
+    c = me.cell(row=i, column=1, value=t); c.font = f; c.alignment = Alignment(wrap_text=True, vertical='top')
+    if i > 1: me.row_dimensions[i].height = 30
+mcols = [('Box #', 8, True), ('Inside width (in)', 10, True), ('Inside height (in)', 10, True), ('Depth (in)', 9, True),
+         ('Cubic inches', 9, False), ('USPS size', 7, False), ('USPS name', 9, False), ('Store size', 9, False),
+         ('Boxes tab says', 11, False), ('Check', 16, False)]
+FITS = [('#10 envelope', 9.5, 4.125, 0.25), ('9 x 12 envelope', 12, 9, 0.5), ('Small Flat Rate Box', 8.6875, 5.4375, 1.75),
+        ('Medium Flat Rate Box', 11.25, 8.75, 6), ('Shoebox', 13, 8, 5)]
+IT = MT + 9                  # first item row on the right
+for k in range(len(FITS)):
+    mcols.append((f'="Fits: "&$S${IT + k}', 10, False))
+mcols.append(('Note', 24, True))
+for i, (n, w, _) in enumerate(mcols, 1):
+    c = me.cell(row=MT, column=i, value=n); c.font = head; c.fill = HEAD; c.alignment = Alignment(wrap_text=True, vertical='center')
+    me.column_dimensions[c.column_letter].width = w
+me.row_dimensions[MT].height = 44
+usps = [(1, 'X-Small', '3 x 5 1/2', '10-15 letters, 2 rolled magazines', 0, 'Small'),
+        (2, 'Small', '5 x 5 1/2', '10-15 letters, 5 rolled magazines', 296, 'Small'),
+        (3, 'Medium', '11 x 5 1/2', 'Large envelopes and magazines, flat', 500, 'Medium'),
+        (4, 'Large', '11 x 11', 'Two shoeboxes and some letters', 1000, 'Large'),
+        (5, 'X-Large', '22 1/2 x 12', 'Flat Rate Boxes and parcels', 2000, 'Large')]
+U0 = MT + 1                  # first USPS row on the right
+me.cell(row=MT - 1, column=19, value='USPS PO Box sizes (Domestic Mail Manual 508 4.1.3; every one 14 3/4 deep)').font = bold
+for j, n in enumerate(['USPS size', 'Name', 'Opening W x H (in)', 'Holds (USPS)', 'Cubic inches from', 'Store size (yours)']):
+    c = me.cell(row=MT, column=19 + j, value=n); c.font = head; c.fill = HEAD; c.alignment = Alignment(wrap_text=True, vertical='center')
+for k, row in enumerate(usps):
+    for j, v in enumerate(row):
+        c = me.cell(row=U0 + k, column=19 + j, value=v); c.font = base; c.border = box
+    me.cell(row=U0 + k, column=24).fill = INPUT; me.cell(row=U0 + k, column=24).font = blue
+me.cell(row=IT - 2, column=19, value='Things that should fit (inches, longest side first; change them if yours differ)').font = bold
+for j, n in enumerate(['Item', 'Longest', 'Middle', 'Shortest']):
+    c = me.cell(row=IT - 1, column=19 + j, value=n); c.font = head; c.fill = HEAD
+for k, row in enumerate(FITS):
+    for j, v in enumerate(row):
+        c = me.cell(row=IT + k, column=19 + j, value=v); c.font = blue; c.border = box; c.fill = INPUT
+for col, w in zip('STUVWX', (20, 10, 12, 30, 10, 12)):
+    me.column_dimensions[col].width = w
+UR = lambda col: f'${col}${U0}:${col}${U0 + 4}'
+for r in range(MT + 1, MLAST + 1):
+    for i, (n, _, inp) in enumerate(mcols, 1):
+        c = me.cell(row=r, column=i); c.font = base; c.border = box
+        if inp: c.fill = INPUT
+    me[f'E{r}'] = f'=IF(COUNT(B{r}:D{r})<3,"",ROUND(B{r}*C{r}*D{r},0))'
+    me[f'F{r}'] = f'=IF(E{r}="","",MATCH(E{r},{UR("W")},1))'
+    me[f'G{r}'] = f'=IF(F{r}="","",INDEX({UR("T")},F{r}))'
+    me[f'H{r}'] = f'=IF(F{r}="","",INDEX({UR("X")},F{r}))'
+    me[f'I{r}'] = f'=IF(A{r}="","",IFERROR(INDEX(Boxes!$B$2:$B${last},MATCH(A{r},Boxes!$A$2:$A${last},0))&"","not there yet"))'
+    me[f'J{r}'] = f'=IF(OR(A{r}="",H{r}=""),"",IF(I{r}="not there yet","add to Boxes",IF(I{r}="","size blank on Boxes",IF(I{r}=H{r},"OK","Boxes says "&I{r}))))'
+    for k in range(len(FITS)):
+        it = IT + k
+        col = me.cell(row=r, column=11 + k).column_letter
+        me[f'{col}{r}'] = (f'=IF(E{r}="","",IF(AND(LARGE(B{r}:D{r},1)>=$T${it},LARGE(B{r}:D{r},2)>=$U${it},'
+                           f'SMALL(B{r}:D{r},1)>=$V${it}),"yes","no"))')
+    me[f'E{r}'].number_format = '#,##0'
+# the example boxes from the Boxes tab, measured like USPS size 2 and 3 boxes
+for i, (n, w, h_, d) in enumerate([(101, 5, 5.5, 14.75), (102, 5, 5.5, 14.75), (201, 11, 5.5, 14.75)], MT + 1):
+    me[f'A{i}'], me[f'B{i}'], me[f'C{i}'], me[f'D{i}'] = n, w, h_, d
+    for c in range(1, len(mcols) + 1): me.cell(row=i, column=c).fill = EX
+me[f'{me.cell(row=MT + 1, column=len(mcols)).column_letter}{MT + 1}'] = 'Example measurements: type over them'
+rule(me, f'A{MT+1}:A{MLAST}', 'custom', f'COUNTIF($A${MT+1}:$A${MLAST},A{MT+1})=1', title='Box number',
+     prompt='The number on the box door.', error='That box number is already on this tab. One row per box.')
+rule(me, f'B{MT+1}:D{MLAST}', 'decimal', '0.5', '60', 'between', title='Inches', prompt='Inches, fractions as decimals: 5 1/2 = 5.5.',
+     error='Type inches between 0.5 and 60, fractions as decimals: 5 1/2 = 5.5, 14 3/4 = 14.75.')
+dv(me, '=Prices!$A$2:$A$4', f'X{U0}:X{U0 + 4}', 'Which store size this USPS size is sold as.')
+for k in range(len(FITS)):
+    rule(me, f'T{IT+k}:V{IT+k}', 'decimal', '0', '60', 'between', title='Inches', error='Type inches, fractions as decimals.')
+me.conditional_formatting.add(f'J{MT+1}:J{MLAST}', FormulaRule(formula=[f'J{MT+1}="OK"'], fill=green))
+me.conditional_formatting.add(f'J{MT+1}:J{MLAST}', FormulaRule(formula=[f'AND(J{MT+1}<>"",J{MT+1}<>"OK")'], fill=amber))
 from openpyxl.workbook.properties import CalcProperties
 wb.calculation = CalcProperties(fullCalcOnLoad=True)
 wb.security = None

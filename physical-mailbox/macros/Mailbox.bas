@@ -1,7 +1,7 @@
-REM  Goin' Postal Forsythe: mailbox register macros (v1.82.0)
+REM  Goin' Postal Forsythe: mailbox register macros (v1.82.2)
 REM  Lives inside mailbox-register-TEMPLATE.ods as Standard.Mailbox. The buttons on the Counter tab
 REM  call the btn... subs; each one asks its questions in small boxes and then calls a plain function
-REM  below (AddCustomer, AddPayment, AssignBox, CloseHolder, BuildCallList, BuildUSPSList, Backup),
+REM  below (AddCustomer, AddPayment, AssignBox, CloseHolder, BuildCallList, BuildUSPSList, BoxesFromMeasure, Backup),
 REM  which never shows a box itself, so tools/add-macros.py can test it without anyone clicking.
 REM  Setting a cell from a macro skips the typing checks, so every function checks its own input.
 Option Explicit
@@ -46,6 +46,12 @@ REM Boxes columns
 Private Const B_BOX As Long = 0
 Private Const B_SIZE As Long = 1
 Private Const B_STATUS As Long = 4
+
+REM Measure tab (build-register.py: header on row 13, boxes from row 14; Store size is column H)
+Private Const M0 As Long = 13
+Private Const MLAST As Long = 312
+Private Const M_BOX As Long = 0
+Private Const M_STORESIZE As Long = 7
 
 REM ---------------------------------------------------------------- helpers
 
@@ -391,6 +397,51 @@ Function BuildUSPSList() As Long
 	BuildUSPSList = n
 End Function
 
+REM Copies every measured box and its store size from the Measure tab to the Boxes tab. Adds boxes
+REM that are not there yet and sets the size of Free ones; a box someone holds keeps its size.
+REM Returns "added,changed,held" (held = sizes that differ on a box with a holder, left alone).
+Function BoxesFromMeasure() As String
+	Dim m As Object, b As Object, r As Long, br As Long, sBox As String, sSize As String, found As Long
+	Dim added As Long, changed As Long, held As Long, oFrom As Object
+	ThisComponent.calculateAll()
+	m = Sh("Measure")
+	b = Sh("Boxes")
+	For r = M0 To MLAST
+		sBox = CellText(m, M_BOX, r)
+		sSize = CellText(m, M_STORESIZE, r)
+		If sBox <> "" And sSize <> "" Then
+			found = -1
+			For br = R0 To HLAST
+				If CellText(b, B_BOX, br) = sBox Then
+					found = br
+					Exit For
+				End If
+			Next br
+			If found < 0 Then
+				found = FirstFree(b, B_BOX, HLAST)
+				If found < 0 Then Exit For
+				oFrom = m.getCellByPosition(M_BOX, r)
+				If oFrom.getType() = com.sun.star.table.CellContentType.VALUE Then
+					b.getCellByPosition(B_BOX, found).setValue(oFrom.getValue())
+				Else
+					b.getCellByPosition(B_BOX, found).setString(sBox)
+				End If
+				b.getCellByPosition(B_SIZE, found).setString(sSize)
+				added = added + 1
+			ElseIf CellText(b, B_SIZE, found) <> sSize Then
+				If CellText(b, B_STATUS, found) = "Free" Or CellText(b, B_STATUS, found) = "" Then
+					b.getCellByPosition(B_SIZE, found).setString(sSize)
+					changed = changed + 1
+				Else
+					held = held + 1
+				End If
+			End If
+		End If
+	Next r
+	ThisComponent.calculateAll()
+	BoxesFromMeasure = added & "," & changed & "," & held
+End Function
+
 Function BackupFolder() As String
 	Dim f As String
 	f = CellText(Sh("Lists"), 5, 0)
@@ -554,7 +605,16 @@ Sub btnUSPSList(Optional oEvent)
 	Dim n As Long
 	n = BuildUSPSList()
 	JumpTo("USPS quarterly", 0, 3)
-	MsgBox n & " open boxes, in name order, on the USPS quarterly tab. Print it with Ctrl+P and take it to the post office.", 64, APP
+	MsgBox n & " open boxes, in name order, on the USPS quarterly tab. Check it against the USPS CMRA database before the quarterly certification (Jan 15, Apr 15, Jul 15, Oct 15), or print it with Ctrl+P if the postmaster wants paper.", 64, APP
+End Sub
+
+Sub btnBoxesFromMeasure(Optional oEvent)
+	Dim res As Variant, msg As String
+	res = Split(BoxesFromMeasure(), ",")
+	msg = res(0) & " boxes added to the Boxes tab, " & res(1) & " Free boxes given their measured size."
+	If CLng(res(2)) > 0 Then msg = msg & Chr(10) & res(2) & " boxes someone holds measure as a different size: they kept theirs. See Check on the Measure tab."
+	JumpTo("Boxes", B_SIZE, R0)
+	MsgBox msg, 64, APP
 End Sub
 
 Sub btnFind(Optional oEvent)

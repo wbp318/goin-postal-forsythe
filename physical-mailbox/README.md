@@ -22,8 +22,10 @@ The owner checklist is also GitHub issue 23, with boxes to tick.
    Open LibreOffice, then **Tools > Options > LibreOffice > Security > Macro Security > Trusted
    Sources > Trusted File Locations > Add**, and pick the folder from step 3. Close and reopen the
    register. Without this step the sheets still work; only the buttons do not.
-5. **Set it up.** On the Prices tab, type the real prices. On the Boxes tab, type the store's real
-   box numbers and sizes. Delete the grey example rows on Holders, Payments and Boxes.
+5. **Set it up.** On the Prices tab, type the real prices. **Measure every box** on the Measure tab
+   (see [Measuring the boxes](#measuring-the-boxes)), then press **Boxes from measurements** on the
+   Counter tab to fill the Boxes tab. Delete the grey example rows on Holders, Payments, Boxes and
+   Measure.
 6. **Print the packet and take the first customer.** Print [`intake-packet.pdf`](intake-packet.pdf).
    Page 2 is the counter steps. Change the parts of the agreement marked OWNERS first
    (`intake-packet.html` is the source: edit it, open it in a browser, print to PDF). Print blank
@@ -42,7 +44,8 @@ asks its questions in small boxes and fills in the right tabs.
 | **Find a customer** | By code, box number or part of a name. Jumps to their row. |
 | **Close a box** | Writes today as the Closed date and the forwarding address in Notes. The box shows Free again. |
 | **Call list** | A new tab listing everyone overdue, due within a week, or with an ID to fix, worst first, with what to do. Print it with Ctrl+P. |
-| **USPS quarterly list** | A new tab with every open box in name order: the list USPS expects from a CMRA each quarter (Domestic Mail Manual 508.1.8). Print it and take it in. |
+| **USPS quarterly list** | A new tab with every open box in name order, to check against before the quarterly certification USPS asks of a CMRA (Domestic Mail Manual 508 1.8.3: by January 15, April 15, July 15 and October 15, in the CMRA Customer Registration Database). Print it if the postmaster wants paper. |
+| **Boxes from measurements** | Copies every box measured on the Measure tab to the Boxes tab with its store size. Adds new boxes and resizes Free ones; a box someone holds keeps its size, and the Measure tab's Check column flags it. |
 | **Save and back up** | Saves, and puts a dated copy in `Documents\Mailbox backups`. |
 
 **Automatic:** every save (Ctrl+S) also writes the day's copy to `Documents\Mailbox backups`, one
@@ -74,6 +77,7 @@ flowchart TD
 | Holders | one row per customer: contact, size, term, start date, both IDs (last 4 only), 1583 date | price per term, months paid, paid through, **Status** (Current, Due soon, Overdue, Closed), **ID check** (OK, missing, same kind, no address, EXPIRED), **Ready for a box** |
 | Payments | one row per POS payment: date, code, months covered, amount, receipt number | the holder's name, the expected amount |
 | Prices | the monthly price per size and how many months a year costs | the yearly prices |
+| Measure | each box's inside width, height and depth in inches; which USPS sizes count as Small, Medium and Large | cubic inches, the USPS size (1 to 5) and name, the store size, whether it matches the Boxes tab, and what fits (a #10 envelope, a 9 x 12 envelope, Small and Medium Flat Rate Boxes, a shoebox) |
 
 Yellow cells are for typing. White cells are formulas. "Paid through" is the start date plus every
 month paid on the Payments tab, so a payment row is all it takes to renew. Every typed column checks
@@ -85,6 +89,32 @@ code from the Holders list and 1 to 24 months. The buttons check the same things
 **Customer data stays off GitHub.** This folder's `.gitignore` ignores every spreadsheet except the
 template. The real register lives on the counter PC. Copy `Documents\Mailbox backups` to a USB stick
 at closing. The paper 1583s and ID copies go in a locked drawer.
+
+## Measuring the boxes
+
+USPS sets no size for a CMRA's private mailboxes: Domestic Mail Manual 508 1.8, the CMRA rules, says
+nothing about it. What USPS does have is its own PO Box chart (DMM 508 4.1.3), five sizes by cubic
+inches, and that is the plain way to tell a customer what a box holds. So each box is measured once
+and sized the USPS way. The Measure tab has these steps at the top:
+
+1. Tape measure in inches, door open. **Width and height** of the door opening at its tightest point
+   (the frame lip, not the wall behind it). **Depth** from the front of the opening to the back wall,
+   less a hinge or lock bolt that sticks in.
+2. Fractions as decimals (5 1/2 = 5.5, 14 3/4 = 14.75), rounded down.
+3. One row per door. A bank of identical boxes: measure one, copy its numbers down.
+4. The sheet gives the cubic inches, the USPS size and the store size, and **Fits** columns for common
+   items. Press **Boxes from measurements** on the Counter tab.
+
+| USPS size | Opening (in), all 14 3/4 deep | Cubic inches | Store size (template default) |
+| --- | --- | --- | --- |
+| 1 X-Small | 3 x 5 1/2 | under 296 | Small |
+| 2 Small | 5 x 5 1/2 | 296 to 499 | Small |
+| 3 Medium | 11 x 5 1/2 | 500 to 999 | Medium |
+| 4 Large | 11 x 11 | 1,000 to 1,999 | Large |
+| 5 X-Large | 22 1/2 x 12 | 2,000 or more | Large |
+
+The store-size column is Peter and Rin's to set (yellow cells on the Measure tab). The item sizes for
+the Fits columns are yellow too: change them if the store's own boxes differ.
 
 ## Rebuilding the template
 
@@ -99,7 +129,8 @@ python physical-mailbox/tools/build-register.py
 
 The second step adds the Counter tab, the buttons and the macros, saves
 `mailbox-register-TEMPLATE.ods`, then reopens it and runs every macro against it: a customer, a
-payment, the IDs, a box, both lists, a backup and closing the box. It stops with a FAIL line if
+payment, the IDs, a box, both lists, a backup, closing the box, the Measure tab's formulas and Boxes
+from measurements (40 checks in all). It stops with a FAIL line if
 anything is off.
 
 ## Decisions for Peter and Rin
@@ -111,14 +142,16 @@ anything is off.
    days), refunds.
 3. **Address format.** With "Ste 2" already in the store's address, ask the postmaster for either
    "Ste 2 #101" or "PMB 101" on its own line, and use that one every time.
-4. **One real copy.** The counter PC holds the real register. A copy on a personal machine is a
+4. **Which USPS sizes are Small, Medium and Large.** The template sells USPS sizes 1 and 2 as Small, 3
+   as Medium, 4 and 5 as Large. Change it on the Measure tab once the boxes are measured.
+5. **One real copy.** The counter PC holds the real register. A copy on a personal machine is a
    backup to look at, not a second place to type: two copies typed in separately cannot be merged.
 
 ## Files
 
 | File | What |
 | --- | --- |
-| `mailbox-register-TEMPLATE.ods` | The blank register with the Counter tab, the buttons, the macros, and one grey example customer, payment and boxes |
+| `mailbox-register-TEMPLATE.ods` | The blank register with the Counter tab, the buttons, the macros, the Measure tab, and one grey example customer, payment, boxes and measurements |
 | `intake-packet.pdf` | Five pages to print: owner checklist, counter steps and closing a box, which IDs count with the store's ID record, the service agreement (draft), the key receipt and the customer's address card |
 | `intake-packet.html` | The source of the PDF |
 | `macros/Mailbox.bas` | The macros, readable: what each button does |
