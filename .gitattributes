@@ -52,3 +52,10 @@
 *.woff2    binary
 *.ttf      binary
 *.otf      binary
+
+# The 107x39 banner's SVGs are machine output, not hand-written: vectorize.py and rebuilt/build.py
+# write the two banners, and parts/mascot.svg is a trace of the artwork. At 4.5 MB they were 95% of
+# the repo's SVG and pushed Python under GitHub's "Other". Kept in the repo, left out of the bar.
+designs/banner-107x39/banner-107x39.svg                  linguist-detectable=false
+designs/banner-107x39/rebuilt/banner-107x39-rebuilt.svg  linguist-detectable=false
+designs/banner-107x39/rebuilt/parts/mascot.svg           linguist-detectable=false
