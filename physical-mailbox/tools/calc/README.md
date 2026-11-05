@@ -173,7 +173,7 @@ frozen at D2).
 | Col | Heading | Type or formula | What goes in, and the check |
 | --- | --- | --- | --- |
 | A | Code | **automatic** | The next `MB-` code, written as soon as a name is typed on the row (or by New customer). Red while a name has no code. Typed by hand it must be MB- and three digits, used once |
-| B | Box # | type (Give a box does it) | Pick from the arrow: the Boxes tab's numbers. Turns **red** if two open customers have the same box |
+| B | Box # | pick or type (Give a box does it) | Pick from the arrow (every box on the Boxes tab), or type any number. A typed number is checked: letters and digits up to 6, not another open customer's box (a message says whose, and the cell clears). A number not on the Boxes tab yet is added there with the customer's size. **Amber** if the customer is not ready for a box yet, **red** if two open customers have it |
 | C | Name | type | 2 to 60 characters |
 | D | Business (optional) | type | The business name if the box is for one |
 | E | Phone | type | Ten digits; spaces, dashes, dots and brackets are fine: `318 555 0100`. Text cell |
@@ -231,7 +231,7 @@ themselves.
 
 | Col | Heading | Type or formula | What |
 | --- | --- | --- | --- |
-| A | Box # | type | The number on the door; each once |
+| A | Box # | type | The number on the door: letters and digits up to 6, each once. Boxes typed on Holders and boxes from Measure land here by themselves |
 | B | Size | type | Arrow: Small, Medium, Large |
 | C | Holder code | formula | The open customer with this box |
 | D | Holder | formula | Their name |
@@ -703,6 +703,8 @@ If any check fails, it saves nothing. Other paths: `upgrade-register.py OLD.ods 
 | A box shows red on Holders | Two open customers have the same box | One of them is wrong: fix Box # |
 | The Boxes tab says Free for a box someone has | Their Box # is blank, or they have a Closed date | Fix their row |
 | A row's Code cell is red and its formulas are blank | A name was typed while macros were off, so no code was written | Trust the folder (1.3) and reopen: the code fills in on open. Or type the next MB- code |
+| The Box # dropdown shows only a few boxes | The dropdown lists the Boxes tab, which has only the grey examples until the real boxes are in | Type the real boxes on Boxes, or measure them and press Boxes from measurements. Or just type the number on Holders: it is added to Boxes |
+| "Box 102 is already ...'s" and the cell clears | That box belongs to another open customer | Pick a Free box: Boxes tab, Status arrow, tick Free |
 | Status says Overdue right after a payment | The Payments row has a wrong code, or Months covered is blank | Check the row: Name should show the customer |
 | A button says "No single customer matches" | Part of a name matched two people, or none | Type more of the name, or the code |
 | A button stops with a Basic error box | Something the macro did not expect | Note the line it names, press OK, Ctrl+Z if it wrote anything, and report it |
@@ -912,7 +914,7 @@ Tips:
 LibreOffice ships its own Python with the `uno` module, at
 `C:\Program Files\LibreOffice\program\python.exe`. That Python starts a hidden Calc, opens files, runs
 macros and saves. [`add-macros.py`](add-macros.py) is the full example: it builds the Counter tab,
-puts the Basic in, and runs 51 checks. The smallest version opens the register hidden and reads a
+puts the Basic in, and runs 56 checks. The smallest version opens the register hidden and reads a
 count:
 
 ```python
@@ -990,7 +992,7 @@ python physical-mailbox/tools/calc/build-register.py
 1. `build-register.py` (your Python with openpyxl) writes the tabs, formulas, typing checks, colours,
    text formats and unlocked yellow cells to `register-sheets.xlsx` (git-ignored).
 2. `add-macros.py` (LibreOffice's Python) adds the Counter tab, the buttons, the Basic and the two
-   document events, and saves `mailbox-register-TEMPLATE.ods`. It then reopens it and runs 51 checks:
+   document events, and saves `mailbox-register-TEMPLATE.ods`. It then reopens it and runs 56 checks:
    - every macro: a customer, a payment, the IDs, a box, both lists, a backup, closing;
    - the Measure tab and Boxes from measurements;
    - the Python macro;
@@ -1033,7 +1035,7 @@ Print this section. It fits on one page.
 | --- | --- |
 | `README.md` | This guide |
 | `build-register.py` | Step 1 of the build: the tabs, formulas, checks and formats (openpyxl) |
-| `add-macros.py` | Step 2: the Counter tab, buttons, Basic and events; then the 51 checks (LibreOffice's Python) |
+| `add-macros.py` | Step 2: the Counter tab, buttons, Basic and events; then the 56 checks (LibreOffice's Python) |
 | `upgrade-register.py` | Carries a filled register into a new template; `--self-test` |
 | `register-report.py` | The pandas report (walkthrough 1) |
 | `macros/Mailbox.bas` | The buttons' Basic, readable |

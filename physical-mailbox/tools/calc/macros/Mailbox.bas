@@ -1,4 +1,4 @@
-REM  Goin' Postal Forsythe: mailbox register macros (v1.85.0)
+REM  Goin' Postal Forsythe: mailbox register macros (v1.86.0)
 REM  Lives inside mailbox-register-TEMPLATE.ods as Standard.Mailbox. The buttons on the Counter tab
 REM  call the btn... subs; each one asks its questions in small boxes and then calls a plain function
 REM  below (AddCustomer, AddPayment, AssignBox, CloseHolder, BuildCallList, BuildUSPSList, BoxesFromMeasure, Backup),
@@ -49,6 +49,7 @@ REM Boxes columns
 Private Const B_BOX As Long = 0
 Private Const B_SIZE As Long = 1
 Private Const B_STATUS As Long = 4
+Private Const B_NOTE As Long = 6
 
 REM Measure tab (build-register.py: header on row 13, boxes from row 14; Store size is column H)
 Private Const M0 As Long = 13
@@ -702,15 +703,83 @@ Function ChangedRows(oEvent As Object, lastRow As Long) As Variant
 	End If
 End Function
 
+REM A box number typed on a Holders row. Returns "" when it is fine, "added" when it was not on the
+REM Boxes tab and has been added there (with the customer's size), or "!" and why it cannot be used.
+Function CheckBoxEntry(r As Long) As String
+	Dim h As Object, b As Object, sBox As String, i As Long, ch As String, r2 As Long, br As Long, cell As Object
+	h = Sh("Holders")
+	CheckBoxEntry = ""
+	sBox = CellText(h, H_BOX, r)
+	If sBox = "" Or CellText(h, H_CLOSED, r) <> "" Then Exit Function
+	If Len(sBox) > 6 Then
+		CheckBoxEntry = "!Box numbers are up to 6 letters and digits, like 101 or A12."
+		Exit Function
+	End If
+	For i = 1 To Len(sBox)
+		ch = UCase(Mid(sBox, i, 1))
+		If Not ((ch >= "0" And ch <= "9") Or (ch >= "A" And ch <= "Z")) Then
+			CheckBoxEntry = "!Box numbers are letters and digits only, like 101 or A12."
+			Exit Function
+		End If
+	Next i
+	For r2 = R0 To HLAST
+		If r2 <> r And CellText(h, H_CODE, r2) <> "" And CellText(h, H_CLOSED, r2) = "" And UCase(CellText(h, H_BOX, r2)) = UCase(sBox) Then
+			CheckBoxEntry = "!Box " & sBox & " is already " & CellText(h, H_NAME, r2) & "'s (" & CellText(h, H_CODE, r2) & "). Free boxes show on the Boxes tab."
+			Exit Function
+		End If
+	Next r2
+	b = Sh("Boxes")
+	For br = R0 To HLAST
+		If UCase(CellText(b, B_BOX, br)) = UCase(sBox) Then Exit Function
+	Next br
+	br = FirstFree(b, B_BOX, HLAST)
+	If br < 0 Then
+		CheckBoxEntry = "!The Boxes tab is full."
+		Exit Function
+	End If
+	cell = b.getCellByPosition(B_BOX, br)
+	If IsNumeric(sBox) Then
+		cell.setValue(CDbl(sBox))
+	Else
+		cell.setString(UCase(sBox))
+	End If
+	b.getCellByPosition(B_SIZE, br).setString(CellText(h, H_SIZE, r))
+	b.getCellByPosition(B_NOTE, br).setString("Added from Holders " & DateText(TodaySerial()) & ": measure it on the Measure tab")
+	CheckBoxEntry = "added"
+End Function
+
+REM True when a Content changed event covers the Holders Box # column.
+Function TouchesBoxColumn(oEvent As Object) As Boolean
+	Dim addrs As Variant, i As Long
+	If oEvent.supportsService("com.sun.star.sheet.SheetCellRanges") Then
+		addrs = oEvent.getRangeAddresses()
+	Else
+		addrs = Array(oEvent.getRangeAddress())
+	End If
+	TouchesBoxColumn = False
+	For i = LBound(addrs) To UBound(addrs)
+		If addrs(i).StartColumn <= H_BOX And addrs(i).EndColumn >= H_BOX Then TouchesBoxColumn = True
+	Next i
+End Function
+
 Sub OnHoldersChange(Optional oEvent)
-	Dim rows As Variant, i As Long
+	Dim rows As Variant, i As Long, boxCol As Boolean, res As String
 	If busy Or IsMissing(oEvent) Then Exit Sub
 	busy = True
 	On Error GoTo Done
 	rows = ChangedRows(oEvent, HLAST)
+	boxCol = TouchesBoxColumn(oEvent)
 	For i = LBound(rows) To UBound(rows)
 		FillHolderRow(rows(i))
+		If boxCol Then
+			res = CheckBoxEntry(rows(i))
+			If Left(res, 1) = "!" Then
+				Sh("Holders").getCellByPosition(H_BOX, rows(i)).clearContents(1 + 2 + 4 + 16)
+				MsgBox Mid(res, 2), 48, APP
+			End If
+		End If
 	Next i
+	ThisComponent.calculateAll()
 Done:
 	busy = False
 End Sub

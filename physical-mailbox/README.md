@@ -83,7 +83,8 @@ Yellow cells are for typing. White cells are formulas. "Paid through" is the sta
 month paid on the Payments tab, so a payment row is all it takes to renew. Every typed column checks
 what goes in and says why in a box when it refuses: codes are MB- and three digits, used once;
 phones need ten digits; IDs take the last four characters only and refuse an expired date; a box
-comes from the Boxes tab's list, and a box given to two open customers turns red; payments take a
+is picked from the Boxes tab's list or typed (a typed number is checked, refused if another open
+customer has it, and added to the Boxes tab if it is new), and a box given to two open customers turns red; payments take a
 code from the Holders list and 1 to 24 months. The buttons check the same things.
 
 **Customer data stays off GitHub.** This folder's `.gitignore` ignores every spreadsheet except the
@@ -169,10 +170,10 @@ python physical-mailbox/tools/calc/build-register.py
 ```
 
 The second step adds the Counter tab, the buttons and the macros, saves
-`mailbox-register-TEMPLATE.ods`, then reopens it and runs 51 checks:
+`mailbox-register-TEMPLATE.ods`, then reopens it and runs 56 checks:
 
 - every macro: a customer, a payment, the IDs, a box, both lists, a backup and closing the box;
-- automatic codes: a name typed on an empty row gets the next code and today, typed through Calc's own input as the keyboard does;
+- automatic codes: a name typed on an empty row gets the next code and today, and a new box number typed by hand lands on the Boxes tab, both typed through Calc's own input as the keyboard does;
 - the Measure tab's formulas and Boxes from measurements;
 - the Python macro;
 - the text formats and cell locks;

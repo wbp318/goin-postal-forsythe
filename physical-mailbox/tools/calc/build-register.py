@@ -230,7 +230,12 @@ H = lambda n: f'{L[n]}2:{L[n]}{last}'
 c = lambda n: f'{L[n]}2'
 rule(ho, H('Code'), 'custom', f'AND(LEFT({c("Code")},3)="MB-",LEN({c("Code")})=6,ISNUMBER(VALUE(RIGHT({c("Code")},3))),COUNTIF($A$2:$A${last},{c("Code")})=1)',
      title='Customer code', prompt='MB- and three digits: MB-002, MB-003 ... Each code once.', error='Use MB- and three digits, like MB-002, and do not reuse a code that is already on this tab.')
-dv(ho, f'=Boxes!$A$2:$A${last}', H('Box #'), 'Pick a box from the Boxes tab. It must be Free there.')
+# Box #: a dropdown of the Boxes tab's numbers, and any number typed by hand is allowed too (no stop box).
+# The OnHoldersChange macro checks a typed number: letters and digits, not another open customer's box,
+# and a number not on the Boxes tab yet is added there.
+_bd = DataValidation(type='list', formula1=f'=Boxes!$A$2:$A${last}', allow_blank=True, showErrorMessage=False, showInputMessage=True,
+                     promptTitle='Box number', prompt='Pick a box from the list, or type its number. A number not on the Boxes tab yet is added there. Give a box (Counter tab) checks the customer is ready first.')
+ho.add_data_validation(_bd); _bd.add(H('Box #'))
 rule(ho, H('Name'), 'textLength', '2', '60', 'between', title='Name', error="Type the customer's name (2 to 60 letters).")
 rule(ho, H('Phone'), 'custom', f'LEN(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE({c("Phone")}," ",""),"-",""),"(",""),")",""),".",""))=10',
      title='Phone', prompt='Ten digits, like 318 555 0100.', error='A phone number needs ten digits, like 318 555 0100.')
@@ -259,7 +264,7 @@ dv(pa, f'=Holders!$A$2:$A${last}', f'B2:B{PL}', "Pick the customer's code (MB-..
 rule(pa, f'D2:D{PL}', 'whole', '1', '24', 'between', title='Months covered', prompt='1 for a month, 12 for a year.', error='Months covered is a whole number from 1 to 24: 1 for a month, 12 for a year.')
 rule(pa, f'E2:E{PL}', 'decimal', '0', '5000', 'between', title='Amount', prompt='What the POS took, in dollars.', error='Type the amount in dollars, like 15 or 150.00.')
 
-rule(bx, f'A2:A{last}', 'custom', f'COUNTIF($A$2:$A${last},A2)=1', title='Box number', prompt='The number on the box door.', error='That box number is already on this tab. Each box once.')
+rule(bx, f'A2:A{last}', 'custom', f'AND(COUNTIF($A$2:$A${last},A2)=1,LEN(A2)<=6,ISERROR(FIND(" ",A2)))', title='Box number', prompt='The number on the box door: letters and digits, up to 6, like 101 or A12.', error='Each box once, letters and digits only, up to 6 characters (101, A12).')
 
 for cell in ('B2', 'B3', 'B4'):
     rule(pr, cell, 'decimal', '0', '1000', 'between', title='Monthly price', error='Type the monthly price in dollars, like 15.')

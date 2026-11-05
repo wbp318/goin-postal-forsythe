@@ -266,6 +266,20 @@ def test(desktop):
     sel.addRangeAddress(p.getCellRangeByPosition(1, pr_, 1, pr_).getRangeAddress(), False)
     run('OnPaymentsChange', sel)
     check('a payment code typed by hand gets today as its date (several ranges at once too)', int(p.getCellByPosition(0, pr_).getValue()) == today, p.getCellByPosition(0, pr_).getValue())
+    # A box number typed by hand on Typed Byhand's row (MB-003, Small)
+    def box_entry(v):
+        h.getCellByPosition(1, hr).setString(v) if isinstance(v, str) else h.getCellByPosition(1, hr).setValue(v)
+        return run('CheckBoxEntry', hr)
+    check('a typed box number not on the Boxes tab is added there with the customer size',
+          box_entry(305) == 'added' and any(b.getCellByPosition(0, i).getString() == '305' and b.getCellByPosition(1, i).getString() == 'Small' for i in range(1, 12)))
+    check('...and typing it again is simply fine', box_entry(305) == '')
+    check("a box another open customer holds is refused, naming them", str(box_entry(101)).startswith('!Box 101 is already EXAMPLE Jane Doe'), box_entry(101))
+    check('a box number with a space or over 6 characters is refused', str(box_entry('A 12')).startswith('!') and str(box_entry('1234567')).startswith('!'))
+    check('the Box # cell keeps a dropdown but takes typed numbers', h.getCellByPosition(1, hr).Validation.Type == uno.Enum('com.sun.star.sheet.ValidationType', 'LIST') and not h.getCellByPosition(1, hr).Validation.ShowErrorMessage)
+    h.getCellByPosition(1, hr).clearContents(1 | 2 | 4 | 16)
+    for i in range(1, 12):
+        if b.getCellByPosition(0, i).getString() == '305':
+            b.getCellByPosition(0, i).clearContents(1 | 2 | 4 | 16); b.getCellByPosition(1, i).clearContents(1 | 2 | 4 | 16); b.getCellByPosition(6, i).clearContents(1 | 2 | 4 | 16)
     h.getCellByPosition(0, hr).clearContents(1 | 2 | 4 | 16)
     n = run('FillTypedRows')
     check('opening the register gives a code to a name typed while macros were off', n == 1 and h.getCellByPosition(0, hr).getString() == 'MB-003', (n, h.getCellByPosition(0, hr).getString()))
@@ -314,10 +328,14 @@ def test_typing(desktop):
         type_in(h, 2, 2, 'John Roberts')
         type_in(h, 2, 3, 'Second Person')
         type_in(p, 1, 2, 'MB-002')
+        type_in(h, 6, 2, 'Small')
+        type_in(h, 1, 2, '412')
         doc.calculateAll()
-        got = [h.getCellByPosition(0, 2).getString(), h.getCellByPosition(0, 3).getString(), p.getCellByPosition(0, 2).getString() != '', p.getCellByPosition(2, 2).getString()]
-        ok = got == ['MB-002', 'MB-003', True, 'John Roberts']
-        print(('  ok   ' if ok else '  FAIL ') + 'typed in Calc: names get MB-002 and MB-003, a typed payment code gets its date and name' + ('' if ok else f'  (got {got!r})'))
+        bx = doc.Sheets.getByName('Boxes')
+        new_box = [bx.getCellByPosition(1, i).getString() for i in range(1, 12) if bx.getCellByPosition(0, i).getString() == '412']
+        got = [h.getCellByPosition(0, 2).getString(), h.getCellByPosition(0, 3).getString(), p.getCellByPosition(0, 2).getString() != '', p.getCellByPosition(2, 2).getString(), new_box]
+        ok = got == ['MB-002', 'MB-003', True, 'John Roberts', ['Small']]
+        print(('  ok   ' if ok else '  FAIL ') + 'typed in Calc: names get MB-002 and MB-003, a payment code gets its date and name, a new box number typed by hand lands on Boxes' + ('' if ok else f'  (got {got!r})'))
         if not ok: failures.append('typing')
     finally:
         doc.close(True)
