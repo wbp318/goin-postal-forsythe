@@ -40,8 +40,8 @@ Download it free from libreoffice.org, or open a terminal and run
 
 ### 1.2 Put the register where it lives
 
-On the counter PC, make one folder for the register, such as `C:\Mailbox`. Copy
-`mailbox-register-TEMPLATE.ods` into it and rename the copy `mailbox-register.ods`. That copy is
+On the counter PC, make one folder for the register, such as `C:\Mailbox`. Download
+[`mailbox-register-TEMPLATE.ods`](https://github.com/wbp318/goin-postal-forsythe/raw/main/physical-mailbox/mailbox-register-TEMPLATE.ods) into it and rename the copy `mailbox-register.ods`. That copy is
 **the real register**. Every other copy anywhere is a backup to look at.
 
 ### 1.3 Trust that folder, so the buttons run

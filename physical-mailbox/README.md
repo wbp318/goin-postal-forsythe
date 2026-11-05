@@ -5,6 +5,30 @@ register with buttons that do the work, and a printed intake packet. It runs on 
 machines and the owners' own, with no internet needed. Nothing here waits on Cloudflare, Stripe or
 PeterShip; physical boxes exist at one location only, so they are not part of PeterShip at all.
 
+## Start here: download the template, then work in your own copy
+
+**The template is a blank starting point. The register you type customers into is your own copy of
+it, and that copy never goes on GitHub.**
+
+1. **Download the template.** Use **[mailbox-register-TEMPLATE.ods](https://github.com/wbp318/goin-postal-forsythe/raw/main/physical-mailbox/mailbox-register-TEMPLATE.ods)**,
+   or on GitHub open `mailbox-register-TEMPLATE.ods` and press the download button. In a clone of
+   this repo, it is already here in `physical-mailbox/`.
+2. **Make your copy.** Put the file in a folder on the counter PC, such as `C:\Mailbox`, and rename it
+   **`mailbox-register.ods`**. That file is the real register: open it, type in it, save it. In a clone
+   of the repo, the copy goes right here next to the template, as
+   `physical-mailbox/mailbox-register.ods`.
+3. **Trust its folder once,** so the buttons run: **Tools > Options > LibreOffice > Security > Macro
+   Security > Trusted Sources > Trusted File Locations > Add**, then pick that folder. Close and reopen
+   the register.
+4. **Open `mailbox-register.ods` and go.** It opens on the Counter tab. Start with the steps below, and
+   use [`tools/calc/README.md`](tools/calc/README.md), the complete guide, for everything else.
+
+Never type customers into the template, and never upload, email or commit your copy: it holds names,
+phone numbers and ID details. This folder's `.gitignore` ignores every `.ods` except the template, so
+a copy in a clone stays off GitHub. When a newer template comes out, do not copy it over your
+register. The upgrade script carries your customers into it
+([guide section 7](tools/calc/README.md#7-upgrading-to-a-new-template)).
+
 ## Instructions: Friday in six steps
 
 The owner checklist is also GitHub issue 23, with boxes to tick.
@@ -15,9 +39,8 @@ The owner checklist is also GitHub issue 23, with boxes to tick.
    thing that can stop Friday.
 2. **Install LibreOffice** (free, from libreoffice.org, or `winget install TheDocumentFoundation.LibreOffice`)
    on each machine that will open the register.
-3. **Copy the register.** Copy [`mailbox-register-TEMPLATE.ods`](mailbox-register-TEMPLATE.ods) into
-   a folder on that machine and rename it `mailbox-register.ods`. Keep one copy as the real one:
-   the counter PC.
+3. **Make your copy of the register** from the template, as in [Start here](#start-here-download-the-template-then-work-in-your-own-copy):
+   `mailbox-register.ods` in its own folder. Keep one copy as the real one: the counter PC.
 4. **Let its buttons run, once per machine.** LibreOffice only runs macros from folders you trust.
    Open LibreOffice, then **Tools > Options > LibreOffice > Security > Macro Security > Trusted
    Sources > Trusted File Locations > Add**, and pick the folder from step 3. Close and reopen the
