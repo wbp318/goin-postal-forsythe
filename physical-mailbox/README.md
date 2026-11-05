@@ -90,6 +90,35 @@ code from the Holders list and 1 to 24 months. The buttons check the same things
 template. The real register lives on the counter PC. Copy `Documents\Mailbox backups` to a USB stick
 at closing. The paper 1583s and ID copies go in a locked drawer.
 
+## Using Calc well, and Python with it
+
+**[CALC-GUIDE.md](CALC-GUIDE.md)** is the full guide. It covers:
+
+- Calc for an Excel user (Shift+Esc is Alt+Q)
+- the keys worth knowing
+- value highlighting and the Detective, for seeing what a cell is
+- filters (rather than sorting)
+- printing and pivot tables
+- keeping the file safe (AutoRecovery, the lock file, one real copy)
+- the Basic macros
+- a **Python tutorial** with three walkthroughs on the register:
+
+| | Run it | What it does |
+| --- | --- | --- |
+| pandas, reading the saved file | `python physical-mailbox/tools/register-report.py` (needs `pip install pandas odfpy`) | Who to call, money by month, boxes by size; `--csv folder` writes CSV files |
+| A Python macro inside Calc | copy `macros/python/mailbox_tools.py` to `%APPDATA%\LibreOffice\4\user\Scripts\python`, then Tools > Macros > Run Macro > My Macros > mailbox_tools > box_report | A Box report tab: boxes, taken, Free and the money a month per size |
+| UNO, driving Calc from outside | LibreOffice's own `python.exe`, as `tools/add-macros.py` does | Builds the template and tests every macro |
+
+The five habits that matter most:
+
+1. **Type only in yellow cells.** Ctrl+F8 shows formulas in green; never type over them.
+2. **Filter, don't sort.** Press Ctrl+Shift+L on a tab, then pick from the arrows. The buttons build
+   sorted lists on their own tabs.
+3. **Ctrl+S often.** Each save makes the day's backup. Keep it .ods ("Use ODF Format!").
+4. **One real copy, one machine at a time.** Close it before copying it to the USB stick.
+5. **Change the template, not the file**, for new buttons or tabs: edit `macros/Mailbox.bas` and
+   `tools/`, then rebuild. Your own tabs, pivot tables and Python macros are fine to add any time.
+
 ## Measuring the boxes
 
 USPS sets no size for a CMRA's private mailboxes: Domestic Mail Manual 508 1.8, the CMRA rules, says
@@ -130,7 +159,7 @@ python physical-mailbox/tools/build-register.py
 The second step adds the Counter tab, the buttons and the macros, saves
 `mailbox-register-TEMPLATE.ods`, then reopens it and runs every macro against it: a customer, a
 payment, the IDs, a box, both lists, a backup, closing the box, the Measure tab's formulas and Boxes
-from measurements (40 checks in all). It stops with a FAIL line if
+from measurements (41 checks in all, the Python macro too). It stops with a FAIL line if
 anything is off.
 
 ## Decisions for Peter and Rin
@@ -156,3 +185,6 @@ anything is off.
 | `intake-packet.html` | The source of the PDF |
 | `macros/Mailbox.bas` | The macros, readable: what each button does |
 | `tools/build-register.py`, `tools/add-macros.py` | The two steps that build the template |
+| `CALC-GUIDE.md` | Using Calc well, and the Python tutorial |
+| `tools/register-report.py` | The pandas report (walkthrough 1) |
+| `macros/python/mailbox_tools.py` | The Python macro (walkthrough 2), tested by `add-macros.py` |

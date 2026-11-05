@@ -227,6 +227,12 @@ def test(desktop):
     check('the Boxes tab has 301 Large and 201 Large, and 101 kept Small', (sizes.get('301'), sizes.get('201'), sizes.get('101')) == ('Large', 'Large', 'Small'), sizes)
     check('Check says OK for 301 and flags 101', (M(9, 16).getString(), M(9, 13).getString()) == ('OK', 'Boxes says Small'), (M(9, 16).getString(), M(9, 13).getString()))
     check('running it again changes nothing', run('BoxesFromMeasure') == '0,0,1')
+    sys.path.insert(0, str(HERE.parent / 'macros' / 'python'))
+    import mailbox_tools  # the Python macro, called with the document as it would be from the menu
+    n = mailbox_tools.build_box_report(doc)
+    br = s.getByName('Box report')
+    got = [br.getCellByPosition(c, 4).getString() for c in range(4)]
+    check('Python macro box_report: 4 boxes, 1 taken, 3 Free', n == 3 and got == ['All', '4', '1', '3'], (n, got))
     for name in ('Holders', 'Payments', 'Boxes', 'Measure'):
         sh = s.getByName(name)
         rng = sh.getCellRangeByPosition(0, 1, {'Holders': 27, 'Measure': 23}.get(name, 8), 40)
