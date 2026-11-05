@@ -64,6 +64,7 @@ git tag vX.Y.Z && git push origin main vX.Y.Z
 python scripts/release_notes.py vX.Y.Z --body narrative.md > full.md   # narrative + linked changelog of every file changed
 gh release create vX.Y.Z --title "vX.Y.Z: ..." --notes-file full.md
 python scripts/changelog.py && git commit -am "CHANGELOG.md: vX.Y.Z"   # rebuilds CHANGELOG.md from the releases; wait a few seconds after the release first
+python scripts/languages.py   # refreshes the README's exact language table from GitHub's count; commit it with the changelog
 ```
 
 Owner-facing follow-ups (keys to obtain, prices to confirm, schema re-runs) go in GitHub issues, not in code comments alone.
