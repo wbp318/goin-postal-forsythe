@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.81.1] - 2026-11-05
+
+**input checks in the mailbox register**
+
+Every column staff type in now checks the entry. A wrong entry is refused with a sentence saying why, and a hint shows when the cell is selected. All 29 checks survive a round trip through LibreOffice Calc.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.81.1) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.81.1) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.81.0...v1.81.1)
+
 ## [v1.81.0] - 2026-11-04
 
 **physical mailboxes run on their own**
