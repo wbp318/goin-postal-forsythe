@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.86.0] - 2026-11-05
+
+**Box # from the dropdown or typed, checked, and added to Boxes**
+
+The Box # dropdown on Holders offered only 101, 102 and 201. It lists the Boxes tab, and that tab holds only the grey examples until the store's real boxes go in. Peter asked for manual entry or the dropdown, with validation on manual entry.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.86.0) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.86.0) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.85.0...v1.86.0)
+
 ## [v1.85.0] - 2026-11-05
 
 **automatic codes and dates as you type in the mailbox register**
