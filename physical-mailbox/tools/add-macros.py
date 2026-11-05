@@ -43,14 +43,15 @@ BUTTONS = [
     ('USPS quarterly list', 'btnUSPSList', 'Every open box in name order, the list USPS expects each quarter. Print it and take it to the post office.'),
     ('Save and back up', 'btnBackup', 'Saves, and puts a dated copy in Documents\\Mailbox backups. Saving with Ctrl+S makes the day\'s copy too.'),
 ]
+# setFormula takes Calc's own syntax: $Sheet.$A$1 (a dot, not Excel's Sheet!A1) and ; between arguments.
 COUNTS = [
-    ('Open boxes', '=COUNTIFS(Holders!$A$2:$A$301;"<>";Holders!$Z$2:$Z$301;"";Holders!$B$2:$B$301;"<>")'),
-    ('Free boxes', '=COUNTIF(Boxes!$E$2:$E$301;"Free")'),
-    ('Overdue', '=COUNTIF(Holders!$M$2:$M$301;"Overdue")'),
-    ('Due within a week', '=COUNTIF(Holders!$M$2:$M$301;"Due soon")'),
-    ('IDs to fix', '=COUNTIFS(Holders!$A$2:$A$301;"<>";Holders!$Z$2:$Z$301;"";Holders!$W$2:$W$301;"<>OK")'),
-    ('Ready, waiting on a box', '=COUNTIFS(Holders!$X$2:$X$301;"YES";Holders!$B$2:$B$301;"";Holders!$Z$2:$Z$301;"")'),
-    ('Taken this month ($)', '=SUMIFS(Payments!$E$2:$E$1201;Payments!$A$2:$A$1201;">="&DATE(YEAR(TODAY());MONTH(TODAY());1))'),
+    ('Open boxes', '=COUNTIFS($Holders.$A$2:$A$301;"<>";$Holders.$Z$2:$Z$301;"";$Holders.$B$2:$B$301;"<>")'),
+    ('Free boxes', '=COUNTIF($Boxes.$E$2:$E$301;"Free")'),
+    ('Overdue', '=COUNTIF($Holders.$M$2:$M$301;"Overdue")'),
+    ('Due within a week', '=COUNTIF($Holders.$M$2:$M$301;"Due soon")'),
+    ('IDs to fix', '=COUNTIFS($Holders.$A$2:$A$301;"<>";$Holders.$Z$2:$Z$301;"";$Holders.$W$2:$W$301;"<>OK")'),
+    ('Ready, waiting on a box', '=COUNTIFS($Holders.$X$2:$X$301;"YES";$Holders.$B$2:$B$301;"";$Holders.$Z$2:$Z$301;"")'),
+    ('Taken this month ($)', '=SUMIFS($Payments.$E$2:$E$1201;$Payments.$A$2:$A$1201;">="&DATE(YEAR(TODAY());MONTH(TODAY());1))'),
 ]
 
 
@@ -152,6 +153,7 @@ def test(desktop):
     run = lambda name, *a: sp.getScript(MACRO.format(name)).invoke(a, (), ())[0]
     s = doc.Sheets
     h, p, b = s.getByName('Holders'), s.getByName('Payments'), s.getByName('Boxes')
+    c = s.getByName('Counter')
     form = s.getByName('Counter').DrawPage.Forms.getByIndex(0)
     check('eight buttons, each bound to a macro', form.getCount() == 8 and all(form.getScriptEvents(i)[0].ScriptCode.startswith('vnd.sun.star.script:Standard.Mailbox.btn') for i in range(form.getCount())), form.getCount())
     check('the macro module is in the document', doc.BasicLibraries.getByName('Standard').hasByName('Mailbox'))
@@ -194,6 +196,14 @@ def test(desktop):
     doc.calculateAll()
     check('closing writes the date and frees the box', h.getCellByPosition(25, row).getValue() == today and b.getCellByPosition(4, 2).getString() == 'Free', b.getCellByPosition(4, 2).getString())
     check('closing keeps the forwarding address in Notes', 'PO Box 1' in h.getCellByPosition(26, row).getString())
+    bad = [(i, c.getCellByPosition(1, 3 + i).getError()) for i in range(len(COUNTS)) if c.getCellByPosition(1, 3 + i).getError()]
+    check('every Counter count calculates', not bad, bad)
+    check('the Counter counts are right after the test (1 open box, 2 Free)', c.getCellByPosition(1, 3).getValue() == 1 and c.getCellByPosition(1, 4).getValue() == 2, (c.getCellByPosition(1, 3).getValue(), c.getCellByPosition(1, 4).getValue()))
+    for name in ('Holders', 'Payments', 'Boxes'):
+        sh = s.getByName(name)
+        rng = sh.getCellRangeByPosition(0, 1, 27 if name == 'Holders' else 8, 40)
+        bad = [(name, cc, rr) for rr in range(40) for cc in range(rng.Columns.Count) if rng.getCellByPosition(cc, rr).getError()]
+        check(f'no formula errors on {name}', not bad, bad[:3])
     errs = []
     for name in ('Holders', 'Payments', 'Boxes', 'Counter'):
         sh = s.getByName(name)
