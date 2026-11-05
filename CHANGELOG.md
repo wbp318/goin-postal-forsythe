@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.84.0] - 2026-11-05
+
+**tools/calc/, the complete Calc guide, upgrade script, text cells and protectable formulas**
+
+The builder, the macros, the Python tools and the guide moved into one folder. Git history was kept for each file (git mv).
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.84.0) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.84.0) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.83.0...v1.84.0)
+
 ## [v1.83.0] - 2026-11-05
 
 **Calc guide and Python tutorial for the mailbox register**
