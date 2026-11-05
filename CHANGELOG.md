@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.87.0] - 2026-11-05
+
+**every language, exact, in the README**
+
+GitHub's repo sidebar shows only the six biggest languages and folds the rest into "Other", and no setting changes that. So the root README now has a **Languages** section that lists every language GitHub counts. Each row gives the language's share to two decimals, its bytes, and what it is in this repo.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.87.0) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.87.0) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.86.4...v1.87.0)
+
 ## [v1.86.4] - 2026-11-05
 
 **every language counted, only the machine-made banner SVGs left out**

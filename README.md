@@ -1065,17 +1065,17 @@ python scripts/export_designs.py
 ## Languages
 
 <!-- languages:start -->
-Every language GitHub counts in this repo, exact, as of November 5, 2026 (3,944,077 bytes in all). GitHub's sidebar shows the top six and folds the rest into "Other"; this is the whole list, from the same count. Refreshed by `python scripts/languages.py`.
+Every language GitHub counts in this repo, exact, as of November 5, 2026 (3,950,304 bytes in all). GitHub's sidebar shows the top six and folds the rest into "Other"; this is the whole list, from the same count. Refreshed by `python scripts/languages.py`.
 
 | Language | Share | Bytes | What it is here |
 | --- | ---: | ---: | --- |
-| TypeScript | 34.63% | 1,365,979 | PeterShip and the website's APIs, libraries and tests (`site/src`) |
-| Markdown | 34.01% | 1,341,185 | Plans, guides, READMEs, the agenda and the changelog |
-| Astro | 8.81% | 347,669 | The website's pages and layouts |
-| JSON | 7.14% | 281,538 | Rate sheets, the 14-language strings, store facts, package files |
+| TypeScript | 34.58% | 1,365,979 | PeterShip and the website's APIs, libraries and tests (`site/src`) |
+| Markdown | 34.00% | 1,343,180 | Plans, guides, READMEs, the agenda and the changelog |
+| Astro | 8.80% | 347,669 | The website's pages and layouts |
+| JSON | 7.13% | 281,538 | Rate sheets, the 14-language strings, store facts, package files |
 | SVG | 5.29% | 208,797 | Ad and sponsorship designs (the banner's machine-made traces are left out) |
 | HTML | 4.04% | 159,508 | The mailbox intake packet, the design gallery, page previews |
-| Python | 3.36% | 132,567 | Build and release scripts, the mailbox register's builder, tests and tools |
+| Python | 3.46% | 136,799 | Build and release scripts, the mailbox register's builder, tests and tools |
 | JavaScript | 1.04% | 41,046 | Marketplace connectors and the printer agent (`.mjs`) |
 | CSS | 0.76% | 29,890 | The website's styles |
 | Visual Basic 6.0 | 0.75% | 29,751 | The mailbox register's LibreOffice Basic macros (GitHub's name for `.bas`) |
