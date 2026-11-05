@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.85.0] - 2026-11-05
+
+**automatic codes and dates as you type in the mailbox register**
+
+A customer typed straight onto the Holders tab got no code. Every formula on a Holders row is keyed to the code: price per term, months paid, paid through, status, ID check and ready. So the whole row stayed blank. Peter's ask: "make it do autocodes, I don't wanna manually create codes."
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.85.0) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.85.0) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.84.0...v1.85.0)
+
 ## [v1.84.0] - 2026-11-05
 
 **tools/calc/, the complete Calc guide, upgrade script, text cells and protectable formulas**
