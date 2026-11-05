@@ -49,8 +49,13 @@ def run(browser, *args):
 
 
 def design_files():
-    """Every SVG under designs/, skipping the export folders."""
-    return sorted(p for p in DESIGNS.rglob("*.svg") if p.relative_to(DESIGNS).parts[0] not in ("png", "pdf"))
+    """Every SVG under designs/, skipping the export folders and the print banner.
+
+    banner-107x39/ is sized in inches for the printer and has its own exports (vectorize.py,
+    rebuilt/build.py, its png/ folder), the same folder check_designs.py skips.
+    """
+    return sorted(p for p in DESIGNS.rglob("*.svg")
+                  if p.relative_to(DESIGNS).parts[0] not in ("png", "pdf", "banner-107x39"))
 
 
 def size_of(svg_text):
