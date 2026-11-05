@@ -8,11 +8,15 @@ It starts a hidden LibreOffice with a throwaway profile, then:
   1. loads tools/calc/register-sheets.xlsx,
   2. adds the Counter tab first: live counts and one button per job, each wired to a sub in macros/Mailbox.bas,
   3. puts tools/calc/macros/Mailbox.bas in the document as Standard.Mailbox,
-  4. binds Open Document (land on the Counter tab) and Save Document Done (the day's backup copy),
+  4. binds Open Document (fill typed rows, land on the Counter tab), Save Document Done (the day's
+     backup copy), and Content changed on Holders and Payments (codes, dates and box numbers as you type),
   5. saves physical-mailbox/mailbox-register-TEMPLATE.ods,
   6. reopens that file and runs every macro function against it (add a customer, a payment, IDs, a box,
-     the call list, the USPS list, a backup, closing a box, the Measure tab and Boxes from measurements),
-     then closes it without saving.
+     the call list, the USPS list, a backup, closing a box, the Measure tab and Boxes from measurements,
+     fill as you type, typed box numbers, the Python macro, text formats and cell locks), then closes it
+     without saving,
+  7. opens a copy in a real Calc view and types into it through Calc's own input command, as the
+     keyboard does, to check the sheet events fire.
 It exits non-zero if any check fails.
 """
 import os, sys, time, shutil, subprocess, tempfile, datetime as dt
