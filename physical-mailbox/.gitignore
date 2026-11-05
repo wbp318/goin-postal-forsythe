@@ -1,6 +1,6 @@
-# Filled-in registers hold customer names, phones and ID details: they live on the counter PC, never here.
-*.xlsx
+# Filled-in registers hold customer names, phones and ID details: they live on the store's machines, never here.
 *.ods
-!mailbox-register-TEMPLATE.xlsx
+*.xlsx
+!mailbox-register-TEMPLATE.ods
 ~$*
 .~lock.*

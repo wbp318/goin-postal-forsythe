@@ -25,12 +25,16 @@
   .sig { margin-top: 16pt; }
   .small { font-size: 9.5pt; color: #444; }
   .draft { color: #9c0006; font-weight: bold; }
+  .tight { font-size: 10.5pt; line-height: 1.32; }
+  .tight li { margin: 2pt 0; }
+  .tight h2 { margin-top: 8pt; }
+  .tight p { margin: 5pt 0; }
 </style>
 </head>
 <body>
 
 <!-- 1 -->
-<div class="page">
+<div class="page tight">
   <h1>Mailbox intake packet</h1>
   <p class="sub">Goin' Postal Forsythe · 1800 Forsythe Ave Ste 2, Monroe, LA 71201 · For the counter. Print one packet per new customer from page 3 on.</p>
 
@@ -40,14 +44,14 @@
   <p><span class="tick"></span>Blank <strong>PS Form 1583</strong> printed. Get the current version from usps.com or the post office; USPS revised it in 2023. Keep 10 on hand.</p>
   <p><span class="tick"></span>Prices set: small <span class="line short"></span> medium <span class="line short"></span> large <span class="line short"></span> a month. Type them on the Prices tab of the register.</p>
   <p><span class="tick"></span>Every box numbered, its size written on the Boxes tab, two keys per box tagged with the box number.</p>
-  <p><span class="tick"></span>The register (<em>mailbox-register-TEMPLATE.xlsx</em>) copied to the counter PC and renamed <em>mailbox-register.xlsx</em>. It opens in LibreOffice Calc, or upload it to Google Sheets. Grey example rows deleted.</p>
-  <p><span class="tick"></span>Backup: copy the register to a USB stick or a private Google Drive at the end of each day. It holds customer details: never email it around, never put it on GitHub.</p>
+  <p><span class="tick"></span>LibreOffice installed, and the register (<em>mailbox-register-TEMPLATE.ods</em>) copied to the counter PC as <em>mailbox-register.ods</em>. Its folder added once under Tools &gt; Options &gt; LibreOffice &gt; Security &gt; Macro Security &gt; Trusted Sources &gt; Trusted File Locations, so the buttons run. Real box numbers typed on the Boxes tab. Grey example rows deleted.</p>
+  <p><span class="tick"></span>Backup: every save makes the day's copy in <em>Documents\Mailbox backups</em>. Copy that folder to a USB stick at closing. The register holds customer details: never email it around, never put it on GitHub.</p>
   <p><span class="tick"></span>A locked drawer or cabinet for the signed 1583s, agreements and ID copies.</p>
   <p><span class="tick"></span>The service agreement on page 4 read and changed where it says <span class="draft">OWNERS</span>.</p>
 
   <h2>Every week</h2>
   <ul>
-    <li>Open the register, Holders tab. Anyone <strong>Overdue</strong>: call or text. <strong>Due soon</strong>: remind at pickup.</li>
+    <li>Counter tab, <strong>Call list</strong> button: everyone overdue, due within a week, or with an ID to fix, with what to do. Print it and call.</li>
     <li><strong>EXPIRED</strong> in ID check: ask for a current ID at their next visit and type it over the old one.</li>
   </ul>
   <h2>Every quarter</h2>
@@ -57,7 +61,7 @@
 </div>
 
 <!-- 2 -->
-<div class="page">
+<div class="page tight">
   <h1>A new mailbox customer</h1>
   <p class="sub">About fifteen minutes. The customer must be here in person with two IDs.</p>
   <ol>
@@ -67,8 +71,8 @@
     <li><strong>Fill in PS Form 1583 together.</strong> The customer completes their part and signs. You fill in the CMRA part: the box number, the two IDs you saw, and sign as the agent. Every person who will collect mail from the box goes on the form, and each shows their own two IDs.</li>
     <li><strong>The service agreement</strong> (page 4): the customer reads and signs. You sign.</li>
     <li><strong>Take the first payment on the POS.</strong> Write the POS receipt number on the agreement.</li>
-    <li><strong>The register:</strong> Holders tab, a new row: the next code (MB-002, MB-003 ...), name, phone, email, size, term, start date, both IDs (type, <em>last 4 only</em>, expiry), 1583 signed date, your name. Payments tab: the date, the code, months covered, the amount, the receipt number. <strong>Ready for a box</strong> now says YES.</li>
-    <li><strong>Give the box.</strong> Pick a <em>Free</em> box of the right size on the Boxes tab. Type its number in the holder's Box # column. Hand over two keys and have them sign the key receipt (page 5).</li>
+    <li><strong>The register:</strong> Counter tab, <strong>New customer</strong>: name, phone, email, size, monthly or yearly. It gives the next MB- code and jumps to the ID cells: type both IDs (type, <em>last 4 only</em>, expiry), the 1583 signed date and your name. Then <strong>Record a payment</strong> with the POS receipt number.</li>
+    <li><strong>Give the box.</strong> Counter tab, <strong>Give a box</strong>. It refuses until the IDs, the 1583 and the payment are in, then offers the Free boxes of their size and shows their address. Hand over two keys and have them sign the key receipt (page 5).</li>
     <li><strong>Tell them their address</strong> and write it on the back of their receipt:</li>
   </ol>
   <div class="box" style="font-size: 13pt;">
@@ -84,7 +88,7 @@
   <ol>
     <li>Collect both keys. Hand over any mail still in the box.</li>
     <li>Ask for a forwarding address and write it on their 1583.</li>
-    <li>Register: type the Closed date on their row. The box shows Free again.</li>
+    <li>Counter tab, <strong>Close a box</strong>: it writes today as the Closed date and the forwarding address. The box shows Free again.</li>
     <li>Keep the paper file. USPS expects the CMRA to keep the 1583 after the box closes; confirm how long with the postmaster.</li>
   </ol>
 </div>
