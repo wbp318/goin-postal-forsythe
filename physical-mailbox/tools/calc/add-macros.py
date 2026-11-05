@@ -2,12 +2,12 @@
 
 Run with LibreOffice's own Python (it ships the uno module), from the repo root:
 
-    "C:/Program Files/LibreOffice/program/python.exe" physical-mailbox/tools/add-macros.py
+    "C:/Program Files/LibreOffice/program/python.exe" physical-mailbox/tools/calc/add-macros.py
 
 It starts a hidden LibreOffice with a throwaway profile, then:
-  1. loads tools/register-sheets.xlsx,
+  1. loads tools/calc/register-sheets.xlsx,
   2. adds the Counter tab first: live counts and one button per job, each wired to a sub in macros/Mailbox.bas,
-  3. puts macros/Mailbox.bas in the document as Standard.Mailbox,
+  3. puts tools/calc/macros/Mailbox.bas in the document as Standard.Mailbox,
   4. binds Open Document (land on the Counter tab) and Save Document Done (the day's backup copy),
   5. saves physical-mailbox/mailbox-register-TEMPLATE.ods,
   6. reopens that file and runs every macro function against it (add a customer, a payment, IDs, a box,
@@ -18,7 +18,8 @@ It exits non-zero if any check fails.
 import os, sys, time, shutil, subprocess, tempfile, datetime as dt
 from pathlib import Path
 HERE = Path(__file__).resolve().parent
-ROOT = HERE.parents[1]
+FOLDER = HERE.parents[1]          # physical-mailbox/
+ROOT = HERE.parents[2]
 sys.path.insert(0, str(ROOT / 'scripts'))
 import owner_guard  # noqa: E402,F401
 
@@ -29,8 +30,8 @@ from com.sun.star.script import ScriptEventDescriptor  # noqa: E402
 
 SOFFICE = Path(sys.executable).with_name('soffice.exe')
 SRC = HERE / 'register-sheets.xlsx'
-BAS = HERE.parent / 'macros' / 'Mailbox.bas'
-OUT = HERE.parent / 'mailbox-register-TEMPLATE.ods'
+BAS = HERE / 'macros' / 'Mailbox.bas'
+OUT = FOLDER / 'mailbox-register-TEMPLATE.ods'
 PORT = 2083
 MACRO = 'vnd.sun.star.script:Standard.Mailbox.{}?language=Basic&location=document'
 
@@ -163,6 +164,15 @@ def test(desktop):
     check('nine buttons, each bound to a macro', form.getCount() == len(BUTTONS) == 9 and all(form.getScriptEvents(i)[0].ScriptCode.startswith('vnd.sun.star.script:Standard.Mailbox.btn') for i in range(form.getCount())), form.getCount())
     check('the macro module is in the document', doc.BasicLibraries.getByName('Standard').hasByName('Mailbox'))
     check('the Counter tab is first', s.getByIndex(0).Name == 'Counter', s.getByIndex(0).Name)
+    TEXT = 256  # com.sun.star.util.NumberFormat.TEXT
+    fmt = lambda cell: doc.NumberFormats.getByKey(cell.NumberFormat).Type & TEXT
+    check('ID last 4, phone and POS receipt columns are text (0123 stays 0123)',
+          all(fmt(h.getCellByPosition(c, 5)) for c in (4, 14, 17)) and fmt(p.getCellByPosition(6, 5)))
+    check('yellow cells are unlocked and formula cells locked, for Tools > Protect Sheet',
+          not any(h.getCellByPosition(c, 5).CellProtection.IsLocked for c in (0, 1, 2, 13, 14, 20, 25, 26))
+          and all(h.getCellByPosition(c, 5).CellProtection.IsLocked for c in (9, 11, 12, 22, 23))
+          and not p.getCellByPosition(0, 5).CellProtection.IsLocked and p.getCellByPosition(2, 5).CellProtection.IsLocked
+          and not s.getByName('Measure').getCellByPosition(23, 14).CellProtection.IsLocked)
     check('a bad name is refused', str(run('AddCustomer', 'X', '', '', 'S', 'Monthly')).startswith('!'))
     check('a nine-digit phone is refused', str(run('AddCustomer', 'Test Person', '318 555 010', '', 'S', 'Monthly')).startswith('!'))
     code = run('AddCustomer', 'Test Person', '318 555 0100', 'test@example.com', 's', 'Monthly')
@@ -227,7 +237,7 @@ def test(desktop):
     check('the Boxes tab has 301 Large and 201 Large, and 101 kept Small', (sizes.get('301'), sizes.get('201'), sizes.get('101')) == ('Large', 'Large', 'Small'), sizes)
     check('Check says OK for 301 and flags 101', (M(9, 16).getString(), M(9, 13).getString()) == ('OK', 'Boxes says Small'), (M(9, 16).getString(), M(9, 13).getString()))
     check('running it again changes nothing', run('BoxesFromMeasure') == '0,0,1')
-    sys.path.insert(0, str(HERE.parent / 'macros' / 'python'))
+    sys.path.insert(0, str(HERE / 'macros' / 'python'))
     import mailbox_tools  # the Python macro, called with the document as it would be from the menu
     n = mailbox_tools.build_box_report(doc)
     br = s.getByName('Box report')

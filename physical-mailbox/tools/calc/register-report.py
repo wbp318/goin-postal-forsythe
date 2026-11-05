@@ -4,14 +4,14 @@ Reading only: it never writes to the register, so it is safe to run while Calc h
 It sees the register as it was last saved (Ctrl+S first for the latest).
 
     python -m pip install pandas odfpy        # once
-    python physical-mailbox/tools/register-report.py [path/to/mailbox-register.ods] [--csv folder]
+    python physical-mailbox/tools/calc/register-report.py [path/to/mailbox-register.ods] [--csv folder]
 
 With --csv it also writes holders.csv, payments.csv and boxes.csv into that folder, for anything
 else you want to do with them. Keep those files off GitHub too: they hold customer details.
 """
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'scripts'))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'scripts'))
 import owner_guard  # noqa: E402,F401  stops a clone that is not set up by an owner
 import argparse  # noqa: E402
 import pandas as pd  # noqa: E402
@@ -62,7 +62,7 @@ def report(holders, payments, boxes, prices):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument('path', nargs='?', default=str(HERE.parent / 'mailbox-register.ods'))
+    ap.add_argument('path', nargs='?', default=str(HERE.parents[1] / 'mailbox-register.ods'))
     ap.add_argument('--csv', help='folder to write holders.csv, payments.csv and boxes.csv into')
     a = ap.parse_args()
     holders, payments, boxes, prices = load(a.path)

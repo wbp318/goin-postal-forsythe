@@ -2,7 +2,7 @@ REM  Goin' Postal Forsythe: mailbox register macros (v1.82.2)
 REM  Lives inside mailbox-register-TEMPLATE.ods as Standard.Mailbox. The buttons on the Counter tab
 REM  call the btn... subs; each one asks its questions in small boxes and then calls a plain function
 REM  below (AddCustomer, AddPayment, AssignBox, CloseHolder, BuildCallList, BuildUSPSList, BoxesFromMeasure, Backup),
-REM  which never shows a box itself, so tools/add-macros.py can test it without anyone clicking.
+REM  which never shows a box itself, so tools/calc/add-macros.py can test it without anyone clicking.
 REM  Setting a cell from a macro skips the typing checks, so every function checks its own input.
 Option Explicit
 

@@ -92,32 +92,43 @@ at closing. The paper 1583s and ID copies go in a locked drawer.
 
 ## Using Calc well, and Python with it
 
-**[CALC-GUIDE.md](CALC-GUIDE.md)** is the full guide. It covers:
+**[tools/calc/README.md](tools/calc/README.md) is the complete guide** to running this register in
+LibreOffice Calc. It covers:
 
-- Calc for an Excel user (Shift+Esc is Alt+Q)
-- the keys worth knowing
-- value highlighting and the Detective, for seeing what a cell is
-- filters (rather than sorting)
-- printing and pivot tables
-- keeping the file safe (AutoRecovery, the lock file, one real copy)
-- the Basic macros
-- a **Python tutorial** with three walkthroughs on the register:
+- setting up a machine: the trusted folder, AutoRecovery, American dates, the printer;
+- every tab and column: what it holds, the check on it, and how each formula works it out (Paid
+  through, Status, ID check, Ready, Expected);
+- every button step by step;
+- the counter routines: daily, weekly, monthly, quarterly;
+- Calc skills on this register: filters, the Detective, Mark Invalid Data after a paste, pivot
+  tables, printing, two windows, sheet protection;
+- keeping the file safe, and restoring from a backup;
+- upgrading to a new template;
+- a troubleshooting table;
+- the Basic macros;
+- four Python walkthroughs;
+- a one-page quick reference card.
 
-| | Run it | What it does |
+Everything Calc-related lives in `tools/calc/`: the builder, the macros, the Python tools and the
+guide.
+
+| Python with the register | Run it | What it does |
 | --- | --- | --- |
-| pandas, reading the saved file | `python physical-mailbox/tools/register-report.py` (needs `pip install pandas odfpy`) | Who to call, money by month, boxes by size; `--csv folder` writes CSV files |
-| A Python macro inside Calc | copy `macros/python/mailbox_tools.py` to `%APPDATA%\LibreOffice\4\user\Scripts\python`, then Tools > Macros > Run Macro > My Macros > mailbox_tools > box_report | A Box report tab: boxes, taken, Free and the money a month per size |
-| UNO, driving Calc from outside | LibreOffice's own `python.exe`, as `tools/add-macros.py` does | Builds the template and tests every macro |
+| pandas, reading the saved file | `python physical-mailbox/tools/calc/register-report.py` (needs `pip install pandas odfpy`) | Who to call, money by month, boxes by size; `--csv folder` writes CSV files |
+| A Python macro inside Calc | copy `tools/calc/macros/python/mailbox_tools.py` to `%APPDATA%\LibreOffice\4\user\Scripts\python`, then Tools > Macros > Run Macro > My Macros > mailbox_tools > box_report | A Box report tab: boxes, taken, Free and the money a month per size |
+| UNO, driving Calc from outside | LibreOffice's own `python.exe`, as `tools/calc/add-macros.py` does | Builds the template and tests every macro |
+| Upgrading a filled register | `"C:/Program Files/LibreOffice/program/python.exe" physical-mailbox/tools/calc/upgrade-register.py`, then `--replace` | Carries every customer, payment, box and tab of your own into a new template, checks it, and keeps the old file |
 
 The five habits that matter most:
 
-1. **Type only in yellow cells.** Ctrl+F8 shows formulas in green; never type over them.
+1. **Type only in yellow cells.** Ctrl+F8 shows formulas in green; never type over them. Tools >
+   Protect Sheet makes Calc refuse it, and the buttons keep working.
 2. **Filter, don't sort.** Press Ctrl+Shift+L on a tab, then pick from the arrows. The buttons build
    sorted lists on their own tabs.
 3. **Ctrl+S often.** Each save makes the day's backup. Keep it .ods ("Use ODF Format!").
 4. **One real copy, one machine at a time.** Close it before copying it to the USB stick.
-5. **Change the template, not the file**, for new buttons or tabs: edit `macros/Mailbox.bas` and
-   `tools/`, then rebuild. Your own tabs, pivot tables and Python macros are fine to add any time.
+5. **Change the template, not the file**, for new buttons or tabs: edit `tools/calc/`, rebuild, then
+   run the upgrade script. Your own tabs, pivot tables and Python macros are fine to add any time.
 
 ## Measuring the boxes
 
@@ -148,19 +159,27 @@ the Fits columns are yellow too: change them if the store's own boxes differ.
 ## Rebuilding the template
 
 The template is built, not edited by hand, so the formulas, the typing checks and the macros stay in
-step. Change `tools/build-register.py` (the tabs, formulas and checks) or `macros/Mailbox.bas` (the
-buttons), then from the repo root:
+step. Change `tools/calc/build-register.py` (the tabs, formulas and checks) or
+`tools/calc/macros/Mailbox.bas` (the buttons), then from the repo root:
 
 ```
-python physical-mailbox/tools/build-register.py
-"C:/Program Files/LibreOffice/program/python.exe" physical-mailbox/tools/add-macros.py
+python physical-mailbox/tools/calc/build-register.py
+"C:/Program Files/LibreOffice/program/python.exe" physical-mailbox/tools/calc/add-macros.py
+"C:/Program Files/LibreOffice/program/python.exe" physical-mailbox/tools/calc/upgrade-register.py --self-test
 ```
 
 The second step adds the Counter tab, the buttons and the macros, saves
-`mailbox-register-TEMPLATE.ods`, then reopens it and runs every macro against it: a customer, a
-payment, the IDs, a box, both lists, a backup, closing the box, the Measure tab's formulas and Boxes
-from measurements (41 checks in all, the Python macro too). It stops with a FAIL line if
-anything is off.
+`mailbox-register-TEMPLATE.ods`, then reopens it and runs 43 checks:
+
+- every macro: a customer, a payment, the IDs, a box, both lists, a backup and closing the box;
+- the Measure tab's formulas and Boxes from measurements;
+- the Python macro;
+- the text formats and cell locks;
+- no formula errors on any tab.
+
+The third step proves a filled register still upgrades into it (17 checks). Each step stops with a
+FAIL line if anything is off. A filled register gets the new template through the upgrade script,
+[guide section 7](tools/calc/README.md#7-upgrading-to-a-new-template).
 
 ## Decisions for Peter and Rin
 
@@ -183,8 +202,9 @@ anything is off.
 | `mailbox-register-TEMPLATE.ods` | The blank register with the Counter tab, the buttons, the macros, the Measure tab, and one grey example customer, payment, boxes and measurements |
 | `intake-packet.pdf` | Five pages to print: owner checklist, counter steps and closing a box, which IDs count with the store's ID record, the service agreement (draft), the key receipt and the customer's address card |
 | `intake-packet.html` | The source of the PDF |
-| `macros/Mailbox.bas` | The macros, readable: what each button does |
-| `tools/build-register.py`, `tools/add-macros.py` | The two steps that build the template |
-| `CALC-GUIDE.md` | Using Calc well, and the Python tutorial |
-| `tools/register-report.py` | The pandas report (walkthrough 1) |
-| `macros/python/mailbox_tools.py` | The Python macro (walkthrough 2), tested by `add-macros.py` |
+| `tools/calc/README.md` | The complete Calc guide, with the Python walkthroughs |
+| `tools/calc/build-register.py`, `tools/calc/add-macros.py` | The two steps that build and test the template |
+| `tools/calc/upgrade-register.py` | Carries a filled register into a new template |
+| `tools/calc/register-report.py` | The pandas report |
+| `tools/calc/macros/Mailbox.bas` | The buttons' Basic, readable |
+| `tools/calc/macros/python/mailbox_tools.py` | The Python macro (Box report), tested by `add-macros.py` |

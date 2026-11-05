@@ -4,12 +4,12 @@ Writes an intermediate .xlsx (default: register-sheets.xlsx next to this script,
 add-macros.py, run with LibreOffice's own Python, turns it into mailbox-register-TEMPLATE.ods with the
 Counter tab, the buttons and the macros. Run both from the repo root:
 
-    python physical-mailbox/tools/build-register.py
-    "C:/Program Files/LibreOffice/program/python.exe" physical-mailbox/tools/add-macros.py
+    python physical-mailbox/tools/calc/build-register.py
+    "C:/Program Files/LibreOffice/program/python.exe" physical-mailbox/tools/calc/add-macros.py
 """
 import os, sys, datetime as dt
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'scripts'))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'scripts'))
 import owner_guard  # noqa: E402,F401  stops a clone that is not set up by an owner
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
@@ -350,6 +350,24 @@ for k in range(len(FITS)):
     rule(me, f'T{IT+k}:V{IT+k}', 'decimal', '0', '60', 'between', title='Inches', error='Type inches, fractions as decimals.')
 me.conditional_formatting.add(f'J{MT+1}:J{MLAST}', FormulaRule(formula=[f'J{MT+1}="OK"'], fill=green))
 me.conditional_formatting.add(f'J{MT+1}:J{MLAST}', FormulaRule(formula=[f'AND(J{MT+1}<>"",J{MT+1}<>"OK")'], fill=amber))
+# ---------- Calc friendliness (v1.84.0) ----------
+# Text format where a number would lose something: a last 4 of 0123 stays 0123 instead of becoming 123
+# (which the four-character check would then refuse), and a phone or receipt number stays as typed.
+for col in ('Phone', 'ID 1 last 4', 'ID 2 last 4'):
+    for r in range(2, last + 1):
+        ho[f'{L[col]}{r}'].number_format = '@'
+for r in range(2, ROWS * 4 + 2):
+    pa[f'G{r}'].number_format = '@'
+# Every yellow cell is unlocked, so Tools > Protect Sheet stops typing over a formula while the yellow
+# cells and the buttons (which write only to yellow cells) keep working.
+from openpyxl.styles import Protection
+for ws in wb.worksheets:
+    for row in ws.iter_rows():
+        for c in row:
+            colour = str(c.fill.fgColor.rgb).upper() if c.fill is not None else ''
+            formula = isinstance(c.value, str) and c.value.startswith('=')
+            if colour.endswith('FFF7CC') or (colour.endswith('EDEDED') and not formula):   # yellow, or a grey example typed cell
+                c.protection = Protection(locked=False)
 from openpyxl.workbook.properties import CalcProperties
 wb.calculation = CalcProperties(fullCalcOnLoad=True)
 wb.security = None
