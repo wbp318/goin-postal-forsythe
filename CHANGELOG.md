@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.86.3] - 2026-11-05
+
+**Python makes the language bar's top six**
+
+GitHub's repo sidebar shows only the **top six languages** and puts the rest under "Other". After v1.86.2, GitHub counted Python at 3.4%. That made it seventh, behind JSON (7.1%), so the sidebar still showed it as Other.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.86.3) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.86.3) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.86.2...v1.86.3)
+
 ## [v1.86.2] - 2026-11-05
 
 **a fair language bar (machine-made banner SVGs left out, Python shows)**
