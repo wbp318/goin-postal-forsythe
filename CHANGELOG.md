@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.83.0] - 2026-11-05
+
+**Calc guide and Python tutorial for the mailbox register**
+
+The store runs its mailbox register in LibreOffice Calc. This release covers how to use Calc well and how to work with the register from Python.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.83.0) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.83.0) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.82.2...v1.83.0)
+
 ## [v1.82.2] - 2026-11-05
 
 **Measure tab for the mailboxes (USPS sizes), quarterly step per DMM 508 1.8.3, CI green**
