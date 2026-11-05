@@ -322,17 +322,23 @@ def test_typing(desktop):
         ctl = doc.CurrentController
         dh = REMOTE['smgr'].createInstanceWithContext('com.sun.star.frame.DispatchHelper', REMOTE['ctx'])
         h, p = doc.Sheets.getByName('Holders'), doc.Sheets.getByName('Payments')
-        def type_in(sheet, col, row, text):
+        def type_in(sheet, col, row, text, filled=None):
+            # Enter a cell the way the keyboard does, then wait for the macro's fill, as a person's pace would.
             ctl.setActiveSheet(sheet); ctl.select(sheet.getCellByPosition(col, row))
             dh.executeDispatch(ctl.Frame, '.uno:EnterString', '', 0, (pv('StringName', text),))
-        type_in(h, 2, 2, 'John Roberts')
-        type_in(h, 2, 3, 'Second Person')
-        type_in(p, 1, 2, 'MB-002')
-        type_in(h, 6, 2, 'Small')
-        type_in(h, 1, 2, '412')
-        doc.calculateAll()
+            for _ in range(50):
+                if filled is None or filled():
+                    break
+                time.sleep(0.1)
         bx = doc.Sheets.getByName('Boxes')
-        new_box = [bx.getCellByPosition(1, i).getString() for i in range(1, 12) if bx.getCellByPosition(0, i).getString() == '412']
+        on_boxes = lambda v: [bx.getCellByPosition(1, i).getString() for i in range(1, 12) if bx.getCellByPosition(0, i).getString() == v]
+        type_in(h, 2, 2, 'John Roberts', lambda: h.getCellByPosition(0, 2).getString() != '')
+        type_in(h, 2, 3, 'Second Person', lambda: h.getCellByPosition(0, 3).getString() != '')
+        type_in(p, 1, 2, 'MB-002', lambda: p.getCellByPosition(0, 2).getString() != '')
+        type_in(h, 6, 2, 'Small')
+        type_in(h, 1, 2, '412', lambda: on_boxes('412'))
+        doc.calculateAll()
+        new_box = on_boxes('412')
         got = [h.getCellByPosition(0, 2).getString(), h.getCellByPosition(0, 3).getString(), p.getCellByPosition(0, 2).getString() != '', p.getCellByPosition(2, 2).getString(), new_box]
         ok = got == ['MB-002', 'MB-003', True, 'John Roberts', ['Small']]
         print(('  ok   ' if ok else '  FAIL ') + 'typed in Calc: names get MB-002 and MB-003, a payment code gets its date and name, a new box number typed by hand lands on Boxes' + ('' if ok else f'  (got {got!r})'))
