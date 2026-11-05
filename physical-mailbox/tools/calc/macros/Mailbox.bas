@@ -1,4 +1,4 @@
-REM  Goin' Postal Forsythe: mailbox register macros (v1.82.2)
+REM  Goin' Postal Forsythe: mailbox register macros (v1.85.0)
 REM  Lives inside mailbox-register-TEMPLATE.ods as Standard.Mailbox. The buttons on the Counter tab
 REM  call the btn... subs; each one asks its questions in small boxes and then calls a plain function
 REM  below (AddCustomer, AddPayment, AssignBox, CloseHolder, BuildCallList, BuildUSPSList, BoxesFromMeasure, Backup),
@@ -12,6 +12,9 @@ Private Const PLAST As Long = 1200
 Private Const STORE_LINE As String = "1800 Forsythe Ave Ste 2 #"
 Private Const STORE_CITY As String = "Monroe, LA 71201"
 Private Const APP As String = "Mailbox register"
+
+REM True while a sheet event is filling cells, so the fill does not set off the same event again.
+Private busy As Boolean
 
 REM Holders columns (0 = A)
 Private Const H_CODE As Long = 0
@@ -640,13 +643,116 @@ Failed:
 	MsgBox "The backup did not work: " & Error$ & Chr(10) & "Save with Ctrl+S, then try again.", 16, APP
 End Sub
 
+REM ---------------------------------------------------------------- fill as you type
+REM Holders and Payments call these on Content changed (Sheet > Sheet Events), so a row typed by hand
+REM fills in like one added by a button. They only ever fill an empty cell; they never change one.
+
+REM One Holders row: a name with no code gets the next MB- code, and no start date gets today.
+REM Returns what it filled ("code", "start", "code,start" or "").
+Function FillHolderRow(r As Long) As String
+	Dim h As Object, did As String
+	h = Sh("Holders")
+	did = ""
+	If CellText(h, H_NAME, r) <> "" Then
+		If CellText(h, H_CODE, r) = "" Then
+			h.getCellByPosition(H_CODE, r).setString(NextCode())
+			did = "code"
+		End If
+		If CellText(h, H_START, r) = "" Then
+			h.getCellByPosition(H_START, r).setValue(TodaySerial())
+			did = did & IIf(did = "", "", ",") & "start"
+		End If
+	End If
+	FillHolderRow = did
+End Function
+
+REM One Payments row: a code with no date gets today. Returns "date" or "".
+Function FillPaymentRow(r As Long) As String
+	Dim p As Object
+	p = Sh("Payments")
+	FillPaymentRow = ""
+	If CellText(p, P_CODE, r) <> "" And CellText(p, P_DATE, r) = "" Then
+		p.getCellByPosition(P_DATE, r).setValue(TodaySerial())
+		FillPaymentRow = "date"
+	End If
+End Function
+
+REM The rows a Content changed event covers: one cell, a range, or several ranges.
+Function ChangedRows(oEvent As Object, lastRow As Long) As Variant
+	Dim addrs As Variant, out() As Long, n As Long, i As Long, r As Long, a As Object
+	If oEvent.supportsService("com.sun.star.sheet.SheetCellRanges") Then
+		addrs = oEvent.getRangeAddresses()
+	Else
+		addrs = Array(oEvent.getRangeAddress())
+	End If
+	n = -1
+	ReDim out(0) As Long
+	For i = LBound(addrs) To UBound(addrs)
+		a = addrs(i)
+		For r = IIf(a.StartRow < R0, R0, a.StartRow) To IIf(a.EndRow > lastRow, lastRow, a.EndRow)
+			n = n + 1
+			ReDim Preserve out(n) As Long
+			out(n) = r
+		Next r
+	Next i
+	If n < 0 Then
+		ChangedRows = Array()
+	Else
+		ChangedRows = out()
+	End If
+End Function
+
+Sub OnHoldersChange(Optional oEvent)
+	Dim rows As Variant, i As Long
+	If busy Or IsMissing(oEvent) Then Exit Sub
+	busy = True
+	On Error GoTo Done
+	rows = ChangedRows(oEvent, HLAST)
+	For i = LBound(rows) To UBound(rows)
+		FillHolderRow(rows(i))
+	Next i
+Done:
+	busy = False
+End Sub
+
+Sub OnPaymentsChange(Optional oEvent)
+	Dim rows As Variant, i As Long
+	If busy Or IsMissing(oEvent) Then Exit Sub
+	busy = True
+	On Error GoTo Done
+	rows = ChangedRows(oEvent, PLAST)
+	For i = LBound(rows) To UBound(rows)
+		FillPaymentRow(rows(i))
+	Next i
+Done:
+	busy = False
+End Sub
+
 REM ---------------------------------------------------------------- document events
 
 REM Open Document: land on the Counter tab.
 Sub OnOpen(Optional oEvent)
 	On Error Resume Next
+	FillTypedRows()
 	ThisComponent.CurrentController.setActiveSheet(Sh("Counter"))
 End Sub
+
+REM Rows typed while macros were off (or before fill-as-you-type existed): a name with no code gets
+REM one, a payment with no date gets today. Returns how many cells it filled.
+Function FillTypedRows() As Long
+	Dim r As Long, n As Long
+	busy = True
+	n = 0
+	For r = R0 To HLAST
+		If FillHolderRow(r) <> "" Then n = n + 1
+	Next r
+	For r = R0 To PLAST
+		If FillPaymentRow(r) <> "" Then n = n + 1
+	Next r
+	busy = False
+	If n > 0 Then ThisComponent.calculateAll()
+	FillTypedRows = n
+End Function
 
 REM Save Document Done: keep the day's copy in the backup folder, silently.
 Sub OnSaved(Optional oEvent)

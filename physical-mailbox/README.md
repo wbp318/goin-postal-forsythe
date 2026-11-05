@@ -38,7 +38,7 @@ asks its questions in small boxes and fills in the right tabs.
 
 | Button | What it does |
 | --- | --- |
-| **New customer** | Asks name, phone, email, size and monthly or yearly. Adds the row on Holders with the next MB- code and today as the start date, then jumps to the ID cells and says what to fill in next. |
+| **New customer** | (Or just type the name on an empty Holders row: the code and start date are automatic.) Asks name, phone, email, size and monthly or yearly. Adds the row on Holders with the next MB- code and today as the start date, then jumps to the ID cells and says what to fill in next. |
 | **Record a payment** | Asks which customer, suggests the months (1, or 12 for yearly) and the amount from the price, takes the POS receipt number and your name, writes the Payments row, and shows the new paid-through date. |
 | **Give a box** | Refuses until both IDs, the 1583 date and a payment are in, and says which is missing. Then offers the Free boxes of their size, writes the box number, asks about the keys, and shows their new address. |
 | **Find a customer** | By code, box number or part of a name. Jumps to their row. |
@@ -169,9 +169,10 @@ python physical-mailbox/tools/calc/build-register.py
 ```
 
 The second step adds the Counter tab, the buttons and the macros, saves
-`mailbox-register-TEMPLATE.ods`, then reopens it and runs 43 checks:
+`mailbox-register-TEMPLATE.ods`, then reopens it and runs 51 checks:
 
 - every macro: a customer, a payment, the IDs, a box, both lists, a backup and closing the box;
+- automatic codes: a name typed on an empty row gets the next code and today, typed through Calc's own input as the keyboard does;
 - the Measure tab's formulas and Boxes from measurements;
 - the Python macro;
 - the text formats and cell locks;

@@ -69,6 +69,9 @@ def url(path):
     return uno.systemPathToFileUrl(str(Path(path).resolve()))
 
 
+REMOTE = {}  # the remote component context, for services such as DispatchHelper
+
+
 def start_office():
     profile = Path(tempfile.mkdtemp(prefix='lo-mailbox-'))
     proc = subprocess.Popen([str(SOFFICE), f'-env:UserInstallation={url(profile)}', '--headless', '--invisible', '--norestore', '--nologo',
@@ -78,6 +81,7 @@ def start_office():
     for _ in range(60):
         try:
             ctx = resolver.resolve(f'uno:socket,host=127.0.0.1,port={PORT};urp;StarOffice.ComponentContext')
+            REMOTE.update(ctx=ctx, smgr=ctx.ServiceManager)
             return proc, profile, ctx.ServiceManager.createInstanceWithContext('com.sun.star.frame.Desktop', ctx)
         except Exception:
             time.sleep(1)
@@ -143,6 +147,10 @@ def build(desktop):
     for event, sub in (('OnLoad', 'OnOpen'), ('OnSaveDone', 'OnSaved')):
         props = (pv('EventType', 'Script'), pv('Script', MACRO.format(sub)))
         uno.invoke(doc.Events, 'replaceByName', (event, uno.Any('[]com.sun.star.beans.PropertyValue', props)))
+    # Sheet > Sheet Events > Content changed: a row typed by hand fills in like one added by a button.
+    for tab, sub in (('Holders', 'OnHoldersChange'), ('Payments', 'OnPaymentsChange')):
+        props = (pv('EventType', 'Script'), pv('Script', MACRO.format(sub)))
+        uno.invoke(sheets.getByName(tab).Events, 'replaceByName', ('OnChange', uno.Any('[]com.sun.star.beans.PropertyValue', props)))
     doc.ApplyFormDesignMode = False
     doc.CurrentController.setActiveSheet(c)
     doc.storeToURL(url(OUT), (pv('FilterName', 'calc8'),))
@@ -173,6 +181,9 @@ def test(desktop):
           and all(h.getCellByPosition(c, 5).CellProtection.IsLocked for c in (9, 11, 12, 22, 23))
           and not p.getCellByPosition(0, 5).CellProtection.IsLocked and p.getCellByPosition(2, 5).CellProtection.IsLocked
           and not s.getByName('Measure').getCellByPosition(23, 14).CellProtection.IsLocked)
+    for tab, sub in (('Holders', 'OnHoldersChange'), ('Payments', 'OnPaymentsChange')):
+        ev = {x.Name: x.Value for x in s.getByName(tab).Events.getByName('OnChange')}
+        check(f'{tab}: Content changed runs {sub}', ev.get('Script', '').endswith(f'Mailbox.{sub}?language=Basic&location=document'), ev)
     check('a bad name is refused', str(run('AddCustomer', 'X', '', '', 'S', 'Monthly')).startswith('!'))
     check('a nine-digit phone is refused', str(run('AddCustomer', 'Test Person', '318 555 010', '', 'S', 'Monthly')).startswith('!'))
     code = run('AddCustomer', 'Test Person', '318 555 0100', 'test@example.com', 's', 'Monthly')
@@ -237,6 +248,32 @@ def test(desktop):
     check('the Boxes tab has 301 Large and 201 Large, and 101 kept Small', (sizes.get('301'), sizes.get('201'), sizes.get('101')) == ('Large', 'Large', 'Small'), sizes)
     check('Check says OK for 301 and flags 101', (M(9, 16).getString(), M(9, 13).getString()) == ('OK', 'Boxes says Small'), (M(9, 16).getString(), M(9, 13).getString()))
     check('running it again changes nothing', run('BoxesFromMeasure') == '0,0,1')
+    # Typed by hand: a name on an empty row gets the next code and today; a payment code gets today's date.
+    hr = 10
+    h.getCellByPosition(2, hr).setString('Typed Byhand')
+    run('OnHoldersChange', h.getCellRangeByPosition(0, hr, 27, hr))
+    doc.calculateAll()
+    check('a name typed on an empty Holders row gets the next code and today as start date',
+          h.getCellByPosition(0, hr).getString() == 'MB-003' and int(h.getCellByPosition(8, hr).getValue()) == today,
+          (h.getCellByPosition(0, hr).getString(), h.getCellByPosition(8, hr).getValue()))
+    check('...and its price per term fills in once the size is typed', (h.getCellByPosition(6, hr).setString('Small'), doc.calculateAll(), h.getCellByPosition(9, hr).getValue())[2] == 15, h.getCellByPosition(9, hr).getValue())
+    h.getCellByPosition(8, hr).setValue(today - 3)
+    run('OnHoldersChange', h.getCellRangeByPosition(2, hr, 2, hr))
+    check('a code or start date already there is never changed', h.getCellByPosition(0, hr).getString() == 'MB-003' and int(h.getCellByPosition(8, hr).getValue()) == today - 3)
+    sel = doc.createInstance('com.sun.star.sheet.SheetCellRanges')
+    pr_ = 20
+    p.getCellByPosition(1, pr_).setString('MB-003')
+    sel.addRangeAddress(p.getCellRangeByPosition(1, pr_, 1, pr_).getRangeAddress(), False)
+    run('OnPaymentsChange', sel)
+    check('a payment code typed by hand gets today as its date (several ranges at once too)', int(p.getCellByPosition(0, pr_).getValue()) == today, p.getCellByPosition(0, pr_).getValue())
+    h.getCellByPosition(0, hr).clearContents(1 | 2 | 4 | 16)
+    n = run('FillTypedRows')
+    check('opening the register gives a code to a name typed while macros were off', n == 1 and h.getCellByPosition(0, hr).getString() == 'MB-003', (n, h.getCellByPosition(0, hr).getString()))
+    for col in (0, 1, 3):
+        p.getCellByPosition(col, pr_).clearContents(1 | 2 | 4 | 16)
+    for col in (0, 2, 6, 8):
+        h.getCellByPosition(col, hr).clearContents(1 | 2 | 4 | 16)
+    doc.calculateAll()
     sys.path.insert(0, str(HERE / 'macros' / 'python'))
     import mailbox_tools  # the Python macro, called with the document as it would be from the menu
     n = mailbox_tools.build_box_report(doc)
@@ -261,6 +298,33 @@ def test(desktop):
     return failures
 
 
+def test_typing(desktop):
+    """Type into a copy through Calc's own input command, as the keyboard does, and check the sheet events fire."""
+    failures = []
+    work = Path(tempfile.mkdtemp(prefix='mailbox-typing-')) / 'r.ods'
+    shutil.copy(OUT, work)
+    doc = desktop.loadComponentFromURL(url(work), '_blank', 0, (pv('MacroExecutionMode', 4),))   # not hidden: typing needs a view
+    try:
+        ctl = doc.CurrentController
+        dh = REMOTE['smgr'].createInstanceWithContext('com.sun.star.frame.DispatchHelper', REMOTE['ctx'])
+        h, p = doc.Sheets.getByName('Holders'), doc.Sheets.getByName('Payments')
+        def type_in(sheet, col, row, text):
+            ctl.setActiveSheet(sheet); ctl.select(sheet.getCellByPosition(col, row))
+            dh.executeDispatch(ctl.Frame, '.uno:EnterString', '', 0, (pv('StringName', text),))
+        type_in(h, 2, 2, 'John Roberts')
+        type_in(h, 2, 3, 'Second Person')
+        type_in(p, 1, 2, 'MB-002')
+        doc.calculateAll()
+        got = [h.getCellByPosition(0, 2).getString(), h.getCellByPosition(0, 3).getString(), p.getCellByPosition(0, 2).getString() != '', p.getCellByPosition(2, 2).getString()]
+        ok = got == ['MB-002', 'MB-003', True, 'John Roberts']
+        print(('  ok   ' if ok else '  FAIL ') + 'typed in Calc: names get MB-002 and MB-003, a typed payment code gets its date and name' + ('' if ok else f'  (got {got!r})'))
+        if not ok: failures.append('typing')
+    finally:
+        doc.close(True)
+        shutil.rmtree(work.parent, ignore_errors=True)
+    return failures
+
+
 def main():
     if not SRC.exists():
         raise SystemExit(f'{SRC} is missing: run build-register.py first')
@@ -268,7 +332,7 @@ def main():
     try:
         build(desktop)
         print(f'wrote {OUT}')
-        failures = test(desktop)
+        failures = test(desktop) + test_typing(desktop)
     finally:
         try: desktop.terminate()
         except Exception: pass

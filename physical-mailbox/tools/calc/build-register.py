@@ -247,6 +247,10 @@ rule(ho, H('Closed date'), 'custom', f'AND(ISNUMBER({c("Closed date")}),{c("Clos
      title='Closed date', prompt='The day the keys came back.', error='Type a date between the start date and today.')
 
 ho.conditional_formatting.add(H('Box #'), FormulaRule(formula=[f'AND({c("Box #")}<>"",{c("Closed date")}="",COUNTIFS($B$2:$B${last},{c("Box #")},${L["Closed date"]}$2:${L["Closed date"]}${last},"")>1)'], fill=red, font=Font(name=F, bold=True, color='9C0006')))
+# A name with no code: the row's formulas all wait on the code (the fill-as-you-type macro adds it; red if macros are off).
+ho.conditional_formatting.add(H('Code'), FormulaRule(formula=[f'AND({c("Code")}="",{c("Name")}<>"")'], fill=red))
+# A box typed in before the customer is ready (Give a box refuses this; typing by hand does not).
+ho.conditional_formatting.add(H('Box #'), FormulaRule(formula=[f'AND({c("Box #")}<>"",{c("Closed date")}="",{c("Ready for a box")}<>"YES")'], fill=amber))
 ho.conditional_formatting.add(H('ID check'), FormulaRule(formula=[f'OR({c("ID check")}="same kind",{c("ID check")}="no address",{c("ID check")}="missing")'], fill=amber))
 
 PL = ROWS * 4 + 1

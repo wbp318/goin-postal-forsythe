@@ -103,6 +103,11 @@ print dialog when you print.
 
 ### 2.1 How to read it
 
+- **Codes are automatic.** Type a customer's name on an empty Holders row, and the register writes
+  the next code (MB-002, MB-003 ...) and today's start date by itself. Type a code on a Payments row,
+  and it writes today's date. It only ever fills an empty cell, never one you typed. Rows typed while
+  macros were off get their codes the next time the register opens. Until then their Code cell is
+  **red**, and the row's formulas wait for it.
 - **Yellow cells are for typing.** White cells are formulas: they fill themselves, so never type over
   them. Ctrl+F8 (value highlighting) shows the difference in any tab: typed text black, typed
   numbers blue, formulas green.
@@ -167,7 +172,7 @@ frozen at D2).
 
 | Col | Heading | Type or formula | What goes in, and the check |
 | --- | --- | --- | --- |
-| A | Code | type (New customer does it) | `MB-` and three digits: MB-002, MB-003. Each code once. The check refuses any other shape and a repeat |
+| A | Code | **automatic** | The next `MB-` code, written as soon as a name is typed on the row (or by New customer). Red while a name has no code. Typed by hand it must be MB- and three digits, used once |
 | B | Box # | type (Give a box does it) | Pick from the arrow: the Boxes tab's numbers. Turns **red** if two open customers have the same box |
 | C | Name | type | 2 to 60 characters |
 | D | Business (optional) | type | The business name if the box is for one |
@@ -175,7 +180,7 @@ frozen at D2).
 | F | Email | type | Needs an @ and a dot after it, no spaces |
 | G | Size | type | Arrow: Small, Medium, Large (from Prices) |
 | H | Monthly / Yearly | type | Arrow |
-| I | Start date | type | The day they signed up. From Jan 1, 2025 to a month ahead |
+| I | Start date | automatic, can be typed | Today, written with the code. Type over it for another day: from Jan 1, 2025 to a month ahead |
 | J | Price per term ($) | formula | From Prices: the monthly price, or the yearly price for Yearly |
 | K | Months paid | formula | Adds up Months covered on every Payments row with this code |
 | L | Paid through | formula | Start date plus Months paid, by calendar month (EDATE): started Nov 7 with 2 months paid is Jan 7 |
@@ -209,7 +214,7 @@ frozen at D2).
 
 | Col | Heading | Type or formula | What goes in |
 | --- | --- | --- | --- |
-| A | Date | type | The day it was paid; not in the future |
+| A | Date | automatic, can be typed | Today, written as soon as a code is typed on the row. Type over it for another day; not in the future |
 | B | Code | type | Arrow: the codes on Holders |
 | C | Name | formula | The customer's name. Says **no such code** (red) if B is wrong |
 | D | Months covered | type | Whole number, 1 to 24: 1 for a month, 12 for a year |
@@ -280,6 +285,12 @@ Every button works from any tab. On the Holders tab, click anywhere in a custome
 button that needs a customer uses that one instead of asking. Asked for a customer, you can type
 their code (MB-002), their box number (101), or part of their name (`fonte`). Part of a name must
 match only one customer.
+
+**Without the buttons, typing works too.** A name typed on an empty Holders row gets its code and
+start date, and a code typed on a Payments row gets its date. These come from two sheet events
+(Sheet > Sheet Events > Content changed, on Holders and on Payments) that run the macros
+OnHoldersChange and OnPaymentsChange. The buttons still do more: they check readiness before a box,
+suggest amounts and list the Free boxes.
 
 Every button checks what it is given, the same checks the yellow cells make, and says plainly what is
 wrong. Writing from a macro skips Calc's own typing checks, so the macros carry their own.
@@ -374,7 +385,8 @@ means someone to call today.
 
 The intake packet (page 2) is the full counter script. In the register:
 
-1. **New customer**: name, phone, email, size, term.
+1. **New customer**: name, phone, email, size, term. Or type straight onto an empty Holders row,
+   starting with the name: the code and start date fill in by themselves.
 2. Type both IDs on their row: type from the arrow, **last 4 only**, the expiry, and whether ID 2
    shows the home address. Then the 1583 signed date and your name in Checked by. Watch ID check turn
    OK.
@@ -690,6 +702,7 @@ If any check fails, it saves nothing. Other paths: `upgrade-register.py OLD.ods 
 | Counts or Status look stale | Calculation was switched off | **Data > Calculate > AutoCalculate** ticked; F9, or Ctrl+Shift+F9 |
 | A box shows red on Holders | Two open customers have the same box | One of them is wrong: fix Box # |
 | The Boxes tab says Free for a box someone has | Their Box # is blank, or they have a Closed date | Fix their row |
+| A row's Code cell is red and its formulas are blank | A name was typed while macros were off, so no code was written | Trust the folder (1.3) and reopen: the code fills in on open. Or type the next MB- code |
 | Status says Overdue right after a payment | The Payments row has a wrong code, or Months covered is blank | Check the row: Name should show the customer |
 | A button says "No single customer matches" | Part of a name matched two people, or none | Type more of the name, or the code |
 | A button stops with a Basic error box | Something the macro did not expect | Note the line it names, press OK, Ctrl+Z if it wrote anything, and report it |
@@ -899,7 +912,7 @@ Tips:
 LibreOffice ships its own Python with the `uno` module, at
 `C:\Program Files\LibreOffice\program\python.exe`. That Python starts a hidden Calc, opens files, runs
 macros and saves. [`add-macros.py`](add-macros.py) is the full example: it builds the Counter tab,
-puts the Basic in, and runs 43 checks. The smallest version opens the register hidden and reads a
+puts the Basic in, and runs 51 checks. The smallest version opens the register hidden and reads a
 count:
 
 ```python
@@ -977,7 +990,7 @@ python physical-mailbox/tools/calc/build-register.py
 1. `build-register.py` (your Python with openpyxl) writes the tabs, formulas, typing checks, colours,
    text formats and unlocked yellow cells to `register-sheets.xlsx` (git-ignored).
 2. `add-macros.py` (LibreOffice's Python) adds the Counter tab, the buttons, the Basic and the two
-   document events, and saves `mailbox-register-TEMPLATE.ods`. It then reopens it and runs 43 checks:
+   document events, and saves `mailbox-register-TEMPLATE.ods`. It then reopens it and runs 51 checks:
    - every macro: a customer, a payment, the IDs, a box, both lists, a backup, closing;
    - the Measure tab and Boxes from measurements;
    - the Python macro;
@@ -1020,7 +1033,7 @@ Print this section. It fits on one page.
 | --- | --- |
 | `README.md` | This guide |
 | `build-register.py` | Step 1 of the build: the tabs, formulas, checks and formats (openpyxl) |
-| `add-macros.py` | Step 2: the Counter tab, buttons, Basic and events; then the 43 checks (LibreOffice's Python) |
+| `add-macros.py` | Step 2: the Counter tab, buttons, Basic and events; then the 51 checks (LibreOffice's Python) |
 | `upgrade-register.py` | Carries a filled register into a new template; `--self-test` |
 | `register-report.py` | The pandas report (walkthrough 1) |
 | `macros/Mailbox.bas` | The buttons' Basic, readable |
