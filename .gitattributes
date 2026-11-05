@@ -28,9 +28,7 @@
 # Prose and data (hidden by default, shown here)
 *.md       linguist-detectable=true linguist-language=Markdown
 *.txt      linguist-detectable=true linguist-language=Text
-# JSON is data here (rate sheets, strings, package files), and GitHub's sidebar shows only the top six
-# languages: counted, it pushed Python into Other. GitHub's own default leaves JSON out too.
-*.json     linguist-detectable=false
+*.json     linguist-detectable=true linguist-language=JSON
 *.yml      linguist-detectable=true linguist-language=YAML
 *.yaml     linguist-detectable=true linguist-language=YAML
 *.csv      linguist-detectable=true linguist-language=CSV
