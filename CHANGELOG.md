@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.82.2] - 2026-11-05
+
+**Measure tab for the mailboxes (USPS sizes), quarterly step per DMM 508 1.8.3, CI green**
+
+USPS sets no size for a store's private mailboxes. Domestic Mail Manual 508 1.8, the CMRA rules, says nothing about it. What USPS does have is its PO Box chart (DMM 508 4.1.3): five sizes by cubic inches, every one 14 3/4 inches deep. That chart is the plain way to tell a customer what a box holds, so the register now sizes every box on it.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.82.2) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.82.2) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.82.1...v1.82.2)
+
 ## [v1.82.1] - 2026-11-05
 
 **mailbox Counter counts fixed**
