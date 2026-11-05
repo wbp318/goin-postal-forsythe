@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.86.2] - 2026-11-05
+
+**a fair language bar (machine-made banner SVGs left out, Python shows)**
+
+**The problem.** The repo's language bar showed SVG at 55.8%, and Python wasn't visible at all. GitHub's Linguist measures languages by bytes. Three SVGs of the 107 x 39 inch banner are machine output, and they make up 4.5 MB, or 95% of all the repo's SVG:
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.86.2) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.86.2) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.86.1...v1.86.2)
+
 ## [v1.86.1] - 2026-11-05
 
 **Start here in the mailbox README (download the template, work in your own copy)**
