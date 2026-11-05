@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.82.0] - 2026-11-05
+
+**buttons and macros in the mailbox register**
+
+LibreOffice is going on the store's machines and the owners' own, so the register is now one LibreOffice file with macros: `physical-mailbox/mailbox-register-TEMPLATE.ods`. The .xlsx template and the Google Sheets path are gone.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.82.0) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.82.0) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.81.1...v1.82.0)
+
 ## [v1.81.1] - 2026-11-05
 
 **input checks in the mailbox register**
