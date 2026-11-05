@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.82.1] - 2026-11-05
+
+**mailbox Counter counts fixed**
+
+The seven live counts on the mailbox register's Counter tab showed #NAME?. The macro tool wrote those formulas with Excel-style references (`Holders!A2`), but a formula set from a LibreOffice macro uses Calc's own syntax (`$Holders.$A$2`). The counts now calculate.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.82.1) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.82.1) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.82.0...v1.82.1)
+
 ## [v1.82.0] - 2026-11-05
 
 **buttons and macros in the mailbox register**
