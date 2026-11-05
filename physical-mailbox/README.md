@@ -49,7 +49,7 @@ flowchart TD
 | Payments | one row per POS payment: date, code, months covered, amount, receipt number | the holder's name, the expected amount |
 | Prices | the monthly price per size and how many months a year costs | the yearly prices |
 
-Yellow cells are for typing. White cells are formulas. "Paid through" is the start date plus every
+Yellow cells are for typing. White cells are formulas. Every typed column checks what goes in and says why in a box when it refuses: codes are MB- and three digits, used once; phones need ten digits; IDs take the last four characters only and refuse an expired date; a box comes from the Boxes tab's list, and a box given to two open customers turns red; payments take a code from the Holders list and 1 to 24 months. Dropdown columns only take their list. "Paid through" is the start date plus every
 month paid on the Payments tab, so a payment row is all it takes to renew. The workbook only uses
 functions that LibreOffice Calc and Google Sheets both have, and it recalculates when opened.
 
