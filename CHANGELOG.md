@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.89.2] - 2026-11-06
+
+**resale tornado, What just happened under the tornado**
+
+The event log, **What just happened**, now sits right under the tornado on the left, full width, instead of at the bottom of the right column. Each event reads beside the move it describes, and the wider space shows every line in full (it was cut off with "…" in the narrow column). It shows the latest 12 events. Counts, Claude, money and Inside the Mac mini stay on the right.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.89.2) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.89.2) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.89.1...v1.89.2)
+
 ## [v1.89.1] - 2026-11-06
 
 **stockrooms by cheapest rent, USPS only; tornado picked and packed totals; Inside the Mac mini**
