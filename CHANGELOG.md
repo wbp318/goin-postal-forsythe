@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.88.2] - 2026-11-06
+
+**Resale starts now with William's stock; tornado counts fixed**
+
+William already has inventory that can be sold, and it's in stock at the store. So the [resale plan](https://github.com/wbp318/goin-postal-forsythe/blob/main/monetization/resale-macmini/README.md#start-now-williams-stock-before-the-holidays) gains **Start now**: selling begins this month by hand, in time for the holidays, without waiting for the Mac mini.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.88.2) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.88.2) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.88.1...v1.88.2)
+
 ## [v1.88.1] - 2026-11-06
 
 **The resale tornado, and how to open it**
