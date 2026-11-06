@@ -18,8 +18,8 @@ The same three colors as every chart in the repo ([full key](../../README.md#how
 |---|---|
 | **What is the one thing that decides it?** | A cash network agreeing to sign the store. Everything else is a day's work. The store joins the network, not each app: **Green Dot** carries Chime, Varo, PayPal, SoFi, Revolut and Green Dot cards; **InComm VanillaDirect** carries Current and Chime. Cash App's network isn't named anywhere public, but its cashier step is a card swipe or a barcode, which the same networks handle (below) |
 | **How long?** | The equipment can be bought and set up in a day. The agreement is the wait: no network publishes a sign-up for one independent store, so the first calls set the timeline. Make them Monday |
-| **Extra equipment?** | Yes, about **$1,000 to $1,300** for a full station (Mac mini, a scanner that reads phone screens, a receipt printer, its own cash drawer, a battery backup). Less if the network sends its own terminal. **Don't buy until the network says what it supports** (step 3) |
-| **A Mac mini just for deposits?** | **Viable, and the right shape:** its own screen, its own drawer and its own log keep deposit cash apart from sales and leave the Goin' Postal POS untouched. It also fits the Mac minis the owners already want ([counter PC plan](../../shipping-client/counter-pc/README.md)). One condition: if the network's software is Windows-only, the station is a Windows mini PC instead. Ask first |
+| **Extra equipment?** | Yes, about **$950 to $1,700** for a full station (Mac mini, a scanner that reads phone screens, a receipt printer, its own cash drawer, a battery backup). Less if the network sends its own terminal. **Don't buy until the network says what it supports** (step 3) |
+| **A Mac mini just for deposits?** | **Viable, and the right shape:** its own screen, its own drawer and its own log keep deposit cash apart from sales and leave the Goin' Postal POS untouched. William wants Mac minis at the counter ([counter PC plan](../../shipping-client/counter-pc/README.md)); Peter and Rin aren't sure they're worth it yet and are waiting for a good Veterans Day or Black Friday deal online. That timing works, because the network's answer has to come first anyway. One condition: if the network's software is Windows-only, the station is a Windows mini PC instead. Ask first |
 | **What does it earn?** | The store keeps a share of each deposit fee. Green Dot's own developer example shows a **$3.95** fee with **$2.00** credited to the store. That is an example in their documentation, not a quote, but it is the first published figure we have found. At $1 to $2 kept a deposit and five deposits a day, $150 to $300 a month, plus the visits |
 | **The catch** | Chime deposits are free at Walgreens and Varo's are free at CVS. The store wins the customers in a hurry, the ones who don't know, and every app with no free option nearby |
 
@@ -110,7 +110,7 @@ flowchart TD
 2. **The Goin' Postal POS stays as it is.** No change to franchise software and no integration to ask GP Brands about, beyond whether the service is allowed.
 3. **One place for the rules.** The scam check, the ID check and the void window all happen at one screen, with every deposit logged by the staff member's name.
 4. **The fixed address.** In route C the station is the machine Green Dot allowlists. The website runs on Cloudflare, which doesn't give a fixed outgoing address on the plans the store uses, so the Green Dot calls can't come from the site.
-5. **It fits the plan already made.** The owners want Mac minis at the counter ([item 52](../../shipping-client/counter-pc/README.md)); this is one more with a single job.
+5. **It fits the counter PC plan.** William wants Mac minis at the counter ([item 52](../../shipping-client/counter-pc/README.md)); Peter and Rin are waiting on a Veterans Day or Black Friday deal before deciding they're worth it. A deposit station is one more mini with a single job, and the first one bought can prove the case.
 
 **When not to:** if the network's software only runs on Windows, the station is a Windows mini PC (about $250 to $400) with the same peripherals. If InComm or a reseller sends a standalone terminal (route A), it can sit on the counter with a drawer and nothing else.
 
@@ -150,7 +150,7 @@ Prices are planning estimates; check them on the day.
 
 | Item | Example | About | Notes |
 |---|---|---|---|
-| Mac mini | Base chip, 16 GB, 256 GB | $600 | As in the counter PC plan. Nothing here strains it |
+| Mac mini | Base chip, 16 GB, 256 GB | $500 to $899 | The 2026 M6 lists at $899 (seen at $779.99 on sale); a 2024 M4 at about $499 on sale is plenty. Nothing here strains it. See the deal note under the table |
 | Barcode scanner | Zebra DS2208 or Honeywell Voyager 1470g | $100 to $150 | 2D imager, USB, reads phone screens. Types the barcode like a keyboard |
 | Receipt printer | Epson TM-T20III, Ethernet model | $170 to $230 | ESC/POS, which the [printer agent](../../shipping-client/printer-agent/README.md) already sends (`receipt_escpos`). Has the drawer port |
 | Cash drawer | APG Vasario or similar, printer-driven | $100 to $130 | RJ12 to the printer; its own drawer, its own key |
@@ -159,7 +159,9 @@ Prices are planning estimates; check them on the day.
 | Battery backup | APC 600 VA or similar | $70 to $90 | A deposit cut off mid-send is the worst case; this rides out a flicker |
 | Static IP | From the store's internet provider | Often $5 to $20 a month | Route C only. Ask the provider; a small cloud server with a fixed address is the fallback |
 | Drop safe | If the store has none | $150 to $300 | Deposit cash leaves the drawer during the day |
-| **Total** | | **About $1,000 to $1,300 once** | Less in route A |
+| **Total** | | **About $950 to $1,700 once** | Low end with an M4 on sale and a spare monitor; less in route A |
+
+**Mac mini prices (deal sites, fall 2026):** the 2026 base Mac mini (M6, 16 GB, 256 GB) lists at $899 and dropped to $779.99 at Amazon in October's Prime Big Deal Days. The 2024 M4 base model has sold at Amazon for about $499 when on sale, and it is more than enough for a station. **A good deal** is the M6 at or under about $780, or an M4 (new or Apple refurbished) at or under about $500. Veterans Day is Wednesday, November 11, and Black Friday is November 27.
 
 ### Route C: how the software would work
 
@@ -314,7 +316,7 @@ The store's share per deposit, times deposits. The $2.00 column is Green Dot's d
 | 5 | 130 | $130 | $260 |
 | 10 | 260 | $260 | $520 |
 
-Against about $1,100 of equipment, five deposits a day at $2 pays it back in about four months; at $1, about eight. As with the ATM, the bigger value is the person at the counter every payday who learns the store ships, notarizes and rents mailboxes.
+Against about $1,200 of equipment, five deposits a day at $2 pays it back in about five months; at $1, about nine. As with the ATM, the bigger value is the person at the counter every payday who learns the store ships, notarizes and rents mailboxes.
 
 ## What PeterShip needs
 
@@ -325,7 +327,7 @@ Against about $1,100 of equipment, five deposits a day at $2 pays it back in abo
 
 1. **Go:** make the Green Dot call and send the InComm form Monday? Who makes the call?
 2. **Station:** agree to a separate deposit station with its own drawer, and to wait for the network's answer before buying?
-3. **Mac mini or Windows mini PC** for it: the Mac mini if the network's software runs on a Mac (it matches the counter plan), Windows if it doesn't.
+3. **Mac mini or Windows mini PC** for it. William wants the Mac mini; Peter and Rin aren't sure it's worth it and are watching for a Veterans Day (Nov 11) or Black Friday (Nov 27) deal. A Mac mini if the network's software runs on a Mac and a deal lands at or under the prices above, a Windows mini PC (about $250 to $400) if the software is Windows-only.
 4. **The store's fee** on top of the network's (if the network allows one): none at first, to win against Walgreens, or $1?
 5. **Card swipes:** barcode-only to start, card swipes only on a network-supplied reader?
 6. **Cash App:** if neither network carries it, ask the card processor about Visa ReadyLink, or leave Cash App out?
@@ -334,6 +336,7 @@ Against about $1,100 of equipment, five deposits a day at $2 pays it back in abo
 
 - Green Dot developer documentation, Retail API: [Retailers overview](https://developer.greendot.com/embedded-finance/docs/retail-overview), [Getting started (environments, OAuth, IP allowlisting)](https://developer.greendot.com/embedded-finance/docs/getting-started-7), [Card Reload and Point of Banking](https://developer.greendot.com/embedded-finance/docs/card-reload) (`merchantFee`, "any valid US debit card", `fundingDelaySeconds`, receipt text), [Barcode / eCash](https://developer.greendot.com/embedded-finance/docs/barcode-ecash), [Transaction voids](https://developer.greendot.com/embedded-finance/docs/transaction-voids), [Cash deposits and payments overview](https://developer.greendot.com/embedded-finance/docs/cash-deposits-and-payments-overview), [API platform overview (Retailer ISO API)](https://developer.greendot.com/embedded-finance/docs/apis-overview), [docs index](https://developer.greendot.com/embedded-finance/llms.txt)
 - Green Dot's distribution: [Form 10-Q, 2019](https://www.sec.gov/Archives/edgar/data/1386278/000138627819000048/form10-qxgdot06302019.htm) ("mostly major chain retail locations"), [Form 10-K, 2016](https://www.sec.gov/Archives/edgar/data/0001386278/000138627817000023/a2016-12x31form10xk.htm) (resellers Blackhawk and InComm), [ACE Cash Express joins the reload network](https://ir.greendot.com/news-releases/news-release-details/ace-cash-express-joins-green-dot-reload-network-adding-1500), [Green Dot Network help](https://www.greendotnetwork.com/help) and [deposit app barcodes](https://www.greendotnetwork.com/depositapp)
+- Mac mini prices: [Slickdeals, M6 at $779.99 at Amazon](https://slickdeals.net/f/20100285-779-99-apple-2026-mac-mini-desktop-computer-m6-chip-16gb-256gb-at-amazon), [Gizmodo on the M6 record low](https://gizmodo.com/why-buy-the-m6-mac-mini-directly-from-apple-when-amazon-is-selling-it-at-a-record-low-2000832780), [9to5Toys, M6 deals Oct 26](https://9to5toys.com/2026/10/26/apple-m6-mac-mini-models-deal/), [Slickdeals, M4 at $499 at Amazon](https://slickdeals.net/f/18752011-499-99-apple-mac-mini-desktop-2024-m4-10-core-cpu-gpu-16gb-ram-256gb-ssd-at-amazon)
 - [Cash App: Paper Money Deposits](https://cash.app/help/6488-paper-money-deposit) ($1 fee, $5 to $500, $5,000 a week, $10,000 a month, swipe or barcode)
 - [Chime: deposit cash](https://help.chime.com/how-do-i-deposit-cash-into-my-chime-account-2c7dc564) (Move, Deposit cash, View barcode; 92,000+ retailers), [Varo cash deposits](https://support.varomoney.com/hc/en-us/articles/115011614388-Cash-Deposits)
 - InComm: [VanillaDirect](https://www.vanilladirect.com/), [partner form](https://www.vanilladirect.com/partnership.html), [VanillaDirect cash solutions](https://www.incomm.com/payments/cash-solutions/), [independent retailer FAQ](https://www.incomm.com/independent-retailers/independent-retailer-faq/) (standalone scanner and reader, checks, payment schedule)

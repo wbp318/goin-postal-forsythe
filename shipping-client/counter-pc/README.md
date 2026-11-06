@@ -1,6 +1,6 @@
 # Counter PCs: the plan for Windows 11 today and Mac minis tomorrow
 
-What runs at the counter, on which machine, how it is set up, and how to move from the two Windows 11 PCs the store has now to the two Mac minis the owners want. Written for Peter, Rin and William; step by step, nothing assumed. The short version: PeterShip does not care which it is. The one thing that does care is the Goin' Postal POS, which is Windows software, so at least one Windows machine (or a Windows virtual machine) stays until GP Brands says otherwise.
+What runs at the counter, on which machine, how it is set up, and how to move from the two Windows 11 PCs the store has now to the two Mac minis William wants (Peter and Rin aren't sure yet they're worth it, and are waiting on a good Veterans Day or Black Friday deal online). Written for Peter, Rin and William; step by step, nothing assumed. The short version: PeterShip does not care which it is. The one thing that does care is the Goin' Postal POS, which is Windows software, so at least one Windows machine (or a Windows virtual machine) stays until GP Brands says otherwise.
 
 ### How to read the charts
 
@@ -124,7 +124,7 @@ If a Windows PC dies: another PC, steps 1 to 5, 10 to 14, 16 to 17, and a PIN. F
 
 ## 4. Route B: two Mac minis
 
-A Mac mini is quiet, small, draws about 7 watts idle, is silent, gets macOS updates for seven or eight years, and the M-series chips are far more than this needs. For a machine that runs a browser and a tiny Node program all day it is close to ideal, and it is why the owners want them. The one hard fact is in the next section.
+A Mac mini is quiet, small, draws about 7 watts idle, is silent, gets macOS updates for seven or eight years, and the M-series chips are far more than this needs. For a machine that runs a browser and a tiny Node program all day it is close to ideal, and it is why William wants them. Whether that is worth the price is the question Peter and Rin are weighing. The one hard fact is in the next section.
 
 ### 4a. The POS stays on Windows
 
@@ -145,7 +145,7 @@ Recommendation: the first branch. Buy the minis, run PeterShip and the browser o
 
 ### 4b. Which mini
 
-Any current Mac mini with the base chip, 16 GB, 256 GB. Nothing here uses the storage or the memory. Buy the two at once so they match. Each needs a monitor (any HDMI or USB-C screen; a touch screen is not needed, the tablet covers that), a keyboard and mouse, and the same scanner and printers as Route A. Budget about $600 per mini plus whatever screens the store does not already have.
+Any current Mac mini with the base chip, 16 GB, 256 GB. Nothing here uses the storage or the memory. Buy the two at once so they match. Each needs a monitor (any HDMI or USB-C screen; a touch screen is not needed, the tablet covers that), a keyboard and mouse, and the same scanner and printers as Route A. Budget $500 to $899 per mini plus whatever screens the store does not already have: the 2026 base model (M6) lists at $899 and was $779.99 at Amazon in October; a 2024 M4 at about $499 on sale does the job just as well. Peter and Rin are waiting for a Veterans Day (Nov 11) or Black Friday (Nov 27) deal; at or under about $780 for an M6, or about $500 for an M4, is a good one. Prices from deal sites in fall 2026.
 
 ### 4c. Prepare the machine
 
@@ -203,7 +203,7 @@ Identical to Windows: nothing is on the mini. A spare mini, or the old Windows P
 
 | | Route A, Windows PCs you own | Route B, two Mac minis |
 |---|---|---|
-| Hardware | $0 | About $1,200 for two base minis, plus screens if needed |
+| Hardware | $0 | About $1,000 to $1,800 for two base minis (M4 on sale to M6 at list), plus screens if needed |
 | Software | $0 (Node, Chrome, the agent are free) | $0, unless Parallels for the POS: about $100 a year plus a Windows licence |
 | Scanner | $40 to $80 each if not owned | Same |
 | Zebra network printer | Already owned per the agenda; a second about $300 used | Same |
