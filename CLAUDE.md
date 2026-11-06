@@ -7,8 +7,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 A public repo for Goin' Postal Forsythe, a shipping store in Monroe, Louisiana. Two kinds of content:
 
 - `site/`: the store website (Astro 7 on Cloudflare) and **PeterShip**, the store's own shipping client (`site/src/shipping/`, the `/counter/*` staff pages, the `/api/*` routes). This is where nearly all code work happens. No PHP anywhere, deliberately.
-- `physical-mailbox/`: the store's physical mailbox rental, run on its own (not PeterShip): a LibreOffice Calc register with macros (`mailbox-register-TEMPLATE.ods`) and a printed intake packet. Everything Calc lives in `physical-mailbox/tools/calc/`: `build-register.py` (openpyxl) then `add-macros.py` under LibreOffice's Python (adds the Counter tab, buttons and Basic from `macros/Mailbox.bas`, then 56 checks; Holders and Payments Content changed events fill codes and dates as you type, including the Python macro in `macros/python/`), `upgrade-register.py` (carries a filled register into a new template; `--self-test`), `register-report.py` (pandas), and `README.md`, the complete Calc guide. Filled registers hold customer data and are git-ignored.
-- Everything else is plans and marketing: `AGENDA.md` (the numbered agenda items and the T-numbered PeterShip to-do list, plus a dated log), `research/` (next-store site research), `monetization/`, `shipping-client/` (connectors, printer agent, LLC drafts, rate plans), `designs/`, and the root `README.md`.
+- `physical-mailbox/`: the store's physical mailbox rental, run on its own (not PeterShip): a LibreOffice Calc register with macros (`mailbox-register-TEMPLATE.ods`) and a printed intake packet. Everything Calc lives in `physical-mailbox/tools/calc/`: `build-register.py` (openpyxl) then `add-macros.py` under LibreOffice's Python (adds the Counter tab, buttons and Basic from `macros/Mailbox.bas`, then runs its own checks on every macro and formula cell; Holders and Payments Content changed events fill codes and dates as you type, including the Python macro in `macros/python/`), `upgrade-register.py` (carries a filled register into a new template; `--self-test`), `register-report.py` (pandas), and `README.md`, the complete Calc guide. Filled registers hold customer data and are git-ignored.
+- Everything else is plans and marketing: `AGENDA.md` (the numbered agenda items and the T-numbered PeterShip to-do list, plus a dated log), `research/` (next-store site research), `monetization/` (see below), `shipping-client/` (connectors, printer agent, LLC drafts, rate plans), `designs/`, and the root `README.md`.
 
 Owners are Peter (owner and manager, main decision maker) and Rin (investor). Address decision questions in plans to "Peter and Rin". Python scripts import `scripts/owner_guard.py` and stop unless `GOIN_POSTAL_OWNER` is set or `.owner-key` exists at the repo root.
 
@@ -27,7 +27,15 @@ npm run db:local            # re-apply db/schema.sql to the local D1 (run after 
 
 Local secrets go in `site/.dev.vars` (copy `.dev.vars.example`; `COUNTER_PIN=1234` is the staff PIN for local testing). Blank values mean mock mode: emails and texts are logged to the terminal as `[mock email] ...`, and labels are demo labels. Without a D1 binding the store falls back to memory.
 
-Root-level CI also runs `node --check` on every `shipping-client/**/*.mjs` connector, `python -m py_compile scripts/*.py`, re-runs `site/db/schema.sql` twice in sqlite (it must be re-runnable), `scripts/check_designs.py`, and renders every Mermaid chart in the READMEs with `@mermaid-js/mermaid-cli@11`. New connectors need adding to the `node --check` line in `.github/workflows/ci.yml`.
+Root-level CI also runs `node --check` on every `shipping-client/**/*.mjs` connector, `python -m py_compile scripts/*.py`, re-runs `site/db/schema.sql` twice in sqlite (it must be re-runnable), `scripts/check_designs.py`, and renders every Mermaid chart that `scripts/extract_mermaid.py` collects with `@mermaid-js/mermaid-cli@11`. That script's `SOURCES` covers the root `README.md`, `AGENDA.md`, two `docs/` files, and every `.md` under `research/`, `shipping-client/`, `monetization/`, `physical-mailbox/`, `notary/` and `site/`; a new top-level folder with charts needs adding there. New connectors need adding to the `node --check` line in `.github/workflows/ci.yml`.
+
+From the repo root (needs `.owner-key` or `GOIN_POSTAL_OWNER`):
+
+```
+python scripts/extract_mermaid.py build/mermaid          # the .mmd files CI renders
+npx -y @mermaid-js/mermaid-cli@11 -i build/mermaid/<file>.mmd -o out.svg   # render one chart
+python scripts/check_designs.py                          # the design check CI runs
+```
 
 ## Architecture
 
@@ -49,10 +57,19 @@ Root-level CI also runs `node --check` on every `shipping-client/**/*.mjs` conne
 
 PeterShip is proprietary under `shipping-client/LICENSE` (not the repo's Apache license); `shipping-client/README.md` is its long-form manual, with a "What is built so far" list keyed to releases and a screen-by-screen test script. The code that runs on Cloudflare lives in `site/` (see above); this folder holds what runs elsewhere and the business plans around it:
 
-- **Code that runs on a counter PC or a seller's machine.** `printer-agent/agent.mjs` polls the site's print queue (`PRINTER_KEY` shared secret) and sends ZPL, PDF or ESC/POS jobs to the printers; `--test` and `--once` flags for trying it. `shopify-connector/`, `square-connector/`, `ebay-connector/` each hold `connector.mjs`, `config.example.json` and a README: standalone Node 24 scripts with no packages that poll a marketplace, buy labels through the public `/api/v1` with a `psk_` key, mark the order shipped, and keep a `shipped.json` for dedupe, with `dry_run`. Same shape each time; copy the latest one, and add the new file to CI's `node --check` line.
+- **Code that runs on a counter PC or a seller's machine.** `printer-agent/agent.mjs` polls the site's print queue (`PRINTER_KEY` shared secret) and sends ZPL, PDF or ESC/POS jobs to the printers; `--test` and `--once` flags for trying it. `shopify-connector/`, `square-connector/`, `ebay-connector/`, `etsy-connector/` each hold `connector.mjs`, `config.example.json` and a README: standalone Node 24 scripts with no packages that poll a marketplace, buy labels through the public `/api/v1` with a `psk_` key, mark the order shipped, and keep a `shipped.json` for dedupe, with `dry_run`. Same shape each time; copy the latest one, and add the new file to CI's `node --check` line.
 - **Plans, each a README with Mermaid charts and a "Decisions for Peter and Rin" section.** `api/` (the public API's contract), `connectors/` (the marketplace and fulfillment roadmap with a numbered step table that gets ✅ and a version when a step ships), `rates/` (beating Pirate Ship), `costs/` (savings versus Easyship and GP Rate Pro), `counter-pc/` (hardware), `for-other-stores/` (selling PeterShip to other stores), `gp-brands/` (selling it to Goin' Postal as the Rate Pro replacement), `llc/` (the PeterShip LLC plan plus four draft papers: articles, operating agreement, IP assignment, software license to the store; members and domiciles come from `LICENSE`).
 
 When a feature ships, update the matching plan's step table and the "What is built so far" list in `shipping-client/README.md` alongside `AGENDA.md`.
+
+## `monetization/`: revenue plans beyond shipping
+
+One folder per idea, each a README with Mermaid charts, costs, sources and a "Decisions for Peter and Rin" section, linked from `monetization/README.md` and the root `README.md`. The ones with depth:
+
+- `cash-services/` (agenda item 60): ATM, cash deposits for online banks and apps, cash to crypto only as a licensed company's agent, the DMV question. `deposit-station/` is the setup for app deposits (Green Dot's Retail API, Cash App's rules, the cash handling), and `deposit-station/macmini/` is the station's Mac mini: a sealed network, four macOS accounts, and Claude Code running the nightly close under root-owned managed settings with no shell or web tools. It has a to-scale `floorplan.svg`.
+- `resale-macmini/` (item 63): the store as a reseller, starting now by hand with William's stock already at the store ("Start now"), the Mac mini automation later. Claude drafts listings, a person approves in Obsidian, and scripts publish only where a marketplace has an official API. It holds `floorplan.svg` and `tornado.html`, a standalone animated mock of the flow. **Its section 4 is the model guide for every Mac mini plan**: Claude Haiku 5.5 by default, Sonnet 5.5 only on flagged work, no Opus, pinned with `model` and `availableModels`. The deposit station and `shipping-client/counter-pc/` point to it. Keep money arithmetic in scripts, never in the model.
+
+These are plans: nothing in them is built or bought until the owners decide. Prices and third-party rules in them are dated; re-check them before quoting them as current.
 
 ## Releases and docs
 
@@ -68,3 +85,13 @@ python scripts/languages.py   # refreshes the README's exact language table from
 ```
 
 Owner-facing follow-ups (keys to obtain, prices to confirm, schema re-runs) go in GitHub issues, not in code comments alone.
+
+Every Mermaid flowchart in the plans uses the same three classes, explained under "How to read the charts" in `README.md`, so copy them as they are:
+
+```
+classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00   %% the store (yellow)
+classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff   %% outside companies (navy)
+classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d     %% people and decisions (light blue)
+```
+
+Relative links in nested plan folders are easy to get one `../` wrong; check that every link target exists before committing.

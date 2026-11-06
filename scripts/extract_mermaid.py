@@ -1,4 +1,5 @@
-"""Pull every Mermaid diagram out of the README, agenda, docs, research folder and plan page into .mmd files.
+"""Pull every Mermaid diagram out of the README, agenda, docs, the plan folders (research, shipping-client,
+monetization, physical-mailbox, notary), site/ and the plan page into .mmd files.
 
 Run from the repo root:  python scripts/extract_mermaid.py OUT_DIR
 CI renders each file with mermaid-cli, so a broken chart fails the build.
@@ -24,7 +25,8 @@ SOURCES = {
 # Every Markdown file under research/ is scanned too (research/README.md, research/florida/README.md, ...).
 for md in sorted((ROOT / "research").rglob("*.md")):
     SOURCES[md.relative_to(ROOT).as_posix()] = MD
-for md in sorted(list((ROOT / "shipping-client").rglob("*.md")) + list((ROOT / "monetization").rglob("*.md"))):
+for md in sorted(list((ROOT / "shipping-client").rglob("*.md")) + list((ROOT / "monetization").rglob("*.md"))
+                 + list((ROOT / "physical-mailbox").rglob("*.md")) + list((ROOT / "notary").rglob("*.md"))):
     SOURCES[md.relative_to(ROOT).as_posix()] = MD
 # And every Markdown file under site/ except node_modules (site/README.md, site/costs/README.md, ...).
 for md in sorted((ROOT / "site").rglob("*.md")):

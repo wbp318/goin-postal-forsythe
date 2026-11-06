@@ -50,6 +50,7 @@ The account to use is at the start of each step. Details are in [section 5](#5-t
 | **Which model?** | **Claude Haiku 5.5 for everything routine** (drafts, notes, checks): $0.10 in and $0.50 out per million tokens, about a cent per item. **Claude Sonnet 5.5 only when a job is flagged** (a designer brand, a possible fake, anything over $75): 20 times the price, still about 12 cents an item. No Opus. Roughly **$4 to $10 a month** at 20 items a day ([section 4](#4-which-model-haiku-55-by-default-sonnet-55-when-flagged)) |
 | **The device** | A Mac mini (the 2024 M4 is plenty) on the store's normal network, **not** the sealed deposit station. One of William's counter minis can do it, or one at the workroom desk |
 | **Where** | A back-room workroom with seven stations in order: intake, photos, measure and weigh, the listing desk, shelves by SKU, packing, and outbound to the counter's carrier pickups ([floor plan](#the-workroom)) |
+| **Start now** | **William already has stock at the store that can sell now.** It goes on eBay by hand this month, with Claude drafting the text, to catch the holidays; the automation takes over the same items later ([start now](#start-now-williams-stock-before-the-holidays)) |
 | **See it run** | [`tornado.html`](tornado.html), an animated mock month of this plan ([how to open it](#how-to-open-it)) |
 | **The big rule** | No bots that click, no scraping. Accounts get banned for it, and the money in them is held when they are |
 
@@ -68,6 +69,48 @@ flowchart LR
   classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
 ```
 
+## Start now: William's stock, before the holidays
+
+William already has inventory that can be sold right now, and it stays in stock at the store. So resale doesn't wait for the Mac mini, the scripts or the marketplace approvals. It starts this month, by hand, on the same rules, and the automation takes over the same items later.
+
+```mermaid
+flowchart LR
+  N["Now<br/>count it, SKU it,<br/>shelve it at the store"]:::you --> P["This week<br/>photos at the store,<br/>Claude drafts the text,<br/>a person lists on eBay"]:::local
+  P --> BF["Nov 27 to Dec 1<br/>Black Friday to<br/>Cyber Monday traffic"]:::cloud
+  BF --> LAST["Dec 15<br/>last new listings for<br/>Christmas delivery"]:::you
+  LAST --> CUT["USPS cutoffs<br/>Ground Advantage Dec 17,<br/>Priority Dec 18,<br/>Express Dec 19"]:::cloud
+  CUT --> AFTER["After Dec 19<br/>listings say ships<br/>after the holidays"]:::local
+  AFTER -.->|"when it's ready"| MM["The Mac mini<br/>takes over the same items"]:::local
+  classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
+  classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
+  classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
+```
+
+The cutoffs are the USPS dates on the store's own holiday sign (agenda item 3: arrive by December 25). FedEx's are there too; UPS hadn't published its dates when the sign was made.
+
+### The steps, without the Mac mini
+
+1. **Count it and give each item a SKU** (`A-001` on): one row or one note per item with the same fields as `item.md` in [section 3](#3-the-obsidian-vault) (cost, source, measurements, price, status). A LibreOffice sheet or Obsidian notes both work; the vault can import either later. Print SKU labels on the store's Zebra and shelve by SKU, as in the [workroom plan](#the-workroom), in whatever space the store can give it.
+2. **Photos at the store:** a white wall or a sheet of white board, daylight or two lamps, 6 to 12 photos per item (front, back, tags, flaws, a tape measure across it).
+3. **The listing text:** Claude drafts it in an ordinary Claude Code or claude.ai session on any computer, from the photos and the notes, under the same rules as [section 6](#6-rules-that-keep-the-accounts-safe): describe only what's there, flag anything designer or possibly fake, and put no eBay data into Claude. A person checks it and pastes it into the eBay app.
+4. **List on eBay first,** with 1 business day handling. Add Etsy for anything 20 years or older. Hold the by-hand marketplaces until an item has sat unsold for 14 days, as the plan says.
+5. **Ship from the counter** with the store's own labels and boxes, the same day where possible. Holiday buyers judge a seller on speed.
+6. **Mark every sale** on the list the moment it happens, and end it anywhere else it's listed.
+
+**What the store gets right away:** sales before the holidays, a stock of real listings to test the drafting rules on, and the first entries in the store's own sales history. That history is what the Mac mini's price notes will be built from.
+
+### One question first: whose stock, whose account
+
+William's inventory sold through the store needs one decision before the first sale, because it decides whose eBay account it goes on, whose bank gets paid, and whose books it's in:
+
+| Shape | How it works | What it means |
+|---|---|---|
+| **The store buys it** | The store pays William an agreed price for the lot; the store lists and keeps the sales | Simplest books: it's the store's stock from day one |
+| **Consignment** | William keeps owning it; the store lists, sells and ships, and pays William an agreed share of each sale | Common for resale shops. Needs a written split and a monthly statement to William |
+| **William sells, the store ships** | William lists on his own account; the store packs and ships it as a business account in PeterShip, at the store's rates | No change to the store's books; the store earns on shipping only |
+
+The accountant should see whichever shape Peter and Rin pick. It's decision 1, below.
+
 ## See it run: the resale tornado
 
 [`tornado.html`](tornado.html) is an animated mock of this plan: one month at 20 items a day, sped up. Each dot is an item spiraling down a funnel through the eight stages: intake, photos, Claude drafts, script check, person approves, listed, sold, shipped. The funnel narrows because not everything sells in a month. Color the dots by where they sell, by which Claude model ran them, or by stage. Hover one for its card, and watch the counts, the Claude cost, the money and the event log on the right. **Every number is mock data**, from this plan's assumptions.
@@ -77,11 +120,11 @@ flowchart LR
 | Where | How |
 |---|---|
 | **The hosted copy** | [https://claude.ai/artifact/AUdC9zURHiCYd3tBECPNn7](https://claude.ai/artifact/AUdC9zURHiCYd3tBECPNn7). Open it in any browser while signed in to claude.ai as its owner. It is private until shared: on its page, **Share** gives Peter and Rin a link |
-| **From a clone of this repo** | Double-click `monetization/resale-macmini/tornado.html`, or right-click it, **Open with**, **Opera** |
+| **From a clone of this repo** | Double-click `monetization/resale-macmini/tornado.html`, or right-click it, **Open with**, **Google Chrome** |
 | **From GitHub, no clone** | Open the file on GitHub, click **Download raw file** (the arrow at the top right of the file), then double-click the download. GitHub itself shows the page's source, not the page |
 | **From Obsidian** | It's mirrored into the vault next to this note. Obsidian lists `.html` files once **Settings, Files and links, Detect all file extensions** is on; then right-click it, **Open in default app**. Or double-click it in File Explorer, in the vault's `_repos/goin-postal-forsythe/monetization/resale-macmini/` folder |
-| **Windows command line** | `start opera "monetization\resale-macmini\tornado.html"` from the repo folder |
-| **Mac** | `open -a Opera monetization/resale-macmini/tornado.html`, or double-click it in Finder |
+| **Windows command line** | `start chrome "%cd%\monetization\resale-macmini\tornado.html"` in Command Prompt, from the repo folder |
+| **Mac** | `open -a "Google Chrome" monetization/resale-macmini/tornado.html`, or double-click it in Finder |
 
 It needs no server, no install and no internet, except for its three Google fonts; offline it falls back to the system's fonts and runs the same. If the system asks for reduced motion, it opens paused with a **Play** button.
 
@@ -511,7 +554,7 @@ At 20 items a day with half of them selling within the month, that is roughly **
 
 ## Decisions for Peter and Rin (and William)
 
-1. **Go?** A resale business at the store: who buys stock, with how much to start, and is it the store's business or a separate one?
+1. **Go, and whose stock?** Start now with William's inventory at the store: does the store buy it, sell it on consignment, or just ship it for William ([the three shapes](#one-question-first-whose-stock-whose-account))? After that, who buys more stock, with how much, and is resale the store's business or a separate one?
 2. **The franchise:** does GP Brands allow a resale business run from the store? Add it to the same email as issue 11.
 3. **The by-hand marketplaces:** post by hand from Claude's text (free), or pay a crosslister that uses official connections?
 4. **The machine:** a counter mini with three more accounts, or its own mini at the workroom desk?

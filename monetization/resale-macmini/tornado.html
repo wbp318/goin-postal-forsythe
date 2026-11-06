@@ -112,8 +112,9 @@ footer { color: var(--muted); font-size: 12px; margin-top: 14px; max-width: 110c
       <div class="bar"><span id="dayBar"></span></div>
     </div>
     <div class="card">
-      <h2>Items in each stage</h2>
+      <h2>Right now in each stage</h2>
       <table id="stages"></table>
+      <div class="kv" id="flow" style="margin-top:10px;padding-top:8px;border-top:1px solid var(--line)"></div>
     </div>
     <div class="card">
       <h2>Claude this month</h2>
@@ -365,7 +366,7 @@ footer { color: var(--muted); font-size: 12px; margin-top: 14px; max-width: 110c
             const lx = G.cx + R.r + 14;
             ctx.fillText((i + 1) + "  " + STAGES[i].name.toUpperCase(), lx, R.y + 4);
             ctx.font = "12px 'IBM Plex Mono', monospace"; ctx.fillStyle = "#9aa6c4";
-            ctx.fillText(WHO[STAGES[i].who] + " · " + (i === 7 ? S.shipped + count : count), lx, R.y + 19);
+            ctx.fillText(WHO[STAGES[i].who] + " · " + count, lx, R.y + 19);
             ctx.strokeStyle = "rgba(242,183,5,0.35)"; ctx.lineWidth = 1;
             ctx.beginPath(); ctx.moveTo(G.cx + R.r + 2, R.y); ctx.lineTo(lx - 4, R.y); ctx.stroke();
           }
@@ -403,11 +404,17 @@ footer { color: var(--muted); font-size: 12px; margin-top: 14px; max-width: 110c
     $("clock").textContent = String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0") + (h >= 8 && h < 18 ? " · open" : " · closed");
     $("dayBar").style.width = Math.min(100, (S.hour / MONTH_HOURS) * 100) + "%";
     const counts = STAGES.map((s, i) => S.items.filter(it => it.stage === i && !it.done).length);
-    counts[7] += S.shipped;
     const max = Math.max(1, ...counts);
     $("stages").innerHTML = STAGES.map((s, i) =>
       "<tr><td>" + (i + 1) + ". " + s.name + "</td><td class=\"who\"><span class=\"chip " + (s.who === "claude" ? "claude" : s.who === "person" ? "person" : "") + "\">" + WHO[s.who] + "</span></td>" +
       "<td style=\"width:70px\"><div class=\"mini\" style=\"width:" + Math.round((counts[i] / max) * 100) + "%\"></div></td><td class=\"n\">" + counts[i] + "</td></tr>").join("");
+    const soldMonth = S.soldBy.ebay + S.soldBy.etsy + S.soldBy.hand;
+    const waiting = S.items.filter(it => it.stage === 6 && !it.done).length;
+    $("flow").innerHTML =
+      "<span>Sold this month</span><span>" + soldMonth + "</span>" +
+      "<span>Shipped this month</span><span>" + S.shipped + "</span>" +
+      "<span>Sold, waiting for its label</span><span>" + waiting + "</span>" +
+      "<span class=\"note\" style=\"grid-column:1/-1;padding:4px 0 0\">Every shipped item was sold first; it waits in Sold a few hours for its label. Stage rows are right now; these three are the month so far.</span>";
     $("claude").innerHTML =
       "<span>Haiku 5.5 runs (drafts, redrafts)</span><span>" + S.haikuRuns + "</span>" +
       "<span>Sonnet 5.5 second opinions</span><span>" + S.sonnetRuns + "</span>" +
