@@ -98,7 +98,7 @@ footer { color: var(--muted); font-size: 12px; margin-top: 14px; max-width: 110c
 <header>
   <h1>Resale Tornado</h1>
   <span class="badge">MOCK DATA</span>
-  <div class="sub">How the resale automation would run: one simulated month at 20 items a day, sped up. Items spiral down the funnel from intake to shipped; the funnel narrows because not everything sells in a month. On the left, the Mac mini's layers light up as each one does its part; below, the stockrooms pick, pack and hand off what sold.</div>
+  <div class="sub">How the resale automation would run: one simulated month at 20 items a day, sped up. Items spiral down the funnel from intake to shipped; the funnel narrows because not everything sells in a month. Diamonds are dropship items, listed from a supplier's feed and shipped by the supplier. On the left, the Mac mini's layers light up as each one does its part; below, the stockrooms pick, pack and hand off what sold, and the dropship card orders from suppliers.</div>
 </header>
 
 <div class="wrap">
@@ -111,7 +111,7 @@ footer { color: var(--muted); font-size: 12px; margin-top: 14px; max-width: 110c
       <button class="btn" id="restart" type="button">Restart month</button>
     </div>
     <div class="canvas-box">
-      <canvas id="c" role="img" aria-label="Animated funnel of mock resale items moving through eight stages from intake to shipped, beside a Mac mini drawn as five layers (staff account, launchd jobs, Claude Code, the Obsidian vault, the walls) with lines to the stages each one works on; counts for each stage and the layers are in the panel beside it."></canvas>
+      <canvas id="c" role="img" aria-label="Animated funnel of mock resale items moving through eight stages from intake to shipped, with dropship items from supplier feeds drawn as diamonds, beside a Mac mini drawn as five layers (staff account, launchd jobs, Claude Code, the Obsidian vault, the walls) with lines to the stages each one works on; counts for each stage and the layers are in the panel beside it."></canvas>
       <div class="tip" id="tip"></div>
       <div class="summary" id="summary"><div class="box" id="sumbox"></div></div>
     </div>
@@ -142,10 +142,10 @@ footer { color: var(--muted); font-size: 12px; margin-top: 14px; max-width: 110c
           <p>The only login a person uses. Start an item from the Obsidian template, AirDrop the photos from a phone, read Claude's draft, set the price and mark it approved. Post to Poshmark and Mercari by hand in Chrome.</p>
           <p class="mm-io">Stages 1, 2, 5 · can't see the marketplace keys</p></div></li>
         <li><span class="mm-n">2</span><div><b>launchd jobs</b> <span class="chip">scripts</span>
-          <p>Plain scripts the Mac starts on a timer, no AI. They move and shrink photos, check Claude's draft, publish what a person approved, and when something sells, end the other listings and buy the label through PeterShip.</p>
-          <p class="mm-io">Stages 2, 4, 6, 7, 8 · the hidden <code>lister</code> account holds the eBay and Etsy keys</p></div></li>
+          <p>Plain scripts the Mac starts on a timer, no AI. They move and shrink photos, check Claude's draft, publish what a person approved, and when something sells, end the other listings and buy the label through PeterShip. For dropship they read the supplier's feed (new items, stock, prices), order a sold item from the supplier and send its tracking to the marketplace.</p>
+          <p class="mm-io">Stages 1 (supplier feed), 2, 4, 6, 7, 8 · the hidden <code>lister</code> account holds the eBay, Etsy and supplier keys</p></div></li>
         <li><span class="mm-n">3</span><div><b>Claude Code</b> <span class="chip claude">Claude</span>
-          <p>Writes the listing draft from the photos and notes: title, description, measurements, flaws. Claude Haiku 5.5 does routine items, one per run; designer brands, possible fakes and anything over $75 get a Claude Sonnet 5.5 second opinion. Also writes the 9 pm sales note and Monday's list of slow sellers.</p>
+          <p>Writes the listing draft from the photos and notes: title, description, measurements, flaws. For a dropship item, from the supplier's facts, in the store's own words. Claude Haiku 5.5 does routine items, one per run; designer brands, possible fakes and anything over $75 get a Claude Sonnet 5.5 second opinion. Also writes the 9 pm sales note and Monday's list of slow sellers.</p>
           <p class="mm-io">Stage 3 · writes only draft.md and notes · reaches api.anthropic.com and nothing else</p></div></li>
         <li><span class="mm-n">4</span><div><b>Obsidian vault</b> <span class="chip">the record</span>
           <p>A folder of notes, one per item, with its history saved every night to a private GitHub repo the partners can read from home. People write item.md, Claude writes draft.md, the scripts write listings.md.</p>
@@ -160,6 +160,8 @@ footer { color: var(--muted); font-size: 12px; margin-top: 14px; max-width: 110c
         <span>Drafts, one item a run</span><span>every 15 min, 8&ndash;8</span>
         <span>Publish approved items</span><span>every 15 min</span>
         <span>Sold: delist, buy label</span><span>every 5 min</span>
+        <span>Supplier feed: stock, prices</span><span>every hour</span>
+        <span>Dropship orders, tracking</span><span>every 5 min</span>
         <span>Sales note</span><span>9:00 pm</span>
         <span>Slow-seller list</span><span>Mon 8:00 am</span>
       </div>
@@ -199,7 +201,7 @@ Notes:</pre>
 </div>
 
 <footer>
-  Mock data, from the plan in <span style="font-family:var(--mono)">monetization/resale-macmini/</span>: 20 items a day; about 10% flagged to Claude Sonnet 5.5 (designer brands, possible fakes, over $75), the rest drafted by Claude Haiku 5.5; about half of listed items sell within the month; marketplace fees shown as 13.5% for the example; Claude costs at the plan's estimates ($0.0065 a Haiku draft, $0.117 a Sonnet second opinion, $0.009 a daily note). eBay always; Etsy only for vintage; Poshmark, Mercari and the other by-hand marketplaces only after 14 days unsold. Nothing here is real sales data.
+  Mock data, from the plan in <span style="font-family:var(--mono)">monetization/resale-macmini/</span>: 20 items a day; about 10% flagged to Claude Sonnet 5.5 (designer brands, possible fakes, over $75), the rest drafted by Claude Haiku 5.5; about half of listed items sell within the month; marketplace fees shown as 13.5% for the example; Claude costs at the plan's estimates ($0.0065 a Haiku draft, $0.117 a Sonnet second opinion, $0.009 a daily note). eBay always; Etsy only for vintage; Poshmark, Mercari and the other by-hand marketplaces only after 14 days unsold. Dropship: about 4 new supplier listings a working day from CJdropshipping, Doba and Printify (the store's own designs), supplier price 55% to 72% of the sale price delivered, goods on eBay and Shopify and designs on Shopify and Etsy, about 3% a day chance to sell, fees of eBay 13.6% + $0.40, Etsy about 9.5% + $0.45 and Shopify 2.9% + $0.30, the supplier ships in 1 to 3 days and delivers in 3 to 6, and 3% of orders canceled because the supplier ran out. Nothing here is real sales data.
 </footer>
 
 <script>
@@ -212,7 +214,7 @@ Notes:</pre>
     { k: "check",   name: "Script check",      who: "script" },
     { k: "approve", name: "Person approves",   who: "person" },
     { k: "listed",  name: "Listed",            who: "market" },
-    { k: "sold",    name: "Sold: pick, pack, label", who: "person" },
+    { k: "sold",    name: "Sold: pack or order", who: "person" },
     { k: "shipped", name: "Shipped, in transit", who: "market" }
   ];
   const WHO = { person: "person", script: "script", claude: "Claude", market: "market" };
@@ -220,8 +222,8 @@ Notes:</pre>
   const LAYERS = [
     { k: "staff", w: 0.95, name: "Staff account", sub: "Obsidian · AirDrop · Chrome", out: "by-hand apps, in Chrome", stages: [0, 1, 4],
       tip: "<b>Staff account</b><br>Whoever is in the workroom. Starts an item from the Obsidian template, AirDrops the photos, approves and prices in Obsidian, posts the by-hand marketplaces in Chrome.<br>Can't read the marketplace tokens." },
-    { k: "jobs", w: 0.95, name: "launchd jobs · lister", sub: "intake · check · publish · sold-sync", out: "eBay, Etsy APIs · PeterShip", stages: [1, 3, 5, 6, 7],
-      tip: "<b>launchd jobs, hidden lister account</b><br>Plain scripts, no AI: intake every 2 min (photos, HEIC to JPEG), the draft check, publish every 15 min, sold-sync every 5 min (ends other listings, buys the PeterShip label).<br>Owns the eBay, Etsy, Shopify and TikTok tokens." },
+    { k: "jobs", w: 0.95, name: "launchd jobs · lister", sub: "intake · feed · publish · sold · dropship", out: "APIs · suppliers · PeterShip", stages: [0, 1, 3, 5, 6, 7],
+      tip: "<b>launchd jobs, hidden lister account</b><br>Plain scripts, no AI: intake every 2 min (photos, HEIC to JPEG), the draft check, publish every 15 min, sold-sync every 5 min (ends other listings, buys the PeterShip label). For dropship: the supplier feed every hour (new items, stock and prices; ends a listing the moment the supplier runs out) and the dropship order job (orders from the supplier, uploads its tracking).<br>Owns the eBay, Etsy, Shopify, TikTok and supplier tokens." },
     { k: "claude", w: 0.95, name: "Claude Code · ops", sub: "Haiku 5.5 · Sonnet 5.5 on flags", out: "api.anthropic.com only", stages: [2],
       tip: "<b>Claude Code, hidden ops account</b><br>Haiku 5.5 drafts each item at low effort, one item per run; flagged items (designer, possible fake, over $75) get a Sonnet 5.5 second opinion. Also writes the daily sales note and the weekly aging list.<br>Writes draft.md and notes only." },
     { k: "vault", w: 3, name: "Obsidian vault · git", sub: "item.md · draft.md · listings.md", out: "github.com, git only", stages: [4],
@@ -236,11 +238,13 @@ Notes:</pre>
     la2: { name: "Stockroom 2 · Louisiana", sub: "cheapest rent wins · USPS pickup 11 am", short: "Stockroom 2", pickup: 11, how: "A second Louisiana stockroom in whatever little shop rents cheapest. East Carroll looks cheapest (Lake Providence, Transylvania, Sondheimer); rural Madison Parish outside Tallulah and West Carroll (Epps, Oak Grove) are the other options. Ships USPS only: free package pickup the next morning, which comes to any rural address. Someone packs there on set days.", pulse: 0, today: 0 },
     chicot: { name: "Arkansas unit · Chicot County", sub: "maybe · Eudora or rural · post office 3 pm", short: "Chicot County", pickup: 15, how: "A possible cheap little rented shop in Chicot County, Arkansas: Eudora, 24 miles up from Lake Providence, or somewhere rural, wherever rent is lowest (Lake Village and Monticello too). Ships USPS only: parcels to the post office by 3 pm, or pickup at the door. Adds Arkansas filings, so only if the rent pays for them.", pulse: 0, today: 0 }
   };
-  const ROOM_KEYS = ["monroe", "la2", "chicot"];
+  ROOMS.drop = { name: "Dropship · suppliers ship", sub: "no shelf · the supplier ships to the buyer", short: "Dropship", tiny: "DROPSHIP", pickup: 0, how: "Items the store lists but never stocks. A supplier's feed brings them in; Claude drafts and a person approves like any item. When one sells, the dropship job places the order with the supplier through its API, the supplier ships it blind (no supplier invoice in the box) and its tracking goes back to the marketplace. Goods only on eBay (from a wholesale supplier, never another retailer) and the store's Shopify; the store's own print-on-demand designs on Shopify and Etsy. Never Poshmark, Mercari, Facebook or Depop, and TikTok Shop only later. PeterShip doesn't buy these labels.", pulse: 0, today: 0 };
+  ROOMS.monroe.tiny = "MAIN · OUACHITA"; ROOMS.la2.tiny = "STOCKROOM 2"; ROOMS.chicot.tiny = "ARKANSAS UNIT";
+  const ROOM_KEYS = ["monroe", "la2", "chicot", "drop"];
   function nextOpen(h) { const d = Math.floor(h / 24), hod = h - d * 24; if (hod >= 8 && hod < 17) return h; return (hod < 8 ? d : d + 1) * 24 + 8; }
   function nextPickup(room, h) { const T = ROOMS[room].pickup, d = Math.floor(h / 24), hod = h - d * 24; return (hod < T - 0.25 ? d : d + 1) * 24 + T; }
   function hit() { for (const k of arguments) pulse[k] = 1; }
-  const COLORS = { ebay: "#3987e5", etsy: "#d95926", hand: "#199e70", unlisted: "#6b7591", haiku: "#c98500", sonnet: "#3987e5" };
+  const COLORS = { ebay: "#3987e5", etsy: "#d95926", hand: "#199e70", shop: "#a678e0", unlisted: "#6b7591", haiku: "#c98500", sonnet: "#3987e5" };
   const STAGE_RAMP = ["#7a6420", "#8d7322", "#a28424", "#b79526", "#cca62a", "#dfb733", "#efc94f", "#ffdc7a"];
   const ITEMS = [
     ["Levi's 501 jeans", 34], ["Pendleton wool shirt", 48], ["Pyrex mixing bowl", 28], ["Carhartt work jacket", 62],
@@ -253,7 +257,16 @@ Notes:</pre>
     ["Vintage Avon bottle", 22, "vintage"], ["Ray-Ban sunglasses", 65, "designer"], ["Graphing calculator", 38], ["Board game, complete", 24]
   ];
   const NAMES = ["Peter", "Rin", "William"];
-  const MARKET_NAME = { ebay: "eBay", etsy: "Etsy", hand: "by hand (Poshmark, Mercari)" };
+  const MARKET_NAME = { ebay: "eBay", etsy: "Etsy", hand: "by hand (Poshmark, Mercari)", shop: "Shopify (the store's site)" };
+  // Dropship: listed from a supplier's feed, shipped by the supplier straight to the buyer. Never on Etsy or the by-hand marketplaces.
+  const DROP_ITEMS = [
+    ["Thermal label printer", 89], ["Shipping scale, 110 lb", 42], ["Poly mailers, 100-pack", 19], ["Bubble mailers, 50-pack", 24],
+    ["Packing tape gun", 16], ["Insulated tumbler, 30 oz", 22], ["Phone tripod with remote", 26], ["LED ring light", 38],
+    ["Bamboo cutting board set", 32], ["Cast iron care kit", 18], ["Pet hair remover roller", 15], ["Car phone mount", 17],
+    ["Moving boxes, 10-pack", 36], ["Label rolls, 4x6, 4-pack", 28],
+    ["Monroe skyline tee (store design)", 26, "pod"], ["Bayou mug (store design)", 18, "pod"], ["Ouachita River poster (store design)", 22, "pod"]
+  ];
+  const SUPPLIERS = ["CJdropshipping, US warehouse (API)", "Doba, US supplier (API)", "Printify, print on demand (API)"];
 
   const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const cv = document.getElementById("c"), ctx = cv.getContext("2d");
@@ -271,8 +284,9 @@ Notes:</pre>
   function fresh() {
     S = { hour: 8, items: [], nextSku: 1, nextArrival: 8, logs: [], shipped: 0, bought: 0, costSum: 0,
           revenue: 0, fees: 0, boxes: 0, haikuRuns: 0, sonnetRuns: 0, noteRuns: 0, claudeCost: 0,
-          soldBy: { ebay: 0, etsy: 0, hand: 0 }, lastDay: 0, summaryShown: false, shippedCost: 0, delivered: 0 };
-    for (const k of ROOM_KEYS) { ROOMS[k].today = 0; ROOMS[k].pulse = 0; ROOMS[k].month = { pick: 0, pack: 0, label: 0, out: 0, delivered: 0 }; }
+          soldBy: { ebay: 0, etsy: 0, hand: 0, shop: 0 }, lastDay: 0, summaryShown: false, shippedCost: 0, delivered: 0,
+          nextDrop: 9, nextDropSku: 1, dropSold: 0, dropPaid: 0, dropListed: 0, cancelled: 0 };
+    for (const k of ROOM_KEYS) { ROOMS[k].today = 0; ROOMS[k].pulse = 0; ROOMS[k].month = { pick: 0, pack: 0, label: 0, out: 0, delivered: 0, ordered: 0, cancelled: 0 }; }
   }
   const MONTH_HOURS = 30 * 24;
 
@@ -304,7 +318,67 @@ Notes:</pre>
     log(it.sku + " in: " + it.name + ", paid " + money(it.cost));
   }
 
+  function newDrop() {
+    const base = pick(DROP_ITEMS);
+    const price = Math.round(base[1] * between(0.9, 1.15));
+    const it = { id: 1000 + S.nextDropSku, sku: "DS-" + String(S.nextDropSku).padStart(3, "0"), name: base[0], price, drop: true,
+      supplier: base[2] === "pod" ? SUPPLIERS[2] : pick(SUPPLIERS.slice(0, 2)), pod: base[2] === "pod",
+      cost: Math.round(price * between(0.55, 0.72) * 100) / 100, stock: 20 + Math.floor(rnd() * 180),
+      vintage: false, flagged: false, stage: 0, next: S.hour + between(0.2, 0.6), room: "drop", bin: "",
+      markets: [], soldOn: null, listedAt: null, handAdded: false,
+      a: rnd() * Math.PI * 2, ry: null, rr: null, alpha: 1, done: false, jy: 0, jr: 1 };
+    it.source = it.supplier;
+    S.nextDropSku++;
+    S.items.push(it);
+    S.focus = it; S.focusKey = "sku";
+    log(it.sku + " in from the supplier feed: " + it.name + ", " + money(it.cost) + " delivered, " + it.stock + " in stock");
+  }
+
+  function advanceDrop(it) {
+    const st = STAGES[it.stage].k;
+    if (st === "intake") { it.stage = 1; it.next = S.hour + between(0.1, 0.3); log(it.sku + " supplier photos pulled and checked"); return; }
+    if (st === "photos") { it.stage = 2; it.next = S.hour + 0.08; S.haikuRuns++; S.claudeCost += 0.0065; log(it.sku + " drafted by Haiku 5.5 from the supplier's facts, " + cents(0.0065)); return; }
+    if (st === "draft") { it.stage = 3; it.next = S.hour + 0.05; return; }
+    if (st === "check") { it.stage = 4; it.next = S.hour + between(1.5, 7); return; }
+    if (st === "approve") {
+      // goods: eBay (wholesale supplier only) and Shopify; the store's own print-on-demand designs: Shopify and Etsy
+      it.stage = 5; it.listedAt = S.hour; it.jy = between(-26, 26); it.jr = between(0.8, 1.35); it.markets = it.pod ? ["shop", "etsy"] : ["ebay", "shop"]; S.dropListed++;
+      log(it.sku + " approved by " + pick(NAMES) + " at " + money(it.price) + " (margin floor " + money(it.cost * 1.25) + "); dropship on " + it.markets.map(m => MARKET_NAME[m].split(" (")[0]).join(" and "));
+      it.next = S.hour + 1; return;
+    }
+    if (st === "listed") {
+      if (rnd() < 0.004) { it.done = true; it.alpha = 0; log(it.sku + " supplier sold out: feed job ended the eBay and Shopify listings"); return; }
+      if (rnd() < 1 - Math.pow(1 - 0.03, 1 / 24)) {
+        const on = rnd() < 0.6 ? it.markets[0] : it.markets[1];
+        it.soldOn = on; it.stage = 6; it.step = "order"; it.next = S.hour + between(0.05, 0.15);
+        // eBay 13.6% + $0.40 an order; Etsy 6.5% + $0.20 listing + 3% + $0.25 payments; Shopify Payments 2.9% + $0.30
+        const fee = on === "ebay" ? it.price * 0.136 + 0.40 : on === "etsy" ? it.price * 0.095 + 0.45 : it.price * 0.029 + 0.30; it.fee = fee; S.revenue += it.price; S.fees += fee; S.soldBy[on]++; S.dropSold++;
+        log(it.sku + " sold on " + MARKET_NAME[on] + " for " + money(it.price) + "; ended on " + it.markets.filter(m => m !== on).map(m => MARKET_NAME[m].split(" (")[0]).join(", "));
+      } else it.next = S.hour + 1;
+      return;
+    }
+    if (st === "sold") {
+      const R = ROOMS.drop; R.pulse = 1;
+      if (it.step === "order") {
+        if (rnd() < 0.03) {
+          it.done = true; it.alpha = 0; S.revenue -= it.price; S.fees -= it.fee; S.cancelled++; R.month.cancelled++; S.dropSold--; S.soldBy[it.soldOn]--;
+          log(it.sku + " supplier out of stock after the sale: order canceled and refunded, a defect on " + MARKET_NAME[it.soldOn]); return;
+        }
+        it.step = "supplier"; it.next = S.hour + between(18, 60); R.month.ordered++; S.dropPaid += it.cost; hit("jobs");
+        log(it.sku + " ordered from " + it.supplier + " for " + money(it.cost) + "; buyer's address sent, ships blind");
+        return;
+      }
+      it.carrier = it.pod ? "USPS Ground Advantage (Printify's label)" : rnd() < 0.3 ? "UPS Ground (supplier's label)" : "USPS Ground Advantage (supplier's label)";
+      it.stage = 7; it.step = "transit"; it.next = S.hour + between(60, 150); R.today++; R.month.out++; S.shipped++; hit("jobs");
+      log(it.sku + " shipped by the supplier; tracking uploaded to " + MARKET_NAME[it.soldOn]);
+      return;
+    }
+    if (st === "shipped") { it.done = true; S.delivered++; R_drop_delivered(); if (rnd() < 0.3) log(it.sku + " delivered"); }
+  }
+  function R_drop_delivered() { ROOMS.drop.month.delivered++; }
+
   function advance(it) {
+    if (it.drop) return advanceDrop(it);
     const st = STAGES[it.stage].k;
     if (st === "intake") { it.stage = 1; it.next = S.hour + between(0.3, 0.8); log(it.sku + " photos in, HEIC converted"); return; }
     if (st === "photos") {
@@ -367,6 +441,11 @@ Notes:</pre>
         if (hod >= 8 && hod < 18) newItem();
         S.nextArrival += 0.5; // 20 arrivals across a 10-hour working day
       }
+      while (S.nextDrop <= S.hour) {
+        const hod = S.nextDrop % 24;
+        if (hod >= 8 && hod < 18) newDrop();
+        S.nextDrop += 2.5; // the supplier feed adds about 4 listings a working day
+      }
       for (const it of S.items) if (!it.done && S.hour >= it.next) advance(it);
       const day = Math.floor(S.hour / 24);
       if (day > S.lastDay) {
@@ -413,7 +492,7 @@ Notes:</pre>
     if (mode === "stage") return STAGE_RAMP[it.stage];
     if (mode === "model") return it.flagged ? COLORS.sonnet : COLORS.haiku;
     if (it.soldOn) return COLORS[it.soldOn];
-    if (it.stage >= 5) return it.handAdded ? COLORS.hand : it.markets.includes("etsy") ? COLORS.etsy : COLORS.ebay;
+    if (it.stage >= 5) return it.drop ? COLORS.shop : it.handAdded ? COLORS.hand : it.markets.includes("etsy") ? COLORS.etsy : COLORS.ebay;
     return COLORS.unlisted;
   }
 
@@ -433,12 +512,12 @@ Notes:</pre>
       ["status", st, "status"],
       ["cost", it.cost.toFixed(2), "sku"],
       ["source", it.source.length > 19 ? it.source.slice(0, 18) + "…" : it.source, "sku"],
-      ["location", ROOMS[it.room].short + " " + it.bin, "sku"],
+      ["location", it.drop ? "dropship" : ROOMS[it.room].short + " " + it.bin, "sku"],
       ["price", it.stage >= 5 ? it.price.toFixed(2) : "(at approval)", "price"],
       ["floor", it.stage >= 5 ? Math.round(it.price * 0.7).toFixed(2) : "", "price"],
       ["vintage", it.vintage ? "true" : "false", "sku"],
       ["draft.md", it.stage >= 3 ? "Haiku" + (it.flagged ? " + Sonnet" : "") : "…", "draft"],
-      ["listings.md", it.markets.length ? it.markets.map(m => m === "hand" ? "by hand" : m === "ebay" ? "eBay" : "Etsy").join(", ") : "-", "listings"]
+      ["listings.md", it.markets.length ? it.markets.map(m => m === "hand" ? "by hand" : m === "ebay" ? "eBay" : m === "shop" ? "Shopify" : "Etsy").join(", ") : "-", "listings"]
     ];
     const lh = 13.5, fit = Math.max(0, Math.floor((h - 22) / lh));
     ctx.font = "10.5px 'IBM Plex Mono', monospace";
@@ -564,7 +643,10 @@ Notes:</pre>
           const size = (it.flagged ? 5 : 4) * (z < 0 ? 0.8 : 1.05);
           ctx.globalAlpha = Math.max(0, it.alpha) * (z < 0 ? 0.5 : 1);
           ctx.fillStyle = colorOf(it);
-          ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath();
+          if (it.drop) { const d = size * 1.3; ctx.moveTo(x, y - d); ctx.lineTo(x + d, y); ctx.lineTo(x, y + d); ctx.lineTo(x - d, y); ctx.closePath(); }
+          else ctx.arc(x, y, size, 0, Math.PI * 2);
+          ctx.fill();
           ctx.lineWidth = 2; ctx.strokeStyle = "#0b1430"; ctx.stroke(); // surface ring between overlapping marks
           if (it.flagged && mode !== "model") { ctx.lineWidth = 1.2; ctx.strokeStyle = "#e9eef9"; ctx.beginPath(); ctx.arc(x, y, size + 2.5, 0, Math.PI * 2); ctx.stroke(); }
           ctx.globalAlpha = 1;
@@ -590,7 +672,7 @@ Notes:</pre>
       const f = ctx.font, w = ctx.measureText(t).width;
       if (w > maxW) {
         const m = f.match(/([\d.]+)px/), px = parseFloat(m[1]);
-        ctx.font = f.replace(m[0], Math.max(px * 0.7, px * maxW / w).toFixed(1) + "px");
+        ctx.font = f.replace(m[0], Math.max(px * 0.62, px * maxW / w).toFixed(1) + "px");
       }
       ctx.fillText(t, x, y); ctx.font = f;
     }
@@ -598,7 +680,7 @@ Notes:</pre>
     for (const k of ROOM_KEYS) ROOMS[k].pulse = Math.max(0, ROOMS[k].pulse - 0.02);
     const x0 = G.left + 6, x1 = W - 10, y0 = G.bot + 50, h = H - y0 - 8, gap = 10;
     if (h < 60) return;
-    const w = (x1 - x0 - gap * 2) / 3;
+    const w = (x1 - x0 - gap * (ROOM_KEYS.length - 1)) / ROOM_KEYS.length;
     ROOM_KEYS.forEach((k, i) => {
       const R = ROOMS[k], x = x0 + i * (w + gap), p = R.pulse;
       const mine = S.items.filter(it => it.room === k && !it.done);
@@ -606,19 +688,36 @@ Notes:</pre>
       for (const it of mine) if (it.stage === 6) c[it.step]++;
       const transit = mine.filter(it => it.stage === 7).length, held = mine.filter(it => it.stage <= 5).length;
       // the line from the bottom of the funnel to this stockroom
-      ctx.strokeStyle = "rgba(242,183,5," + (0.15 + 0.6 * p).toFixed(3) + ")"; ctx.lineWidth = 1 + p; ctx.setLineDash([4, 4]);
+      ctx.strokeStyle = (k === "drop" ? "rgba(166,120,224," : "rgba(242,183,5,") + (0.15 + 0.6 * p).toFixed(3) + ")"; ctx.lineWidth = 1 + p; ctx.setLineDash(k === "drop" ? [2, 3] : [4, 4]);
       ctx.beginPath(); ctx.moveTo(G.cx, G.bot + 6); ctx.bezierCurveTo(G.cx, y0 - 10, x + w / 2, y0 - 26, x + w / 2, y0); ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle = k === "chicot" ? "#141c38" : "#121d3d"; rr(x, y0, w, h, 6); ctx.fill();
+      ctx.fillStyle = k === "drop" ? "#17163a" : k === "chicot" ? "#141c38" : "#121d3d"; rr(x, y0, w, h, 6); ctx.fill();
       if (p > 0.02) { ctx.fillStyle = "rgba(242,183,5," + (p * 0.18).toFixed(3) + ")"; rr(x, y0, w, h, 6); ctx.fill(); }
-      ctx.strokeStyle = p > 0.05 ? "rgba(242,183,5," + (0.4 + 0.6 * p).toFixed(3) + ")" : "#2b3a6a"; ctx.lineWidth = 1;
-      if (k === "chicot") ctx.setLineDash([5, 4]);
+      ctx.strokeStyle = p > 0.05 ? (k === "drop" ? "rgba(166,120,224," : "rgba(242,183,5,") + (0.4 + 0.6 * p).toFixed(3) + ")" : k === "drop" ? "#4a3a7a" : "#2b3a6a"; ctx.lineWidth = 1;
+      if (k === "chicot" || k === "drop") ctx.setLineDash(k === "drop" ? [2, 3] : [5, 4]);
       rr(x, y0, w, h, 6); ctx.stroke(); ctx.setLineDash([]);
       ctx.textAlign = "left";
-      ctx.fillStyle = "#e9eef9"; ctx.font = "600 15px 'Barlow Condensed', sans-serif"; fitText(R.name.toUpperCase(), x + 10, y0 + 19, w - 18);
+      ctx.fillStyle = "#e9eef9"; ctx.font = "600 15px 'Barlow Condensed', sans-serif"; fitText(w < 200 ? R.tiny : R.name.toUpperCase(), x + 10, y0 + 19, w - 18);
       ctx.fillStyle = "#9aa6c4"; ctx.font = "11px 'IBM Plex Sans', sans-serif"; fitText(R.sub, x + 10, y0 + 34, w - 18);
       ctx.font = "11.5px 'IBM Plex Mono', monospace";
-      // right now, then the running total since day 1 directly under it: always shown
       const m = R.month;
+      if (k === "drop") {
+        const ord = mine.filter(it => it.stage === 6 && it.step === "order").length, wait = mine.filter(it => it.stage === 6 && it.step === "supplier").length;
+        const listed = mine.filter(it => it.stage === 5).length;
+        ctx.fillStyle = "#cbd5ee"; fitText("ordering " + ord + " · supplier packing " + wait, x + 10, y0 + 54, w - 18);
+        ctx.fillStyle = "#c9a8f0"; ctx.font = "600 14px 'Barlow Condensed', sans-serif";
+        fitText("ORDERED " + m.ordered + "  ·  SHIPPED " + m.out + "  THIS MONTH", x + 10, y0 + 71, w - 18);
+        ctx.font = "11.5px 'IBM Plex Mono', monospace"; ctx.fillStyle = "#cbd5ee";
+        fitText("shipped today " + R.today + " · listed " + listed, x + 10, y0 + 89, w - 18);
+        if (h > 100) { ctx.fillStyle = p > 0.05 ? "#e2d0ff" : "#9aa6c4"; fitText("in transit " + transit + " · canceled " + m.cancelled, x + 10, y0 + 105, w - 18); }
+        if (h > 132) {
+          ctx.strokeStyle = "#2c2a5a"; ctx.beginPath(); ctx.moveTo(x + 8, y0 + 114); ctx.lineTo(x + w - 8, y0 + 114); ctx.stroke();
+          ctx.fillStyle = "#e9eef9"; fitText("paid suppliers " + money(S.dropPaid), x + 10, y0 + 129, w - 18);
+          if (h > 148) fitText("delivered " + m.delivered + " this month", x + 10, y0 + 145, w - 18);
+        }
+        roomBoxes.push({ x, y: y0, w, h, R });
+        return;
+      }
+      // right now, then the running total since day 1 directly under it: always shown
       ctx.fillStyle = "#cbd5ee"; fitText("pick " + c.pick + " · pack " + c.pack + " · label " + c.label, x + 10, y0 + 54, w - 18);
       ctx.fillStyle = "#f5c75a"; ctx.font = "600 14px 'Barlow Condensed', sans-serif";
       fitText("PICKED " + m.pick + "  ·  PACKED " + m.pack + "  THIS MONTH", x + 10, y0 + 71, w - 18);
@@ -637,8 +736,9 @@ Notes:</pre>
     // the ground line, with the running totals of picked and packed in gold, centered as one line
     const tot = (f) => ROOM_KEYS.reduce((a, k) => a + ROOMS[k].month[f], 0);
     const parts = [
-      ["each sold item ships from the stockroom that holds it  ·  ", "12px 'IBM Plex Sans', sans-serif", "#9aa6c4"],
+      ["each sold item ships from the stockroom that holds it, or from its supplier  ·  ", "12px 'IBM Plex Sans', sans-serif", "#9aa6c4"],
       ["PICKED " + tot("pick") + "  ·  PACKED " + tot("pack"), "600 13.5px 'Barlow Condensed', sans-serif", "#f5c75a"],
+      ["  ·  DROPSHIPPED " + ROOMS.drop.month.out, "600 13.5px 'Barlow Condensed', sans-serif", "#c9a8f0"],
       ["  ·  shipped " + S.shipped + "  ·  delivered " + S.delivered, "12px 'IBM Plex Sans', sans-serif", "#9aa6c4"]
     ];
     let lw = 0;
@@ -661,15 +761,16 @@ Notes:</pre>
     $("stages").innerHTML = STAGES.map((s, i) =>
       "<tr><td>" + (i + 1) + ". " + s.name + "</td><td class=\"who\"><span class=\"chip " + (s.who === "claude" ? "claude" : s.who === "person" ? "person" : "") + "\">" + WHO[s.who] + "</span></td>" +
       "<td style=\"width:70px\"><div class=\"mini\" style=\"width:" + Math.round((counts[i] / max) * 100) + "%\"></div></td><td class=\"n\">" + counts[i] + "</td></tr>").join("");
-    const soldMonth = S.soldBy.ebay + S.soldBy.etsy + S.soldBy.hand;
+    const soldMonth = S.soldBy.ebay + S.soldBy.etsy + S.soldBy.hand + S.soldBy.shop;
     const waiting = S.items.filter(it => it.stage === 6 && !it.done).length;
     $("flow").innerHTML =
       "<span>Sold this month</span><span>" + soldMonth + "</span>" +
       "<span>Shipped this month</span><span>" + S.shipped + "</span>" +
-      "<span>Sold, being picked and packed</span><span>" + waiting + "</span>" +
+      "<span>Sold, being packed or ordered</span><span>" + waiting + "</span>" +
+      "<span>Dropship sold · shipped by supplier</span><span>" + S.dropSold + " · " + ROOMS.drop.month.out + "</span>" +
       "<span>Delivered this month</span><span>" + S.delivered + "</span>" +
       "<span>Picked · packed · labeled this month</span><span>" + ROOM_KEYS.reduce((a, k) => a + ROOMS[k].month.pick, 0) + " · " + ROOM_KEYS.reduce((a, k) => a + ROOMS[k].month.pack, 0) + " · " + ROOM_KEYS.reduce((a, k) => a + ROOMS[k].month.label, 0) + "</span>" +
-      "<span class=\"note\" style=\"grid-column:1/-1;padding:4px 0 0\">Every shipped item was sold first. After a sale it is picked from its stockroom, packed, labeled through PeterShip and handed to the carrier at that stockroom's pickup time, then spends 2 to 5 days in transit. Stage rows are right now; these are the month so far.</span>";
+      "<span class=\"note\" style=\"grid-column:1/-1;padding:4px 0 0\">Every shipped item was sold first. After a sale it is picked from its stockroom, packed, labeled through PeterShip and handed to the carrier at that stockroom's pickup time, then spends 2 to 5 days in transit. A dropship item is ordered from its supplier instead, which ships it in 1 to 3 days. Stage rows are right now; these are the month so far.</span>";
     $("claude").innerHTML =
       "<span>Haiku 5.5 runs (drafts, redrafts)</span><span>" + S.haikuRuns + "</span>" +
       "<span>Sonnet 5.5 second opinions</span><span>" + S.sonnetRuns + "</span>" +
@@ -679,27 +780,29 @@ Notes:</pre>
     const kept = S.revenue - S.fees - S.boxes - S.costSumSold();
     $("money").innerHTML =
       "<span>Bought (" + S.bought + " items)</span><span>" + money(S.costSum) + "</span>" +
-      "<span>Sold (" + (S.soldBy.ebay + S.soldBy.etsy + S.soldBy.hand) + " items)</span><span>" + money(S.revenue) + "</span>" +
-      "<span>Fees at 13.5%, boxes</span><span>−" + money(S.fees + S.boxes) + "</span>" +
-      "<span>On eBay · Etsy · by hand</span><span>" + S.soldBy.ebay + " · " + S.soldBy.etsy + " · " + S.soldBy.hand + "</span>" +
+      "<span>Sold (" + soldMonth + " items)</span><span>" + money(S.revenue) + "</span>" +
+      "<span>Fees and boxes</span><span>−" + money(S.fees + S.boxes) + "</span>" +
+      "<span>Dropship: paid suppliers</span><span>−" + money(S.dropPaid) + "</span>" +
+      "<span>On eBay · Etsy · by hand · Shopify</span><span>" + S.soldBy.ebay + " · " + S.soldBy.etsy + " · " + S.soldBy.hand + " · " + S.soldBy.shop + "</span>" +
       "<span class=\"em\">Kept on sold items</span><span class=\"em\">" + money(Math.max(0, kept)) + "</span>";
     $("log").innerHTML = S.logs.slice(0, 12).map(l => "<div><span class=\"t\">" + l.t + "</span> " + l.text.replace(/</g, "&lt;") + "</div>").join("");
   }
 
   function legend() {
     let html = "";
-    if (mode === "market") html = [["ebay", "eBay (API)"], ["etsy", "Etsy, vintage (API)"], ["hand", "By hand after 14 days"], ["unlisted", "Not listed yet"]].map(([k, t]) => "<span><i style=\"background:" + COLORS[k] + "\"></i>" + t + "</span>").join("") + "<span>White ring: flagged to Sonnet 5.5</span>";
+    if (mode === "market") html = [["ebay", "eBay (API)"], ["etsy", "Etsy, vintage (API)"], ["hand", "By hand after 14 days"], ["shop", "Shopify (dropship is listed here)"], ["unlisted", "Not listed yet"]].map(([k, t]) => "<span><i style=\"background:" + COLORS[k] + "\"></i>" + t + "</span>").join("") + "<span>White ring: flagged to Sonnet 5.5</span>";
     if (mode === "model") html = "<span><i style=\"background:" + COLORS.haiku + "\"></i>Drafted by Claude Haiku 5.5 only</span><span><i style=\"background:" + COLORS.sonnet + "\"></i>Flagged: Haiku draft, then Sonnet 5.5 second opinion</span>";
     if (mode === "stage") html = "<span><i style=\"background:" + STAGE_RAMP[0] + "\"></i>Intake</span><span>darker to lighter, top to bottom</span><span><i style=\"background:" + STAGE_RAMP[7] + "\"></i>Shipped</span><span>White ring: flagged to Sonnet 5.5</span>";
-    $("legend").innerHTML = html + "<span>Left: the Mac mini's layers, lit when they work. Bottom: the stockrooms, lit when they pick, pack, label or hand off. Hover either for what it is</span>";
+    $("legend").innerHTML = html + "<span><b style=\"color:#c9a8f0\">◆</b> Dropship: a supplier ships it, no shelf</span><span>Left: the Mac mini's layers, lit when they work. Bottom: the stockrooms and the dropship card, lit when they pick, pack, order or hand off. Hover any of them for what it is</span>";
   }
 
   function summary() {
-    const sold = S.soldBy.ebay + S.soldBy.etsy + S.soldBy.hand;
+    const sold = S.soldBy.ebay + S.soldBy.etsy + S.soldBy.hand + S.soldBy.shop;
     const kept = S.revenue - S.fees - S.boxes - S.costSumSold();
     $("sumbox").innerHTML = "<h3>Month one, mock</h3><div class=\"kv\">" +
       "<span>Items bought and photographed</span><span>" + S.bought + "</span>" +
       "<span>Sold</span><span>" + sold + "</span>" +
+      "<span>Of those, dropshipped</span><span>" + S.dropSold + "</span>" +
       "<span>Still listed</span><span>" + S.items.filter(i => i.stage === 5).length + "</span>" +
       "<span>Kept on sold items</span><span>" + money(Math.max(0, kept)) + "</span>" +
       "<span>Claude, all of it</span><span>" + cents(S.claudeCost) + "</span></div>" +
@@ -731,7 +834,7 @@ Notes:</pre>
     const to = it.stage;
     if (to !== from) {
       S.focus = it; S.focusKey = to === 5 ? "price" : to === 2 || to === 3 ? "draft" : to === 6 ? "listings" : "status";
-      if (to === 1) hit("staff", "jobs");
+      if (to === 1) { if (it.drop) hit("jobs"); else hit("staff", "jobs"); }
       else if (to === 2) hit("jobs", "claude");
       else if (to === 3) hit("jobs");
       else if (to === 4) hit("vault");
@@ -782,7 +885,7 @@ Notes:</pre>
     const room = roomBoxes.find(b => mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h);
     if (room) {
       const mm = room.R.month;
-      tip.innerHTML = "<b>" + room.R.name + "</b><br>" + room.R.how + "<br>This month: picked " + mm.pick + ", packed " + mm.pack + ", labeled " + mm.label + ", handed off " + mm.out + ", delivered " + mm.delivered + ".";
+      tip.innerHTML = "<b>" + room.R.name + "</b><br>" + room.R.how + (room.R === ROOMS.drop ? "<br>This month: ordered " + mm.ordered + ", shipped by suppliers " + mm.out + ", canceled " + mm.cancelled + ", delivered " + mm.delivered + "." : "<br>This month: picked " + mm.pick + ", packed " + mm.pack + ", labeled " + mm.label + ", handed off " + mm.out + ", delivered " + mm.delivered + ".");
       tip.style.display = "block"; tip.style.left = Math.min(r.width - 290, mx + 14) + "px"; tip.style.top = Math.max(0, my - 90) + "px";
       return;
     }
@@ -793,8 +896,8 @@ Notes:</pre>
     const where = it.soldOn ? "Sold on " + MARKET_NAME[it.soldOn] : it.markets.length ? "Listed on " + it.markets.map(m => MARKET_NAME[m]).join(", ") : "Not listed yet";
     tip.innerHTML = "<b>" + it.sku + "</b> " + it.name + "<br>Stage: " + STAGES[it.stage].name +
       "<br>Claude: Haiku 5.5" + (it.flagged ? " + Sonnet 5.5 (flagged)" : "") +
-      "<br>Paid " + money(it.cost) + (it.stage >= 5 ? " · price " + money(it.price) : "") + (it.vintage ? " · vintage" : "") + "<br>" + where +
-      "<br>Sits in: " + ROOMS[it.room].short + ", bin " + it.bin + (it.stage === 6 ? "<br>Shipping step: " + it.step : it.stage === 7 ? "<br>In transit: " + it.carrier : "");
+      "<br>" + (it.drop ? "Supplier price " : "Paid ") + money(it.cost) + (it.stage >= 5 ? " · price " + money(it.price) : "") + (it.vintage ? " · vintage" : "") + "<br>" + where +
+      (it.drop ? "<br>Dropship from: " + it.supplier + " · " + it.stock + " in its stock" : "<br>Sits in: " + ROOMS[it.room].short + ", bin " + it.bin) + (it.stage === 6 ? "<br>Shipping step: " + (it.step === "supplier" ? "supplier packing" : it.step) : it.stage === 7 ? "<br>In transit: " + it.carrier : "");
     tip.style.display = "block";
     const tx = Math.min(r.width - 220, mx + 14), ty = Math.max(0, my - 10);
     tip.style.left = tx + "px"; tip.style.top = ty + "px";

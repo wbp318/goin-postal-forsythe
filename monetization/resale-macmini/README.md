@@ -53,6 +53,7 @@ The account to use is at the start of each step. Details are in [section 5](#5-t
 | **Start now** | **William already has stock at the store that can sell now.** It goes on eBay by hand this month, with Claude drafting the text, to catch the holidays; the automation takes over the same items later ([start now](#start-now-williams-stock-before-the-holidays)) |
 | **See it run** | [`tornado.html`](tornado.html), an animated mock month of this plan ([how to open it](#how-to-open-it)) |
 | **Shipping** | Each item ships from the stockroom that holds it: the **main stockroom in Ouachita Parish** (the store's 4 pm carrier pickups), a **second Louisiana stockroom** still being found, maybe a **Chicot County, Arkansas** unit. Pick, pack, label through PeterShip, hand off, track ([shipping](#shipping-from-the-stockrooms)). PeterShip needs ship-from locations (T39) before the second stockroom ships |
+| **Dropship** | **Yes, as a side line, on eBay and the store's Shopify only:** list goods the store never stocks from a US wholesale supplier with an API (CJdropshipping, Doba), and the store's own designs through print-on-demand (Printify, Printful), which may also go on Etsy. The supplier ships blind to the buyer; the store stays responsible for delivery and returns. Never Poshmark, Mercari, Facebook or Depop; TikTok Shop later. Keeps roughly $8 to $13 on a $42 item ([dropship](#dropship-selling-what-the-store-doesnt-stock)) |
 | **The big rule** | No bots that click, no scraping. Accounts get banned for it, and the money in them is held when they are |
 
 ```mermaid
@@ -125,6 +126,8 @@ On the left is **the Mac mini, drawn as its five layers**, the same ones as [sec
 | 3. Claude Code under `ops` (Haiku 5.5, Sonnet 5.5 on flags) | Drafts | Claude drafts an item or writes the daily note |
 | 4. The Obsidian vault and git | Approval | A draft lands for approval, an item is approved, the nightly note is pushed |
 | 5. The walls (managed settings, accounts, LuLu) | Around Claude | Claude runs: the walls are what it runs inside |
+
+**Dropship items are diamonds.** About four a working day come in from a supplier's feed (CJdropshipping and Doba goods, and the store's own designs through Printify), get a Haiku draft from the supplier's facts and a person's approval like any item, and list on eBay and Shopify (the designs on Shopify and Etsy). When one sells, the dropship job orders it from the supplier, which ships it blind; its tracking goes back to the marketplace. A few are canceled when the supplier runs out after a sale, which the log shows as a defect. The fourth card under the funnel, **Dropship · suppliers ship**, counts what's being ordered and packed by suppliers, the month's ordered and shipped in violet, what's in transit, canceled, and what the store paid suppliers; the line above the cards adds **DROPSHIPPED**.
 
 Under the funnel are **the stockrooms**: the main stockroom in Ouachita Parish, Stockroom 2 (Louisiana, in whatever little shop rents cheapest, East Carroll first) and the maybe-Arkansas unit (Eudora or rural Chicot County). Each shows what it is picking, packing, labeling and handing off right now, what went out today, what's in transit and what's on its shelves, and a gold **running total of everything picked and packed there this month**, directly under the live pick and pack counts. The line above the stockrooms adds up all three: picked, packed, shipped, delivered. Each stockroom lights up as it works; hover one for its pickup and what's kept there. The item note on the Mac mini shows each item's `location` and `bin`.
 
@@ -308,6 +311,108 @@ PeterShip's public API (`POST /api/v1/shipments`) takes no ship-from address tod
 
 - **Until T39 ships,** only the main stockroom ships. Stockroom 2 and the Chicot unit hold stock and send it to the main stockroom in the weekly run.
 - **T39:** named ship-from locations on a business account (each stockroom's address and pickup schedule), a `from_location` on `POST /api/v1/shipments` and on the batch and counter pages, rates from that location's ZIP, and a `ship_from` setting in the eBay and Etsy connectors so each stockroom's orders buy their own labels. Returns still default to the main stockroom.
+
+## Dropship: selling what the store doesn't stock
+
+A side line to the resale business, at William's ask (November 6, 2026). The store lists goods it never buys or shelves. When one sells, a script orders it from the supplier, who ships it straight to the buyer with no supplier invoice in the box, and the supplier's tracking goes back to the marketplace. Nothing is bought until it's sold, nothing takes a shelf, and no one at the store packs it. **The store still owns the sale:** the marketplaces hold the seller responsible for on-time delivery, returns and refunds, whoever shipped the box.
+
+In the [tornado](tornado.html), dropship items are **diamonds**, and the fourth card under the funnel is **Dropship · suppliers ship**.
+
+```mermaid
+flowchart LR
+  F["Supplier feed<br/>every hour: new items,<br/>stock, prices"]:::cloud --> J["Feed job<br/>adds items, ends listings<br/>the moment stock runs out"]:::local
+  J --> C["Claude Haiku 5.5<br/>drafts from the supplier's<br/>facts, in the store's words"]:::local
+  C --> A["A person approves<br/>in Obsidian, at or above<br/>the margin floor"]:::you
+  A --> L["Listed: eBay and Shopify<br/>(the store's own designs:<br/>Shopify and Etsy)"]:::cloud
+  L --> S["Sold: dropship job<br/>orders from the supplier<br/>through its API"]:::local
+  S --> P["Supplier ships blind<br/>to the buyer"]:::cloud
+  P --> T["Tracking to the<br/>marketplace within<br/>handling time"]:::local
+  S -.->|"out of stock"| X["Cancel and refund<br/>at once; a defect"]:::you
+  classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
+  classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
+  classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
+```
+
+### Where it may be listed
+
+Checked against each marketplace's own rules on November 6, 2026; rows marked unconfirmed came from secondary sources because the official page wouldn't load.
+
+| Marketplace | Dropshipping | The condition |
+|---|---|---|
+| **eBay** | **Allowed, with conditions** | Only from a **wholesale supplier**. Listing an item and then buying it from another retailer or marketplace to ship to the buyer is banned. The seller is responsible for delivery in the time the listing shows, and for returns and item-not-received claims. A late scan counts as a late shipment |
+| **Shopify** (the store's own site) | **Allowed** | Its own store; Shopify even runs a dropship program (Collective) |
+| **Etsy** | **Only the store's own designs** | Dropshipping is banned (except craft and party supplies). Print-on-demand through a production partner is allowed for the seller's **original designs**, disclosed on the listing. The vintage side can't dropship: vintage must be handpicked and 20 years old |
+| **TikTok Shop** | **Later** | Shipping from another retailer is banned; reported rules want a carrier scan within 2 business days, valid tracking on 95% of orders and USPS labels bought through TikTok (unconfirmed) |
+| **Poshmark** | **No** | The seller must have the item in hand (unconfirmed on Poshmark's own site) |
+| **Mercari** | **No** | "If you don't own it, don't sell it" |
+| **Facebook Marketplace** | **No** | For person-to-person sales of things you have (no explicit dropship clause; not worth the account) |
+| **Depop** | **No** | Catalog and wholesale goods aren't welcome; only your own print-on-demand designs (unconfirmed) |
+
+```mermaid
+flowchart TD
+  I["A dropship item"]:::you --> G{"Goods from a<br/>wholesale supplier,<br/>or the store's own design?"}:::you
+  G -->|"goods"| E["eBay · Shopify"]:::cloud
+  G -->|"the store's design,<br/>print-on-demand"| D["Shopify · Etsy"]:::cloud
+  G -.->|"never"| N["Poshmark · Mercari ·<br/>Facebook · Depop ·<br/>TikTok Shop for now"]:::cloud
+  classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
+  classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
+  classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
+```
+
+### Which suppliers
+
+Only suppliers with an API a script can use fit this plan; the rest work only through a Shopify or eBay app, which can't be the source of truth for the vault and PeterShip.
+
+| Supplier | What | Cost | API | US delivery | Notes |
+|---|---|---|---|---|---|
+| **CJdropshipping** | General goods | Free account; storage and custom packaging paid | **Yes, free and public** (products, orders, tracking) | US warehouses, about a week | The first one to connect |
+| **Doba** | US suppliers | About $15 to $175 a month (sources differ) | Retailer API, on request | About 90% ship from US warehouses | Ask sales for API terms |
+| **Printify** | The store's own designs on shirts, mugs, posters | Free; Premium $39 a month | **Yes, public**, with webhooks | US print providers | Fits the [screen-printing plan](../screen-printing/README.md) for designs too small to print a run of |
+| **Printful** | Same | Free; Growth $24.99 a month | Yes, public | US facilities | Unbranded by default |
+| Spocket, Zendrop, DSers, Syncee | General goods | $0 to $300 a month | **App only** | Mixed; DSers ships mostly from China, too slow | Not for this plan |
+| Faire | Wholesale | | | | **Doesn't dropship**: buy stock there instead |
+
+### After a dropship sale, step by step
+
+1. **Sold-sync** sees the order (every 5 minutes) and ends the item's other listing, as for any item.
+2. **The dropship job** checks the supplier's stock and price once more, then places the order through the supplier's API with the buyer's address, marked blind (no supplier invoice or ads in the box).
+3. **Out of stock or the price went up past the floor:** cancel and refund the buyer at once, with a note; the marketplace counts it as a seller cancel, so the feed job's stock check every hour is what keeps these rare.
+4. **The supplier ships** in 1 to 3 business days and sends its tracking by API or webhook.
+5. **The job posts the tracking** to eBay (`createShippingFulfillment`) or Shopify (`fulfillmentCreate`) within the listing's handling time, and marks the order shipped in the vault and in PeterShip.
+6. **Returns** follow the supplier's policy, but the store refunds the buyer when the marketplace says so. Listings promise only the returns the supplier gives back to the store.
+
+### The rules
+
+- **Wholesale suppliers only.** Never list something to buy it from Amazon, Walmart or another store; eBay bans it, and the margin isn't there anyway.
+- **The margin floor is in the script:** no listing goes live below **25% over the supplier's delivered price** (item plus its shipping). The model never sets or checks a price.
+- **Handling time is 3 business days** on every dropship listing, so a supplier's 1 to 3 days still scans on time.
+- **No brand names** unless the supplier proves it's an authorized distributor: catalog goods draw VeRO takedowns on eBay.
+- **Claude writes from the supplier's facts in the store's words,** never copying the supplier's text, and says nothing the supplier's listing doesn't support.
+- **The feed job ends a listing the moment the supplier's stock runs out** or its price climbs past the floor.
+- **No eBay data into Claude,** same as resale: the supplier's facts and the store's own sales only.
+
+### Money: one item
+
+A shipping scale that sells for $42, from a supplier at $27.50 delivered:
+
+| | On eBay | On Shopify |
+|---|---|---|
+| Sale | $42.00 | $42.00 |
+| Supplier, delivered | −$27.50 | −$27.50 |
+| Fees | −$6.11 (13.6% + $0.40) | −$1.52 (2.9% + $0.30) |
+| **Kept** | **$8.39** | **$12.98** |
+
+No box, no label, no packing time, and no money tied up in stock. Shopify's plan is $39 a month ($29 a month billed yearly), so its side pays once it sells about four of these a month. Shopify Collective quotes 20% to 50% gross margins for dropship goods; blogs put the net at 10% to 25%. Each return or cancellation eats several sales' margin, which is why the floor and the stock check matter.
+
+### Sales tax
+
+- **Suppliers:** give each one Louisiana's **R-1064 resale certificate** (applied for and printed in LaTAP) so they don't charge the store sales tax. R-1042 is retired. A supplier shipping into another state may ask for that state's certificate.
+- **eBay and Etsy sales:** the marketplace collects and pays the tax (Louisiana's marketplace facilitator law; Louisiana merchants can rely on it).
+- **Shopify sales:** the store collects **5% state plus the local rate** on orders delivered in Louisiana; other states only where the store's sales there pass their thresholds. Shopify's tax settings handle the math.
+
+### What PeterShip needs (T41)
+
+Dropship lives inside the [linked inventory (T40)](../../AGENDA.md): the supplier is the item's location, so one record knows the item, its listings and its order. A `dropship` connector in `shipping-client/`, the same shape as the eBay and Etsy connectors (Node 24, no packages, `dry_run`), runs the feed job and the order job: CJdropshipping first, Printify for the store's designs. PeterShip buys no label for these, but records the supplier order, its cost and the tracking, so the month's numbers and the end-of-day close include dropship.
 
 ## 3. The Obsidian vault
 
@@ -665,8 +770,12 @@ At 20 items a day with half of them selling within the month, that is roughly **
 5. **The model:** agree to **Haiku 5.5 by default and Sonnet 5.5 on flags**, a $25 monthly spending cap on the resale workspace, and no Opus?
 6. **The flag line:** $75 and the brand watch list, or different?
 7. **The room:** which back room, and can it hold 7 stations?
+8. **Dropship:** start it as a side line on eBay and Shopify? Which supplier first (CJdropshipping has a free API; Doba on request), and a Printify shop of the store's own designs?
+9. **The dropship floor:** 25% over the supplier's delivered price, and 3 business days' handling, or different? Who gets the R-1064 resale certificate in LaTAP?
 
 ## Sources
+
+- Dropship (November 6, 2026): [eBay drop shipping policy](https://www.ebay.com/help/policies/rules-policies-buyers/drop-shipping-policy?id=4176), [eBay tracking](https://www.ebay.com/help/selling/shipping-items/setting-shipping-options/adding-tracking-information?id=4089), [eBay selling fees](https://www.ebay.com/help/selling/fees-credits-invoices/selling-fees?id=4822), [Etsy on dropshipping](https://help.etsy.com/hc/en-us/articles/23948763872151) and [production partners](https://help.etsy.com/hc/articles/360024112614), [Mercari: if you don't own it](https://www.mercari.com/us/help_center/article/407), [Poshmark terms (archived copy)](https://conductatlas.com/diff/poshmark/poshmark-terms-of-service/3006/5235/), [Meta commerce policies](https://www.facebook.com/policies/commerce), [TikTok Shop packaging rules (report)](https://www.relevantaudience.com/ecommerce-marketing/tiktok-shop-bans-review-bait-inserts-us-packing-rules/) and [fulfillment requirements (guide)](https://ynkincubator.com/guides/tiktok-shop-fulfillment-requirements), [Shopify Collective requirements](https://help.shopify.com/en/manual/products/shopify-collective/retailers/requirements), [Faire: no drop shipping](https://www.faire.com/support/articles/18524831904667), [CJdropshipping API](https://developers.cjdropshipping.com/en/summary), [Printify API](https://developers.printify.com/), [Spocket pricing](https://www.costbench.com/software/ecommerce/spocket/), [Zendrop plans](https://support.zendrop.com/en/articles/9981459-zendrop-plans-pricing-and-features), [Doba](https://us.fitgap.com/products/doba), [eBay createShippingFulfillment](https://developer.ebay.com/api-docs/sell/fulfillment/resources/order/shipping_fulfillment/methods/createShippingFulfillment), [Shopify fulfillmentCreate](https://shopify.dev/docs/api/admin-graphql/latest/mutations/fulfillmentCreate), Louisiana: [RIB 09-015 (R-1042 retired)](https://dam.ldr.la.gov/lawspolicies/RIB09015.pdf), [LDR forms (R-1064)](https://revenue.louisiana.gov/tax-forms/), [RSIB 23-001 marketplace facilitators](https://remotesellers.louisiana.gov/Documents/RSIB%2023-001%20Marketplace%20Facilitators%20and%20Louisiana%20Merchants.pdf), [RIB 25-007, 5% state rate](https://dam.ldr.la.gov/lawspolicies/RIB%2025-007%20-%20State%20Sales%20Tax%20Rate.pdf)
 
 - Claude: [Anthropic pricing](https://platform.claude.com/docs/en/about-claude/pricing) (Haiku 5.5 $0.10 / $0.50 per million tokens up to 100,000-token prompts, $0.50 / $2.50 above; Sonnet 5.5 $2 / $10; Opus 5.5 $4 / $20; cache reads; batch), [models overview](https://platform.claude.com/docs/en/about-claude/models/overview); Claude Code: [model configuration](https://code.claude.com/docs/en/model-config.md) (`--model`, aliases, effort), [settings reference](https://code.claude.com/docs/en/settings-reference.md) (`model`, `availableModels`, `effortLevel`), [CLI reference](https://code.claude.com/docs/en/cli-reference.md) (`--effort`), [tools reference](https://code.claude.com/docs/en/tools-reference.md) (Read handles PNG, JPEG, GIF, WebP), and the deposit station plan's Claude Code sources
 - eBay: [Sell Inventory API methods](https://developer.ebay.com/api-docs/sell/inventory/resources/methods), [developer program](https://developer.ebay.com/develop/get-started), [API updates](https://developer.ebay.com/updates/api-updates), [policies](https://developer.ebay.com/join/policies); the 2025 AI change to the API license as reported by [EcommerceBytes](https://www.ecommercebytes.com/2025/07/18/ebay-restricts-developers-from-using-its-data-to-train-ai/) (read the current license before building)
