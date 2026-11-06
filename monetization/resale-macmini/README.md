@@ -50,6 +50,7 @@ The account to use is at the start of each step. Details are in [section 5](#5-t
 | **Which model?** | **Claude Haiku 5.5 for everything routine** (drafts, notes, checks): $0.10 in and $0.50 out per million tokens, about a cent per item. **Claude Sonnet 5.5 only when a job is flagged** (a designer brand, a possible fake, anything over $75): 20 times the price, still about 12 cents an item. No Opus. Roughly **$4 to $10 a month** at 20 items a day ([section 4](#4-which-model-haiku-55-by-default-sonnet-55-when-flagged)) |
 | **The device** | A Mac mini (the 2024 M4 is plenty) on the store's normal network, **not** the sealed deposit station. One of William's counter minis can do it, or one at the workroom desk |
 | **Where** | A back-room workroom with seven stations in order: intake, photos, measure and weigh, the listing desk, shelves by SKU, packing, and outbound to the counter's carrier pickups ([floor plan](#the-workroom)) |
+| **See it run** | [`tornado.html`](tornado.html), an animated mock month of this plan ([how to open it](#how-to-open-it)) |
 | **The big rule** | No bots that click, no scraping. Accounts get banned for it, and the money in them is held when they are |
 
 ```mermaid
@@ -66,6 +67,23 @@ flowchart LR
   classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
   classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
 ```
+
+## See it run: the resale tornado
+
+[`tornado.html`](tornado.html) is an animated mock of this plan: one month at 20 items a day, sped up. Each dot is an item spiraling down a funnel through the eight stages: intake, photos, Claude drafts, script check, person approves, listed, sold, shipped. The funnel narrows because not everything sells in a month. Color the dots by where they sell, by which Claude model ran them, or by stage. Hover one for its card, and watch the counts, the Claude cost, the money and the event log on the right. **Every number is mock data**, from this plan's assumptions.
+
+### How to open it
+
+| Where | How |
+|---|---|
+| **The hosted copy** | [https://claude.ai/artifact/AUdC9zURHiCYd3tBECPNn7](https://claude.ai/artifact/AUdC9zURHiCYd3tBECPNn7). Open it in any browser while signed in to claude.ai as its owner. It is private until shared: on its page, **Share** gives Peter and Rin a link |
+| **From a clone of this repo** | Double-click `monetization/resale-macmini/tornado.html`, or right-click it, **Open with**, **Opera** |
+| **From GitHub, no clone** | Open the file on GitHub, click **Download raw file** (the arrow at the top right of the file), then double-click the download. GitHub itself shows the page's source, not the page |
+| **From Obsidian** | It's mirrored into the vault next to this note. Obsidian lists `.html` files once **Settings, Files and links, Detect all file extensions** is on; then right-click it, **Open in default app**. Or double-click it in File Explorer, in the vault's `_repos/goin-postal-forsythe/monetization/resale-macmini/` folder |
+| **Windows command line** | `start opera "monetization\resale-macmini\tornado.html"` from the repo folder |
+| **Mac** | `open -a Opera monetization/resale-macmini/tornado.html`, or double-click it in Finder |
+
+It needs no server, no install and no internet, except for its three Google fonts; offline it falls back to the system's fonts and runs the same. If the system asks for reduced motion, it opens paused with a **Play** button.
 
 ## 1. Which marketplaces allow automated selling
 

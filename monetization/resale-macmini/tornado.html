@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Resale Tornado</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* One visual world: a storm at night over the shipping counter. Gold is the store, blue/orange/aqua are where items sell. */
+  --sky: #0b1430;
+  --panel: #121d3d;
+  --line: #24315a;
+  --ink: #e9eef9;
+  --muted: #9aa6c4;
+  --gold: #f2b705;
+  --haiku: #c98500;
+  --sonnet: #3987e5;
+  --ebay: #3987e5;
+  --etsy: #d95926;
+  --hand: #199e70;
+  --unlisted: #6b7591;
+  --display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  color-scheme: dark;
+  /* layout: the tornado takes the stage on the left, the ledger sits on the right */
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--sky); color: var(--ink); font-family: var(--body); }
+body { padding: 20px clamp(16px, 3vw, 36px) 28px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; margin-bottom: 12px; }
+h1 { font-family: var(--display); font-weight: 700; font-size: clamp(30px, 4vw, 44px); letter-spacing: 0.01em; margin: 0; text-wrap: balance; }
+.sub { color: var(--muted); font-size: 14px; max-width: 70ch; }
+.badge { font-family: var(--mono); font-size: 12px; color: var(--sky); background: var(--gold); padding: 2px 8px; border-radius: 3px; font-weight: 500; }
+.wrap { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; align-items: start; }
+@media (max-width: 920px) { .wrap { grid-template-columns: 1fr; } }
+.stage { background: radial-gradient(ellipse at 50% 0%, #1b2a57 0%, var(--sky) 70%); border: 1px solid var(--line); border-radius: 6px; padding: 10px; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; padding: 4px 4px 10px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.seg button, .btn { font: 500 13px var(--body); color: var(--ink); background: transparent; border: 0; padding: 6px 11px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--gold); color: var(--sky); }
+.btn { border: 1px solid var(--line); border-radius: 4px; }
+.btn:hover, .seg button:hover { background: #1d2b55; }
+.seg button[aria-pressed="true"]:hover { background: var(--gold); }
+button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.lbl { font-size: 12px; color: var(--muted); margin-right: 4px; }
+.canvas-box { position: relative; }
+canvas { display: block; width: 100%; height: clamp(440px, 64vh, 680px); }
+.tip { position: absolute; pointer-events: none; background: #0e1836; border: 1px solid var(--gold); border-radius: 4px; padding: 8px 10px; font-size: 12.5px; line-height: 1.45; min-width: 190px; display: none; }
+.tip b { font-family: var(--mono); color: var(--gold); font-weight: 500; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--muted); padding: 8px 4px 2px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+.note { font-size: 12.5px; color: var(--muted); padding: 2px 4px; }
+aside { display: grid; gap: 12px; min-width: 0; }
+.card, .stage { min-width: 0; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; }
+.card h2 { font-family: var(--display); font-weight: 600; font-size: 19px; letter-spacing: 0.02em; margin: 0 0 8px; }
+.day { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 13px; }
+.bar { height: 6px; background: #22305a; border-radius: 3px; margin-top: 8px; overflow: hidden; }
+.bar > span { display: block; height: 100%; background: var(--gold); width: 0; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+td { padding: 3px 0; vertical-align: middle; }
+td.n { text-align: right; font-family: var(--mono); width: 44px; }
+td.who { width: 76px; }
+.chip { font-size: 10.5px; font-family: var(--mono); padding: 1px 5px; border-radius: 3px; border: 1px solid var(--line); color: var(--muted); }
+.chip.claude { border-color: var(--haiku); color: #f5c75a; }
+.chip.person { border-color: #7c8fbf; color: #c6d2ef; }
+.mini { height: 5px; background: var(--gold); border-radius: 2px; opacity: 0.85; }
+.kv { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; font-size: 13px; }
+.kv span:nth-child(even) { font-family: var(--mono); text-align: right; font-variant-numeric: tabular-nums; }
+.kv .em { color: var(--gold); font-weight: 600; }
+.log { font-family: var(--mono); font-size: 11.5px; line-height: 1.5; max-height: 210px; overflow: hidden; color: #cbd5ee; }
+.log div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.log .t { color: var(--muted); }
+.summary { position: absolute; inset: 0; display: none; place-items: center; background: rgba(11, 20, 48, 0.82); }
+.summary .box { background: var(--panel); border: 1px solid var(--gold); border-radius: 6px; padding: 18px 22px; max-width: 420px; }
+.summary h3 { font-family: var(--display); font-size: 26px; margin: 0 0 8px; }
+footer { color: var(--muted); font-size: 12px; margin-top: 14px; max-width: 110ch; line-height: 1.5; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Resale Tornado</h1>
+  <span class="badge">MOCK DATA</span>
+  <div class="sub">How the resale automation would run: one simulated month at 20 items a day, sped up. Items spiral down the funnel from intake to shipped; the funnel narrows because not everything sells in a month.</div>
+</header>
+
+<div class="wrap">
+  <section class="stage">
+    <div class="controls">
+      <button class="btn" id="play" type="button">Pause</button>
+      <span><span class="lbl">Speed</span><span class="seg" id="speed"><button type="button" data-v="1" aria-pressed="false">1×</button><button type="button" data-v="4" aria-pressed="true">4×</button><button type="button" data-v="12" aria-pressed="false">12×</button></span></span>
+      <span><span class="lbl">Color by</span><span class="seg" id="mode"><button type="button" data-v="stage" aria-pressed="false">Stage</button><button type="button" data-v="market" aria-pressed="true">Where it sells</button><button type="button" data-v="model" aria-pressed="false">Claude model</button></span></span>
+      <button class="btn" id="restart" type="button">Restart month</button>
+    </div>
+    <div class="canvas-box">
+      <canvas id="c" role="img" aria-label="Animated funnel of mock resale items moving through eight stages from intake to shipped; counts for each stage are in the table beside it."></canvas>
+      <div class="tip" id="tip"></div>
+      <div class="summary" id="summary"><div class="box" id="sumbox"></div></div>
+    </div>
+    <div class="legend" id="legend"></div>
+    <div class="note" id="motion"></div>
+  </section>
+
+  <aside>
+    <div class="card">
+      <div class="day"><span id="dayLabel">Day 1 of 30</span><span id="clock">08:00</span></div>
+      <div class="bar"><span id="dayBar"></span></div>
+    </div>
+    <div class="card">
+      <h2>Items in each stage</h2>
+      <table id="stages"></table>
+    </div>
+    <div class="card">
+      <h2>Claude this month</h2>
+      <div class="kv" id="claude"></div>
+    </div>
+    <div class="card">
+      <h2>Money this month</h2>
+      <div class="kv" id="money"></div>
+    </div>
+    <div class="card">
+      <h2>What just happened</h2>
+      <div class="log" id="log"></div>
+    </div>
+  </aside>
+</div>
+
+<footer>
+  Mock data, from the plan in <span style="font-family:var(--mono)">monetization/resale-macmini/</span>: 20 items a day; about 10% flagged to Claude Sonnet 5.5 (designer brands, possible fakes, over $75), the rest drafted by Claude Haiku 5.5; about half of listed items sell within the month; marketplace fees shown as 13.5% for the example; Claude costs at the plan's estimates ($0.0065 a Haiku draft, $0.117 a Sonnet second opinion, $0.009 a daily note). eBay always; Etsy only for vintage; Poshmark, Mercari and the other by-hand marketplaces only after 14 days unsold. Nothing here is real sales data.
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  const STAGES = [
+    { k: "intake",  name: "Intake",            who: "person" },
+    { k: "photos",  name: "Photos",            who: "script" },
+    { k: "draft",   name: "Claude drafts",     who: "claude" },
+    { k: "check",   name: "Script check",      who: "script" },
+    { k: "approve", name: "Person approves",   who: "person" },
+    { k: "listed",  name: "Listed",            who: "market" },
+    { k: "sold",    name: "Sold",              who: "market" },
+    { k: "shipped", name: "Shipped",           who: "script" }
+  ];
+  const WHO = { person: "person", script: "script", claude: "Claude", market: "market" };
+  const COLORS = { ebay: "#3987e5", etsy: "#d95926", hand: "#199e70", unlisted: "#6b7591", haiku: "#c98500", sonnet: "#3987e5" };
+  const STAGE_RAMP = ["#7a6420", "#8d7322", "#a28424", "#b79526", "#cca62a", "#dfb733", "#efc94f", "#ffdc7a"];
+  const ITEMS = [
+    ["Levi's 501 jeans", 34], ["Pendleton wool shirt", 48], ["Pyrex mixing bowl", 28], ["Carhartt work jacket", 62],
+    ["Coach leather bag", 95, "designer"], ["Nike Air Max 90", 70], ["Monroe Moccasins jersey", 55], ["Fiesta ware plate set", 40],
+    ["LSU Tigers hoodie", 30], ["Polaroid SX-70 camera", 140], ["Cast iron skillet", 35], ["Vintage Pyrex casserole", 45, "vintage"],
+    ["Patagonia fleece", 52], ["Ralph Lauren polo", 22], ["1990s band tee", 60, "vintage"], ["Le Creuset dutch oven", 120, "designer"],
+    ["Dooney & Bourke purse", 85, "designer"], ["Wrangler pearl-snap shirt", 26], ["Corelle dish set", 32], ["Columbia rain jacket", 38],
+    ["Vintage Lane cedar box", 75, "vintage"], ["Fossil watch", 44], ["Mid-century lamp", 90, "vintage"], ["Hunting boots", 48],
+    ["Kitchenaid mixer bowl", 30], ["Saints jersey", 42], ["Old Navy denim jacket", 18], ["Duck Commander cap", 16],
+    ["Vintage Avon bottle", 22, "vintage"], ["Ray-Ban sunglasses", 65, "designer"], ["Graphing calculator", 38], ["Board game, complete", 24]
+  ];
+  const NAMES = ["Peter", "Rin", "William"];
+  const MARKET_NAME = { ebay: "eBay", etsy: "Etsy", hand: "by hand (Poshmark, Mercari)" };
+
+  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const cv = document.getElementById("c"), ctx = cv.getContext("2d");
+  const tip = document.getElementById("tip");
+  let W = 0, H = 0, DPR = 1;
+
+  // ---------- random helpers (seeded so a restart looks alike but not identical) ----------
+  let seed = 7;
+  function rnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
+  function between(a, b) { return a + (b - a) * rnd(); }
+  function pick(arr) { return arr[Math.floor(rnd() * arr.length)]; }
+
+  // ---------- simulation state ----------
+  let S;
+  function fresh() {
+    S = { hour: 8, items: [], nextSku: 1, nextArrival: 8, logs: [], shipped: 0, bought: 0, costSum: 0,
+          revenue: 0, fees: 0, boxes: 0, haikuRuns: 0, sonnetRuns: 0, noteRuns: 0, claudeCost: 0,
+          soldBy: { ebay: 0, etsy: 0, hand: 0 }, lastDay: 0, summaryShown: false, shippedCost: 0 };
+  }
+  const MONTH_HOURS = 30 * 24;
+
+  function sku(n) { return (n <= 99 ? "A" : n <= 198 ? "B" : n <= 297 ? "C" : "D") + "-" + String(((n - 1) % 99) + 1).padStart(3, "0"); }
+  function money(v) { return "$" + v.toFixed(v < 10 ? 2 : 0); }
+  function cents(v) { return "$" + v.toFixed(v < 1 ? 3 : 2); }
+
+  function log(text) {
+    const d = Math.floor(S.hour / 24) + 1, h = Math.floor(S.hour % 24), m = Math.floor((S.hour % 1) * 60);
+    S.logs.unshift({ t: "D" + d + " " + String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0"), text });
+    if (S.logs.length > 40) S.logs.pop();
+  }
+
+  function newItem() {
+    let base = pick(ITEMS);
+    if (base[2] === "designer" && rnd() < 0.6) base = pick(ITEMS.filter(x => x[2] !== "designer"));
+    const price = Math.round(Math.max(12, Math.min(220, base[1] * between(0.75, 1.3))));
+    const flagged = base[2] === "designer" || (price > 75 && rnd() < 0.35);
+    const it = { id: S.nextSku, sku: sku(S.nextSku), name: base[0], price, cost: Math.round(price * between(0.12, 0.3) * 100) / 100,
+      vintage: base[2] === "vintage", flagged, stage: 0, next: S.hour + between(0.3, 1.0),
+      markets: [], soldOn: null, listedAt: null, handAdded: false,
+      a: rnd() * Math.PI * 2, ry: null, rr: null, alpha: 1, done: false, jy: 0, jr: 1 };
+    S.nextSku++; S.bought++; S.costSum += it.cost;
+    S.items.push(it);
+    log(it.sku + " in: " + it.name + ", paid " + money(it.cost));
+  }
+
+  function advance(it) {
+    const st = STAGES[it.stage].k;
+    if (st === "intake") { it.stage = 1; it.next = S.hour + between(0.3, 0.8); log(it.sku + " photos in, HEIC converted"); return; }
+    if (st === "photos") {
+      it.stage = 2; it.next = S.hour + (it.flagged ? 0.25 : 0.08);
+      S.haikuRuns++; S.claudeCost += 0.0065;
+      log(it.sku + " drafted by Haiku 5.5, " + cents(0.0065));
+      if (it.flagged) { S.sonnetRuns++; S.claudeCost += 0.117; log(it.sku + " flagged (" + (it.price > 75 ? "over $75" : "brand check") + "): Sonnet 5.5 second opinion, " + cents(0.117)); }
+      return;
+    }
+    if (st === "draft") { it.stage = 3; it.next = S.hour + 0.05; return; }
+    if (st === "check") {
+      if (rnd() < 0.06 && !it.rechecked) { it.rechecked = true; it.next = S.hour + 0.1; S.haikuRuns++; S.claudeCost += 0.0065; log(it.sku + " sent back: title over 80 characters, redrafted"); return; }
+      it.stage = 4; it.next = S.hour + between(1.5, 7); return;
+    }
+    if (st === "approve") {
+      it.stage = 5; it.listedAt = S.hour; it.jy = between(-26, 26); it.jr = between(0.8, 1.35); it.markets = ["ebay"]; if (it.vintage) it.markets.push("etsy");
+      log(it.sku + " approved by " + pick(NAMES) + " at " + money(it.price) + "; listed on " + it.markets.map(m => MARKET_NAME[m]).join(" and "));
+      it.next = S.hour + 1; return;
+    }
+    if (st === "listed") {
+      // each hour: chance to sell; after 14 days unsold, by-hand marketplaces get it too
+      if (!it.handAdded && S.hour - it.listedAt > 14 * 24) { it.handAdded = true; it.markets.push("hand"); log(it.sku + " 14 days unsold: posted by hand on Poshmark and Mercari from Claude's text"); }
+      const pHour = 1 - Math.pow(1 - 0.023, 1 / 24) * (it.handAdded ? 0.9993 : 1);
+      if (rnd() < pHour) {
+        let on = "ebay";
+        if (it.vintage && rnd() < 0.4) on = "etsy";
+        else if (it.handAdded && rnd() < 0.35) on = "hand";
+        it.soldOn = on; it.stage = 6; it.next = S.hour + between(6, 20);
+        const fee = it.price * 0.135; S.revenue += it.price; S.fees += fee; S.boxes += 0.6; S.soldBy[on]++;
+        const others = it.markets.filter(m => m !== on);
+        log(it.sku + " sold on " + MARKET_NAME[on] + " for " + money(it.price) + (others.includes("hand") ? "; Delist now on Poshmark" : others.length ? "; ended on " + others.map(m => MARKET_NAME[m]).join(", ") : ""));
+      } else it.next = S.hour + 1;
+      return;
+    }
+    if (st === "sold") { it.stage = 7; it.next = S.hour + 2; log(it.sku + " label bought through PeterShip, out at carrier pickup"); return; }
+    if (st === "shipped") { it.done = true; S.shipped++; }
+  }
+
+  function stepSim(dh) {
+    const end = S.hour + dh;
+    while (S.hour < end) {
+      const step = Math.min(0.25, end - S.hour);
+      S.hour += step;
+      while (S.nextArrival <= S.hour) {
+        const hod = S.nextArrival % 24;
+        if (hod >= 8 && hod < 18) newItem();
+        S.nextArrival += 0.5; // 20 arrivals across a 10-hour working day
+      }
+      for (const it of S.items) if (!it.done && S.hour >= it.next) advance(it);
+      const day = Math.floor(S.hour / 24);
+      if (day > S.lastDay) {
+        S.lastDay = day; S.noteRuns++; S.claudeCost += 0.009;
+        log("Daily sales note written by Haiku 5.5, " + cents(0.009));
+        if (day % 7 === 0) { S.noteRuns++; S.claudeCost += 0.009; log("Weekly aging list written by Haiku 5.5"); }
+      }
+    }
+    S.items = S.items.filter(it => !(it.done && it.alpha <= 0));
+  }
+
+  // ---------- geometry ----------
+  function geom() {
+    const top = H * 0.10, bot = H * 0.86, rMax = Math.min(W * 0.40, 330), rMin = Math.max(10, rMax * 0.05);
+    const rings = STAGES.map((s, i) => {
+      const t = i / (STAGES.length - 1);
+      return { y: top + (bot - top) * t, r: rMin + (rMax - rMin) * Math.pow(1 - t, 1.25) };
+    });
+    return { cx: W * 0.47, top, bot, rMax, rMin, rings, tilt: 0.24 };
+  }
+  function funnelR(G, y) {
+    const t = Math.max(0, Math.min(1, (y - G.top) / (G.bot - G.top)));
+    return G.rMin + (G.rMax - G.rMin) * Math.pow(1 - t, 1.25);
+  }
+
+  // dust that makes it a tornado
+  const DUST = [];
+  function makeDust() { DUST.length = 0; for (let i = 0; i < 900; i++) DUST.push({ h: Math.pow(Math.random(), 0.9) * 1.06 - 0.03, a: Math.random() * Math.PI * 2, j: 0.8 + Math.random() * 0.45, l: 0.05 + Math.random() * 0.18 }); }
+
+  function resize() {
+    DPR = Math.min(2, window.devicePixelRatio || 1);
+    const r = cv.getBoundingClientRect(); W = r.width; H = r.height;
+    cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+
+  let mode = "market", speed = 4, playing = !reduce, spin = 0;
+  function colorOf(it) {
+    if (mode === "stage") return STAGE_RAMP[it.stage];
+    if (mode === "model") return it.flagged ? COLORS.sonnet : COLORS.haiku;
+    if (it.soldOn) return COLORS[it.soldOn];
+    if (it.stage >= 5) return it.handAdded ? COLORS.hand : it.markets.includes("etsy") ? COLORS.etsy : COLORS.ebay;
+    return COLORS.unlisted;
+  }
+
+  const drawn = [];
+  function draw(dt) {
+    const G = geom();
+    ctx.clearRect(0, 0, W, H);
+    // ground
+    const gy = G.bot + 22;
+    const grd = ctx.createLinearGradient(0, gy - 10, 0, H);
+    grd.addColorStop(0, "rgba(242,183,5,0.10)"); grd.addColorStop(1, "rgba(242,183,5,0)");
+    ctx.fillStyle = grd; ctx.fillRect(0, gy - 6, W, H - gy + 6);
+    ctx.strokeStyle = "rgba(154,166,196,0.35)"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(W * 0.08, gy); ctx.lineTo(W * 0.88, gy); ctx.stroke();
+    ctx.fillStyle = "#9aa6c4"; ctx.font = "12px 'IBM Plex Sans', sans-serif"; ctx.textAlign = "center";
+    ctx.fillText("the counter: carrier pickup  ·  shipped this month: " + S.shipped, G.cx, gy + 18);
+
+    spin += dt;
+    const omega = (r) => 0.55 * Math.pow(G.rMax / r, 0.65) * (playing ? 1 : 0.15);
+
+    const back = [], front = [];
+    // dust streaks
+    for (const d of DUST) {
+      const y = G.top - 30 + (G.bot - G.top + 40) * d.h;
+      const r = funnelR(G, y) * d.j + 6;
+      d.a += omega(r) * dt * (playing ? speed / 4 + 0.5 : 0.3);
+      const z = Math.sin(d.a);
+      (z < 0 ? back : front).push(["dust", d, y, r]);
+    }
+    // rings
+    for (let i = 0; i < G.rings.length; i++) { back.push(["ringB", i]); front.push(["ringF", i]); }
+    // items
+    drawn.length = 0;
+    for (const it of S.items) {
+      const ring = G.rings[it.stage];
+      if (it.ry === null) { it.ry = ring.y; it.rr = ring.r; }
+      const k = Math.min(1, dt * 2.2);
+      const ty = ring.y + (it.stage === 5 ? it.jy : 0), tr = ring.r * (it.stage === 5 ? it.jr : 1);
+      it.ry += (ty - it.ry) * k; it.rr += (tr - it.rr) * k;
+      if (it.done) { it.ry += 40 * dt; it.alpha -= dt * 0.8; }
+      it.a += omega(Math.max(it.rr, 8)) * dt * (playing ? 1 : 0);
+      const z = Math.sin(it.a);
+      (z < 0 ? back : front).push(["item", it]);
+    }
+
+    function paint(list) {
+      for (const e of list) {
+        if (e[0] === "dust") {
+          const d = e[1], y = e[2], r = e[3], z = Math.sin(d.a);
+          const x1 = G.cx + r * Math.cos(d.a), y1 = y + r * G.tilt * z;
+          const a2 = d.a - d.l, x2 = G.cx + r * Math.cos(a2), y2 = y + r * G.tilt * Math.sin(a2);
+          ctx.strokeStyle = z < 0 ? "rgba(154,166,196,0.10)" : "rgba(233,238,249,0.22)";
+          ctx.lineWidth = z < 0 ? 1 : 1.4;
+          ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x1, y1); ctx.stroke();
+        } else if (e[0] === "ringB" || e[0] === "ringF") {
+          const i = e[1], R = G.rings[i];
+          ctx.strokeStyle = e[0] === "ringB" ? "rgba(242,183,5,0.16)" : "rgba(242,183,5,0.55)";
+          ctx.lineWidth = e[0] === "ringB" ? 1 : 1.5;
+          ctx.beginPath();
+          ctx.ellipse(G.cx, R.y, R.r, R.r * G.tilt, 0, e[0] === "ringB" ? Math.PI : 0, e[0] === "ringB" ? Math.PI * 2 : Math.PI);
+          ctx.stroke();
+          if (e[0] === "ringF") {
+            const count = S.items.filter(it => it.stage === i && !it.done).length;
+            ctx.textAlign = "left"; ctx.font = "600 13px 'Barlow Condensed', sans-serif"; ctx.fillStyle = "#e9eef9";
+            const lx = G.cx + R.r + 14;
+            ctx.fillText((i + 1) + "  " + STAGES[i].name.toUpperCase(), lx, R.y + 4);
+            ctx.font = "12px 'IBM Plex Mono', monospace"; ctx.fillStyle = "#9aa6c4";
+            ctx.fillText(WHO[STAGES[i].who] + " · " + (i === 7 ? S.shipped + count : count), lx, R.y + 19);
+            ctx.strokeStyle = "rgba(242,183,5,0.35)"; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(G.cx + R.r + 2, R.y); ctx.lineTo(lx - 4, R.y); ctx.stroke();
+          }
+        } else {
+          const it = e[1], z = Math.sin(it.a);
+          const x = G.cx + it.rr * Math.cos(it.a), y = it.ry + it.rr * G.tilt * z;
+          const size = (it.flagged ? 5 : 4) * (z < 0 ? 0.8 : 1.05);
+          ctx.globalAlpha = Math.max(0, it.alpha) * (z < 0 ? 0.5 : 1);
+          ctx.fillStyle = colorOf(it);
+          ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2); ctx.fill();
+          ctx.lineWidth = 2; ctx.strokeStyle = "#0b1430"; ctx.stroke(); // surface ring between overlapping marks
+          if (it.flagged && mode !== "model") { ctx.lineWidth = 1.2; ctx.strokeStyle = "#e9eef9"; ctx.beginPath(); ctx.arc(x, y, size + 2.5, 0, Math.PI * 2); ctx.stroke(); }
+          ctx.globalAlpha = 1;
+          drawn.push({ it, x, y, front: z >= 0 });
+        }
+      }
+    }
+    paint(back);
+    // the core glow
+    const core = ctx.createLinearGradient(G.cx, G.top, G.cx, G.bot);
+    core.addColorStop(0, "rgba(242,183,5,0.05)"); core.addColorStop(1, "rgba(242,183,5,0.16)");
+    ctx.fillStyle = core;
+    ctx.beginPath();
+    ctx.moveTo(G.cx - G.rMax * 0.12, G.top); ctx.lineTo(G.cx + G.rMax * 0.12, G.top);
+    ctx.lineTo(G.cx + G.rMin * 0.6, G.bot + 20); ctx.lineTo(G.cx - G.rMin * 0.6, G.bot + 20); ctx.closePath(); ctx.fill();
+    paint(front);
+  }
+
+  // ---------- panel ----------
+  const $ = (id) => document.getElementById(id);
+  function panel() {
+    const day = Math.min(30, Math.floor(S.hour / 24) + 1);
+    $("dayLabel").textContent = "Day " + day + " of 30";
+    const h = Math.floor(S.hour % 24), m = Math.floor((S.hour % 1) * 60);
+    $("clock").textContent = String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0") + (h >= 8 && h < 18 ? " · open" : " · closed");
+    $("dayBar").style.width = Math.min(100, (S.hour / MONTH_HOURS) * 100) + "%";
+    const counts = STAGES.map((s, i) => S.items.filter(it => it.stage === i && !it.done).length);
+    counts[7] += S.shipped;
+    const max = Math.max(1, ...counts);
+    $("stages").innerHTML = STAGES.map((s, i) =>
+      "<tr><td>" + (i + 1) + ". " + s.name + "</td><td class=\"who\"><span class=\"chip " + (s.who === "claude" ? "claude" : s.who === "person" ? "person" : "") + "\">" + WHO[s.who] + "</span></td>" +
+      "<td style=\"width:70px\"><div class=\"mini\" style=\"width:" + Math.round((counts[i] / max) * 100) + "%\"></div></td><td class=\"n\">" + counts[i] + "</td></tr>").join("");
+    $("claude").innerHTML =
+      "<span>Haiku 5.5 runs (drafts, redrafts)</span><span>" + S.haikuRuns + "</span>" +
+      "<span>Sonnet 5.5 second opinions</span><span>" + S.sonnetRuns + "</span>" +
+      "<span>Haiku notes (daily, weekly)</span><span>" + S.noteRuns + "</span>" +
+      "<span>Opus 5.5</span><span>0, not allowed</span>" +
+      "<span class=\"em\">Claude cost so far</span><span class=\"em\">" + cents(S.claudeCost) + "</span>";
+    const kept = S.revenue - S.fees - S.boxes - S.costSumSold();
+    $("money").innerHTML =
+      "<span>Bought (" + S.bought + " items)</span><span>" + money(S.costSum) + "</span>" +
+      "<span>Sold (" + (S.soldBy.ebay + S.soldBy.etsy + S.soldBy.hand) + " items)</span><span>" + money(S.revenue) + "</span>" +
+      "<span>Fees at 13.5%, boxes</span><span>−" + money(S.fees + S.boxes) + "</span>" +
+      "<span>On eBay · Etsy · by hand</span><span>" + S.soldBy.ebay + " · " + S.soldBy.etsy + " · " + S.soldBy.hand + "</span>" +
+      "<span class=\"em\">Kept on sold items</span><span class=\"em\">" + money(Math.max(0, kept)) + "</span>";
+    $("log").innerHTML = S.logs.slice(0, 11).map(l => "<div><span class=\"t\">" + l.t + "</span> " + l.text.replace(/</g, "&lt;") + "</div>").join("");
+  }
+
+  function legend() {
+    let html = "";
+    if (mode === "market") html = [["ebay", "eBay (API)"], ["etsy", "Etsy, vintage (API)"], ["hand", "By hand after 14 days"], ["unlisted", "Not listed yet"]].map(([k, t]) => "<span><i style=\"background:" + COLORS[k] + "\"></i>" + t + "</span>").join("") + "<span>White ring: flagged to Sonnet 5.5</span>";
+    if (mode === "model") html = "<span><i style=\"background:" + COLORS.haiku + "\"></i>Drafted by Claude Haiku 5.5 only</span><span><i style=\"background:" + COLORS.sonnet + "\"></i>Flagged: Haiku draft, then Sonnet 5.5 second opinion</span>";
+    if (mode === "stage") html = "<span><i style=\"background:" + STAGE_RAMP[0] + "\"></i>Intake</span><span>darker to lighter, top to bottom</span><span><i style=\"background:" + STAGE_RAMP[7] + "\"></i>Shipped</span><span>White ring: flagged to Sonnet 5.5</span>";
+    $("legend").innerHTML = html;
+  }
+
+  function summary() {
+    const sold = S.soldBy.ebay + S.soldBy.etsy + S.soldBy.hand;
+    const kept = S.revenue - S.fees - S.boxes - S.costSumSold();
+    $("sumbox").innerHTML = "<h3>Month one, mock</h3><div class=\"kv\">" +
+      "<span>Items bought and photographed</span><span>" + S.bought + "</span>" +
+      "<span>Sold</span><span>" + sold + "</span>" +
+      "<span>Still listed</span><span>" + S.items.filter(i => i.stage === 5).length + "</span>" +
+      "<span>Kept on sold items</span><span>" + money(Math.max(0, kept)) + "</span>" +
+      "<span>Claude, all of it</span><span>" + cents(S.claudeCost) + "</span></div>" +
+      "<p class=\"note\" style=\"padding:10px 0 0\">A new month starts in a few seconds.</p>";
+    $("summary").style.display = "grid";
+    setTimeout(() => { $("summary").style.display = "none"; start(); }, 7000);
+  }
+
+  // cost of the items that sold (for "kept")
+  function attachHelpers() {
+    S.costSumSold = function () { let c = 0; for (const it of S.items) if (it.soldOn && !it.done) c += it.cost; return c + (S.shippedCost || 0); };
+  }
+
+  function start() {
+    seed = 7 + Math.floor(Math.random() * 1000);
+    fresh(); attachHelpers();
+    // open in a working state: run the first five days without drawing
+    stepSim(5 * 24);
+    S.items = S.items.filter(it => !it.done);
+    for (const it of S.items) { it.ry = null; }
+  }
+
+  // shipped items leave the list; remember their cost first
+  const _advance = advance;
+  advance = function (it) {
+    const wasShipping = STAGES[it.stage].k === "shipped";
+    _advance(it);
+    if (wasShipping && it.done) S.shippedCost = (S.shippedCost || 0) + it.cost;
+  };
+
+  // ---------- loop ----------
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (playing && !S.summaryShown) {
+      stepSim(dt * 2 * speed); // 1× = one sim day every 12 seconds
+      if (S.hour >= MONTH_HOURS) { S.summaryShown = true; summary(); }
+    }
+    draw(dt);
+    panelTimer += dt; if (panelTimer > 0.2) { panelTimer = 0; panel(); }
+    requestAnimationFrame(frame);
+  }
+  let panelTimer = 1;
+
+  // ---------- controls ----------
+  function segment(id, cb) {
+    const el = $(id);
+    el.addEventListener("click", (e) => {
+      const b = e.target.closest("button"); if (!b) return;
+      el.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+      cb(b.dataset.v);
+    });
+  }
+  segment("speed", v => { speed = +v; });
+  segment("mode", v => { mode = v; legend(); });
+  $("play").addEventListener("click", () => { playing = !playing; $("play").textContent = playing ? "Pause" : "Play"; $("motion").textContent = ""; });
+  $("restart").addEventListener("click", () => { $("summary").style.display = "none"; start(); });
+
+  cv.addEventListener("mousemove", (e) => {
+    const r = cv.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+    let best = null, bd = 14 * 14;
+    for (const d of drawn) { const dd = (d.x - mx) ** 2 + (d.y - my) ** 2 + (d.front ? 0 : 40); if (dd < bd) { bd = dd; best = d; } }
+    if (!best) { tip.style.display = "none"; return; }
+    const it = best.it;
+    const where = it.soldOn ? "Sold on " + MARKET_NAME[it.soldOn] : it.markets.length ? "Listed on " + it.markets.map(m => MARKET_NAME[m]).join(", ") : "Not listed yet";
+    tip.innerHTML = "<b>" + it.sku + "</b> " + it.name + "<br>Stage: " + STAGES[it.stage].name +
+      "<br>Claude: Haiku 5.5" + (it.flagged ? " + Sonnet 5.5 (flagged)" : "") +
+      "<br>Paid " + money(it.cost) + (it.stage >= 5 ? " · price " + money(it.price) : "") + (it.vintage ? " · vintage" : "") + "<br>" + where;
+    tip.style.display = "block";
+    const tx = Math.min(r.width - 220, mx + 14), ty = Math.max(0, my - 10);
+    tip.style.left = tx + "px"; tip.style.top = ty + "px";
+  });
+  cv.addEventListener("mouseleave", () => { tip.style.display = "none"; });
+
+  window.addEventListener("resize", resize);
+  resize(); makeDust(); start(); legend(); panel();
+  if (reduce) { $("play").textContent = "Play"; $("motion").textContent = "Paused because your system asks for reduced motion. Press Play to run it."; }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
