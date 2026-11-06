@@ -49,7 +49,7 @@ h1 { font-family: var(--display); font-weight: 700; font-size: clamp(30px, 4vw, 
 button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .lbl { font-size: 12px; color: var(--muted); margin-right: 4px; }
 .canvas-box { position: relative; }
-canvas { display: block; width: 100%; height: clamp(440px, 64vh, 680px); }
+canvas { display: block; width: 100%; height: clamp(560px, 74vh, 780px); }
 .tip { position: absolute; pointer-events: none; background: #0e1836; border: 1px solid var(--gold); border-radius: 4px; padding: 8px 10px; font-size: 12.5px; line-height: 1.45; min-width: 190px; max-width: 280px; display: none; }
 .tip b { font-family: var(--mono); color: var(--gold); font-weight: 500; }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--muted); padding: 8px 4px 2px; }
@@ -128,6 +128,22 @@ footer { color: var(--muted); font-size: 12px; margin-top: 14px; max-width: 110c
       <div class="note" style="padding:6px 0 0">Claude never publishes, prices or approves: the jobs publish what a person approved in the vault.</div>
     </div>
     <div class="card">
+      <h2>The Obsidian intake template</h2>
+      <pre style="margin:0;font:11.5px/1.5 var(--mono);color:#cbd5ee;white-space:pre-wrap">Templates/Intake.md → Items/SKU/item.md
+---
+sku: <span style="color:var(--gold)">{{next SKU}}</span>   <span style="color:var(--muted)"># intake job</span>
+status: intake      <span style="color:var(--muted)"># the jobs move it on</span>
+cost:               <span style="color:var(--muted)"># person</span>
+source:             <span style="color:var(--muted)"># person</span>
+price:              <span style="color:var(--muted)"># person, at approval</span>
+floor:              <span style="color:var(--muted)"># lowest markdown</span>
+vintage: false      <span style="color:var(--muted)"># true only with proof</span>
+---
+Measurements:
+Notes:</pre>
+      <div class="note" style="padding:8px 0 0">Status runs intake, photos, drafted, approved, listed, sold. Only a person sets <b>approved</b>, with the price. Claude can't edit this file: it writes <b>draft.md</b> beside it, and the jobs write <b>listings.md</b>. The note on the Mac mini follows the item being worked on, with the field that just changed in gold.</div>
+    </div>
+    <div class="card">
       <h2>Claude this month</h2>
       <div class="kv" id="claude"></div>
     </div>
@@ -162,15 +178,15 @@ footer { color: var(--muted); font-size: 12px; margin-top: 14px; max-width: 110c
   const WHO = { person: "person", script: "script", claude: "Claude", market: "market" };
   // The Mac mini's layers, top to bottom, and the stages each one works on
   const LAYERS = [
-    { k: "staff", name: "Staff account", sub: "Obsidian · AirDrop · Chrome", out: "by-hand apps, in Chrome", stages: [0, 1, 4],
+    { k: "staff", w: 0.95, name: "Staff account", sub: "Obsidian · AirDrop · Chrome", out: "by-hand apps, in Chrome", stages: [0, 1, 4],
       tip: "<b>Staff account</b><br>Whoever is in the workroom. Starts an item from the Obsidian template, AirDrops the photos, approves and prices in Obsidian, posts the by-hand marketplaces in Chrome.<br>Can't read the marketplace tokens." },
-    { k: "jobs", name: "launchd jobs · lister", sub: "intake · check · publish · sold-sync", out: "eBay, Etsy APIs · PeterShip", stages: [1, 3, 5, 6, 7],
+    { k: "jobs", w: 0.95, name: "launchd jobs · lister", sub: "intake · check · publish · sold-sync", out: "eBay, Etsy APIs · PeterShip", stages: [1, 3, 5, 6, 7],
       tip: "<b>launchd jobs, hidden lister account</b><br>Plain scripts, no AI: intake every 2 min (photos, HEIC to JPEG), the draft check, publish every 15 min, sold-sync every 5 min (ends other listings, buys the PeterShip label).<br>Owns the eBay, Etsy, Shopify and TikTok tokens." },
-    { k: "claude", name: "Claude Code · ops", sub: "Haiku 5.5 · Sonnet 5.5 on flags", out: "api.anthropic.com only", stages: [2],
+    { k: "claude", w: 0.95, name: "Claude Code · ops", sub: "Haiku 5.5 · Sonnet 5.5 on flags", out: "api.anthropic.com only", stages: [2],
       tip: "<b>Claude Code, hidden ops account</b><br>Haiku 5.5 drafts each item at low effort, one item per run; flagged items (designer, possible fake, over $75) get a Sonnet 5.5 second opinion. Also writes the daily sales note and the weekly aging list.<br>Writes draft.md and notes only." },
-    { k: "vault", name: "Obsidian vault · git", sub: "item.md · draft.md · listings.md", out: "github.com, git only", stages: [4],
-      tip: "<b>The Obsidian vault</b><br>A git repo, pushed nightly to a private GitHub repo the partners read at home. People write item.md (price, approval), Claude writes draft.md, scripts write listings.md." },
-    { k: "walls", name: "The walls", sub: "managed settings · accounts · LuLu", out: "everything else blocked", stages: [],
+    { k: "vault", w: 3, name: "Obsidian vault · git", sub: "item.md · draft.md · listings.md", out: "github.com, git only", stages: [4],
+      tip: "<b>The Obsidian vault</b><br>A git repo, pushed nightly to a private GitHub repo the partners read at home. Every item starts from <b>Templates/Intake.md</b>, which makes Items/SKU/item.md. People write item.md (cost, source, price, floor, approval), Claude writes draft.md, scripts write listings.md and move the status along. Only a person sets status: approved.<br>The note shown is the item being worked on right now." },
+    { k: "walls", w: 0.75, name: "The walls", sub: "managed settings · accounts · LuLu", out: "everything else blocked", stages: [],
       tip: "<b>What keeps Claude away from money and accounts</b><br>Root-owned managed settings: no shell, no web tools, Haiku and Sonnet only, can't edit item.md, can't publish. macOS accounts: ops can't read lister's tokens. The sandbox. LuLu: claude may reach api.anthropic.com and nothing else." }
   ];
   const pulse = { staff: 0, jobs: 0, claude: 0, vault: 0, walls: 0 };
@@ -225,12 +241,14 @@ footer { color: var(--muted); font-size: 12px; margin-top: 14px; max-width: 110c
     if (base[2] === "designer" && rnd() < 0.6) base = pick(ITEMS.filter(x => x[2] !== "designer"));
     const price = Math.round(Math.max(12, Math.min(220, base[1] * between(0.75, 1.3))));
     const flagged = base[2] === "designer" || (price > 75 && rnd() < 0.35);
-    const it = { id: S.nextSku, sku: sku(S.nextSku), name: base[0], price, cost: Math.round(price * between(0.12, 0.3) * 100) / 100,
+    const it = { id: S.nextSku, sku: sku(S.nextSku), name: base[0], price,
+      source: rnd() < 0.45 ? "William's stock, at the store" : pick(["Goodwill, Louisville Ave", "Estate sale, Bastrop", "Habitat ReStore, Monroe", "Yard sale, West Monroe", "Thrift store, Ruston"]), cost: Math.round(price * between(0.12, 0.3) * 100) / 100,
       vintage: base[2] === "vintage", flagged, stage: 0, next: S.hour + between(0.3, 1.0),
       markets: [], soldOn: null, listedAt: null, handAdded: false,
       a: rnd() * Math.PI * 2, ry: null, rr: null, alpha: 1, done: false, jy: 0, jr: 1 };
     S.nextSku++; S.bought++; S.costSum += it.cost;
     S.items.push(it);
+    S.focus = it; S.focusKey = "sku";
     log(it.sku + " in: " + it.name + ", paid " + money(it.cost));
   }
 
@@ -334,6 +352,36 @@ footer { color: var(--muted); font-size: 12px; margin-top: 14px; max-width: 110c
 
   const drawn = [], bands = [];
   function rr(x, y, w, h, r) { ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h); }
+  const STATUS = ["intake", "photos", "drafting", "drafted", "drafted", "listed", "sold", "shipped"];
+  function drawNote(x, y, w, h, p) {
+    const it = S.focus;
+    ctx.fillStyle = "#0b1430"; ctx.strokeStyle = "#3a4a7a"; ctx.lineWidth = 1; rr(x, y, w, h, 4); ctx.fill(); ctx.stroke();
+    ctx.textAlign = "left";
+    if (!it) { ctx.fillStyle = "#7d8bb0"; ctx.font = "11px 'IBM Plex Mono', monospace"; ctx.fillText("waiting for an item", x + 8, y + 18); return; }
+    ctx.fillStyle = "#9aa6c4"; ctx.font = "10.5px 'IBM Plex Mono', monospace";
+    ctx.fillText("Items/" + it.sku + "/item.md", x + 8, y + 14);
+    const st = it.done ? "shipped" : STATUS[it.stage];
+    const rows = [
+      ["sku", it.sku, "sku"],
+      ["status", st, "status"],
+      ["cost", it.cost.toFixed(2), "sku"],
+      ["source", it.source.length > 19 ? it.source.slice(0, 18) + "…" : it.source, "sku"],
+      ["price", it.stage >= 5 ? it.price.toFixed(2) : "(at approval)", "price"],
+      ["floor", it.stage >= 5 ? Math.round(it.price * 0.7).toFixed(2) : "", "price"],
+      ["vintage", it.vintage ? "true" : "false", "sku"],
+      ["draft.md", it.stage >= 3 ? "Haiku" + (it.flagged ? " + Sonnet" : "") : "…", "draft"],
+      ["listings.md", it.markets.length ? it.markets.map(m => m === "hand" ? "by hand" : m === "ebay" ? "eBay" : "Etsy").join(", ") : "-", "listings"]
+    ];
+    const lh = 13.5, fit = Math.max(0, Math.floor((h - 22) / lh));
+    ctx.font = "10.5px 'IBM Plex Mono', monospace";
+    rows.slice(0, fit).forEach((r, i) => {
+      const ry = y + 28 + i * lh;
+      if (i === 7) { ctx.strokeStyle = "#24315a"; ctx.beginPath(); ctx.moveTo(x + 6, ry - lh + 3); ctx.lineTo(x + w - 6, ry - lh + 3); ctx.stroke(); }
+      const hot = r[2] === S.focusKey && (r[0] === "status" || r[0] === "price" || r[0] === "draft.md" || r[0] === "listings.md" || r[0] === "sku") && p > 0.05;
+      ctx.fillStyle = hot ? "#f2b705" : "#7d8bb0"; ctx.fillText(r[0] + ":", x + 8, ry);
+      ctx.fillStyle = hot ? "#ffe08a" : "#cbd5ee"; ctx.fillText(String(r[1]), x + 8 + (i >= 7 ? 86 : 62), ry);
+    });
+  }
   function drawBox(G) {
     bands.length = 0;
     if (!G.showBox) return;
@@ -345,10 +393,12 @@ footer { color: var(--muted); font-size: 12px; margin-top: 14px; max-width: 110c
     ctx.fillStyle = playing ? "#4ade80" : "#9aa6c4"; ctx.beginPath(); ctx.arc(b.x + b.w - 16, b.y + 17, 3.5, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = "#0e1838"; ctx.strokeStyle = "#3a4a7a"; ctx.lineWidth = 1;
     rr(b.x, b.y + 36, b.w, b.h - 36 - 30, 8); ctx.fill(); ctx.stroke();
-    const n = LAYERS.length, top = b.y + 44, bh = (b.h - 36 - 30 - 16) / n;
+    const top = b.y + 44, unit = (b.h - 36 - 30 - 16) / LAYERS.reduce((a, L) => a + L.w, 0);
+    let yy = top;
     LAYERS.forEach((L, i) => {
       const p = L.k === "walls" ? Math.max(pulse.walls, pulse.claude * 0.7) : pulse[L.k];
-      const x = b.x + 8, y = top + i * bh, w = b.w - 16, h = bh - 8;
+      const bh = unit * L.w, x = b.x + 8, y = yy, w = b.w - 16, h = bh - 8;
+      yy += bh;
       // lines to the rings this layer works on (under the tornado)
       for (const si of L.stages) {
         const R = G.rings[si], tx = G.cx - R.r - 6, ty = R.y;
@@ -365,6 +415,7 @@ footer { color: var(--muted); font-size: 12px; margin-top: 14px; max-width: 110c
       ctx.fillStyle = "#e9eef9"; ctx.font = "600 15px 'Barlow Condensed', sans-serif"; ctx.fillText((i + 1) + "  " + L.name.toUpperCase(), x + 10, y + 19);
       ctx.fillStyle = "#9aa6c4"; ctx.font = "11.5px 'IBM Plex Sans', sans-serif"; ctx.fillText(L.sub, x + 10, y + 35);
       if (h > 52) { ctx.fillStyle = p > 0.05 ? "#f5c75a" : "#7d8bb0"; ctx.font = "11px 'IBM Plex Mono', monospace"; ctx.fillText("→ " + L.out, x + 10, y + 51); }
+      if (L.k === "vault" && h > 150) drawNote(x + 8, y + 60, w - 16, h - 68, p);
       bands.push({ x, y, w, h, L });
     });
     ctx.fillStyle = "#9aa6c4"; ctx.font = "11px 'IBM Plex Sans', sans-serif";
@@ -544,6 +595,7 @@ footer { color: var(--muted); font-size: 12px; margin-top: 14px; max-width: 110c
     _advance(it);
     const to = it.stage;
     if (to !== from) {
+      S.focus = it; S.focusKey = to === 5 ? "price" : to === 2 || to === 3 ? "draft" : to === 6 ? "listings" : "status";
       if (to === 1) hit("staff", "jobs");
       else if (to === 2) hit("jobs", "claude");
       else if (to === 3) hit("jobs");

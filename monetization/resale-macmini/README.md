@@ -262,6 +262,24 @@ resale-vault/
 
 The split keeps everyone in their lane: **people write `item.md`** (Claude may not edit it, so it can never approve or price), **Claude writes `draft.md`**, **scripts write `listings.md`**. The publish script reads the words from `draft.md` and the price and approval from `item.md`.
 
+Every item starts from **`Templates/Intake.md`** (Obsidian's core Templates plugin, or the Templater plugin for the SKU). It makes `Items/<SKU>/item.md`:
+
+```markdown
+---
+sku: {{next SKU}}     # filled by the intake job
+status: intake       # intake, photos, drafted, approved, listed, sold: the jobs move it on; only a person sets approved
+cost:                # person, at intake
+source:              # person: where and when it was bought ("William's stock, at the store")
+price:               # person, at approval
+floor:               # person: the lowest a markdown may go
+vintage: false       # person: true only with proof of 20 years or more
+---
+Measurements:
+Notes:
+```
+
+The person fills in cost, source, measurements and notes at intake, and price, floor and status `approved` when the draft is right. Claude never edits this file. The tornado page shows this note live on the Mac mini, following the item being worked on.
+
 A finished `item.md`:
 
 ```markdown
