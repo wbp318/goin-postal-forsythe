@@ -113,7 +113,19 @@ The accountant should see whichever shape Peter and Rin pick. It's decision 1, b
 
 ## See it run: the resale tornado
 
-[`tornado.html`](tornado.html) is an animated mock of this plan: one month at 20 items a day, sped up. Each dot is an item spiraling down a funnel through the eight stages: intake, photos, Claude drafts, script check, person approves, listed, sold, shipped. The funnel narrows because not everything sells in a month. Color the dots by where they sell, by which Claude model ran them, or by stage. Hover one for its card, and watch the counts, the Claude cost, the money and the event log on the right. **Every number is mock data**, from this plan's assumptions.
+[`tornado.html`](tornado.html) is an animated mock of this plan: one month at 20 items a day, sped up. Each dot is an item spiraling down a funnel through the eight stages: intake, photos, Claude drafts, script check, person approves, listed, sold, shipped. The funnel narrows because not everything sells in a month. Color the dots by where they sell, by which Claude model ran them, or by stage. Hover one for its card, and watch the counts, the Claude cost, the money and the event log on the right.
+
+On the left is **the Mac mini, drawn as its five layers**, the same ones as [section 5](#5-the-mac-mini-its-accounts-and-claude-code):
+
+| Layer | Works on | Lights up when |
+|---|---|---|
+| 1. Staff account (Obsidian, AirDrop, Chrome) | Intake, photos, approval | Someone starts an item, sends photos, approves a listing, or posts one by hand |
+| 2. launchd jobs under `lister` (intake, check, publish, sold-sync) | Photos, the check, listing, sold, shipped | A script moves photos, checks a draft, publishes, ends other listings or buys the PeterShip label |
+| 3. Claude Code under `ops` (Haiku 5.5, Sonnet 5.5 on flags) | Drafts | Claude drafts an item or writes the daily note |
+| 4. The Obsidian vault and git | Approval | A draft lands for approval, an item is approved, the nightly note is pushed |
+| 5. The walls (managed settings, accounts, LuLu) | Around Claude | Claude runs: the walls are what it runs inside |
+
+A layer and its lines to the funnel light up each time it does its part, and hovering a layer explains it. Each layer's outside connection is written on it: the by-hand apps, the marketplace APIs and PeterShip, `api.anthropic.com` only, `github.com` for git only. **Every number is mock data**, from this plan's assumptions.
 
 ### How to open it
 

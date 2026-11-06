@@ -50,7 +50,7 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .lbl { font-size: 12px; color: var(--muted); margin-right: 4px; }
 .canvas-box { position: relative; }
 canvas { display: block; width: 100%; height: clamp(440px, 64vh, 680px); }
-.tip { position: absolute; pointer-events: none; background: #0e1836; border: 1px solid var(--gold); border-radius: 4px; padding: 8px 10px; font-size: 12.5px; line-height: 1.45; min-width: 190px; display: none; }
+.tip { position: absolute; pointer-events: none; background: #0e1836; border: 1px solid var(--gold); border-radius: 4px; padding: 8px 10px; font-size: 12.5px; line-height: 1.45; min-width: 190px; max-width: 280px; display: none; }
 .tip b { font-family: var(--mono); color: var(--gold); font-weight: 500; }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--muted); padding: 8px 4px 2px; }
 .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
@@ -86,7 +86,7 @@ footer { color: var(--muted); font-size: 12px; margin-top: 14px; max-width: 110c
 <header>
   <h1>Resale Tornado</h1>
   <span class="badge">MOCK DATA</span>
-  <div class="sub">How the resale automation would run: one simulated month at 20 items a day, sped up. Items spiral down the funnel from intake to shipped; the funnel narrows because not everything sells in a month.</div>
+  <div class="sub">How the resale automation would run: one simulated month at 20 items a day, sped up. Items spiral down the funnel from intake to shipped; the funnel narrows because not everything sells in a month. On the left, the Mac mini's layers light up as each one does its part.</div>
 </header>
 
 <div class="wrap">
@@ -98,7 +98,7 @@ footer { color: var(--muted); font-size: 12px; margin-top: 14px; max-width: 110c
       <button class="btn" id="restart" type="button">Restart month</button>
     </div>
     <div class="canvas-box">
-      <canvas id="c" role="img" aria-label="Animated funnel of mock resale items moving through eight stages from intake to shipped; counts for each stage are in the table beside it."></canvas>
+      <canvas id="c" role="img" aria-label="Animated funnel of mock resale items moving through eight stages from intake to shipped, beside a Mac mini drawn as five layers (staff account, launchd jobs, Claude Code, the Obsidian vault, the walls) with lines to the stages each one works on; counts for each stage and the layers are in the panel beside it."></canvas>
       <div class="tip" id="tip"></div>
       <div class="summary" id="summary"><div class="box" id="sumbox"></div></div>
     </div>
@@ -115,6 +115,17 @@ footer { color: var(--muted); font-size: 12px; margin-top: 14px; max-width: 110c
       <h2>Right now in each stage</h2>
       <table id="stages"></table>
       <div class="kv" id="flow" style="margin-top:10px;padding-top:8px;border-top:1px solid var(--line)"></div>
+    </div>
+    <div class="card">
+      <h2>Inside the Mac mini</h2>
+      <table>
+        <tr><td><b>1</b> Staff account</td><td class="n" style="width:auto;font-family:var(--body);color:var(--muted)">people: stages 1, 2, 5</td></tr>
+        <tr><td><b>2</b> launchd jobs</td><td class="n" style="width:auto;font-family:var(--body);color:var(--muted)">scripts: 2, 4, 6, 7, 8</td></tr>
+        <tr><td><b>3</b> Claude Code</td><td class="n" style="width:auto;font-family:var(--body);color:var(--muted)">Haiku, Sonnet: 3</td></tr>
+        <tr><td><b>4</b> Obsidian vault</td><td class="n" style="width:auto;font-family:var(--body);color:var(--muted)">the record: 5</td></tr>
+        <tr><td><b>5</b> The walls</td><td class="n" style="width:auto;font-family:var(--body);color:var(--muted)">around Claude</td></tr>
+      </table>
+      <div class="note" style="padding:6px 0 0">Claude never publishes, prices or approves: the jobs publish what a person approved in the vault.</div>
     </div>
     <div class="card">
       <h2>Claude this month</h2>
@@ -149,6 +160,21 @@ footer { color: var(--muted); font-size: 12px; margin-top: 14px; max-width: 110c
     { k: "shipped", name: "Shipped",           who: "script" }
   ];
   const WHO = { person: "person", script: "script", claude: "Claude", market: "market" };
+  // The Mac mini's layers, top to bottom, and the stages each one works on
+  const LAYERS = [
+    { k: "staff", name: "Staff account", sub: "Obsidian · AirDrop · Chrome", out: "by-hand apps, in Chrome", stages: [0, 1, 4],
+      tip: "<b>Staff account</b><br>Whoever is in the workroom. Starts an item from the Obsidian template, AirDrops the photos, approves and prices in Obsidian, posts the by-hand marketplaces in Chrome.<br>Can't read the marketplace tokens." },
+    { k: "jobs", name: "launchd jobs · lister", sub: "intake · check · publish · sold-sync", out: "eBay, Etsy APIs · PeterShip", stages: [1, 3, 5, 6, 7],
+      tip: "<b>launchd jobs, hidden lister account</b><br>Plain scripts, no AI: intake every 2 min (photos, HEIC to JPEG), the draft check, publish every 15 min, sold-sync every 5 min (ends other listings, buys the PeterShip label).<br>Owns the eBay, Etsy, Shopify and TikTok tokens." },
+    { k: "claude", name: "Claude Code · ops", sub: "Haiku 5.5 · Sonnet 5.5 on flags", out: "api.anthropic.com only", stages: [2],
+      tip: "<b>Claude Code, hidden ops account</b><br>Haiku 5.5 drafts each item at low effort, one item per run; flagged items (designer, possible fake, over $75) get a Sonnet 5.5 second opinion. Also writes the daily sales note and the weekly aging list.<br>Writes draft.md and notes only." },
+    { k: "vault", name: "Obsidian vault · git", sub: "item.md · draft.md · listings.md", out: "github.com, git only", stages: [4],
+      tip: "<b>The Obsidian vault</b><br>A git repo, pushed nightly to a private GitHub repo the partners read at home. People write item.md (price, approval), Claude writes draft.md, scripts write listings.md." },
+    { k: "walls", name: "The walls", sub: "managed settings · accounts · LuLu", out: "everything else blocked", stages: [],
+      tip: "<b>What keeps Claude away from money and accounts</b><br>Root-owned managed settings: no shell, no web tools, Haiku and Sonnet only, can't edit item.md, can't publish. macOS accounts: ops can't read lister's tokens. The sandbox. LuLu: claude may reach api.anthropic.com and nothing else." }
+  ];
+  const pulse = { staff: 0, jobs: 0, claude: 0, vault: 0, walls: 0 };
+  function hit() { for (const k of arguments) pulse[k] = 1; }
   const COLORS = { ebay: "#3987e5", etsy: "#d95926", hand: "#199e70", unlisted: "#6b7591", haiku: "#c98500", sonnet: "#3987e5" };
   const STAGE_RAMP = ["#7a6420", "#8d7322", "#a28424", "#b79526", "#cca62a", "#dfb733", "#efc94f", "#ffdc7a"];
   const ITEMS = [
@@ -261,7 +287,7 @@ footer { color: var(--muted); font-size: 12px; margin-top: 14px; max-width: 110c
       const day = Math.floor(S.hour / 24);
       if (day > S.lastDay) {
         S.lastDay = day; S.noteRuns++; S.claudeCost += 0.009;
-        log("Daily sales note written by Haiku 5.5, " + cents(0.009));
+        log("Daily sales note written by Haiku 5.5, " + cents(0.009)); hit("claude", "vault");
         if (day % 7 === 0) { S.noteRuns++; S.claudeCost += 0.009; log("Weekly aging list written by Haiku 5.5"); }
       }
     }
@@ -270,12 +296,16 @@ footer { color: var(--muted); font-size: 12px; margin-top: 14px; max-width: 110c
 
   // ---------- geometry ----------
   function geom() {
-    const top = H * 0.10, bot = H * 0.86, rMax = Math.min(W * 0.40, 330), rMin = Math.max(10, rMax * 0.05);
+    const showBox = W >= 760;
+    const boxW = showBox ? Math.min(250, W * 0.27) : 0;
+    const box = { x: 10, y: H * 0.05, w: boxW, h: H * 0.86 };
+    const left = showBox ? box.x + boxW + 24 : 0, avail = W - left;
+    const top = H * 0.10, bot = H * 0.86, rMax = Math.min(avail * 0.34, 300), rMin = Math.max(10, rMax * 0.05);
     const rings = STAGES.map((s, i) => {
       const t = i / (STAGES.length - 1);
       return { y: top + (bot - top) * t, r: rMin + (rMax - rMin) * Math.pow(1 - t, 1.25) };
     });
-    return { cx: W * 0.47, top, bot, rMax, rMin, rings, tilt: 0.24 };
+    return { cx: left + avail * 0.42, top, bot, rMax, rMin, rings, tilt: 0.24, box, showBox };
   }
   function funnelR(G, y) {
     const t = Math.max(0, Math.min(1, (y - G.top) / (G.bot - G.top)));
@@ -302,7 +332,44 @@ footer { color: var(--muted); font-size: 12px; margin-top: 14px; max-width: 110c
     return COLORS.unlisted;
   }
 
-  const drawn = [];
+  const drawn = [], bands = [];
+  function rr(x, y, w, h, r) { ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h); }
+  function drawBox(G) {
+    bands.length = 0;
+    if (!G.showBox) return;
+    const b = G.box;
+    // the machine: a silver lid, then the layers inside
+    ctx.fillStyle = "#c9ced8"; rr(b.x, b.y, b.w, 34, 8); ctx.fill();
+    ctx.fillStyle = "#0b1430"; ctx.font = "700 15px 'Barlow Condensed', sans-serif"; ctx.textAlign = "left";
+    ctx.fillText("MAC MINI M4  ·  RESALE", b.x + 12, b.y + 22);
+    ctx.fillStyle = playing ? "#4ade80" : "#9aa6c4"; ctx.beginPath(); ctx.arc(b.x + b.w - 16, b.y + 17, 3.5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#0e1838"; ctx.strokeStyle = "#3a4a7a"; ctx.lineWidth = 1;
+    rr(b.x, b.y + 36, b.w, b.h - 36 - 30, 8); ctx.fill(); ctx.stroke();
+    const n = LAYERS.length, top = b.y + 44, bh = (b.h - 36 - 30 - 16) / n;
+    LAYERS.forEach((L, i) => {
+      const p = L.k === "walls" ? Math.max(pulse.walls, pulse.claude * 0.7) : pulse[L.k];
+      const x = b.x + 8, y = top + i * bh, w = b.w - 16, h = bh - 8;
+      // lines to the rings this layer works on (under the tornado)
+      for (const si of L.stages) {
+        const R = G.rings[si], tx = G.cx - R.r - 6, ty = R.y;
+        ctx.strokeStyle = "rgba(242,183,5," + (0.10 + 0.6 * p).toFixed(3) + ")"; ctx.lineWidth = 1 + 1.4 * p;
+        ctx.beginPath(); ctx.moveTo(x + w, y + h / 2);
+        ctx.bezierCurveTo(x + w + 50, y + h / 2, tx - 70, ty, tx, ty); ctx.stroke();
+        ctx.fillStyle = "rgba(242,183,5," + (0.25 + 0.6 * p).toFixed(3) + ")"; ctx.beginPath(); ctx.arc(tx, ty, 2.5, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.fillStyle = L.k === "walls" ? "#1a1430" : "#16224a"; rr(x, y, w, h, 5); ctx.fill();
+      if (p > 0.02) { ctx.fillStyle = "rgba(242,183,5," + (p * 0.22).toFixed(3) + ")"; rr(x, y, w, h, 5); ctx.fill(); }
+      ctx.strokeStyle = p > 0.05 ? "rgba(242,183,5," + (0.35 + 0.65 * p).toFixed(3) + ")" : (L.k === "walls" ? "#5b3a6a" : "#2b3a6a");
+      ctx.lineWidth = L.k === "walls" ? 1.5 : 1; rr(x, y, w, h, 5); ctx.stroke();
+      ctx.textAlign = "left";
+      ctx.fillStyle = "#e9eef9"; ctx.font = "600 15px 'Barlow Condensed', sans-serif"; ctx.fillText((i + 1) + "  " + L.name.toUpperCase(), x + 10, y + 19);
+      ctx.fillStyle = "#9aa6c4"; ctx.font = "11.5px 'IBM Plex Sans', sans-serif"; ctx.fillText(L.sub, x + 10, y + 35);
+      if (h > 52) { ctx.fillStyle = p > 0.05 ? "#f5c75a" : "#7d8bb0"; ctx.font = "11px 'IBM Plex Mono', monospace"; ctx.fillText("→ " + L.out, x + 10, y + 51); }
+      bands.push({ x, y, w, h, L });
+    });
+    ctx.fillStyle = "#9aa6c4"; ctx.font = "11px 'IBM Plex Sans', sans-serif";
+    ctx.fillText("On the store network. Never the deposit station.", b.x + 2, b.y + b.h - 10);
+  }
   function draw(dt) {
     const G = geom();
     ctx.clearRect(0, 0, W, H);
@@ -317,6 +384,8 @@ footer { color: var(--muted); font-size: 12px; margin-top: 14px; max-width: 110c
     ctx.fillText("the counter: carrier pickup  ·  shipped this month: " + S.shipped, G.cx, gy + 18);
 
     spin += dt;
+    for (const k in pulse) pulse[k] = Math.max(0, pulse[k] - dt * 1.4);
+    drawBox(G);
     const omega = (r) => 0.55 * Math.pow(G.rMax / r, 0.65) * (playing ? 1 : 0.15);
 
     const back = [], front = [];
@@ -436,7 +505,7 @@ footer { color: var(--muted); font-size: 12px; margin-top: 14px; max-width: 110c
     if (mode === "market") html = [["ebay", "eBay (API)"], ["etsy", "Etsy, vintage (API)"], ["hand", "By hand after 14 days"], ["unlisted", "Not listed yet"]].map(([k, t]) => "<span><i style=\"background:" + COLORS[k] + "\"></i>" + t + "</span>").join("") + "<span>White ring: flagged to Sonnet 5.5</span>";
     if (mode === "model") html = "<span><i style=\"background:" + COLORS.haiku + "\"></i>Drafted by Claude Haiku 5.5 only</span><span><i style=\"background:" + COLORS.sonnet + "\"></i>Flagged: Haiku draft, then Sonnet 5.5 second opinion</span>";
     if (mode === "stage") html = "<span><i style=\"background:" + STAGE_RAMP[0] + "\"></i>Intake</span><span>darker to lighter, top to bottom</span><span><i style=\"background:" + STAGE_RAMP[7] + "\"></i>Shipped</span><span>White ring: flagged to Sonnet 5.5</span>";
-    $("legend").innerHTML = html;
+    $("legend").innerHTML = html + "<span>Left: the Mac mini's layers. A layer and its lines light up when it does the work; hover one for what it is</span>";
   }
 
   function summary() {
@@ -464,14 +533,26 @@ footer { color: var(--muted); font-size: 12px; margin-top: 14px; max-width: 110c
     // open in a working state: run the first five days without drawing
     stepSim(5 * 24);
     S.items = S.items.filter(it => !it.done);
+    for (const k in pulse) pulse[k] = 0;
     for (const it of S.items) { it.ry = null; }
   }
 
   // shipped items leave the list; remember their cost first
   const _advance = advance;
   advance = function (it) {
-    const wasShipping = STAGES[it.stage].k === "shipped";
+    const wasShipping = STAGES[it.stage].k === "shipped", from = it.stage, hadHand = it.handAdded, wasRe = it.rechecked;
     _advance(it);
+    const to = it.stage;
+    if (to !== from) {
+      if (to === 1) hit("staff", "jobs");
+      else if (to === 2) hit("jobs", "claude");
+      else if (to === 3) hit("jobs");
+      else if (to === 4) hit("vault");
+      else if (to === 5) hit("staff", "vault", "jobs");
+      else if (to === 6 || to === 7) hit("jobs");
+    }
+    if (!hadHand && it.handAdded) hit("staff");
+    if (!wasRe && it.rechecked) hit("claude", "jobs");
     if (wasShipping && it.done) S.shippedCost = (S.shippedCost || 0) + it.cost;
   };
 
@@ -505,6 +586,12 @@ footer { color: var(--muted); font-size: 12px; margin-top: 14px; max-width: 110c
 
   cv.addEventListener("mousemove", (e) => {
     const r = cv.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+    const band = bands.find(b => mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h);
+    if (band) {
+      tip.innerHTML = band.L.tip + (band.L.stages.length ? "<br>Works on: " + band.L.stages.map(i => (i + 1) + " " + STAGES[i].name).join(", ") : "");
+      tip.style.display = "block"; tip.style.left = Math.min(r.width - 260, mx + 14) + "px"; tip.style.top = Math.max(0, my - 10) + "px";
+      return;
+    }
     let best = null, bd = 14 * 14;
     for (const d of drawn) { const dd = (d.x - mx) ** 2 + (d.y - my) ** 2 + (d.front ? 0 : 40); if (dd < bd) { bd = dd; best = d; } }
     if (!best) { tip.style.display = "none"; return; }
