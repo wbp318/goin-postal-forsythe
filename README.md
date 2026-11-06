@@ -1069,14 +1069,14 @@ python scripts/export_designs.py
 ## Languages
 
 <!-- languages:start -->
-Every language GitHub counts in this repo, exact, as of November 6, 2026 (4,027,868 bytes in all). GitHub's sidebar shows the top six and folds the rest into "Other"; this is the whole list, from the same count. Refreshed by `python scripts/languages.py`.
+Every language GitHub counts in this repo, exact, as of November 6, 2026 (4,031,594 bytes in all). GitHub's sidebar shows the top six and folds the rest into "Other"; this is the whole list, from the same count. Refreshed by `python scripts/languages.py`.
 
 | Language | Share | Bytes | What it is here |
 | --- | ---: | ---: | --- |
-| Markdown | 35.26% | 1,420,399 | Plans, guides, READMEs, the agenda and the changelog |
-| TypeScript | 33.91% | 1,365,979 | PeterShip and the website's APIs, libraries and tests (`site/src`) |
-| Astro | 8.63% | 347,669 | The website's pages and layouts |
-| JSON | 6.99% | 281,538 | Rate sheets, the 14-language strings, store facts, package files |
+| Markdown | 35.32% | 1,424,125 | Plans, guides, READMEs, the agenda and the changelog |
+| TypeScript | 33.88% | 1,365,979 | PeterShip and the website's APIs, libraries and tests (`site/src`) |
+| Astro | 8.62% | 347,669 | The website's pages and layouts |
+| JSON | 6.98% | 281,538 | Rate sheets, the 14-language strings, store facts, package files |
 | SVG | 5.18% | 208,797 | Ad and sponsorship designs (the banner's machine-made traces are left out) |
 | HTML | 3.96% | 159,508 | The mailbox intake packet, the design gallery, page previews |
 | Python | 3.40% | 137,144 | Build and release scripts, the mailbox register's builder, tests and tools |

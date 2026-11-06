@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.87.4] - 2026-11-06
+
+**Mac minis: William wants them, Peter and Rin wait for a deal**
+
+A correction to who wants the Mac minis, with real prices.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.87.4) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.87.4) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.87.3...v1.87.4)
+
 ## [v1.87.3] - 2026-11-06
 
 **Cash deposit setup, and a Mac mini deposit station**
