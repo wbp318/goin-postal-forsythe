@@ -158,10 +158,13 @@ Prices are planning estimates; check them on the day.
 | Customer display | An old tablet or phone on a stand | $0 to $100 | Shows the amount and the fee before the cashier commits |
 | Battery backup | APC 600 VA or similar | $70 to $90 | A deposit cut off mid-send is the worst case; this rides out a flicker |
 | Static IP | From the store's internet provider | Often $5 to $20 a month | Route C only. Ask the provider; a small cloud server with a fixed address is the fallback |
-| Drop safe | If the store has none | $150 to $300 | Deposit cash leaves the drawer during the day |
+| Drop safe | A front-loading depository safe with a drop slot, bolted down ([the cash](#the-cash-where-it-goes-and-what-happens-to-it)) | $300 to $900 | Deposit cash leaves the drawer during the day |
+| Counterfeit checker | UV and magnetic bill detector | $40 to $150 | The network pulls the full amount, fake bills included |
 | **Total** | | **About $950 to $1,700 once** | Low end with an M4 on sale and a spare monitor; less in route A |
 
 **Mac mini prices (deal sites, fall 2026):** the 2026 base Mac mini (M6, 16 GB, 256 GB) lists at $899 and dropped to $779.99 at Amazon in October's Prime Big Deal Days. The 2024 M4 base model has sold at Amazon for about $499 when on sale, and it is more than enough for a station. **A good deal** is the M6 at or under about $780, or an M4 (new or Apple refurbished) at or under about $500. Veterans Day is Wednesday, November 11, and Black Friday is November 27.
+
+**Where the cash goes** (the drawer, the drop safe, the counterfeit check, its own bank account, and what to do with the money each day) is in [the cash](#the-cash-where-it-goes-and-what-happens-to-it).
 
 **The full setup of the Mac mini** (the device, a sealed network that reaches only the payment network and a short list of services, four macOS accounts, and Claude Code and Obsidian running the nightly close, the morning check and the weekly bank match on their own) is in [`macmini/`](macmini/README.md).
 
@@ -242,6 +245,65 @@ flowchart LR
 ```
 
 The bank account must hold enough for the network's pull. A failed pull can end the agreement, so the deposit cash goes to the bank (or into the ATM, which repays the bank the next business day) before the network's pull date. How fast the network pulls is question 4 on the call.
+
+## The cash: where it goes and what happens to it
+
+Deposit cash is not the store's money. It belongs to the network from the moment the deposit goes through, and the network takes it back out of the store's bank account a day or two later (question 4 on the call). Everything below protects that money until the pull, and makes sure the bank account can cover it.
+
+### Where it sits
+
+The [floor plan](macmini/README.md#where-it-sits-at-the-counter) puts it all at the end of the counter: the **deposit drawer** under the receipt printer, the **drop safe** bolted to the floor under the counter with its slot facing the cashier, and a **camera** that sees both and the customer's hands.
+
+| Item | What to get | About | Why |
+|---|---|---|---|
+| **Deposit drawer** | A printer-driven cash drawer with its own lock and key (APG Vasario or similar, 16 by 16 inches) | $100 to $130 | Opens only on a receipt. Deposit cash never touches the POS drawer |
+| **Change float** | $50 in fives, ones and coins, counted at open and at close | $50 of the store's cash | A customer depositing $200 with a $3.95 fee hands over $210 and needs change |
+| **Counterfeit checker** | A UV and magnetic bill detector at the station, used on every $20 and up | $40 to $150 | **The network pulls the full amount whether or not a bill was fake.** A fake $100 is the store's $100. Detector pens are easily fooled; check the security features too (feel, tilt the bill for the color-shifting 100, hold it to the light for the portrait watermark and the thread) |
+| **Drop safe** | A front-loading depository safe with a drop slot, bolted to the floor. Staff drop envelopes in and can't open it; only Peter (and whoever he names) has the code | $300 to $900 | Keeps the drawer under $300 all day without anyone carrying cash to the back |
+| **Drop envelopes and a drop log** | Numbered envelopes; a log line per drop: time, amount, staff, envelope number | A few dollars | Every dollar in the safe matches a line |
+| **Tamper-evident bank bags** | From the bank, or a box of numbered bags | Usually free, or cents each | The deposit can't be opened between the safe and the bank without showing it |
+| **Bill counter** (optional) | One with counterfeit detection, for the end-of-day count | $150 to $250 | Faster and more accurate than counting by hand past a few hundred dollars |
+| **Camera** | One aimed at the drawer, the safe and the customer's hands; keep 30 days or more | Often already in the store | Disputes with the network and with customers are settled on the footage |
+| **Its own bank account** | A business checking account used only for the network's pulls and the deposit cash | Ask the bank | A pull never bounces against rent or payroll, and the weekly match reads one account |
+
+Ask the store's insurance agent two things before going live: how much cash may stay in the safe overnight under the current policy, and whether the safe needs a particular rating for that amount. Ask the bank whether the account charges for cash deposits over a monthly amount; many business accounts do.
+
+### A day of deposit cash
+
+```mermaid
+flowchart TD
+  O["Open: count the $50 float<br/>into the deposit drawer,<br/>log it"]:::local --> D["Each deposit: check every<br/>$20 and up, cash into the<br/>deposit drawer, receipt"]:::local
+  D --> C{"Drawer over $300?"}
+  C -->|"yes"| DR["Drop: count the extra into a<br/>numbered envelope, log it,<br/>drop it in the safe"]:::local
+  C -->|"no"| D
+  DR --> D
+  D --> CL["Close: count the drawer<br/>down to the $50 float,<br/>drop the rest, log it"]:::local
+  CL --> M["Station day total =<br/>drops + what's left above<br/>the float? Over or short<br/>goes on the close"]:::you
+  M --> BK["Next morning, before the pull:<br/>Peter opens the safe, counts,<br/>deposit slip, sealed bank bag"]:::you
+  BK --> BANK["Deposit into the station's<br/>own bank account"]:::cloud
+  BANK --> PULL["The network pulls the day's<br/>deposits less the store's share"]:::cloud
+  BK -.->|"optional, logged<br/>as a load"| ATM["The ATM, which pays the<br/>bank back next business day"]:::local
+  classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
+  classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
+  classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
+```
+
+### What to do with the money once it's in
+
+1. **All day:** the deposit drawer stays under $300. Anything above that goes into a logged envelope and into the drop safe.
+2. **At close:** count the drawer down to the $50 float, drop the rest, and type the count into the station. It compares the count with its own day total and the nightly note says even, over or short.
+3. **Every morning, before the network's pull:** Peter (or the person he names) opens the safe, counts every envelope against the drop log, fills a deposit slip, seals a bank bag, and deposits it into the station's own account. Photograph the bank's receipt into the vault's `Inbox/` for the weekly match.
+4. **Or feed the ATM** (if the store has one, [item 60](../README.md#1-the-atm)): some of the safe's cash can load the ATM instead, logged as an ATM load. The ATM's processor repays the bank the next business day, so the account still covers the pull with fewer bank runs.
+5. **Weekly:** the bank statement goes in the vault. The weekly match lines up drops, bank deposits and network pulls, and lists every difference for the partners.
+6. **The store's share** of the fees arrives as the network nets it from the pull, or as a separate credit; it goes to the store's main account monthly.
+
+### Safety rules for the cash
+
+- Never count where a customer can see. Count the drawer down at close with the door locked.
+- Bank runs at different times and by different routes. The bag goes in a plain bag, never in hand, and over $2,000 two people go, or the deposit waits for the ATM load.
+- Never keep more in the safe overnight than the insurance covers. If deposits grow past that, ask the bank about a daily night drop or an armored pickup service.
+- If someone demands the cash, give it. The money is insured; people aren't replaceable. Then the camera, the police and the network's fraud line, in that order.
+- Two people sign every safe opening and every bank bag when two are on shift.
 
 ## Setup, in order
 
@@ -333,6 +395,7 @@ Against about $1,200 of equipment, five deposits a day at $2 pays it back in abo
 4. **The store's fee** on top of the network's (if the network allows one): none at first, to win against Walgreens, or $1?
 5. **Card swipes:** barcode-only to start, card swipes only on a network-supplied reader?
 6. **Cash App:** if neither network carries it, ask the card processor about Visa ReadyLink, or leave Cash App out?
+7. **The cash:** a bolted drop safe at the station ($300 to $900), a counterfeit checker, a business checking account just for the deposit network, and Peter (or whom?) making the morning bank deposit?
 
 ## Sources
 

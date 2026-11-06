@@ -185,6 +185,10 @@ Any current Mac mini with the base chip, 16 GB, 256 GB. Nothing here uses the st
 13. Chrome on macOS kiosk mode: in Terminal, `open -a "Google Chrome" --args --kiosk --app=https://YOURSITE/counter/queue`. To run it at login, save that line as an Automator "Application" (Run Shell Script) and add it under **Login Items** in System Settings; or use Safari full screen, which is fine too since the staff pages need nothing special. Cmd+Q leaves kiosk mode.
 14. Same as Windows 18 and 19: language per machine, PIN per use.
 
+### 4f2. Claude Code on a counter mini
+
+Nothing at the counter needs Claude Code today. If a counter mini takes on the resale jobs ([`monetization/resale-macmini/`](../../monetization/resale-macmini/README.md)), or any other scheduled Claude job, it runs **Claude Haiku 5.5** by default, with Sonnet 5.5 only for flagged work and no Opus, pinned in a managed settings file. The [model guide](../../monetization/resale-macmini/README.md#4-which-model-haiku-55-by-default-sonnet-55-when-flagged) has the prices and the limits. The deposit station is never a counter mini: it has its own, on its own sealed network ([`deposit-station/macmini/`](../../monetization/cash-services/deposit-station/macmini/README.md)).
+
 ### 4g. Recovery
 
 Identical to Windows: nothing is on the mini. A spare mini, or the old Windows PC with Route A, takes over in under an hour.

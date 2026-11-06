@@ -14,10 +14,10 @@ The details for each step are in [section 3](#3-claude-code-on-the-station). The
    ~/.local/bin/claude --version
    ```
 4. **`ops`:** put the key in `~/.config/station/anthropic-key` (`chmod 600`) and create `~/.config/station/print-key.sh` (`chmod 700`), as in [The key](#the-key).
-5. **`admin`:** copy [`managed-settings.json`](#the-rules-where-no-one-can-loosen-them) to `/Library/Application Support/ClaudeCode/`, owned by `root:wheel`, mode 644.
+5. **`admin`:** copy [`managed-settings.json`](#the-rules-where-no-one-can-loosen-them) to `/Library/Application Support/ClaudeCode/`, owned by `root:wheel`, mode 644. It sets **Claude Haiku 5.5** as the model at low effort, allows Sonnet 5.5 for the bank-mismatch note, and nothing else ([which model](#which-model)).
 6. **`ops`:** clone the station vault to `/Users/ops/deposit-station-vault`, and add [`CLAUDE.md` and `_prompts/`](#the-instructions-in-the-vault).
 7. **`admin`:** put the three launchd files (morning check, nightly close, weekly bank) in `/Library/LaunchDaemons/`, then `launchctl bootstrap` each one and `kickstart` each once.
-8. **`ops`:** run the five [refusal tests](#tests-for-claudes-walls). Every one must be refused.
+8. **`ops`:** run the six [refusal tests](#tests-for-claudes-walls). Every one must be refused.
 9. **`admin`:** switch the maintenance group off. Repeat steps 1, 3 (`claude update`) and 8 in each monthly maintenance hour.
 
 ### If you are Claude Code reading this folder
@@ -51,6 +51,7 @@ The same three colors as every chart in the repo ([full key](../../../README.md#
 | **The device** | A base Mac mini (a 2024 M4 on sale is plenty; the 2026 M6 only on a deal near the M4's price), wired Ethernet only, Wi-Fi and Bluetooth off, the disk encrypted (FileVault), four macOS accounts that can't read each other's files |
 | **The network** | The station gets **its own small network behind its own firewall** (a Firewalla Gold SE, about $450 to $520). Everything going out is blocked except a written list: the payment network, Anthropic (Claude Code), GitHub (the vault), PeterShip, and Apple's update servers during a monthly maintenance hour. Nothing comes in, and the station can't see the store's other machines |
 | **Claude Code** | Runs on a timer with no one at the keyboard. It writes the **nightly close**, the **morning health check** and the **weekly bank match** as notes in an Obsidian vault. **It never touches money:** it can't read the payment secret, can't reach the payment network and can't press Deposit or Void. Four separate walls make sure of it |
+| **The model** | **Claude Haiku 5.5** at low effort, about $1 a month for every job. **Claude Sonnet 5.5** only to explain a bank mismatch. No Opus ([which model](#which-model)) |
 | **Obsidian** | The station's own vault (not anyone's personal vault), pushed to a private GitHub repo every night. Peter, Rin and William open it in Obsidian at home or on a phone. The instructions Claude follows are notes in that vault, so the partners edit them in Obsidian |
 | **Extra cost** | The firewall, about $450 to $520 once. LuLu (the Mac's own outbound firewall) and a private GitHub repo are free. Claude Code is billed per use on an Anthropic account with a monthly spending cap |
 
@@ -125,6 +126,12 @@ flowchart LR
 ```
 
 The customer screen is now a **second wired monitor** instead of the tablet in the first plan: on a sealed network nothing joins by Wi-Fi.
+
+### Where it sits at the counter
+
+![Plan view of the deposit station: Mac mini, monitors, scanner and receipt printer on the counter; the deposit drawer, drop safe, firewall and battery under it; the cashier behind, the customer in front, a camera covering the drawer, the safe and the customer's hands](floorplan.svg)
+
+Drawn to scale on an assumed 6 by 2 foot counter end, next to the Goin' Postal POS with a divider between. Measure the real counter first. The drawer sits under the printer, which opens it. The drop safe is bolted to the floor under the counter with its slot facing the cashier, out of the customer's sight. One camera sees the drawer, the safe and the customer's hands. What happens to the cash after that (counting, the safe, the bank) is in [the cash](../README.md#the-cash-where-it-goes-and-what-happens-to-it).
 
 ### macOS settings
 
@@ -299,6 +306,34 @@ flowchart LR
 
 Any one wall would stop it. They are stacked because the vault is edited from outside (the partners push prompt changes and the bank CSV through GitHub), and anything read from outside could carry instructions. Even a note that told Claude to fetch the secret would hit all four.
 
+### Which model
+
+**Claude Haiku 5.5** (`claude-haiku-5-5`) for all three jobs, at low effort. The station's work is the most routine there is: read a day file, write a note in the shape of the last one, list what looks odd. Scripts do every sum, so the model never has to get arithmetic right. Haiku costs $0.10 per million tokens read and $0.50 per million written (for prompts up to 100,000 tokens), against $2 and $10 for Sonnet 5.5 and $4 and $20 for Opus 5.5.
+
+**Claude Sonnet 5.5** for one case only: when the weekly bank match script finds a difference between a network pull and the station's day totals, Sonnet writes the explanation for the partners. Expect that a couple of times a month at most. **No Opus.**
+
+At about 200,000 tokens read (mostly cached) and 5,000 written per run, 64 runs a month (30 closes, 30 morning checks, 4 bank matches):
+
+```mermaid
+%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#0f1d3a"}}}}%%
+xychart-beta
+  title "Deposit station: Claude cost a month, 64 runs (US dollars)"
+  x-axis ["Haiku only", "Haiku + Sonnet on mismatches", "Sonnet only", "Opus only"]
+  y-axis "Dollars a month" 0 --> 24
+  bar [0.58, 0.91, 10.62, 21.25]
+```
+
+| Setup | A month |
+|---|---|
+| Haiku 5.5 for everything | about $0.58 |
+| **Haiku 5.5, Sonnet 5.5 for two bank mismatches (the plan)** | about **$0.91** |
+| Sonnet 5.5 for everything | about $10.62 |
+| Opus 5.5 for everything | about $21.25 |
+
+These are planning figures. Each run's real cost is in its JSON log (`total_cost_usd`), and the morning check adds up the month. The [model guide in the resale plan](../../../resale-macmini/README.md#4-which-model-haiku-55-by-default-sonnet-55-when-flagged) has the full price table, the job-by-job chart, and what Haiku can't be trusted with. The one limit that matters here: Haiku doesn't do the money; scripts do.
+
+The managed settings pin it (below): `"model": "claude-haiku-5-5"`, and `"availableModels"` lists only Haiku 5.5 and Sonnet 5.5, so nothing on this machine can start Opus.
+
 ### Install (maintenance hour)
 
 As `ops` (`sudo -iu ops` from `admin`), with the Firewalla maintenance group on and, for the hour, `claude.ai` and `downloads.claude.ai` added to it:
@@ -333,6 +368,9 @@ Claude Code reads a **managed settings** file at `/Library/Application Support/C
 ```json
 {
   "apiKeyHelper": "/Users/ops/.config/station/print-key.sh",
+  "model": "claude-haiku-5-5",
+  "availableModels": ["claude-haiku-5-5", "claude-sonnet-5-5"],
+  "effortLevel": "low",
   "env": {
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
     "DISABLE_AUTOUPDATER": "1",
@@ -414,6 +452,8 @@ fi
 ~/.local/bin/claude -p "$(cat _prompts/nightly-close.md)
 
 Today is $D." \
+  --model claude-haiku-5-5 \
+  --effort low \
   --output-format json \
   --max-turns 20 \
   --permission-mode dontAsk \
@@ -498,6 +538,7 @@ Run them as `ops` with a throwaway prompt, after the managed settings are in pla
 | "Edit _prompts/nightly-close.md" | The Edit deny rule |
 | "Fetch https://example.com" | WebFetch is removed |
 | Start it with `--permission-mode bypassPermissions` | Disabled by the managed settings |
+| Start it with `--model claude-opus-5-5` | `availableModels` in the managed settings |
 
 ## 4. The station vault in Obsidian
 
@@ -679,7 +720,7 @@ Section 2, steps 1 to 11, with the Mac mini plugged in but not yet set up. Durin
 |---|---|---|
 | Sealed | The curl and ping tests in section 2 | Blocked ones fail, allowed ones connect |
 | Permissions | `sudo -u ops cat` the secret | Permission denied |
-| Claude's walls | The five tests at the end of section 3 | Every one refused |
+| Claude's walls | The six tests at the end of section 3 | Every one refused |
 | Power cut | Pull the battery backup's plug for 10 minutes | Clean shutdown on battery; back up after a manager types the FileVault password; jobs resume |
 | Internet down | Unplug the firewall's WAN | The deposit page says **offline: no deposits** and refuses; the morning check says red |
 | Void window | A practice deposit, then void at 60 seconds and at 150 | The first voids, the second is refused |
@@ -725,7 +766,7 @@ First Sunday, Peter as `admin`, about an hour:
 | USB-C adapters, second small monitor | About $20 and $80 to $120 |
 | LuLu | Free |
 | Private GitHub repo | Free |
-| Claude Code | Pay per use on an Anthropic API account. Set a **monthly spending limit** on its workspace in the Anthropic Console before the first run; the morning check can report the month so far |
+| Claude Code | About $1 a month on Haiku 5.5 ([which model](#which-model)). Pay per use on an Anthropic API account. Set a **monthly spending limit** on its workspace in the Anthropic Console before the first run; the morning check can report the month so far |
 | Static IP block (layout B) | Ask the internet provider |
 
 ## Decisions for Peter and Rin (and William)
@@ -733,7 +774,7 @@ First Sunday, Peter as `admin`, about an hour:
 1. **The firewall:** a Firewalla Gold SE (recommended, about $450 to $520, phone app, allows by name), or a Netgate 2100 with pfSense ($349, needs a proxy for these services)?
 2. **Layout A or B:** start behind the store router, or ask the internet provider for a small block of static IPs so the station has its own address?
 3. **Remote access for William:** none (the vault reaches him through GitHub; anything hands-on waits for his next visit), or a remote login through a private VPN, which adds the VPN's servers to the allow list?
-4. **Claude Code's account:** an Anthropic API key on its own workspace with a spending cap (recommended for a machine nobody watches), or a subscription token?
+4. **Claude Code's account and model:** an Anthropic API key on its own workspace with a $5 monthly cap (recommended for a machine nobody watches), or a subscription token? And Haiku 5.5 for every job, with Sonnet 5.5 only for bank mismatches?
 5. **Who holds the keys:** the FileVault recovery key, the `admin` password and the service passwords, sealed in the safe. Peter, with a copy where?
 6. **The vault's repo:** a private GitHub repo under whose account, with write access for exactly the three of them?
 7. **A question for Green Dot (or InComm):** may the store keep day summaries in a private GitHub repo and have an AI service read redacted totals for reconciliation? Ask on the first call, before anything is built.

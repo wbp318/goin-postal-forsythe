@@ -106,6 +106,10 @@ Written November 5, 2026 (agenda item 60). You can't buy an "Allpoint ATM": Allp
 
 **Deposit setup** (November 6, [`cash-services/deposit-station/`](cash-services/deposit-station/README.md)): the store joins a network, not each app, and no network publishes a sign-up for one store, so the calls to Green Dot and InComm set the timeline. Green Dot's register API deposits by app barcode (Chime, Varo, PayPal, SoFi), by Green Dot card, and onto any US debit card, and credits the store a `merchantFee` on each (its documentation example: $2.00 of a $3.95 fee). Cash App charges $1 and takes $5 to $500 a deposit by card swipe or barcode. A separate deposit station on a Mac mini (2D scanner for phone screens, ESC/POS receipt printer, its own drawer, battery backup; about $950 to $1,700, the Mac mini bought on a Veterans Day or Black Friday deal if Peter and Rin agree it's worth it) keeps deposit cash out of sales and the Goin' Postal POS untouched, and is the fixed-IP machine Green Dot's API needs. Buy it once the network says terminal, portal or API. The Mac mini's setup, a sealed network and Claude Code and Obsidian running the paperwork with no access to the money, is in [`cash-services/deposit-station/macmini/`](cash-services/deposit-station/macmini/README.md).
 
+## Resale on a Mac mini
+
+Written November 6, 2026 (agenda item 63), in [`resale-macmini/`](resale-macmini/README.md). The store buys secondhand stock, and a Mac mini runs the listing work. A person photographs and approves, Claude Haiku 5.5 drafts (Sonnet 5.5 on flagged items), and scripts publish to eBay, Etsy (vintage only), Shopify and TikTok Shop, sync the sales, and ship through PeterShip. Poshmark, Mercari and Facebook Marketplace stay by hand, with no bots. Also in it: a workroom floor plan, the model guide for every Mac mini plan with cost charts, and seven decisions.
+
 ## How the multi-store versions run on Cloudflare
 
 ```mermaid
