@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.89.0] - 2026-11-06
+
+**Funding and sites; shipping from the stockrooms; tornado month totals**
+
+Three pieces: the funding and sites plan, shipping from the stockrooms, and the tornado's stockrooms with running month totals.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.89.0) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.89.0) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.88.4...v1.89.0)
+
 ## [v1.88.4] - 2026-11-06
 
 **The Obsidian intake template, live on the tornado's Mac mini**

@@ -1073,20 +1073,20 @@ python scripts/export_designs.py
 ## Languages
 
 <!-- languages:start -->
-Every language GitHub counts in this repo, exact, as of November 6, 2026 (4,217,103 bytes in all). GitHub's sidebar shows the top six and folds the rest into "Other"; this is the whole list, from the same count. Refreshed by `python scripts/languages.py`.
+Every language GitHub counts in this repo, exact, as of November 6, 2026 (4,271,531 bytes in all). GitHub's sidebar shows the top six and folds the rest into "Other"; this is the whole list, from the same count. Refreshed by `python scripts/languages.py`.
 
 | Language | Share | Bytes | What it is here |
 | --- | ---: | ---: | --- |
-| Markdown | 36.75% | 1,549,890 | Plans, guides, READMEs, the agenda and the changelog |
-| TypeScript | 32.39% | 1,365,979 | PeterShip and the website's APIs, libraries and tests (`site/src`) |
-| Astro | 8.24% | 347,669 | The website's pages and layouts |
-| JSON | 6.68% | 281,538 | Rate sheets, the 14-language strings, store facts, package files |
-| SVG | 5.35% | 225,460 | Ad and sponsorship designs (the banner's machine-made traces are left out) |
-| HTML | 4.80% | 202,402 | The mailbox intake packet, the design gallery, page previews |
-| Python | 3.26% | 137,331 | Build and release scripts, the mailbox register's builder, tests and tools |
-| JavaScript | 0.97% | 41,046 | Marketplace connectors and the printer agent (`.mjs`) |
-| CSS | 0.71% | 29,890 | The website's styles |
-| Visual Basic 6.0 | 0.71% | 29,751 | The mailbox register's LibreOffice Basic macros (GitHub's name for `.bas`) |
+| Markdown | 37.39% | 1,597,029 | Plans, guides, READMEs, the agenda and the changelog |
+| TypeScript | 31.98% | 1,365,979 | PeterShip and the website's APIs, libraries and tests (`site/src`) |
+| Astro | 8.14% | 347,669 | The website's pages and layouts |
+| JSON | 6.59% | 281,538 | Rate sheets, the 14-language strings, store facts, package files |
+| SVG | 5.28% | 225,460 | Ad and sponsorship designs (the banner's machine-made traces are left out) |
+| HTML | 4.91% | 209,691 | The mailbox intake packet, the design gallery, page previews |
+| Python | 3.22% | 137,331 | Build and release scripts, the mailbox register's builder, tests and tools |
+| JavaScript | 0.96% | 41,046 | Marketplace connectors and the printer agent (`.mjs`) |
+| CSS | 0.70% | 29,890 | The website's styles |
+| Visual Basic 6.0 | 0.70% | 29,751 | The mailbox register's LibreOffice Basic macros (GitHub's name for `.bas`) |
 | YAML | 0.11% | 4,563 | CI workflows |
 | PowerShell | 0.03% | 1,272 | Windows setup scripts |
 | CSV | 0.01% | 312 | Small data files |
