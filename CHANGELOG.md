@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.88.4] - 2026-11-06
+
+**The Obsidian intake template, live on the tornado's Mac mini**
+
+The [resale tornado](https://github.com/wbp318/goin-postal-forsythe/blob/main/monetization/resale-macmini/tornado.html)'s Mac mini now shows **the Obsidian intake template** at work.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.88.4) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.88.4) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.88.3...v1.88.4)
+
 ## [v1.88.3] - 2026-11-06
 
 **The resale tornado shows the Mac mini's layers**
