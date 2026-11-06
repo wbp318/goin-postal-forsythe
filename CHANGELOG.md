@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.87.1] - 2026-11-06
+
+**Cash services plan: an ATM, Green Dot and Chime deposits, and the DMV question**
+
+A plan for three cash services at the Forsythe counter, written at the owners' request: an ATM, Green Dot and Chime cash deposits, and whether to become a DMV. Agenda item 60. Plan only, no code. Full plan in [`monetization/cash-services/`](https://github.com/wbp318/goin-postal-forsythe/blob/main/monetization/cash-services/README.md).
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.87.1) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.87.1) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.87.0...v1.87.1)
+
 ## [v1.87.0] - 2026-11-05
 
 **every language, exact, in the README**
