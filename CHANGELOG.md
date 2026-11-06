@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.88.3] - 2026-11-06
+
+**The resale tornado shows the Mac mini's layers**
+
+The [resale tornado](https://github.com/wbp318/goin-postal-forsythe/blob/main/monetization/resale-macmini/tornado.html) now shows where the Mac mini does the work.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.88.3) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.88.3) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.88.2...v1.88.3)
+
 ## [v1.88.2] - 2026-11-06
 
 **Resale starts now with William's stock; tornado counts fixed**
