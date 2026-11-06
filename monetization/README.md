@@ -110,6 +110,10 @@ Written November 5, 2026 (agenda item 60). You can't buy an "Allpoint ATM": Allp
 
 Written November 6, 2026 (agenda item 63), in [`resale-macmini/`](resale-macmini/README.md). The store buys secondhand stock, and a Mac mini runs the listing work. A person photographs and approves, Claude Haiku 5.5 drafts (Sonnet 5.5 on flagged items), and scripts publish to eBay, Etsy (vintage only), Shopify and TikTok Shop, sync the sales, and ship through PeterShip. Poshmark, Mercari and Facebook Marketplace stay by hand, with no bots. Also in it: a workroom floor plan, the model guide for every Mac mini plan with cost charts, and seven decisions.
 
+## Funding and sites
+
+Written November 6, 2026 (agenda item 64), in [`funding/`](funding/README.md). What money is really out there for the resale business and PeterShip, from four research passes. Cash grants are few and corporate: Verizon's $10,000 Digital Ready grant is open now, alongside NASE grants and Hello Alice rounds. AI money is credits and training, such as $10,000 of Cloudflare credits for PeterShip. The real money is loans: SBA 7(a) Small and Express, SBA, USDA and TruFund microloans, Louisiana's loan guaranty and collateral support, Hope Credit Union and Kiva at 0%. Since March 2026, SBA requires every owner to be a U.S. citizen or national. Louisiana's Enterprise Zone and Quality Jobs programs are closed. A separate East Carroll LLC doesn't unlock funding. Seven parishes are compared for the second stockroom, with Ruston recommended and Oak Grove second, and Chicot County, Arkansas comes later if at all.
+
 ## How the multi-store versions run on Cloudflare
 
 ```mermaid

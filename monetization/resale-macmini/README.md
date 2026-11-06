@@ -52,6 +52,7 @@ The account to use is at the start of each step. Details are in [section 5](#5-t
 | **Where** | A back-room workroom with seven stations in order: intake, photos, measure and weigh, the listing desk, shelves by SKU, packing, and outbound to the counter's carrier pickups ([floor plan](#the-workroom)) |
 | **Start now** | **William already has stock at the store that can sell now.** It goes on eBay by hand this month, with Claude drafting the text, to catch the holidays; the automation takes over the same items later ([start now](#start-now-williams-stock-before-the-holidays)) |
 | **See it run** | [`tornado.html`](tornado.html), an animated mock month of this plan ([how to open it](#how-to-open-it)) |
+| **Shipping** | Each item ships from the stockroom that holds it: the **main stockroom in Ouachita Parish** (the store's 4 pm carrier pickups), a **second Louisiana stockroom** still being found, maybe a **Chicot County, Arkansas** unit. Pick, pack, label through PeterShip, hand off, track ([shipping](#shipping-from-the-stockrooms)). PeterShip needs ship-from locations (T39) before the second stockroom ships |
 | **The big rule** | No bots that click, no scraping. Accounts get banned for it, and the money in them is held when they are |
 
 ```mermaid
@@ -124,6 +125,8 @@ On the left is **the Mac mini, drawn as its five layers**, the same ones as [sec
 | 3. Claude Code under `ops` (Haiku 5.5, Sonnet 5.5 on flags) | Drafts | Claude drafts an item or writes the daily note |
 | 4. The Obsidian vault and git | Approval | A draft lands for approval, an item is approved, the nightly note is pushed |
 | 5. The walls (managed settings, accounts, LuLu) | Around Claude | Claude runs: the walls are what it runs inside |
+
+Under the funnel are **the stockrooms**: the main stockroom in Ouachita Parish, Stockroom 2 (Louisiana, site not chosen) and the maybe-Chicot County unit. Each shows what it is picking, packing, labeling and handing off right now, what went out today, what's in transit and what's on its shelves. Each lights up as it works; hover one for its pickup and what's kept there. The item note on the Mac mini shows each item's `location` and `bin`.
 
 A layer and its lines to the funnel light up each time it does its part, and hovering a layer explains it. Each layer's outside connection is written on it: the by-hand apps, the marketplace APIs and PeterShip, `api.anthropic.com` only, `github.com` for git only. **Every number is mock data**, from this plan's assumptions.
 
@@ -239,6 +242,71 @@ sequenceDiagram
   S->>P: Delist now on Poshmark, if posted there
 ```
 
+## Shipping, from the stockrooms
+
+The stock lives in more than one place. **An item ships from the stockroom that holds it**, so every `item.md` says where it sits (`location`, `bin`), and every step after a sale happens there.
+
+| Stockroom | Where | Carrier handoff | What's there |
+|---|---|---|---|
+| **Main stockroom** | **Ouachita Parish**, at the store or near it in Monroe or West Monroe | The store's own carrier pickups at the counter, about 4 pm, Monday to Saturday (UPS, FedEx and USPS all come to a Goin' Postal) | William's stock to start; everything until Stockroom 2 opens. Returns come back here |
+| **Stockroom 2** | Somewhere else in Louisiana, site still being found. Seven parishes compared in the [funding and sites plan](../funding/README.md#7-where-the-stockrooms-go): **Ruston (Lincoln Parish) recommended**, Oak Grove (West Carroll) second | USPS free package pickup booked the day before (next morning); UPS or FedEx drop-off in town | Stock bought in that area, and overflow from the main stockroom |
+| **Chicot County unit** (maybe) | Chicot County, Arkansas (Lake Village), across the state line from East Carroll | Drop at the post office by mid-afternoon; UPS and FedEx options to confirm | Storage and shipping for that side of the line, if the numbers work ([funding and sites plan](../funding/README.md)) |
+
+### After a sale, step by step
+
+```mermaid
+flowchart TD
+  S["Sold on eBay, Etsy,<br/>or by hand"]:::cloud --> J["sold-sync job sees it,<br/>ends the other listings"]:::local
+  J --> L{"item.md location?"}
+  L -->|"Ouachita"| P1["Pick list prints at the<br/>main stockroom"]:::local
+  L -->|"Stockroom 2"| P2["Pick list goes to<br/>Stockroom 2's phone or printer"]:::local
+  L -->|"Chicot County"| P3["Pick list goes to<br/>the Chicot unit"]:::local
+  P1 --> PK["Pick from the bin,<br/>check the item against the photos"]:::you
+  P2 --> PK
+  P3 --> PK
+  PK --> PA["Pack in the box PeterShip's<br/>packing advisor picked, weigh it"]:::you
+  PA --> LB["Label through PeterShip at the<br/>store's rates, shipped from<br/>that stockroom's address"]:::local
+  LB --> HO["Hand to the carrier at that<br/>stockroom's pickup or drop"]:::you
+  HO --> TR["Tracking goes back to the<br/>marketplace; buyer is told"]:::local
+  TR --> DL["Delivered in 2 to 5 days;<br/>a return comes to the<br/>main stockroom"]:::cloud
+  classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
+  classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
+  classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
+```
+
+```mermaid
+sequenceDiagram
+  participant M as Marketplace
+  participant J as sold-sync (Mac mini)
+  participant R as Stockroom holding it
+  participant P as PeterShip
+  participant C as Carrier
+  M-->>J: Order for A-014
+  J->>M: End A-014 on the other marketplaces
+  J->>R: Pick list: A-014, bin B03, box 10x8x4
+  R->>R: Pick, check, pack, weigh
+  R->>P: Buy the label from this stockroom's address
+  P-->>R: Label prints at this stockroom
+  R->>C: Handoff at the pickup or the drop
+  J->>M: Tracking number, marked shipped
+  C-->>M: Delivered
+```
+
+### The rules
+
+- **Ship from where it sits.** Never move an item to ship it. A weekly run between stockrooms evens out the stock (slow sellers back to the main stockroom, popular lines out to where they sell).
+- **Handling time follows the stockroom.** The main stockroom promises 1 business day. Stockroom 2 and the Chicot unit promise 2 business days unless someone is there every day. The publish script sets each listing's handling time from `location`.
+- **Holiday cutoffs come a day early** at the stockrooms without a daily pickup: Dec 16 for USPS Ground Advantage instead of Dec 17.
+- **Returns all go to the main stockroom,** which is the return address on every label.
+- **The bin is on the pick list.** An item that isn't in its bin is marked missing in `item.md` that day and its listings end.
+
+### What PeterShip needs first (T39)
+
+PeterShip's public API (`POST /api/v1/shipments`) takes no ship-from address today. Every label it buys is from the store's address. That's fine for the main stockroom, and wrong anywhere else: USPS and UPS price by the origin ZIP, and the label has to show where the parcel really starts. So:
+
+- **Until T39 ships,** only the main stockroom ships. Stockroom 2 and the Chicot unit hold stock and send it to the main stockroom in the weekly run.
+- **T39:** named ship-from locations on a business account (each stockroom's address and pickup schedule), a `from_location` on `POST /api/v1/shipments` and on the batch and counter pages, rates from that location's ZIP, and a `ship_from` setting in the eBay and Etsy connectors so each stockroom's orders buy their own labels. Returns still default to the main stockroom.
+
 ## 3. The Obsidian vault
 
 A vault of its own, `resale-vault`, on a private GitHub repo the three partners can write to, as with the deposit station.
@@ -270,6 +338,8 @@ sku: {{next SKU}}     # filled by the intake job
 status: intake       # intake, photos, drafted, approved, listed, sold: the jobs move it on; only a person sets approved
 cost:                # person, at intake
 source:              # person: where and when it was bought ("William's stock, at the store")
+location:            # stockroom: Ouachita (main), Stockroom 2, Chicot County
+bin:                 # shelf bin in that stockroom (B03)
 price:               # person, at approval
 floor:               # person: the lowest a markdown may go
 vintage: false       # person: true only with proof of 20 years or more
@@ -288,6 +358,8 @@ sku: A-014
 status: approved          # intake, photos, drafted, approved, listed, sold
 cost: 8.00
 source: Goodwill, Louisville Ave, Nov 10
+location: Ouachita
+bin: B03
 price: 42.00
 floor: 30.00              # lowest a markdown may go
 vintage: false
@@ -584,7 +656,7 @@ At 20 items a day with half of them selling within the month, that is roughly **
 
 ## Decisions for Peter and Rin (and William)
 
-1. **Go, and whose stock?** Start now with William's inventory at the store: does the store buy it, sell it on consignment, or just ship it for William ([the three shapes](#one-question-first-whose-stock-whose-account))? After that, who buys more stock, with how much, and is resale the store's business or a separate one?
+1. **Go, whose stock, and with what money?** Start now with William's inventory at the store: does the store buy it, sell it on consignment, or just ship it for William ([the three shapes](#one-question-first-whose-stock-whose-account))? After that, who buys more stock, with how much (the [funding plan](../funding/README.md) has the grants, loans and free help), and is resale the store's business or a separate one?
 2. **The franchise:** does GP Brands allow a resale business run from the store? Add it to the same email as issue 11.
 3. **The by-hand marketplaces:** post by hand from Claude's text (free), or pay a crosslister that uses official connections?
 4. **The machine:** a counter mini with three more accounts, or its own mini at the workroom desk?

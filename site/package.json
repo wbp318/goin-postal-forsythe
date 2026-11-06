@@ -1,7 +1,7 @@
 {
   "name": "site",
   "type": "module",
-  "version": "1.88.4",
+  "version": "1.89.0",
   "engines": {
     "node": ">=22.23.4"
   },
