@@ -230,8 +230,8 @@ Notes:</pre>
   // Where the stock sits. An item ships from the stockroom that holds it.
   const ROOMS = {
     monroe: { name: "Main stockroom · Ouachita Parish", sub: "Monroe area · store pickup 4 pm", short: "Ouachita", pickup: 16, how: "The main stockroom, in Ouachita Parish for now: at the store or near it in Monroe or West Monroe. Carriers pick up at the store counter at 4 pm, Monday to Saturday. William's stock is here, and returns come back here.", pulse: 0, today: 0 },
-    la2: { name: "Stockroom 2 · Louisiana", sub: "cheapest rent wins · USPS pickup 11 am", short: "Stockroom 2", pickup: 11, how: "A second Louisiana stockroom in whatever little shop rents cheapest. East Carroll looks cheapest (Lake Providence, Transylvania, Sondheimer); rural Madison Parish outside Tallulah and West Carroll (Epps, Oak Grove) are the other options. USPS free package pickup the next morning; UPS when there's a UPS parcel. Someone packs there on set days.", pulse: 0, today: 0 },
-    chicot: { name: "Arkansas unit · Chicot County", sub: "maybe · Eudora or rural · post office 3 pm", short: "Chicot County", pickup: 15, how: "A possible cheap little rented shop in Chicot County, Arkansas: Eudora, 24 miles up from Lake Providence, or somewhere rural, wherever rent is lowest (Lake Village and Monticello too). Parcels dropped at the post office by 3 pm. Adds Arkansas filings, so only if the rent pays for them.", pulse: 0, today: 0 }
+    la2: { name: "Stockroom 2 · Louisiana", sub: "cheapest rent wins · USPS pickup 11 am", short: "Stockroom 2", pickup: 11, how: "A second Louisiana stockroom in whatever little shop rents cheapest. East Carroll looks cheapest (Lake Providence, Transylvania, Sondheimer); rural Madison Parish outside Tallulah and West Carroll (Epps, Oak Grove) are the other options. Ships USPS only: free package pickup the next morning, which comes to any rural address. Someone packs there on set days.", pulse: 0, today: 0 },
+    chicot: { name: "Arkansas unit · Chicot County", sub: "maybe · Eudora or rural · post office 3 pm", short: "Chicot County", pickup: 15, how: "A possible cheap little rented shop in Chicot County, Arkansas: Eudora, 24 miles up from Lake Providence, or somewhere rural, wherever rent is lowest (Lake Village and Monticello too). Ships USPS only: parcels to the post office by 3 pm, or pickup at the door. Adds Arkansas filings, so only if the rent pays for them.", pulse: 0, today: 0 }
   };
   const ROOM_KEYS = ["monroe", "la2", "chicot"];
   function nextOpen(h) { const d = Math.floor(h / 24), hod = h - d * 24; if (hod >= 8 && hod < 17) return h; return (hod < 8 ? d : d + 1) * 24 + 8; }
@@ -341,7 +341,8 @@ Notes:</pre>
       if (it.step === "pick") { it.step = "pack"; it.next = S.hour + between(0.15, 0.5); R.month.pick++; hit("staff"); return; }
       if (it.step === "pack") { it.step = "label"; it.next = S.hour + 0.05; R.month.pack++; hit("staff"); return; }
       if (it.step === "label") {
-        it.carrier = it.price > 70 && rnd() < 0.5 ? "UPS Ground" : rnd() < 0.15 ? "USPS Priority Mail" : "USPS Ground Advantage";
+        // the outside stockrooms ship USPS only; the store has every carrier
+        it.carrier = it.room === "monroe" && it.price > 70 && rnd() < 0.5 ? "UPS Ground" : rnd() < 0.15 ? "USPS Priority Mail" : "USPS Ground Advantage";
         it.step = "handoff"; it.next = nextPickup(it.room, S.hour); R.month.label++; hit("jobs");
         log(it.sku + " picked from " + R.short + " bin " + it.bin + ", packed; " + it.carrier + " label bought through PeterShip");
         return;
