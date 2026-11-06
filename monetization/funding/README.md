@@ -22,8 +22,8 @@ The same three colors as every chart in the repo ([full key](../README.md#how-to
 | **The catch on SBA loans** | **Since March 1, 2026, every owner must be a U.S. citizen or national** living in the U.S. for 7(a) and 504 loans. Permanent residents no longer qualify. A startup puts in at least 10% of the project, and every 20% owner guarantees the loan personally |
 | **Louisiana's job incentives?** | **Closed.** The Enterprise Zone and Quality Jobs programs stopped taking new projects on June 30, 2025, and both excluded retail anyway |
 | **A separate LLC in East Carroll for more funding?** | **No, not for money.** SBA counts companies with the same owners as one, USDA rural programs look at where the project is (not where the LLC is filed), lenders want the owners' guarantees either way, and the incentives that rewarded a location are closed. Form a separate LLC only for other reasons (keeping resale apart from the store, a different owner split), and put it where its real work happens |
-| **Where should the second stockroom go?** | **Ruston (Lincoln Parish):** 35 minutes on I-20, real carrier counters (a UPS Store, a UPS outlet and FedEx ShipCenter open to 6 pm, FedEx at Walgreens and Office Depot), warehouse space listed at about $1,000 to $1,200 a month, and USDA-rural. **Second choice: Oak Grove (West Carroll Parish)**, if it should grow into the back room of the future store there |
-| **And Chicot County, Arkansas?** | **Later, maybe.** It borders East Carroll and is cheap, but it adds Arkansas registration ($270), $150 a year of franchise tax, an Arkansas sales tax permit, and thin carrier access (no UPS counter; FedEx at Dollar General). Lake Providence does the same job without the Arkansas filings |
+| **Where should the second stockroom go?** | **Wherever a little shop rents cheapest, and East Carroll looks cheapest** (William, November 6): Lake Providence, Transylvania or Sondheimer. Lake Providence already has a UPS and FedEx counter (Shipping Xpress), and the cheapest space per foot found anywhere in the search (about $1 a square foot a year, in a building far too big unless shared). **Also in the running:** rural Madison Parish outside Tallulah (a 10x10 storage unit at $75 a month) and West Carroll (Epps, Oak Grove). No small shop is listed online in any of these towns, so finding one takes local calls and a drive-by. **Ruston** stays the pick only if carrier depth matters more than rent |
+| **And Chicot County, Arkansas?** | **Maybe, in Eudora or somewhere rural**, in whatever little shop rents cheapest. Eudora is 24 miles up US 65 from Lake Providence and has a post office, but no UPS or FedEx counter, and its mini-storage is marked closed. The cheapest storage confirmed on that side is in Monticello (Drew County): a 10x20 at $70 a month. Any Arkansas unit adds registration ($270), $150 a year of franchise tax and an Arkansas sales tax permit, so the rent saved has to pay for those |
 
 ```mermaid
 flowchart LR
@@ -45,7 +45,7 @@ flowchart TD
   N2 --> N3["This month<br/>Hello Alice profile<br/>for the spring 2027 rounds;<br/>NASE membership if wanted"]:::local
   N3 --> N4["Before any SBA loan<br/>confirm every owner is a<br/>U.S. citizen or national;<br/>budget the 10% injection"]:::you
   N4 --> N5["Once the PeterShip LLC exists<br/>Cloudflare for Startups,<br/>$10k credits; Claude<br/>Startups newsletter"]:::local
-  N2 --> N6["Calls for the stockroom<br/>Ruston warehouse listings ·<br/>USDA RD Monroe office<br/>on the rural map"]:::you
+  N2 --> N6["Calls for the stockroom<br/>East Carroll shops first ·<br/>then Tallulah, Epps, Oak Grove,<br/>Eudora · cheapest rent wins"]:::you
   classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
   classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
   classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
@@ -56,7 +56,7 @@ flowchart TD
 3. **A free Hello Alice profile** puts the store in line for its sponsor-funded rounds, which open in spring (2026's ran $10,000 to $50,000 each). Optional: **NASE membership** for its quarterly Growth Grants, up to $4,000.
 4. **Before any SBA loan, check the ownership rule** below, and set aside the 10% injection a startup project needs.
 5. **Once the PeterShip LLC is formed** ([`shipping-client/llc/`](../../shipping-client/llc/README.md)), apply to **Cloudflare for Startups** ($10,000 in credits for a bootstrapped company; it asks for a live site, a company email domain and a public profile) and sign up for news of the next Claude Startups cohort.
-6. **For the second stockroom:** call on Ruston warehouse listings, and ask USDA Rural Development's office whether the Monroe address counts as rural (the eligibility map is linked below).
+6. **For the second stockroom:** find the cheapest little shop, East Carroll first. Ask around Lake Providence, Transylvania and Sondheimer (word of mouth, Facebook Marketplace, a drive-by: none is listed online), ask Grow NELA (Rob Cleveland, 318-206-5289) whether Lake Providence Building #1 can be split or shared, then try Tallulah, Epps, Oak Grove and Eudora. Ask USDA Rural Development's office whether the Monroe address counts as rural (the eligibility map is linked below).
 
 ## 2. Grants and credits
 
@@ -205,18 +205,20 @@ flowchart TD
 
 ## 7. Where the stockrooms go
 
-The **main stockroom stays in Ouachita Parish** (at or near the store; [the shipping plan](../resale-macmini/README.md#shipping-from-the-stockrooms)). For the second one, seven parishes were compared, with East Carroll and Chicot County alongside.
+The **main stockroom stays in Ouachita Parish** (at or near the store; [the shipping plan](../resale-macmini/README.md#shipping-from-the-stockrooms)). For the second one, seven parishes were compared first, with East Carroll and Chicot County alongside. On November 6 William set the rule that decides it: **a stockroom only stores stock and packs parcels, so the cheapest rent wins.** A cheap little shop anywhere in the area will do: Lake Providence, Transylvania, Sondheimer, rural Madison Parish outside Tallulah, Epps, Oak Grove, Eudora, Monticello, wherever rents lowest. East Carroll looks cheapest. Madison Parish (Tallulah) and Monticello were added to the table that day.
 
 | Parish (town) | Drive from Monroe | Carriers in town | Space found | Funding a small business can reach | Site score (1 to 5) |
 |---|---|---|---|---|---|
 | **Lincoln (Ruston)** | About 35 min, I-20 | **The UPS Store; Pack & Mail (UPS outlet and FedEx ShipCenter, open to 6 pm); FedEx at two Walgreens and Office Depot** | 2,400 sq ft at about $1,200/mo; 3,600 sq ft at $1,000/mo; 10x20 storage $140 to $185 | LaTEC and TBDC advising; USDA-rural; LSBDC at ULM | **5** |
 | Union (Farmerville) | About 35 to 40 min | FedEx at Dollar General; no UPS location | 10x20 storage about $120 | USDA-rural; LSBDC at ULM | 3 |
-| **West Carroll (Oak Grove)** | About 45 to 55 min | FedEx at Dollar General; no UPS location; **no pack-and-ship store at all** | Not found | Fully rural; LSBDC at ULM | 2.5, more if it becomes the future store's back room |
+| **West Carroll (Oak Grove, Epps)** | About 45 to 55 min | FedEx at Dollar General; no UPS location; **no pack-and-ship store at all** | Epps industrial park: 7,500 sq ft at $5,000/mo (about $8/sq ft a year); storage prices not online | Fully rural; LSBDC at ULM | 2.5, more if it becomes the future store's back room |
 | Jackson (Jonesboro) | About 55 min | UPS outlet (Motor Parts Service); FedEx at Dollar General | Not found | USDA-rural; LSBDC at ULM | 2.5 |
-| East Carroll (Lake Providence) | About 1 hr 45 min (75 mi) | **Shipping Xpress: UPS outlet and FedEx ShipCenter**; FedEx at Dollar General | Not found | Rural; LSBDC at ULM | 2.5; the partner lives here |
+| **East Carroll (Lake Providence, Transylvania, Sondheimer)** | About 1 hr 45 min (75 mi) | **Shipping Xpress, 217 Lake St: UPS outlet and FedEx ShipCenter**; FedEx at Dollar General; post offices in all three towns | **Lake Providence Building #1: 33,750 sq ft at $2,833/mo, about $1/sq ft a year** (too big unless split or shared); no small shop listed; no priced self-storage | Rural; LSBDC at ULM | **4 on rent**: likely cheapest, and William lives here |
+| Madison (Tallulah, rural outside it) | About 50 min, I-20 (estimate) | UPS outlet in S&B Drugs; FedEx at Dollar General | **10x10 storage $75/mo** (Delta Self Storage, one left); no shop listed | Rural; LSBDC center unconfirmed | 3.5 on rent |
 | Caldwell (Columbia) | About 40 min | UPS outlet (Knife Works); FedEx at Dollar General | Not found | USDA-rural | 2 |
 | Claiborne (Homer) | About 1 hr 10 min | FedEx at Dollar General only | Not found | Shreveport-side LSBDC | 1.5 |
-| Chicot County, AR (Lake Village) | About 1 hr 50 min (90 mi); 40 min from Lake Providence | No UPS location; FedEx at Dollar General | Not found | ASBTDC at UAM; Arkansas lenders | 2, and Arkansas filings |
+| Chicot County, AR (Eudora, Lake Village, rural) | About 1 hr 50 min (90 mi); Eudora 24 mi from Lake Providence | Post offices; FedEx at Dollar General in Lake Village only; no UPS counter; nothing in Eudora | Lakehall Storage, Lake Village: 10x20 units, prices by phone; Eudora Mini Storage closed; no lease listed | ASBTDC at UAM; Arkansas lenders | 2.5 on rent, and Arkansas filings |
+| Drew County, AR (Monticello) | About 1 hr 40 min (estimate) | UPS outlet (Prescription Pad Pharmacy); FedEx at Walgreens | **10x20 storage $70/mo** (A&R Storage), the best confirmed price per foot | ASBTDC at UAM is in town | 2.5, and Arkansas filings |
 
 West Monroe, for the main stockroom: small warehouse space at about $0.57 to $0.73 a square foot a month (1,092 sq ft at about $800).
 
@@ -237,18 +239,43 @@ quadrantChart
   Columbia Caldwell: [0.4, 0.38]
   Homer Claiborne: [0.25, 0.25]
   Lake Village Chicot: [0.38, 0.33]
+  Tallulah Madison: [0.45, 0.4]
 ```
 
-**Recommendation: Ruston for Stockroom 2.** It's the only town in the comparison with real carrier depth, the drive is the shortest, and space is listed at a price a resale business can carry. The UPS Store and Pack & Mail there sell shipping, which matters for a store but not for a stockroom. **Oak Grove second**, if Peter and Rin want the stockroom to become the back room of the future West Carroll store (agenda item 51).
+### The cheapest rent found (November 6, 2026)
+
+Small shops, garage bays and back rooms in these towns aren't listed online. These are the only prices a listing confirmed; everything else takes a phone call or a drive-by.
+
+| Where | What | A month | Notes |
+|---|---|---|---|
+| Monticello, AR (A&R Storage, 772 Old Warren Rd) | 10x20 storage | **$70** | Also 5x10 $45, 8x12 $50 |
+| Tallulah (Delta Self Storage, 102 Kirby St) | 10x10 drive-up storage | **$75** | One left; 10x15 $95 |
+| Farmerville | 10x20 storage | About $120 | From the first comparison |
+| Ruston | 10x20 storage | $140 to $185 | From the first comparison |
+| Lake Providence (Building #1, 5128 Hwy 65) | 33,750 sq ft warehouse | $2,833 | About $1/sq ft a year, the cheapest per foot; Grow NELA, 318-206-5289 |
+| Epps (180 Capital Bank Dr) | 7,500 sq ft warehouse | $5,000 | About $8/sq ft a year, above Monroe's $5.50 to $6.63 |
+
+```mermaid
+xychart-beta
+  title "Cheapest confirmed storage units (US dollars a month)"
+  x-axis ["Monticello 10x20", "Tallulah 10x10", "Farmerville 10x20", "Ruston 10x20"]
+  y-axis "Dollars a month" 0 --> 200
+  bar [70, 75, 120, 140]
+```
+
+A storage unit holds stock but usually can't be a packing room (no power, no desk, gate hours). A little shop with a door, a table and an outlet is the real target; at $100 to $300 a month it would beat any listing above. Ask before signing whether parcels can be packed and picked up there.
+
+**Recommendation: Stockroom 2 goes wherever a little shop rents cheapest, starting in East Carroll.** A stockroom stores and packs; it doesn't sell, so rent matters more than anything else on the list. East Carroll looks cheapest, William lives there and can pack on set days, and Lake Providence already has a UPS and FedEx counter at Shipping Xpress. USPS free package pickup works at any address. Next, in order of the rents found: rural Madison Parish outside Tallulah, then Epps or Oak Grove (which could also grow into the back room of the future West Carroll store, agenda item 51). **Ruston** has the most carriers and the shortest drive but costs more, so it's the choice only if the stockroom has to ship every day.
 
 ### Chicot County, Arkansas
 
-- **Where:** directly north of East Carroll Parish. Lake Village (the county seat), Dermott (the largest town) and Eudora. About 9,100 people (2025 estimate).
+- **Where:** directly north of East Carroll Parish. Lake Village (the county seat), Dermott (the largest town) and Eudora. About 9,100 people (2025 estimate). The unit would most likely be in **Eudora or somewhere rural**, in a cheap little rented shop; Lake Village and Monticello (next county, Drew) are the fallbacks.
 - **Drive:** Lake Providence to Lake Village about 40 miles (57 min) up US 65; Lake Providence to Eudora 24 miles; Monroe to Lake Village about 90 miles (1 hr 50 min).
-- **Carriers:** post offices in Lake Village (206 S Cokley St) and Eudora (112 N Archer St); FedEx only inside Dollar General in Lake Village; no UPS location in Lake Village or Dermott (the nearest are Monticello, Hamburg and Crossett); no pack-and-ship store found.
+- **Carriers:** post offices in Lake Village (206 S Cokley St) and Eudora (112 N Archer St); FedEx only inside Dollar General in Lake Village; no UPS or FedEx counter in Eudora or Dermott (the nearest UPS outlets are Monticello, Hamburg and Crossett); no pack-and-ship store found. From Eudora, USPS pickup at the door or the Eudora post office is the way out.
+- **Space:** no lease is listed in the county. Eudora Mini Storage (201 N Main St) is marked closed; Lakehall Storage in Lake Village (870-265-5200) rents 10x10, 10x20 and 10x30 units, prices by phone. In Monticello, A&R Storage has a 10x20 at $70 a month.
 - **Taxes:** storing inventory in Arkansas means an Arkansas sales tax permit and collecting tax on the store's own direct sales into Arkansas. eBay, Etsy and the other marketplaces collect Arkansas tax on their own sales (Act 822 of 2019). Whether a seller with Arkansas inventory must still report marketplace sales is unconfirmed; ask DFA (501-682-7104).
 - **Help:** the ASBTDC at UAM; Southern Bancorp; Arkansas Capital Corporation (SBA lender, microloans unconfirmed). Arkansas job incentives depend on the county's yearly tier and need jobs paying $17.30 an hour or more on average.
-- **Verdict:** later, and only if Arkansas buying (estate sales, auctions) or a clearly cheaper building pays for the Arkansas registration, the $150 a year and the sales tax returns. Lake Providence covers the same ground from the Louisiana side, with a UPS and FedEx counter already in town.
+- **Verdict:** worth it if a little shop in Eudora or rural Chicot rents cheaply enough to cover the Arkansas registration, the $150 a year and the sales tax returns (roughly $40 a month in the first year), or if Arkansas buying (estate sales, auctions) brings stock there anyway. Otherwise Lake Providence covers the same ground from the Louisiana side, with a UPS and FedEx counter already in town.
 
 ## 8. What the area's designations do and don't mean
 
@@ -276,8 +303,8 @@ quadrantChart
 3. **SBA loans:** confirm every owner is a U.S. citizen or national before planning on one; otherwise TruFund, Hope Credit Union, LiftFund microloans and Kiva are the routes.
 4. **How much to borrow, if anything,** for stock and Stockroom 2, and from which lender?
 5. **A separate LLC for resale:** not for funding. For separating it from the store? Owned how?
-6. **Stockroom 2 in Ruston** (recommended) or **Oak Grove** (toward the future store)?
-7. **Chicot County:** park it until Arkansas buying or a cheap building makes the case?
+6. **Stockroom 2: the cheapest little shop, East Carroll first** (recommended), then Tallulah, Epps or Oak Grove? Ruston only if it must ship daily. What's the most a month it may cost?
+7. **Chicot County:** look for a cheap little shop in Eudora or rural Chicot now, or wait until Arkansas buying makes the case?
 8. **PeterShip:** form its LLC first so it can take the Cloudflare credits, and ask LaTEC in Ruston about advising?
 
 ## Could not confirm
@@ -293,7 +320,8 @@ quadrantChart
 - Which North Delta or CDC loan programs, if any, are open.
 - Opportunity Zone tracts for 2027.
 - Chicot County's Arkansas incentive tier; Arkansas sales tax reporting for marketplace sales with in-state inventory.
-- Rents in Oak Grove, Jonesboro, Columbia, Homer, Lake Providence and Chicot County.
+- Small-shop rents in Lake Providence, Transylvania, Sondheimer, Tallulah, Epps, Oak Grove, Eudora and Lake Village (none listed online); Lakehall Storage's prices; Monticello's Smart Storage 10x10 at $100 and North Hyatt at about $75 (search snippets only); Jonesboro, Columbia and Homer rents.
+- Which LSBDC center serves Madison Parish.
 - Drive times other than Lake Providence and Chicot (estimates).
 - Amber Grant's application fee and ownership threshold; Microsoft, Google and OpenAI credit amounts.
 
@@ -309,4 +337,4 @@ quadrantChart
 
 **Grants and credits:** [Verizon Digital Ready](https://digitalready.verizonwireless.com/funding/details), [NASE grants](https://www.nase.org/become-a-member/grants-and-scholarships), [Hello Alice](https://helloalice.com/grants/), [eBay Up & Running](https://www.ebay.com/sellercenter/ebay-for-business/up-and-running-grants), [Amber Grant](https://ambergrantsforwomen.com/get-an-amber-grant/), [FedEx contest (retired)](https://www.fedex.com/en-us/small-business/grant-contest.html), [Cloudflare for Startups](https://www.cloudflare.com/forstartups/), [Claude Startups](https://claude.com/programs/startups), [U.S. Chamber AI training](https://www.uschamber.com/co/small-business-ai-training), [Kiva](https://www.kiva.org/borrow), [Hope Credit Union business loans](https://www.hopecu.org/business/loans/), [FTC on grant scams](https://consumer.ftc.gov/articles/government-grant-scams)
 
-**Places:** [Chicot County](https://en.wikipedia.org/wiki/Chicot_County,_Arkansas), [UPS locations](https://locations.ups.com/us/en/la/ruston/), [FedEx Ruston](https://local.fedex.com/en-us/la/ruston/), [FedEx Lake Village](https://local.fedex.com/en-us/ar/lake-village), [Shipping Xpress, Lake Providence (UPS)](https://locations.ups.com/la/lakeprovidence/authorized-shipping-outlet-275691.html), [Ruston industrial listing](https://www.loopnet.ca/fr-CA/Liste/915-E-Georgia-Ave-Ruston-LA/40132444/), [Ruston flex space](https://realmo.com/flex-space/for-lease/la/ruston/), [West Monroe warehouse space](https://www.propertyshark.com/cre/commercial-property/us/la/west-monroe/warehouse-space/), [Monroe population](https://census.gov/quickfacts/fact/table/monroecitylouisiana), [Ruston population](https://www.census.gov/quickfacts/fact/table/rustoncitylouisiana/PST045224)
+**Places:** [Chicot County](https://en.wikipedia.org/wiki/Chicot_County,_Arkansas), [UPS locations](https://locations.ups.com/us/en/la/ruston/), [FedEx Ruston](https://local.fedex.com/en-us/la/ruston/), [FedEx Lake Village](https://local.fedex.com/en-us/ar/lake-village), [Shipping Xpress, Lake Providence (UPS)](https://locations.ups.com/la/lakeprovidence/authorized-shipping-outlet-275691.html), [Ruston industrial listing](https://www.loopnet.ca/fr-CA/Liste/915-E-Georgia-Ave-Ruston-LA/40132444/), [Ruston flex space](https://realmo.com/flex-space/for-lease/la/ruston/), [West Monroe warehouse space](https://www.propertyshark.com/cre/commercial-property/us/la/west-monroe/warehouse-space/), [Lake Providence Building #1 (Grow NELA)](https://louisianasiteselection.com/led/Property/Detail/21556/Lake-Providence-Building-1), [Epps Industrial Park](https://buildingsandsites.com/GrowNELA/Property/Detail/21548/Epps-Industrial-Park), [Oak Grove building](https://louisianasiteselection.com/Property/Detail/22795/150000-SF-building-Oak-Grove-40000-concrete-slab-on-back), [Delta Self Storage, Tallulah (U-Haul)](https://www.uhaul.com/Locations/Self-Storage-near-Tallulah-LA-71282/003075/), [A&R Storage, Monticello (U-Haul)](https://www.uhaul.com/Locations/Self-Storage-near-Monticello-AR-71655/1038820/), [Lakehall Storage](https://www.lakehallstorage.com/), [UPS Monticello](https://locations.ups.com/us/en/ar/monticello/authorized-shipping-provider-208191.html), [FedEx Lake Providence](https://local.fedex.com/en-us/la/lake-providence), [Monroe warehouse benchmark](https://www.propertyshark.com/cre/commercial-property/us/la/monroe/4600-central-ave-3/), [West Monroe warehouse benchmark](https://www.loopnet.ca/Listing/110-Horne-St-West-Monroe-LA/39645916), [Monroe population](https://census.gov/quickfacts/fact/table/monroecitylouisiana), [Ruston population](https://www.census.gov/quickfacts/fact/table/rustoncitylouisiana/PST045224)

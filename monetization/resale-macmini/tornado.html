@@ -79,6 +79,17 @@ td.who { width: 76px; }
 .summary { position: absolute; inset: 0; display: none; place-items: center; background: rgba(11, 20, 48, 0.82); }
 .summary .box { background: var(--panel); border: 1px solid var(--gold); border-radius: 6px; padding: 18px 22px; max-width: 420px; }
 .summary h3 { font-family: var(--display); font-size: 26px; margin: 0 0 8px; }
+.mm-lead { font-size: 13px; line-height: 1.5; color: #cbd5ee; margin: 0 0 10px; }
+.mm { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.mm li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
+.mm-n { font: 600 15px var(--display); color: var(--sky); background: var(--gold); border-radius: 3px; text-align: center; height: 22px; line-height: 22px; }
+.mm b { font-weight: 600; }
+.mm p { margin: 4px 0 0; font-size: 12.5px; line-height: 1.45; color: #cbd5ee; }
+.mm p.mm-io { font: 11px/1.4 var(--mono); color: var(--muted); }
+.mm code { font: inherit; color: var(--gold); }
+.mm-h { font: 600 15px var(--display); letter-spacing: 0.02em; margin: 14px 0 6px; padding-top: 10px; border-top: 1px solid var(--line); }
+.mm-day { font-size: 12.5px; }
+.mm-day span:nth-child(even) { color: var(--muted); font-family: var(--body); }
 footer { color: var(--muted); font-size: 12px; margin-top: 14px; max-width: 110ch; line-height: 1.5; }
 </style>
 </head>
@@ -118,14 +129,39 @@ footer { color: var(--muted); font-size: 12px; margin-top: 14px; max-width: 110c
     </div>
     <div class="card">
       <h2>Inside the Mac mini</h2>
-      <table>
-        <tr><td><b>1</b> Staff account</td><td class="n" style="width:auto;font-family:var(--body);color:var(--muted)">people: stages 1, 2, 5</td></tr>
-        <tr><td><b>2</b> launchd jobs</td><td class="n" style="width:auto;font-family:var(--body);color:var(--muted)">scripts: 2, 4, 6, 7, 8</td></tr>
-        <tr><td><b>3</b> Claude Code</td><td class="n" style="width:auto;font-family:var(--body);color:var(--muted)">Haiku, Sonnet: 3</td></tr>
-        <tr><td><b>4</b> Obsidian vault</td><td class="n" style="width:auto;font-family:var(--body);color:var(--muted)">the record: 5</td></tr>
-        <tr><td><b>5</b> The walls</td><td class="n" style="width:auto;font-family:var(--body);color:var(--muted)">around Claude</td></tr>
-      </table>
-      <div class="note" style="padding:6px 0 0">Claude never publishes, prices or approves: the jobs publish what a person approved in the vault.</div>
+      <p class="mm-lead">One small Apple computer, an M4 Mac mini, runs the resale work on a schedule, day and night. It can be one of William's counter minis with extra accounts, or its own at the workroom desk; never the deposit station's sealed mini. People touch only the first layer. The other four run on their own and can't reach each other's keys.</p>
+      <ol class="mm">
+        <li><span class="mm-n">1</span><div><b>Staff account</b> <span class="chip person">people</span>
+          <p>The only login a person uses. Start an item from the Obsidian template, AirDrop the photos from a phone, read Claude's draft, set the price and mark it approved. Post to Poshmark and Mercari by hand in Chrome.</p>
+          <p class="mm-io">Stages 1, 2, 5 · can't see the marketplace keys</p></div></li>
+        <li><span class="mm-n">2</span><div><b>launchd jobs</b> <span class="chip">scripts</span>
+          <p>Plain scripts the Mac starts on a timer, no AI. They move and shrink photos, check Claude's draft, publish what a person approved, and when something sells, end the other listings and buy the label through PeterShip.</p>
+          <p class="mm-io">Stages 2, 4, 6, 7, 8 · the hidden <code>lister</code> account holds the eBay and Etsy keys</p></div></li>
+        <li><span class="mm-n">3</span><div><b>Claude Code</b> <span class="chip claude">Claude</span>
+          <p>Writes the listing draft from the photos and notes: title, description, measurements, flaws. Claude Haiku 5.5 does routine items, one per run; designer brands, possible fakes and anything over $75 get a Claude Sonnet 5.5 second opinion. Also writes the 9 pm sales note and Monday's list of slow sellers.</p>
+          <p class="mm-io">Stage 3 · writes only draft.md and notes · reaches api.anthropic.com and nothing else</p></div></li>
+        <li><span class="mm-n">4</span><div><b>Obsidian vault</b> <span class="chip">the record</span>
+          <p>A folder of notes, one per item, with its history saved every night to a private GitHub repo the partners can read from home. People write item.md, Claude writes draft.md, the scripts write listings.md.</p>
+          <p class="mm-io">Stage 5 happens here · only a person sets <b>approved</b></p></div></li>
+        <li><span class="mm-n">5</span><div><b>The walls</b> <span class="chip">rules</span>
+          <p>What keeps Claude away from money and accounts: root-owned settings nobody at the desk can change (no shell, no web, Haiku and Sonnet only, no Opus), separate macOS accounts, the sandbox, and LuLu, a free firewall that limits where each program can connect.</p>
+          <p class="mm-io">Around Claude · tested by asking it to break them</p></div></li>
+      </ol>
+      <h3 class="mm-h">A day on the mini</h3>
+      <div class="kv mm-day">
+        <span>Photos in, resized</span><span>every 2 min</span>
+        <span>Drafts, one item a run</span><span>every 15 min, 8&ndash;8</span>
+        <span>Publish approved items</span><span>every 15 min</span>
+        <span>Sold: delist, buy label</span><span>every 5 min</span>
+        <span>Sales note</span><span>9:00 pm</span>
+        <span>Slow-seller list</span><span>Mon 8:00 am</span>
+      </div>
+      <h3 class="mm-h">What it costs</h3>
+      <div class="kv mm-day">
+        <span>The mini</span><span>$0 on a counter mini, about $500 for an M4 on sale</span>
+        <span>Claude at 20 items a day</span><span>about $4&ndash;10 a month</span>
+      </div>
+      <div class="note" style="padding:8px 0 0">Claude never publishes, prices or approves: the jobs publish what a person approved in the vault. Hover a layer in the drawing for more. Prices from November 6, 2026; check them before buying.</div>
     </div>
     <div class="card">
       <h2>The Obsidian intake template</h2>
@@ -194,8 +230,8 @@ Notes:</pre>
   // Where the stock sits. An item ships from the stockroom that holds it.
   const ROOMS = {
     monroe: { name: "Main stockroom · Ouachita Parish", sub: "Monroe area · store pickup 4 pm", short: "Ouachita", pickup: 16, how: "The main stockroom, in Ouachita Parish for now: at the store or near it in Monroe or West Monroe. Carriers pick up at the store counter at 4 pm, Monday to Saturday. William's stock is here, and returns come back here.", pulse: 0, today: 0 },
-    la2: { name: "Stockroom 2 · Louisiana", sub: "site not chosen · USPS pickup 11 am", short: "Stockroom 2", pickup: 11, how: "A second Louisiana stockroom, site still being found. USPS free package pickup the next morning; UPS when there's a UPS parcel. Someone packs there on set days.", pulse: 0, today: 0 },
-    chicot: { name: "Chicot County unit · Arkansas", sub: "maybe · post office drop 3 pm", short: "Chicot County", pickup: 15, how: "A possible storage-and-shipping unit in Chicot County, Arkansas (Lake Village), across the line from East Carroll. Parcels dropped at the post office by 3 pm.", pulse: 0, today: 0 }
+    la2: { name: "Stockroom 2 · Louisiana", sub: "cheapest rent wins · USPS pickup 11 am", short: "Stockroom 2", pickup: 11, how: "A second Louisiana stockroom in whatever little shop rents cheapest. East Carroll looks cheapest (Lake Providence, Transylvania, Sondheimer); rural Madison Parish outside Tallulah and West Carroll (Epps, Oak Grove) are the other options. USPS free package pickup the next morning; UPS when there's a UPS parcel. Someone packs there on set days.", pulse: 0, today: 0 },
+    chicot: { name: "Arkansas unit · Chicot County", sub: "maybe · Eudora or rural · post office 3 pm", short: "Chicot County", pickup: 15, how: "A possible cheap little rented shop in Chicot County, Arkansas: Eudora, 24 miles up from Lake Providence, or somewhere rural, wherever rent is lowest (Lake Village and Monticello too). Parcels dropped at the post office by 3 pm. Adds Arkansas filings, so only if the rent pays for them.", pulse: 0, today: 0 }
   };
   const ROOM_KEYS = ["monroe", "la2", "chicot"];
   function nextOpen(h) { const d = Math.floor(h / 24), hod = h - d * 24; if (hod >= 8 && hod < 17) return h; return (hod < 8 ? d : d + 1) * 24 + 8; }
@@ -345,7 +381,7 @@ Notes:</pre>
     const boxW = showBox ? Math.min(250, W * 0.27) : 0;
     const box = { x: 10, y: H * 0.05, w: boxW, h: H * 0.86 };
     const left = showBox ? box.x + boxW + 24 : 0, avail = W - left;
-    const top = H * 0.09, bot = H * 0.72, rMax = Math.min(avail * 0.34, 300), rMin = Math.max(10, rMax * 0.05);
+    const top = H * 0.09, bot = H * 0.68, rMax = Math.min(avail * 0.34, 300), rMin = Math.max(10, rMax * 0.05);
     const rings = STAGES.map((s, i) => {
       const t = i / (STAGES.length - 1);
       return { y: top + (bot - top) * t, r: rMin + (rMax - rMin) * Math.pow(1 - t, 1.25) };
@@ -460,7 +496,7 @@ Notes:</pre>
     ctx.strokeStyle = "rgba(154,166,196,0.35)"; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(W * 0.08, gy); ctx.lineTo(W * 0.88, gy); ctx.stroke();
     ctx.fillStyle = "#9aa6c4"; ctx.font = "12px 'IBM Plex Sans', sans-serif"; ctx.textAlign = "center";
-    ctx.fillText("each sold item ships from the stockroom that holds it  ·  shipped " + S.shipped + "  ·  delivered " + S.delivered, G.cx, gy + 16);
+
 
     spin += dt;
     for (const k in pulse) pulse[k] = Math.max(0, pulse[k] - dt * 1.4);
@@ -545,6 +581,15 @@ Notes:</pre>
   }
   const roomBoxes = [];
   function drawRooms(G) {
+    // text that would run past a card's edge is set smaller to fit, down to 70%
+    function fitText(t, x, y, maxW) {
+      const f = ctx.font, w = ctx.measureText(t).width;
+      if (w > maxW) {
+        const m = f.match(/([\d.]+)px/), px = parseFloat(m[1]);
+        ctx.font = f.replace(m[0], Math.max(px * 0.7, px * maxW / w).toFixed(1) + "px");
+      }
+      ctx.fillText(t, x, y); ctx.font = f;
+    }
     roomBoxes.length = 0;
     for (const k of ROOM_KEYS) ROOMS[k].pulse = Math.max(0, ROOMS[k].pulse - 0.02);
     const x0 = G.left + 6, x1 = W - 10, y0 = G.bot + 50, h = H - y0 - 8, gap = 10;
@@ -565,22 +610,38 @@ Notes:</pre>
       if (k === "chicot") ctx.setLineDash([5, 4]);
       rr(x, y0, w, h, 6); ctx.stroke(); ctx.setLineDash([]);
       ctx.textAlign = "left";
-      ctx.fillStyle = "#e9eef9"; ctx.font = "600 15px 'Barlow Condensed', sans-serif"; ctx.fillText(R.name.toUpperCase(), x + 10, y0 + 19);
-      ctx.fillStyle = "#9aa6c4"; ctx.font = "11px 'IBM Plex Sans', sans-serif"; ctx.fillText(R.sub, x + 10, y0 + 34);
+      ctx.fillStyle = "#e9eef9"; ctx.font = "600 15px 'Barlow Condensed', sans-serif"; fitText(R.name.toUpperCase(), x + 10, y0 + 19, w - 18);
+      ctx.fillStyle = "#9aa6c4"; ctx.font = "11px 'IBM Plex Sans', sans-serif"; fitText(R.sub, x + 10, y0 + 34, w - 18);
       ctx.font = "11.5px 'IBM Plex Mono', monospace";
-      ctx.fillStyle = "#cbd5ee"; ctx.fillText("pick " + c.pick + " · pack " + c.pack + " · label " + c.label, x + 10, y0 + 54);
-      ctx.fillText("at pickup " + c.handoff + " · out today " + R.today, x + 10, y0 + 70);
-      if (h > 88) { ctx.fillStyle = p > 0.05 ? "#ffe08a" : "#9aa6c4"; ctx.fillText("in transit " + transit + " · on shelf " + held, x + 10, y0 + 86); }
-      if (h > 128) {
-        const m = R.month;
-        ctx.strokeStyle = "#24315a"; ctx.beginPath(); ctx.moveTo(x + 8, y0 + 96); ctx.lineTo(x + w - 8, y0 + 96); ctx.stroke();
-        ctx.fillStyle = "#f5c75a"; ctx.font = "600 12px 'Barlow Condensed', sans-serif"; ctx.fillText("THIS MONTH", x + 10, y0 + 111);
-        ctx.font = "11.5px 'IBM Plex Mono', monospace"; ctx.fillStyle = "#e9eef9";
-        ctx.fillText("picked " + m.pick + " · packed " + m.pack + " · labeled " + m.label, x + 10, y0 + 126);
-        if (h > 142) ctx.fillText("handed off " + m.out + " · delivered " + m.delivered, x + 10, y0 + 141);
+      // right now, then the running total since day 1 directly under it: always shown
+      const m = R.month;
+      ctx.fillStyle = "#cbd5ee"; fitText("pick " + c.pick + " · pack " + c.pack + " · label " + c.label, x + 10, y0 + 54, w - 18);
+      ctx.fillStyle = "#f5c75a"; ctx.font = "600 14px 'Barlow Condensed', sans-serif";
+      fitText("PICKED " + m.pick + "  ·  PACKED " + m.pack + "  THIS MONTH", x + 10, y0 + 71, w - 18);
+      ctx.font = "11.5px 'IBM Plex Mono', monospace"; ctx.fillStyle = "#cbd5ee";
+      fitText("at pickup " + c.handoff + " · out today " + R.today, x + 10, y0 + 89, w - 18);
+      if (h > 100) { ctx.fillStyle = p > 0.05 ? "#ffe08a" : "#9aa6c4"; fitText("in transit " + transit + " · on shelf " + held, x + 10, y0 + 105, w - 18); }
+      if (h > 132) {
+        ctx.strokeStyle = "#24315a"; ctx.beginPath(); ctx.moveTo(x + 8, y0 + 114); ctx.lineTo(x + w - 8, y0 + 114); ctx.stroke();
+        ctx.fillStyle = "#e9eef9";
+        fitText("labeled " + m.label + " · handed off " + m.out, x + 10, y0 + 129, w - 18);
+        if (h > 148) fitText("delivered " + m.delivered + " this month", x + 10, y0 + 145, w - 18);
       }
       roomBoxes.push({ x, y: y0, w, h, R });
     });
+    const gy = G.bot + 22;
+    // the ground line, with the running totals of picked and packed in gold, centered as one line
+    const tot = (f) => ROOM_KEYS.reduce((a, k) => a + ROOMS[k].month[f], 0);
+    const parts = [
+      ["each sold item ships from the stockroom that holds it  ·  ", "12px 'IBM Plex Sans', sans-serif", "#9aa6c4"],
+      ["PICKED " + tot("pick") + "  ·  PACKED " + tot("pack"), "600 13.5px 'Barlow Condensed', sans-serif", "#f5c75a"],
+      ["  ·  shipped " + S.shipped + "  ·  delivered " + S.delivered, "12px 'IBM Plex Sans', sans-serif", "#9aa6c4"]
+    ];
+    let lw = 0;
+    for (const q of parts) { ctx.font = q[1]; q.push(ctx.measureText(q[0]).width); lw += q[3]; }
+    let lx = G.cx - lw / 2; ctx.textAlign = "left";
+    ctx.fillStyle = "rgba(11,20,48,0.9)"; rr(lx - 8, gy + 3, lw + 16, 18, 4); ctx.fill();
+    for (const q of parts) { ctx.font = q[1]; ctx.fillStyle = q[2]; ctx.fillText(q[0], lx, gy + 16); lx += q[3]; }
   }
 
   // ---------- panel ----------
