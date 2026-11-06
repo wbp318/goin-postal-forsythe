@@ -53,6 +53,9 @@ quadrantChart
   Shipping client for other stores: [0.9, 0.95]
   Card designer for other shops: [0.7, 0.75]
   Local seller API: [0.6, 0.5]
+  ATM by the door: [0.25, 0.45]
+  Green Dot and Chime deposits: [0.35, 0.22]
+  Public tag agent: [0.95, 0.8]
 ```
 
 ## Fast wins on the website that exists today
@@ -95,6 +98,10 @@ x402 is the HTTP payment protocol under the Linux Foundation that lets AI agents
 ## A Vice City shipping company on GTA 6
 
 A roleplay server, on GTA 6 only, where players run a pack-and-ship business out of Vice City on PeterShip's real rating engine. GTA 6 arrives on consoles November 19, 2026 with no PC version or server platform announced, so the plan is what to build now without a server: the design document, a browser prototype of the counter and packing game, the PeterShip bridge with one money table, assets, a Discord and waiting list, and the paperwork, ready for the day Rockstar opens the door. Without a real-money economy it is a brand and recruiting play budgeted like a billboard; with the rumored GTA 6 creator economy it becomes a business inside the game. Parody name until GP Brands says otherwise. The plan is in [`vice-city-rp/README.md`](vice-city-rp/README.md).
+
+## Cash services: an ATM, Green Dot and Chime deposits, and the DMV question
+
+Written November 5, 2026 (agenda item 60). You can't buy an "Allpoint ATM": Allpoint is NCR Atleos's surcharge-free network, and Chime's fee-free ATMs are on it. The plan is to buy a standard ATM (about $2,400 to $2,800 new, plus $2,000 to $3,000 of vault cash), charge $3 a withdrawal (about $345 a month at five a day, paid off in about eight months), then ask ATM Network, which says joining is free, whether to put it on Allpoint. Chime deposits run on Green Dot's retail network. That is an account manager and a connection to the register, not a sign-up form, and Walgreens takes Chime deposits for free, so it's two phone calls before anything else. A Louisiana public tag agent could bring in the most money (up to $23 a transaction) but needs two $100,000 bonds and an office separate from the business next door, so it's parked. The cheap version now is notarizing title and bill-of-sale paperwork. Charts, costs, counter rules and decisions in [`cash-services/`](cash-services/README.md).
 
 ## How the multi-store versions run on Cloudflare
 
@@ -161,3 +168,4 @@ flowchart LR
 2. The card upsells are built with the suggested prices above. Confirm or change them in `CARD_OPTIONS` (issue 9).
 3. Mailbox sizes and monthly prices are live at $15, $22 and $30 in `site/src/data/mailboxes.json`. Confirm or change them (issue 9).
 4. Is selling the software to other Goin' Postal stores something to raise with GP Brands now, or after the shipping client works for Forsythe?
+5. Cash services: buy an ATM, call Green Dot, park the tag office? Six questions in [`cash-services/`](cash-services/README.md#decisions-for-peter-and-rin).
