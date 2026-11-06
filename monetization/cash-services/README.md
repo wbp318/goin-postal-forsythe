@@ -1,6 +1,6 @@
 # Cash services: an ATM, cash deposits for every online bank, cash to crypto, and the DMV question
 
-Four counter services that bring in people who never ship anything: an ATM by the door; cash deposits at the register into Chime, PayPal, Cash App, SoFi, Varo, Current and the other online banks and apps; cash turned into crypto and sent to the customer's own wallet; and a Louisiana OMV tag office (what people mean by "DMV"). Written November 5, 2026 at the owners' request, widened the same night to every online bank and to crypto. Agenda item 60.
+Four counter services that bring in people who never ship anything: an ATM by the door; cash deposits at the register into Chime, PayPal, Cash App, SoFi, Varo, Current and the other online banks and apps; cash turned into crypto and sent to the customer's own wallet; and a Louisiana OMV tag office (what people mean by "DMV"). Written November 5, 2026 at the owners' request, widened the same night to every online bank and to crypto. Agenda item 60. The deposits part has its own setup plan, with the station and its diagrams, in [`deposit-station/`](deposit-station/README.md) (November 6).
 
 None of the four is built in software. Each is an agreement with an outside company, some cash, and a rule or two for the counter. PeterShip comes in only at the end, as a line on the close page.
 
@@ -122,6 +122,8 @@ sequenceDiagram
 
 ### Two networks carry almost every app
 
+**Setting it up (November 6, the top priority):** what it takes, the equipment, Green Dot's register API, Cash App's rules and a Mac mini deposit station with full diagrams are in [`deposit-station/`](deposit-station/README.md).
+
 Online banks and payment apps don't run their own cash counters. They rent a retail cash network, and the store joins the network, not each app. Two networks cover nearly the whole list:
 
 | App | Network that takes its cash in stores | Customer fee | Limits (the app's own) |
@@ -135,7 +137,7 @@ Online banks and payment apps don't run their own cash counters. They rent a ret
 | **Crypto.com** (cash account) | Green Dot | | |
 | **Current** | InComm VanillaDirect | $3.50 | $500 a deposit, $1,000 a day, $10,000 a month |
 | **Netspend** | Its own reload network, and MoneyGram | Up to $3.95 | |
-| **Cash App** | Not confirmed | $1 from Cash App plus the store's fee | Figures conflict |
+| **Cash App** | Not named; the cashier swipes the Cash App Card or scans its barcode, which Green Dot's Point of Banking (any US debit card) or a card-network reload could carry | $1 from Cash App plus the store's fee | $5 to $500 a deposit, $5,000 a rolling week, $10,000 a rolling month (Cash App's help page, Nov 6) |
 | **Venmo** | Walmart only for now | $3.74 | $999.99 a day, $4,000 a month |
 | **Dave, OnePay, Albert** | Not confirmed (Dave is free at CVS and Walgreens, which looks like Green Dot) | | |
 
