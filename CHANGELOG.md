@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.87.2] - 2026-11-06
+
+**Cash services: deposits for every online bank, and cash to crypto as a licensed company's agent**
+
+The cash services plan (agenda item 60, [`monetization/cash-services/`](https://github.com/wbp318/goin-postal-forsythe/blob/main/monetization/cash-services/README.md)) widened at the owners' request: cash deposits for every online bank and app, not just Green Dot and Chime, and cash turned into crypto and sent to the customer's own wallet. Plan only, no code.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.87.2) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.87.2) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.87.1...v1.87.2)
+
 ## [v1.87.1] - 2026-11-06
 
 **Cash services plan: an ATM, Green Dot and Chime deposits, and the DMV question**
