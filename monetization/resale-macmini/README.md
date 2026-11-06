@@ -114,7 +114,7 @@ The accountant should see whichever shape Peter and Rin pick. It's decision 1, b
 
 ## See it run: the resale tornado
 
-[`tornado.html`](tornado.html) is an animated mock of this plan: one month at 20 items a day, sped up. Each dot is an item spiraling down a funnel through the eight stages: intake, photos, Claude drafts, script check, person approves, listed, sold, shipped. The funnel narrows because not everything sells in a month. Color the dots by where they sell, by which Claude model ran them, or by stage. Hover one for its card, and watch the counts, the Claude cost, the money and the event log on the right.
+[`tornado.html`](tornado.html) is an animated mock of this plan: one month at 20 items a day, sped up. Each dot is an item spiraling down a funnel through the eight stages: intake, photos, Claude drafts, script check, person approves, listed, sold, shipped. The funnel narrows because not everything sells in a month. Color the dots by where they sell, by which Claude model ran them, or by stage. Hover one for its card, and watch the counts, the Claude cost and the money on the right. **What just happened**, the event log, sits right under the tornado, so each event reads next to the move it describes.
 
 On the left is **the Mac mini, drawn as its five layers**, the same ones as [section 5](#5-the-mac-mini-its-accounts-and-claude-code):
 

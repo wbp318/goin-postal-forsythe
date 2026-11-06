@@ -73,7 +73,8 @@ td.who { width: 76px; }
 .kv { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; font-size: 13px; }
 .kv span:nth-child(even) { font-family: var(--mono); text-align: right; font-variant-numeric: tabular-nums; }
 .kv .em { color: var(--gold); font-weight: 600; }
-.log { font-family: var(--mono); font-size: 11.5px; line-height: 1.5; max-height: 210px; overflow: hidden; color: #cbd5ee; }
+.left { display: grid; gap: 12px; min-width: 0; }
+.log { font-family: var(--mono); font-size: 12px; line-height: 1.55; overflow: hidden; color: #cbd5ee; }
 .log div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .log .t { color: var(--muted); }
 .summary { position: absolute; inset: 0; display: none; place-items: center; background: rgba(11, 20, 48, 0.82); }
@@ -101,6 +102,7 @@ footer { color: var(--muted); font-size: 12px; margin-top: 14px; max-width: 110c
 </header>
 
 <div class="wrap">
+  <div class="left">
   <section class="stage">
     <div class="controls">
       <button class="btn" id="play" type="button">Pause</button>
@@ -116,6 +118,11 @@ footer { color: var(--muted); font-size: 12px; margin-top: 14px; max-width: 110c
     <div class="legend" id="legend"></div>
     <div class="note" id="motion"></div>
   </section>
+    <div class="card">
+      <h2>What just happened</h2>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
 
   <aside>
     <div class="card">
@@ -187,10 +194,6 @@ Notes:</pre>
     <div class="card">
       <h2>Money this month</h2>
       <div class="kv" id="money"></div>
-    </div>
-    <div class="card">
-      <h2>What just happened</h2>
-      <div class="log" id="log"></div>
     </div>
   </aside>
 </div>
@@ -680,7 +683,7 @@ Notes:</pre>
       "<span>Fees at 13.5%, boxes</span><span>−" + money(S.fees + S.boxes) + "</span>" +
       "<span>On eBay · Etsy · by hand</span><span>" + S.soldBy.ebay + " · " + S.soldBy.etsy + " · " + S.soldBy.hand + "</span>" +
       "<span class=\"em\">Kept on sold items</span><span class=\"em\">" + money(Math.max(0, kept)) + "</span>";
-    $("log").innerHTML = S.logs.slice(0, 11).map(l => "<div><span class=\"t\">" + l.t + "</span> " + l.text.replace(/</g, "&lt;") + "</div>").join("");
+    $("log").innerHTML = S.logs.slice(0, 12).map(l => "<div><span class=\"t\">" + l.t + "</span> " + l.text.replace(/</g, "&lt;") + "</div>").join("");
   }
 
   function legend() {
