@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.90.0] - 2026-11-06
+
+**dropship in the resale plan and on the tornado**
+
+William asked for a dropship option in the resale plan and the tornado. The store lists goods it never buys or shelves. When one sells, a script orders it from the supplier, who ships it blind straight to the buyer, and the supplier's tracking goes back to the marketplace. The store still owns the sale: delivery on time, returns and refunds are its responsibility, whoever shipped the box.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.90.0) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.90.0) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.89.2...v1.90.0)
+
 ## [v1.89.2] - 2026-11-06
 
 **resale tornado, What just happened under the tornado**
