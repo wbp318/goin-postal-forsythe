@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.89.1] - 2026-11-06
+
+**stockrooms by cheapest rent, USPS only; tornado picked and packed totals; Inside the Mac mini**
+
+William set the rule on November 6: a stockroom only stores stock and packs parcels, and the outside stockrooms ship **USPS only**. USPS free package pickup comes to any rural address, and anything USPS can't take ships from the main stockroom at the store, where UPS and FedEx come every day. So carrier counters drop out of the choice, and **the cheapest rent wins**.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.89.1) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.89.1) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.89.0...v1.89.1)
+
 ## [v1.89.0] - 2026-11-06
 
 **Funding and sites; shipping from the stockrooms; tornado month totals**
