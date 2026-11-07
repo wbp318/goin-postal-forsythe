@@ -218,6 +218,10 @@ Function AddCustomer(sName As String, sPhone As String, sEmail As String, sSize 
 		AddCustomer = "!That email does not look right."
 		Exit Function
 	End If
+	If InStr("6Y", UCase(Left(Trim(sTerm), 1))) = 0 Or Trim(sTerm) = "" Then
+		AddCustomer = "!The term is 6 months or Yearly."
+		Exit Function
+	End If
 	If SizeName(sSize) = "" Then
 		AddCustomer = "!The size is Small, Medium or Large."
 		Exit Function
@@ -234,12 +238,10 @@ Function AddCustomer(sName As String, sPhone As String, sEmail As String, sSize 
 	If sPhone <> "" Then h.getCellByPosition(H_PHONE, r).setString(Trim(sPhone))
 	If sEmail <> "" Then h.getCellByPosition(H_EMAIL, r).setString(Trim(sEmail))
 	h.getCellByPosition(H_SIZE, r).setString(SizeName(sSize))
-	If UCase(Left(sTerm, 1)) = "Y" Then
+	If UCase(Left(Trim(sTerm), 1)) = "Y" Then
 		h.getCellByPosition(H_TERM, r).setString("Yearly")
-	ElseIf Left(Trim(sTerm), 1) = "6" Then
-		h.getCellByPosition(H_TERM, r).setString("6 months")
 	Else
-		h.getCellByPosition(H_TERM, r).setString("Monthly")
+		h.getCellByPosition(H_TERM, r).setString("6 months")
 	End If
 	h.getCellByPosition(H_START, r).setValue(TodaySerial())
 	ThisComponent.calculateAll()
@@ -253,8 +255,8 @@ Function AddPayment(sCode As String, months As Long, amount As Double, sReceipt 
 		AddPayment = "No customer with code " & sCode & "."
 		Exit Function
 	End If
-	If months < 1 Or months > 24 Then
-		AddPayment = "Months covered is 1 to 24."
+	If months < 6 Or months > 24 Or months Mod 6 <> 0 Then
+		AddPayment = "Months covered is 6, 12, 18 or 24: terms are 6 months or a year."
 		Exit Function
 	End If
 	If amount < 0 Or amount > 5000 Then
@@ -557,10 +559,10 @@ Sub btnNewCustomer(Optional oEvent)
 	em = InputBox("Email (or leave blank):", APP & ": new customer")
 	sz = InputBox("Box size: type S for Small, M for Medium, L for Large.", APP & ": new customer", "S")
 	If Trim(sz) = "" Then Exit Sub
-	tm = InputBox("Term: type M for monthly, 6 for 6 months, Y for yearly.", APP & ": new customer", "M")
+	tm = InputBox("Term: type 6 for 6 months, or Y for a year.", APP & ": new customer", "6")
 	If Trim(tm) = "" Then Exit Sub
-	If InStr("M6Y", UCase(Left(Trim(tm), 1))) = 0 Then
-		MsgBox "The term is M (monthly), 6 (6 months) or Y (yearly). Nothing was added.", 48, APP
+	If InStr("6Y", UCase(Left(Trim(tm), 1))) = 0 Then
+		MsgBox "The term is 6 (6 months) or Y (a year). Nothing was added.", 48, APP
 		Exit Sub
 	End If
 	res = AddCustomer(nm, ph, em, sz, tm)
@@ -579,14 +581,14 @@ Sub btnPayment(Optional oEvent)
 	If r < 0 Then Exit Sub
 	h = Sh("Holders")
 	code = CellText(h, H_CODE, r)
-	m = InputBox("Months this payment covers for " & CellText(h, H_NAME, r) & " (" & CellText(h, H_TERM, r) & "):", APP & ": payment", IIf(CellText(h, H_TERM, r) = "Yearly", "12", IIf(CellText(h, H_TERM, r) = "6 months", "6", "1")))
+	m = InputBox("Months this payment covers for " & CellText(h, H_NAME, r) & " (" & CellText(h, H_TERM, r) & "):", APP & ": payment", IIf(CellText(h, H_TERM, r) = "Yearly", "12", "6"))
 	If Trim(m) = "" Then Exit Sub
 	If Not IsNumeric(m) Then
-		MsgBox "Months is a whole number, like 1 or 12.", 48, APP
+		MsgBox "Months is 6 or 12 (or 18 or 24 paid ahead).", 48, APP
 		Exit Sub
 	End If
 	If CDbl(m) <> Fix(CDbl(m)) Then
-		MsgBox "Months is a whole number, like 1 or 12.", 48, APP
+		MsgBox "Months is 6 or 12 (or 18 or 24 paid ahead).", 48, APP
 		Exit Sub
 	End If
 	months = CLng(m)

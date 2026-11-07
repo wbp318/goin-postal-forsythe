@@ -47,10 +47,10 @@ lines = [
     ("Grey rows are examples. On Holders, Payments and Boxes, delete them (right-click the row number, Delete Rows) before the first real customer. On Measure, type your boxes over them or clear them (select the cells, press Delete): never delete a Measure row, the USPS chart shares those rows.", base),
     ("", base),
     ("A new customer", bold),
-    ("1. Holders tab: a new row. Code = MB- and the next number (MB-002, MB-003 ...). Name, phone, email, size, term (Monthly, 6 months or Yearly), start date (today).", base),
+    ("1. Holders tab: a new row. Code = MB- and the next number (MB-002, MB-003 ...). Name, phone, email, size, term (6 months or Yearly), start date (today).", base),
     ("2. See both IDs (see the intake packet). Type each ID's type, last 4 and expiry. Never the whole number.", base),
     ("3. Fill in PS Form 1583 with the customer and sign the store's part. Type the date in '1583 signed'.", base),
-    ("4. Take the first payment on the POS. Payments tab: a new row with the date, the code, months covered (1, 6 for a 6-month term, 12 for yearly) and the amount.", base),
+    ("4. Take the first payment on the POS. Payments tab: a new row with the date, the code, months covered (6 for a 6-month term, 12 for yearly) and the amount.", base),
     ("5. 'Ready for a box' on the Holders tab now says YES. Pick a Free box on the Boxes tab, type its number in the holder's Box # column, hand over the key, tick Keys given.", base),
     ("", base),
     ("Every payment after that", bold),
@@ -79,7 +79,7 @@ st.column_dimensions['A'].width = 120
 
 # ---------- Prices ----------
 pr = wb.create_sheet('Prices')
-pr['A1'] = 'Size'; pr['B1'] = 'Monthly price ($)'; pr['C1'] = 'Yearly price ($)'; pr['D1'] = 'Fits'; pr['E1'] = '6-month price ($)'
+pr['A1'] = 'Size'; pr['B1'] = 'Monthly rate ($)'; pr['C1'] = 'Yearly price ($)'; pr['D1'] = 'Fits'; pr['E1'] = '6-month price ($)'
 for c in 'ABCDE': pr[f'{c}1'].font = head; pr[f'{c}1'].fill = HEAD
 sizes = [('Small', 15, 'Letters and small envelopes'), ('Medium', 22, 'Letters, magazines, small parcels'), ('Large', 30, 'Everything, with package acceptance')]
 for i, (n, m, fits) in enumerate(sizes, 2):
@@ -134,7 +134,7 @@ ho.column_dimensions[L['Open box (helper)']].hidden = True
 
 # example row 2
 today = dt.date.today()
-ex = {'Code': 'MB-001', 'Box #': 101, 'Name': 'EXAMPLE Jane Doe', 'Phone': '318 555 0100', 'Email': 'jane@example.com', 'Size': 'Small', 'Term': 'Monthly',
+ex = {'Code': 'MB-001', 'Box #': 101, 'Name': 'EXAMPLE Jane Doe', 'Phone': '318 555 0100', 'Email': 'jane@example.com', 'Size': 'Small', 'Term': '6 months',
       'Start date': today, 'ID 1 type (photo ID)': "Driver's license or state ID", 'ID 1 last 4': '1234', 'ID 1 expires': dt.date(today.year + 3, 4, 1),
       'ID 2 type': 'Home or vehicle insurance policy', 'ID 2 last 4': '9876', 'ID 2 expires': dt.date(today.year + 1, 6, 30), 'ID 2 shows home address?': 'Yes',
       '1583 signed': today, 'Checked by': 'Peter', 'Keys given': 'Yes', 'Notes': 'Example row: delete before the first real customer'}
@@ -156,7 +156,7 @@ def rule(sheet, rng, kind, f1, f2=None, op=None, title='', prompt='', error=''):
     sheet.add_data_validation(d); d.add(rng)
 last = ROWS + 1
 dv(ho, '=Prices!$A$2:$A$4', f'{L["Size"]}2:{L["Size"]}{last}')
-dv(ho, '"Monthly,6 months,Yearly"', f'{L["Term"]}2:{L["Term"]}{last}')
+dv(ho, '"6 months,Yearly"', f'{L["Term"]}2:{L["Term"]}{last}')
 ids1 = "Driver's license or state ID,Passport,US passport card,Military ID,Government employee ID,University ID,Permanent resident card,Certificate of naturalization,Tribal ID"
 # list over 255 chars is not allowed inline: put the lists on a hidden sheet
 lists = wb.create_sheet('Lists')
@@ -197,7 +197,7 @@ for r in range(2, ROWS * 4 + 2):
     # Each whole year at the yearly price, then each whole 6 months at the 6-month price, then single months.
     pa[f'F{r}'] = f'=IF(OR(B{r}="",D{r}=""),"",IFERROR(INDEX(Prices!$C$2:$C$4,{_i})*INT(D{r}/12)+INDEX(Prices!$E$2:$E$4,{_i})*INT(MOD(D{r},12)/6)+INDEX(Prices!$B$2:$B$4,{_i})*MOD(D{r},6),""))'
     pa[f'A{r}'].number_format = 'mmm d, yyyy'; pa[f'E{r}'].number_format = pa[f'F{r}'].number_format = '$#,##0.00'
-for n, v in zip('ABDEGHI', (today, 'MB-001', 1, 15, '1043', 'Peter', 'Example row: delete')):
+for n, v in zip('ABDEGHI', (today, 'MB-001', 6, 90, '1043', 'Peter', 'Example row: delete')):
     pa[f'{n}2'] = v
 for i in range(1, len(pcols) + 1): pa.cell(row=2, column=i).fill = EX
 pa['F1'].comment = Comment('What the Prices tab says this should be. 12 months = the yearly price, 6 months = the 6-month price. If it differs from Amount taken, check the POS.', 'PeterShip')
@@ -265,13 +265,13 @@ ho.conditional_formatting.add(H('ID check'), FormulaRule(formula=[f'OR({c("ID ch
 PL = ROWS * 4 + 1
 rule(pa, f'A2:A{PL}', 'date', 'DATE(2000,1,1)', 'TODAY()', 'between', title='Payment date', prompt='The day it was paid on the POS.', error='Type the payment date, like 11/7/2026. It cannot be in the future.')
 dv(pa, f'=Holders!$A$2:$A${last}', f'B2:B{PL}', "Pick the customer's code (MB-...) from the Holders tab.")
-rule(pa, f'D2:D{PL}', 'whole', '1', '24', 'between', title='Months covered', prompt='1 for a month, 12 for a year.', error='Months covered is a whole number from 1 to 24: 1 for a month, 12 for a year.')
+rule(pa, f'D2:D{PL}', 'custom', 'AND(ISNUMBER(D2),MOD(D2,6)=0,D2>=6,D2<=24)', title='Months covered', prompt='6 for 6 months, 12 for a year.', error='Months covered is 6, 12, 18 or 24: terms are 6 months or a year.')
 rule(pa, f'E2:E{PL}', 'decimal', '0', '5000', 'between', title='Amount', prompt='What the POS took, in dollars.', error='Type the amount in dollars, like 15 or 150.00.')
 
 rule(bx, f'A2:A{last}', 'custom', f'AND(COUNTIF($A$2:$A${last},A2)=1,LEN(A2)<=6,ISERROR(FIND(" ",A2)))', title='Box number', prompt='The number on the box door: letters and digits, up to 6, like 101 or A12.', error='Each box once, letters and digits only, up to 6 characters (101, A12).')
 
 for cell in ('B2', 'B3', 'B4'):
-    rule(pr, cell, 'decimal', '0', '1000', 'between', title='Monthly price', error='Type the monthly price in dollars, like 15.')
+    rule(pr, cell, 'decimal', '0', '1000', 'between', title='Monthly rate', error='Type the monthly rate in dollars, like 15. The 6-month and yearly prices are worked out from it.')
 rule(pr, 'B7', 'whole', '1', '12', 'between', title='Months a year costs', error='A whole number from 1 to 12. 10 means 12 months for the price of 10.')
 rule(pr, 'B8', 'whole', '1', '6', 'between', title='Months 6 months cost', error='A whole number from 1 to 6. 5 means 6 months for the price of 5.')
 wb.move_sheet('Boxes', offset=-1)

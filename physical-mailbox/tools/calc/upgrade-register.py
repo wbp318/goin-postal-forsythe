@@ -54,7 +54,7 @@ KEEP_NEW_ROWS = {'Prices'}   # a size row the old file never had keeps the templ
 CELLS = {'Prices': ['B7', 'B8'], 'Measure': ['X14:X18', 'S22:V26'], 'Lists': ['F1']}
 REBUILT = {'Call list', 'USPS quarterly', 'Box report'}   # tabs the buttons and macros make again
 CHECK_COLS = ['Status', 'Paid through', 'ID check', 'Ready for a box']
-RENAMED = {'Term': 'Monthly / Yearly'}   # new heading: the old one it carries from (v1.92.5)
+RENAMED = {'Term': 'Monthly / Yearly', 'Monthly rate ($)': 'Monthly price ($)'}   # new heading: the old one it carries from (v1.92.5, v1.92.7)
 CHART_ROWS = {'Measure': ('S14:S18', 'S22:S26')}   # labels that must sit in the same cells in both files before Measure's side cells are carried by address
 NEW_CELLS = {('Prices', 'B8')}           # a setting an older register never had: an empty old cell keeps the template's
 
@@ -266,7 +266,7 @@ def self_test(desktop):
         h.getCellByPosition(0, r).setString(code)
         if box: h.getCellByPosition(1, r).setValue(box)
         h.getCellByPosition(2, r).setString(name); h.getCellByPosition(4, r).setString('318 555 01%02d' % i)
-        h.getCellByPosition(6, r).setString(size); h.getCellByPosition(7, r).setString('Monthly')
+        h.getCellByPosition(6, r).setString(size); h.getCellByPosition(7, r).setString('6 months')
         h.getCellByPosition(8, r).setValue(today - 40)
         h.getCellByPosition(13, r).setString("Driver's license or state ID"); h.getCellByPosition(14, r).setString('0123' if i == 0 else '12%02d' % i)
         h.getCellByPosition(15, r).setValue(today + 900)
@@ -274,7 +274,7 @@ def self_test(desktop):
         h.getCellByPosition(18, r).setValue(today + 200); h.getCellByPosition(19, r).setString('Yes')
         h.getCellByPosition(20, r).setValue(today - 40); h.getCellByPosition(21, r).setString('Peter')
     h.getCellByPosition(26, 2).setString('Prefers texts')
-    for i, (code, months) in enumerate((('MB-002', 2), ('MB-003', 1), ('MB-004', 1))):
+    for i, (code, months) in enumerate((('MB-002', 12), ('MB-003', 6), ('MB-004', 6))):
         p.getCellByPosition(0, 1 + i).setValue(today - 40); p.getCellByPosition(1, 1 + i).setString(code)
         p.getCellByPosition(3, 1 + i).setValue(months); p.getCellByPosition(4, 1 + i).setValue(15.0 * months)
         p.getCellByPosition(6, 1 + i).setString('R%d' % (500 + i))

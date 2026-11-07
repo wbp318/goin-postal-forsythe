@@ -53,7 +53,8 @@ def report(holders, payments, boxes, prices):
             print(f'  {month}  {amount:>9,.2f}')
 
     print('\nBoxes by size')
-    price = dict(zip(prices['Size'], prices['Monthly price ($)']))
+    rate = 'Monthly rate ($)' if 'Monthly rate ($)' in prices else 'Monthly price ($)'   # renamed in v1.92.7
+    price = dict(zip(prices['Size'], prices[rate]))
     table = boxes.assign(taken=boxes['Status'] != 'Free').groupby('Size')['taken'].agg(boxes='count', taken='sum')
     table['free'] = table['boxes'] - table['taken']
     table['a month if full ($)'] = [n * price.get(s, 0) for s, n in table['boxes'].items()]

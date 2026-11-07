@@ -188,12 +188,13 @@ def test(desktop):
     for tab, sub in (('Holders', 'OnHoldersChange'), ('Payments', 'OnPaymentsChange')):
         ev = {x.Name: x.Value for x in s.getByName(tab).Events.getByName('OnChange')}
         check(f'{tab}: Content changed runs {sub}', ev.get('Script', '').endswith(f'Mailbox.{sub}?language=Basic&location=document'), ev)
-    check('a bad name is refused', str(run('AddCustomer', 'X', '', '', 'S', 'Monthly')).startswith('!'))
-    check('a nine-digit phone is refused', str(run('AddCustomer', 'Test Person', '318 555 010', '', 'S', 'Monthly')).startswith('!'))
-    check('a size that is not Small, Medium or Large is refused', str(run('AddCustomer', 'Test Person', '318 555 0100', '', 'x', 'Monthly')).startswith('!'))
+    check('a bad name is refused', str(run('AddCustomer', 'X', '', '', 'S', '6')).startswith('!'))
+    check('a nine-digit phone is refused', str(run('AddCustomer', 'Test Person', '318 555 010', '', 'S', '6')).startswith('!'))
+    check('a size that is not Small, Medium or Large is refused', str(run('AddCustomer', 'Test Person', '318 555 0100', '', 'x', '6')).startswith('!'))
     pr = s.getByName('Prices')
     check('the Prices tab has three sizes, Small, Medium and Large', [pr.getCellByPosition(0, i).getString() for i in range(1, 5)] == ['Small', 'Medium', 'Large', ''])
-    code = run('AddCustomer', 'Test Person', '318 555 0100', 'test@example.com', 's', 'Monthly')
+    check('a monthly term is refused: terms are 6 months or a year', str(run('AddCustomer', 'Test Person', '318 555 0100', '', 's', 'M')).startswith('!'))
+    code = run('AddCustomer', 'Test Person', '318 555 0100', 'test@example.com', 's', '6')
     six = run('AddCustomer', 'Six Months', '', '', 'm', '6')
     srow = run('FindHolder', six)
     check('AddCustomer takes 6 for a 6-month term', h.getCellByPosition(7, srow).getString() == '6 months', h.getCellByPosition(7, srow).getString())
@@ -212,8 +213,9 @@ def test(desktop):
     check('FindHolder by code', row == 2, row)
     check('FindHolder by part of a name', run('FindHolder', 'test pers') == 2)
     check('start date is today', int(h.getCellByPosition(8, row).getValue()) == (dt.date.today() - dt.date(1899, 12, 30)).days)
-    check('a payment for a code that does not exist is refused', run('AddPayment', 'MB-999', 1, 15.0, '', '') != '')
-    check('AddPayment', run('AddPayment', 'MB-002', 1, 15.0, '1001', 'Tester') == '')
+    check('a payment for a code that does not exist is refused', run('AddPayment', 'MB-999', 6, 90.0, '', '') != '')
+    check('a payment for 1 month is refused: terms are 6 months or a year', run('AddPayment', 'MB-002', 1, 15.0, '', '') != '')
+    check('AddPayment', run('AddPayment', 'MB-002', 6, 90.0, '1001', 'Tester') == '')
     sixp = s.getByName('Prices')
     sixp.getCellByPosition(1, 7).setValue(5)   # try 6 months for the price of 5
     p.getCellByPosition(3, 2).setValue(14); doc.calculateAll()
@@ -328,15 +330,15 @@ def test(desktop):
     br = s.getByName('Box report')
     got = [br.getCellByPosition(c, 4).getString() for c in range(4)]
     fr = 30
-    for col, v in ((2, 'Six Person'), (6, 'Small'), (7, 'Monthly')):
+    for col, v in ((2, 'Six Person'), (6, 'Small'), (7, '6 months')):
         h.getCellByPosition(col, fr).setString(v)
     h.getCellByPosition(0, fr).setString('MB-050'); h.getCellByPosition(8, fr).setValue(today)
     doc.calculateAll()
     h.getCellByPosition(7, fr).setString('6 months'); doc.calculateAll()
     check('a 6-month customer is priced from the 6-month column', h.getCellByPosition(9, fr).getValue() == pr.getCellByPosition(4, 1).getValue() == pr.getCellByPosition(1, 1).getValue() * pr.getCellByPosition(1, 7).getValue(), (h.getCellByPosition(9, fr).getValue(), pr.getCellByPosition(4, 1).getValue()))
     check('the suggested amount for 6 months on a 6-month term is the 6-month price', run('ExpectedAmount', fr, 6) == pr.getCellByPosition(4, 1).getValue(), run('ExpectedAmount', fr, 6))
-    h.getCellByPosition(7, fr).setString('Monthly'); doc.calculateAll()
-    check('a monthly customer is priced at the monthly price', h.getCellByPosition(9, fr).getValue() == pr.getCellByPosition(1, 1).getValue(), h.getCellByPosition(9, fr).getValue())
+    h.getCellByPosition(7, fr).setString('Yearly'); doc.calculateAll()
+    check('a yearly customer is priced at the yearly price', h.getCellByPosition(9, fr).getValue() == pr.getCellByPosition(2, 1).getValue(), h.getCellByPosition(9, fr).getValue())
     for col in (0, 2, 6, 7, 8):
         h.getCellByPosition(col, fr).clearContents(1 | 2 | 4 | 16)
     doc.calculateAll()
