@@ -1071,21 +1071,21 @@ python scripts/export_designs.py
 ## Languages
 
 <!-- languages:start -->
-Every language GitHub counts in this repo, exact, as of November 7, 2026 (4,356,252 bytes in all). GitHub's sidebar shows the top six and folds the rest into "Other"; this is the whole list, from the same count. Refreshed by `python scripts/languages.py`.
+Every language GitHub counts in this repo, exact, as of November 7, 2026 (4,329,964 bytes in all). GitHub's sidebar shows the top six and folds the rest into "Other"; this is the whole list, from the same count. Refreshed by `python scripts/languages.py`.
 
 | Language | Share | Bytes | What it is here |
 | --- | ---: | ---: | --- |
-| Markdown | 38.23% | 1,665,355 | Plans, guides, READMEs, the agenda and the changelog |
-| TypeScript | 31.36% | 1,365,979 | PeterShip and the website's APIs, libraries and tests (`site/src`) |
-| Astro | 7.98% | 347,669 | The website's pages and layouts |
-| JSON | 6.46% | 281,538 | Rate sheets, the 14-language strings, store facts, package files |
-| HTML | 5.19% | 226,086 | The mailbox intake packet, the design gallery, page previews |
-| SVG | 5.18% | 225,460 | Ad and sponsorship designs (the banner's machine-made traces are left out) |
-| Python | 3.15% | 137,331 | Build and release scripts, the mailbox register's builder, tests and tools |
-| JavaScript | 0.94% | 41,046 | Marketplace connectors and the printer agent (`.mjs`) |
+| Markdown | 38.49% | 1,666,544 | Plans, guides, READMEs, the agenda and the changelog |
+| TypeScript | 31.04% | 1,343,926 | PeterShip and the website's APIs, libraries and tests (`site/src`) |
+| Astro | 7.96% | 344,479 | The website's pages and layouts |
+| JSON | 6.45% | 279,304 | Rate sheets, the 14-language strings, store facts, package files |
+| HTML | 5.22% | 226,086 | The mailbox intake packet, the design gallery, page previews |
+| SVG | 5.21% | 225,460 | Ad and sponsorship designs (the banner's machine-made traces are left out) |
+| Python | 3.17% | 137,331 | Build and release scripts, the mailbox register's builder, tests and tools |
+| JavaScript | 0.95% | 41,046 | Marketplace connectors and the printer agent (`.mjs`) |
 | CSS | 0.69% | 29,890 | The website's styles |
-| Visual Basic 6.0 | 0.68% | 29,751 | The mailbox register's LibreOffice Basic macros (GitHub's name for `.bas`) |
-| YAML | 0.10% | 4,563 | CI workflows |
+| Visual Basic 6.0 | 0.69% | 29,751 | The mailbox register's LibreOffice Basic macros (GitHub's name for `.bas`) |
+| YAML | 0.11% | 4,563 | CI workflows |
 | PowerShell | 0.03% | 1,272 | Windows setup scripts |
 | CSV | 0.01% | 312 | Small data files |
 <!-- languages:end -->

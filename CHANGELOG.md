@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.92.0] - 2026-11-07
+
+**PeterShip is domestic only (DHL for US-to-US)**
+
+**PeterShip is domestic only.** William, Nov 7: international has too much risk; DHL stays for domestic only. (T43, with T42 for real domestic DHL.)
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.92.0) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.92.0) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.91.0...v1.92.0)
+
 ## [v1.91.0] - 2026-11-07
 
 **The tech LLC and the company structure**
