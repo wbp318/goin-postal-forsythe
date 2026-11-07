@@ -48,8 +48,9 @@ packet), with boxes to tick.
    register. Without this step the sheets still work; only the buttons do not.
 5. **Set it up.** On the Prices tab, type the real prices. **Measure every box** on the Measure tab
    (see [Measuring the boxes](#measuring-the-boxes)), then press **Boxes from measurements** on the
-   Counter tab to fill the Boxes tab. Delete the grey example rows on Holders, Payments, Boxes and
-   Measure.
+   Counter tab to fill the Boxes tab. Delete the grey example rows on Holders, Payments and Boxes. On
+   Measure, type over the grey rows or clear them (select the cells, press Delete): **never delete a
+   Measure row**, because the USPS chart on the right shares those rows.
 6. **Print the packet and take the first customer.** Print [`intake-packet.pdf`](intake-packet.pdf).
    Page 2 is the counter steps. Change the parts of the agreement marked OWNERS first
    (`intake-packet.html` is the source: edit it, open it in a browser, print to PDF). Print blank
@@ -101,7 +102,9 @@ For each customer:
 
 A customer who wants to keep the app's mail scanning stays on Anytime Mailbox and is not typed in
 here. **Wall boxes and folders never share a number:** before numbering the wall boxes, list every
-folder number on the Boxes tab, and the register refuses to give a number twice. The cabinet locks,
+folder number on the Boxes tab. The Boxes tab refuses a number typed twice, **Boxes from
+measurements** leaves a folder's number alone and says so, and **Give a box** only offers a box of
+the customer's own size. The cabinet locks,
 and mail in it is handled like mail in a box: only staff open it.
 
 ## The Counter tab
@@ -111,8 +114,8 @@ asks its questions in small boxes and fills in the right tabs.
 
 | Button | What it does |
 | --- | --- |
-| **New customer** | (Or just type the name on an empty Holders row: the code and start date are automatic.) Asks name, phone, email, size and monthly or yearly. Adds the row on Holders with the next MB- code and today as the start date, then jumps to the ID cells and says what to fill in next. |
-| **Record a payment** | Asks which customer, suggests the months (1, or 12 for yearly) and the amount from the price, takes the POS receipt number and your name, writes the Payments row, and shows the new paid-through date. |
+| **New customer** | (Or just type the name on an empty Holders row: the code and start date are automatic.) Asks name, phone, email, size (S, M, L or F for a folder) and the term (M monthly, 6 for 6 months, Y yearly). Adds the row on Holders with the next MB- code and today as the start date, then jumps to the ID cells and says what to fill in next. |
+| **Record a payment** | Asks which customer, suggests the months (1, 6 for a 6-month term, 12 for yearly) and the amount the Prices tab says (the same as the Expected column), takes the POS receipt number and your name, writes the Payments row, and shows the new paid-through date. |
 | **Give a box** | Refuses until both IDs, the 1583 date and a payment are in, and says which is missing. Then offers the Free boxes of their size, writes the box number, asks about the keys, and shows their new address. |
 | **Find a customer** | By code, box number or part of a name. Jumps to their row. |
 | **Close a box** | Writes today as the Closed date and the forwarding address in Notes. The box shows Free again. |
@@ -125,8 +128,8 @@ asks its questions in small boxes and fills in the right tabs.
 file per day. The counts at the top of the Counter tab (rented boxes, Free boxes, overdue, due within
 a week, IDs to fix, ready and waiting on a box, money taken this month) update by themselves.
 
-Every button works from any tab. On the Holders tab, click a customer's row first and the button
-uses that customer instead of asking.
+Every button works from any tab. A button that needs a customer asks for one: their code, box
+number or part of their name.
 
 ```mermaid
 flowchart TD
@@ -149,7 +152,7 @@ flowchart TD
 | Boxes | box number and size | who has it, Free or taken, paid through |
 | Holders | one row per customer: contact, size, term, start date, both IDs (last 4 only), 1583 date | price per term, months paid, paid through, **Status** (Current, Due soon, Overdue, Closed), **ID check** (OK, missing, same kind, no address, EXPIRED), **Ready for a box** |
 | Payments | one row per POS payment: date, code, months covered, amount, receipt number | the holder's name, the expected amount |
-| Prices | the monthly price per size and how many months a year costs | the yearly prices |
+| Prices | the monthly price per size, how many months a year costs and how many 6 months cost | the yearly and 6-month prices |
 | Measure | each box's inside width, height and depth in inches; which USPS sizes count as Small, Medium and Large | cubic inches, the USPS size (1 to 5) and name, the store size, whether it matches the Boxes tab, and what fits (a #10 envelope, a 9 x 12 envelope, Small and Medium Flat Rate Boxes, a shoebox) |
 
 Yellow cells are for typing. White cells are formulas. "Paid through" is the start date plus every
@@ -243,7 +246,7 @@ python physical-mailbox/tools/calc/build-register.py
 ```
 
 The second step adds the Counter tab, the buttons and the macros, saves
-`mailbox-register-TEMPLATE.ods`, then reopens it and runs 62 checks:
+`mailbox-register-TEMPLATE.ods`, then reopens it and runs 72 checks:
 
 - every macro: a customer, a payment, the IDs, a box, both lists, a backup and closing the box;
 - automatic codes: a name typed on an empty row gets the next code and today, and a new box number typed by hand lands on the Boxes tab, both typed through Calc's own input as the keyboard does;
@@ -259,7 +262,8 @@ FAIL line if anything is off. A filled register gets the new template through th
 ## Decisions for Peter and Rin
 
 1. **Prices.** The template starts at $15 small, $22 medium, $30 large and $10 for a folder in the
-   filing cabinet a month, with a year at 10 months. Change them on the Prices tab.
+   filing cabinet a month, with a year at 10 months and 6 months at 6 (no discount yet). Change them
+   on the Prices tab (B7 and B8 for the terms).
 2. **The agreement terms** marked OWNERS: days late before mail is held (15) and before the box closes
    (30), how long oversized parcels wait (14 days), the lost-key fee ($25), notice to close (30
    days), refunds.

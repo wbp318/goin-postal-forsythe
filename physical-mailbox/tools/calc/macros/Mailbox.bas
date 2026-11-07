@@ -156,15 +156,21 @@ Function FindHolder(sWhat As String) As Long
 	If hits = 1 Then FindHolder = hitRow
 End Function
 
+REM What the Prices tab says a payment should be, the same rule as Payments column F: each whole year
+REM at the yearly price, each whole 6 months left at the 6-month price, single months at the monthly price.
 Function ExpectedAmount(r As Long, months As Long) As Double
-	Dim h As Object, price As Double
+	Dim h As Object, pr As Object, sz As String, i As Long, pm As Double, py As Double, p6 As Double
 	h = Sh("Holders")
-	price = h.getCellByPosition(H_PRICE, r).getValue()
-	If CellText(h, H_TERM, r) = "Yearly" Then
-		ExpectedAmount = Int(price * months / 12 * 100 + 0.5) / 100
-	Else
-		ExpectedAmount = Int(price * months * 100 + 0.5) / 100
-	End If
+	pr = Sh("Prices")
+	sz = CellText(h, H_SIZE, r)
+	For i = 1 To 4
+		If CellText(pr, 0, i) = sz Then
+			pm = pr.getCellByPosition(1, i).getValue()
+			py = pr.getCellByPosition(2, i).getValue()
+			p6 = pr.getCellByPosition(4, i).getValue()
+		End If
+	Next i
+	ExpectedAmount = Int((py * Int(months / 12) + p6 * Int((months Mod 12) / 6) + pm * (months Mod 6)) * 100 + 0.5) / 100
 End Function
 
 REM Box numbers that show Free on the Boxes tab, of one size (or any size when sSize is empty), comma-separated.
@@ -231,6 +237,8 @@ Function AddCustomer(sName As String, sPhone As String, sEmail As String, sSize 
 	h.getCellByPosition(H_SIZE, r).setString(SizeName(sSize))
 	If UCase(Left(sTerm, 1)) = "Y" Then
 		h.getCellByPosition(H_TERM, r).setString("Yearly")
+	ElseIf Left(Trim(sTerm), 1) = "6" Then
+		h.getCellByPosition(H_TERM, r).setString("6 months")
 	Else
 		h.getCellByPosition(H_TERM, r).setString("Monthly")
 	End If
@@ -270,9 +278,22 @@ Function AddPayment(sCode As String, months As Long, amount As Double, sReceipt 
 	AddPayment = ""
 End Function
 
+REM The size the Boxes tab gives a box number, or "" when it is not there.
+Function BoxSize(sBox As String) As String
+	Dim b As Object, r As Long
+	b = Sh("Boxes")
+	BoxSize = ""
+	For r = R0 To HLAST
+		If CellText(b, B_BOX, r) = sBox Then
+			BoxSize = CellText(b, B_SIZE, r)
+			Exit Function
+		End If
+	Next r
+End Function
+
 REM Gives a Free box to a ready customer. Returns "" when done, or a line saying what is wrong.
 Function AssignBox(r As Long, sBox As String) As String
-	Dim h As Object, why As String, sFree As String, cell As Object
+	Dim h As Object, why As String, sFree As String, cell As Object, bsz As String
 	h = Sh("Holders")
 	If CellText(h, H_BOX, r) <> "" Then
 		AssignBox = "This customer already has box " & CellText(h, H_BOX, r) & "."
@@ -286,6 +307,11 @@ Function AssignBox(r As Long, sBox As String) As String
 	sFree = ", " & FreeBoxes("") & ","
 	If InStr(sFree, ", " & Trim(sBox) & ",") = 0 Then
 		AssignBox = "Box " & sBox & " is not Free on the Boxes tab."
+		Exit Function
+	End If
+	bsz = BoxSize(Trim(sBox))
+	If bsz <> CellText(h, H_SIZE, r) Then
+		AssignBox = "Box " & sBox & " is " & bsz & ", and " & CellText(h, H_NAME, r) & " pays for " & CellText(h, H_SIZE, r) & ". Pick a " & CellText(h, H_SIZE, r) & " box, or change their Size on the Holders tab first."
 		Exit Function
 	End If
 	cell = h.getCellByPosition(H_BOX, r)
@@ -407,7 +433,7 @@ REM that are not there yet and sets the size of Free ones; a box someone holds k
 REM Returns "added,changed,held" (held = sizes that differ on a box with a holder, left alone).
 Function BoxesFromMeasure() As String
 	Dim m As Object, b As Object, r As Long, br As Long, sBox As String, sSize As String, found As Long
-	Dim added As Long, changed As Long, held As Long, oFrom As Object
+	Dim added As Long, changed As Long, held As Long, folders As Long, oFrom As Object
 	ThisComponent.calculateAll()
 	m = Sh("Measure")
 	b = Sh("Boxes")
@@ -433,6 +459,8 @@ Function BoxesFromMeasure() As String
 				End If
 				b.getCellByPosition(B_SIZE, found).setString(sSize)
 				added = added + 1
+			ElseIf CellText(b, B_SIZE, found) = "Folder" Then
+				folders = folders + 1
 			ElseIf CellText(b, B_SIZE, found) <> sSize Then
 				If CellText(b, B_STATUS, found) = "Free" Or CellText(b, B_STATUS, found) = "" Then
 					b.getCellByPosition(B_SIZE, found).setString(sSize)
@@ -444,7 +472,7 @@ Function BoxesFromMeasure() As String
 		End If
 	Next r
 	ThisComponent.calculateAll()
-	BoxesFromMeasure = added & "," & changed & "," & held
+	BoxesFromMeasure = added & "," & changed & "," & held & "," & folders
 End Function
 
 REM Lists F1 when set; otherwise "Mailbox backups" in the Documents folder File Explorer shows. LibreOffice's
@@ -532,10 +560,11 @@ Sub btnNewCustomer(Optional oEvent)
 	em = InputBox("Email (or leave blank):", APP & ": new customer")
 	sz = InputBox("Box size: type S for Small, M for Medium, L for Large, or F for a Folder in the filing cabinet.", APP & ": new customer", "S")
 	If Trim(sz) = "" Then Exit Sub
-	If MsgBox("Paying by the year?" & Chr(10) & "Yes = yearly, No = monthly.", 4 + 32, APP & ": new customer") = 6 Then
-		tm = "Yearly"
-	Else
-		tm = "Monthly"
+	tm = InputBox("Term: type M for monthly, 6 for 6 months, Y for yearly.", APP & ": new customer", "M")
+	If Trim(tm) = "" Then Exit Sub
+	If InStr("M6Y", UCase(Left(Trim(tm), 1))) = 0 Then
+		MsgBox "The term is M (monthly), 6 (6 months) or Y (yearly). Nothing was added.", 48, APP
+		Exit Sub
 	End If
 	res = AddCustomer(nm, ph, em, sz, tm)
 	If Left(res, 1) = "!" Then
@@ -553,7 +582,7 @@ Sub btnPayment(Optional oEvent)
 	If r < 0 Then Exit Sub
 	h = Sh("Holders")
 	code = CellText(h, H_CODE, r)
-	m = InputBox("Months this payment covers for " & CellText(h, H_NAME, r) & " (" & CellText(h, H_TERM, r) & "):", APP & ": payment", IIf(CellText(h, H_TERM, r) = "Yearly", "12", "1"))
+	m = InputBox("Months this payment covers for " & CellText(h, H_NAME, r) & " (" & CellText(h, H_TERM, r) & "):", APP & ": payment", IIf(CellText(h, H_TERM, r) = "Yearly", "12", IIf(CellText(h, H_TERM, r) = "6 months", "6", "1")))
 	If Trim(m) = "" Then Exit Sub
 	If Not IsNumeric(m) Then
 		MsgBox "Months is a whole number, like 1 or 12.", 48, APP
@@ -647,6 +676,7 @@ Sub btnBoxesFromMeasure(Optional oEvent)
 	res = Split(BoxesFromMeasure(), ",")
 	msg = res(0) & " boxes added to the Boxes tab, " & res(1) & " Free boxes given their measured size."
 	If CLng(res(2)) > 0 Then msg = msg & Chr(10) & res(2) & " boxes someone holds measure as a different size: they kept theirs. See Check on the Measure tab."
+	If CLng(res(3)) > 0 Then msg = msg & Chr(10) & res(3) & " measured box numbers are already folders on the Boxes tab, so they were left as folders. Give those wall boxes numbers no folder uses."
 	JumpTo("Boxes", B_SIZE, R0)
 	MsgBox msg, 64, APP
 End Sub

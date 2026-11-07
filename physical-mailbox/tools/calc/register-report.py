@@ -25,7 +25,7 @@ def load(path):
     holders = read('Holders').dropna(subset=['Code'])
     payments = read('Payments').dropna(subset=['Code'])
     boxes = read('Boxes').dropna(subset=['Box #'])
-    prices = read('Prices', nrows=3)
+    prices = read('Prices', nrows=4)
     for df, cols in ((holders, ['Start date', 'Paid through', 'Closed date']), (payments, ['Date'])):
         for c in cols:
             df[c] = pd.to_datetime(df[c], errors='coerce')

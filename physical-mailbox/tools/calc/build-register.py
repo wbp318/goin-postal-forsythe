@@ -44,13 +44,13 @@ lines = [
     ("", base),
     ("Which cells to type in", bold),
     ("Yellow cells are for typing. White cells are formulas: leave them alone, they fill themselves.", base),
-    ("Grey rows are examples. Delete them (right-click the row number, Delete) before the first real customer.", base),
+    ("Grey rows are examples. On Holders, Payments and Boxes, delete them (right-click the row number, Delete Rows) before the first real customer. On Measure, type your boxes over them or clear them (select the cells, press Delete): never delete a Measure row, the USPS chart shares those rows.", base),
     ("", base),
     ("A new customer", bold),
-    ("1. Holders tab: a new row. Code = MB- and the next number (MB-002, MB-003 ...). Name, phone, email, size, Monthly or Yearly, start date (today).", base),
+    ("1. Holders tab: a new row. Code = MB- and the next number (MB-002, MB-003 ...). Name, phone, email, size, term (Monthly, 6 months or Yearly), start date (today).", base),
     ("2. See both IDs (see the intake packet). Type each ID's type, last 4 and expiry. Never the whole number.", base),
     ("3. Fill in PS Form 1583 with the customer and sign the store's part. Type the date in '1583 signed'.", base),
-    ("4. Take the first payment on the POS. Payments tab: a new row with the date, the code, months covered (1, or 12 for yearly) and the amount.", base),
+    ("4. Take the first payment on the POS. Payments tab: a new row with the date, the code, months covered (1, 6 for a 6-month term, 12 for yearly) and the amount.", base),
     ("5. 'Ready for a box' on the Holders tab now says YES. Pick a Free box on the Boxes tab, type its number in the holder's Box # column, hand over the key, tick Keys given.", base),
     ("", base),
     ("Every payment after that", bold),
@@ -79,19 +79,21 @@ st.column_dimensions['A'].width = 120
 
 # ---------- Prices ----------
 pr = wb.create_sheet('Prices')
-pr['A1'] = 'Size'; pr['B1'] = 'Monthly price ($)'; pr['C1'] = 'Yearly price ($)'; pr['D1'] = 'Fits'
-for c in 'ABCD': pr[f'{c}1'].font = head; pr[f'{c}1'].fill = HEAD
+pr['A1'] = 'Size'; pr['B1'] = 'Monthly price ($)'; pr['C1'] = 'Yearly price ($)'; pr['D1'] = 'Fits'; pr['E1'] = '6-month price ($)'
+for c in 'ABCDE': pr[f'{c}1'].font = head; pr[f'{c}1'].fill = HEAD
 sizes = [('Small', 15, 'Letters and small envelopes'), ('Medium', 22, 'Letters, magazines, small parcels'), ('Large', 30, 'Everything, with package acceptance'),
          ('Folder', 10, 'A file folder in the filing cabinet: letters and flat mail; parcels wait at the counter')]
 for i, (n, m, fits) in enumerate(sizes, 2):
     pr[f'A{i}'] = n; pr[f'B{i}'] = m; pr[f'B{i}'].font = blue; pr[f'B{i}'].fill = INPUT
-    pr[f'C{i}'] = f'=B{i}*$B$7'; pr[f'D{i}'] = fits
-    pr[f'B{i}'].number_format = pr[f'C{i}'].number_format = '$#,##0.00'
+    pr[f'C{i}'] = f'=B{i}*$B$7'; pr[f'D{i}'] = fits; pr[f'E{i}'] = f'=B{i}*$B$8'
+    pr[f'B{i}'].number_format = pr[f'C{i}'].number_format = pr[f'E{i}'].number_format = '$#,##0.00'
 pr['A7'] = 'A year costs this many months'; pr['B7'] = 10; pr['B7'].font = blue; pr['B7'].fill = INPUT
 pr['B7'].comment = Comment('12 months for the price of 10, as on the website. Source: site/src/data/mailboxes.json, placeholder until the owners confirm.', 'PeterShip')
+pr['A8'] = '6 months cost this many months'; pr['B8'] = 6; pr['B8'].font = blue; pr['B8'].fill = INPUT
+pr['B8'].comment = Comment('6 means no discount for paying 6 months at once; 5 would be 6 months for the price of 5. Placeholder until the owners decide.', 'PeterShip')
 pr['A9'] = 'Placeholders until Peter and Rin confirm (the same numbers as the website). Change the yellow cells; everything else follows.'; pr['A9'].font = grey
-for col, w in zip('ABCD', (32, 18, 18, 40)): pr.column_dimensions[col].width = w
-for r in pr.iter_rows(min_row=2, max_row=7):
+for col, w in zip('ABCDE', (32, 18, 18, 40, 18)): pr.column_dimensions[col].width = w
+for r in pr.iter_rows(min_row=2, max_row=8):
     for c in r:
         if c.font != blue: c.font = Font(name=F, size=11, bold=c.font.bold)
 
@@ -99,7 +101,7 @@ for r in pr.iter_rows(min_row=2, max_row=7):
 ho = wb.create_sheet('Holders')
 cols = [
     ('Code', 11, True), ('Box #', 8, True), ('Name', 22, True), ('Business (optional)', 20, True), ('Phone', 14, True), ('Email', 24, True),
-    ('Size', 9, True), ('Monthly / Yearly', 11, True), ('Start date', 12, True),
+    ('Size', 9, True), ('Term', 11, True), ('Start date', 12, True),
     ('Price per term ($)', 12, False), ('Months paid', 9, False), ('Paid through', 12, False), ('Status', 10, False),
     ('ID 1 type (photo ID)', 20, True), ('ID 1 last 4', 9, True), ('ID 1 expires', 12, True),
     ('ID 2 type', 20, True), ('ID 2 last 4', 9, True), ('ID 2 expires', 12, True), ('ID 2 shows home address?', 10, True),
@@ -117,7 +119,7 @@ for r in range(2, ROWS + 2):
     for i, (n, _, inp) in enumerate(cols, 1):
         c = ho.cell(row=r, column=i); c.font = base; c.border = box
         if inp: c.fill = INPUT
-    ho[f'{L["Price per term ($)"]}{r}'] = f'=IF(OR({A}="",{L["Size"]}{r}=""),"",IF({L["Monthly / Yearly"]}{r}="Yearly",INDEX(Prices!$C$2:$C$5,MATCH({L["Size"]}{r},Prices!$A$2:$A$5,0)),INDEX(Prices!$B$2:$B$5,MATCH({L["Size"]}{r},Prices!$A$2:$A$5,0))))'
+    ho[f'{L["Price per term ($)"]}{r}'] = f'=IF(OR({A}="",{L["Size"]}{r}=""),"",IF({L["Term"]}{r}="Yearly",INDEX(Prices!$C$2:$C$5,MATCH({L["Size"]}{r},Prices!$A$2:$A$5,0)),IF({L["Term"]}{r}="6 months",INDEX(Prices!$E$2:$E$5,MATCH({L["Size"]}{r},Prices!$A$2:$A$5,0)),INDEX(Prices!$B$2:$B$5,MATCH({L["Size"]}{r},Prices!$A$2:$A$5,0)))))'
     ho[f'{L["Months paid"]}{r}'] = f'=IF({A}="","",SUMIFS(Payments!$D:$D,Payments!$B:$B,{A}))'
     ho[f'{L["Paid through"]}{r}'] = f'=IF(OR({A}="",{L["Start date"]}{r}=""),"",EDATE({L["Start date"]}{r},{L["Months paid"]}{r}))'
     pt = f'{L["Paid through"]}{r}'
@@ -133,7 +135,7 @@ ho.column_dimensions[L['Open box (helper)']].hidden = True
 
 # example row 2
 today = dt.date.today()
-ex = {'Code': 'MB-001', 'Box #': 101, 'Name': 'EXAMPLE Jane Doe', 'Phone': '318 555 0100', 'Email': 'jane@example.com', 'Size': 'Small', 'Monthly / Yearly': 'Monthly',
+ex = {'Code': 'MB-001', 'Box #': 101, 'Name': 'EXAMPLE Jane Doe', 'Phone': '318 555 0100', 'Email': 'jane@example.com', 'Size': 'Small', 'Term': 'Monthly',
       'Start date': today, 'ID 1 type (photo ID)': "Driver's license or state ID", 'ID 1 last 4': '1234', 'ID 1 expires': dt.date(today.year + 3, 4, 1),
       'ID 2 type': 'Home or vehicle insurance policy', 'ID 2 last 4': '9876', 'ID 2 expires': dt.date(today.year + 1, 6, 30), 'ID 2 shows home address?': 'Yes',
       '1583 signed': today, 'Checked by': 'Peter', 'Keys given': 'Yes', 'Notes': 'Example row: delete before the first real customer'}
@@ -155,7 +157,7 @@ def rule(sheet, rng, kind, f1, f2=None, op=None, title='', prompt='', error=''):
     sheet.add_data_validation(d); d.add(rng)
 last = ROWS + 1
 dv(ho, '=Prices!$A$2:$A$5', f'{L["Size"]}2:{L["Size"]}{last}')
-dv(ho, '"Monthly,Yearly"', f'{L["Monthly / Yearly"]}2:{L["Monthly / Yearly"]}{last}')
+dv(ho, '"Monthly,6 months,Yearly"', f'{L["Term"]}2:{L["Term"]}{last}')
 ids1 = "Driver's license or state ID,Passport,US passport card,Military ID,Government employee ID,University ID,Permanent resident card,Certificate of naturalization,Tribal ID"
 # list over 255 chars is not allowed inline: put the lists on a hidden sheet
 lists = wb.create_sheet('Lists')
@@ -192,12 +194,14 @@ for r in range(2, ROWS * 4 + 2):
         c = pa.cell(row=r, column=i); c.font = base; c.border = box
         if inp: c.fill = INPUT
     pa[f'C{r}'] = f'=IF(B{r}="","",IFERROR(INDEX(Holders!$C:$C,MATCH(B{r},Holders!$A:$A,0)),"no such code"))'
-    pa[f'F{r}'] = f'=IF(OR(B{r}="",D{r}=""),"",IFERROR(IF(D{r}>=12,INDEX(Prices!$C$2:$C$5,MATCH(INDEX(Holders!$G:$G,MATCH(B{r},Holders!$A:$A,0)),Prices!$A$2:$A$5,0))*INT(D{r}/12)+INDEX(Prices!$B$2:$B$5,MATCH(INDEX(Holders!$G:$G,MATCH(B{r},Holders!$A:$A,0)),Prices!$A$2:$A$5,0))*MOD(D{r},12),INDEX(Prices!$B$2:$B$5,MATCH(INDEX(Holders!$G:$G,MATCH(B{r},Holders!$A:$A,0)),Prices!$A$2:$A$5,0))*D{r}),""))'
+    _i = f'MATCH(INDEX(Holders!$G:$G,MATCH(B{r},Holders!$A:$A,0)),Prices!$A$2:$A$5,0)'
+    # Each whole year at the yearly price, then each whole 6 months at the 6-month price, then single months.
+    pa[f'F{r}'] = f'=IF(OR(B{r}="",D{r}=""),"",IFERROR(INDEX(Prices!$C$2:$C$5,{_i})*INT(D{r}/12)+INDEX(Prices!$E$2:$E$5,{_i})*INT(MOD(D{r},12)/6)+INDEX(Prices!$B$2:$B$5,{_i})*MOD(D{r},6),""))'
     pa[f'A{r}'].number_format = 'mmm d, yyyy'; pa[f'E{r}'].number_format = pa[f'F{r}'].number_format = '$#,##0.00'
 for n, v in zip('ABDEGHI', (today, 'MB-001', 1, 15, '1043', 'Peter', 'Example row: delete')):
     pa[f'{n}2'] = v
 for i in range(1, len(pcols) + 1): pa.cell(row=2, column=i).fill = EX
-pa['F1'].comment = Comment('What the Prices tab says this should be. 12 months = the yearly price. If it differs from Amount taken, check the POS.', 'PeterShip')
+pa['F1'].comment = Comment('What the Prices tab says this should be. 12 months = the yearly price, 6 months = the 6-month price. If it differs from Amount taken, check the POS.', 'PeterShip')
 pa.conditional_formatting.add(f'C2:C{ROWS*4+1}', FormulaRule(formula=['C2="no such code"'], fill=red))
 
 # ---------- Boxes ----------
@@ -242,12 +246,12 @@ rule(ho, H('Phone'), 'custom', f'LEN(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE
      title='Phone', prompt='Ten digits, like 318 555 0100.', error='A phone number needs ten digits, like 318 555 0100.')
 rule(ho, H('Email'), 'custom', f'AND(ISNUMBER(FIND("@",{c("Email")})),ISNUMBER(FIND(".",{c("Email")},FIND("@",{c("Email")}))),ISERROR(FIND(" ",{c("Email")})))',
      title='Email', error='That does not look like an email address. It needs an @ and a dot after it, and no spaces.')
-rule(ho, H('Start date'), 'date', 'DATE(2025,1,1)', 'TODAY()+31', 'between', title='Start date', prompt='The day they signed up, like 11/7/2026.', error='Type a date, like 11/7/2026. It cannot be more than a month from today.')
+rule(ho, H('Start date'), 'date', 'DATE(2000,1,1)', 'TODAY()+31', 'between', title='Start date', prompt='The day they signed up, like 11/7/2026.', error='Type a date, like 11/7/2026. It cannot be more than a month from today.')
 for n in ('ID 1 last 4', 'ID 2 last 4'):
     rule(ho, H(n), 'textLength', '4', None, 'equal', title='Last 4 only', prompt='The last four characters of the ID number. Never the whole number.', error='Type exactly four characters: the end of the ID number, never the whole number.')
 for n in ('ID 1 expires', 'ID 2 expires'):
     rule(ho, H(n), 'date', 'TODAY()', None, 'greaterThanOrEqual', title='ID expiry', prompt='The expiry date printed on the ID.', error='That ID has expired. USPS does not accept an expired ID: ask for a current one.')
-rule(ho, H('1583 signed'), 'date', 'DATE(2025,1,1)', 'TODAY()', 'between', title='1583 signed', prompt='The day the customer signed PS Form 1583 with you.', error='Type the date the 1583 was signed. It cannot be in the future.')
+rule(ho, H('1583 signed'), 'date', 'DATE(2000,1,1)', 'TODAY()', 'between', title='1583 signed', prompt='The day the customer signed PS Form 1583 with you.', error='Type the date the 1583 was signed. It cannot be in the future.')
 rule(ho, H('Checked by'), 'textLength', '1', '30', 'between', title='Checked by', prompt='Who looked at the two IDs.', error='Type the name of the person who checked the IDs.')
 rule(ho, H('Closed date'), 'custom', f'AND(ISNUMBER({c("Closed date")}),{c("Closed date")}>={c("Start date")},{c("Closed date")}<=TODAY())',
      title='Closed date', prompt='The day the keys came back.', error='Type a date between the start date and today.')
@@ -260,7 +264,7 @@ ho.conditional_formatting.add(H('Box #'), FormulaRule(formula=[f'AND({c("Box #")
 ho.conditional_formatting.add(H('ID check'), FormulaRule(formula=[f'OR({c("ID check")}="same kind",{c("ID check")}="no address",{c("ID check")}="missing")'], fill=amber))
 
 PL = ROWS * 4 + 1
-rule(pa, f'A2:A{PL}', 'date', 'DATE(2025,1,1)', 'TODAY()', 'between', title='Payment date', prompt='The day it was paid on the POS.', error='Type the payment date, like 11/7/2026. It cannot be in the future.')
+rule(pa, f'A2:A{PL}', 'date', 'DATE(2000,1,1)', 'TODAY()', 'between', title='Payment date', prompt='The day it was paid on the POS.', error='Type the payment date, like 11/7/2026. It cannot be in the future.')
 dv(pa, f'=Holders!$A$2:$A${last}', f'B2:B{PL}', "Pick the customer's code (MB-...) from the Holders tab.")
 rule(pa, f'D2:D{PL}', 'whole', '1', '24', 'between', title='Months covered', prompt='1 for a month, 12 for a year.', error='Months covered is a whole number from 1 to 24: 1 for a month, 12 for a year.')
 rule(pa, f'E2:E{PL}', 'decimal', '0', '5000', 'between', title='Amount', prompt='What the POS took, in dollars.', error='Type the amount in dollars, like 15 or 150.00.')
@@ -270,6 +274,7 @@ rule(bx, f'A2:A{last}', 'custom', f'AND(COUNTIF($A$2:$A${last},A2)=1,LEN(A2)<=6,
 for cell in ('B2', 'B3', 'B4', 'B5'):
     rule(pr, cell, 'decimal', '0', '1000', 'between', title='Monthly price', error='Type the monthly price in dollars, like 15.')
 rule(pr, 'B7', 'whole', '1', '12', 'between', title='Months a year costs', error='A whole number from 1 to 12. 10 means 12 months for the price of 10.')
+rule(pr, 'B8', 'whole', '1', '6', 'between', title='Months 6 months cost', error='A whole number from 1 to 6. 5 means 6 months for the price of 5.')
 wb.move_sheet('Boxes', offset=-1)
 
 # ---------- Measure (v1.82.2) ----------
@@ -288,7 +293,8 @@ steps = [
     ('3. One row per door, by the number on the door. A bank of identical boxes: measure one, then copy its three numbers down to the rest.', base),
     ('4. The sheet works out the cubic inches, the USPS size and the store size. Which USPS sizes count as Small, Medium and Large is for Peter and Rin: the yellow Store size cells in the chart on the right. The prices follow from the Prices tab.', base),
     ('5. The Fits columns say yes when that item goes in flat without bending (the item sizes are on the right; change them if yours differ). Use them for the Fits words on the Prices tab and to answer "will my packages fit?".', base),
-    ('6. Counter tab, Boxes from measurements: copies every measured box and its store size to the Boxes tab. It never changes the size of a box someone holds. Check says OK when both tabs agree.', base),
+    ('6. Counter tab, Boxes from measurements: copies every measured box and its store size to the Boxes tab. It never changes the size of a box someone holds, or of a folder. Check says OK when both tabs agree.', base),
+    ('Never delete a row on this tab: the USPS chart on the right shares rows 14 to 18. To remove a box or the grey examples, select its cells and press Delete.', bold),
     ('Parcels too big for the box: USPS sets no rule for a private mailbox; the service agreement (OWNERS terms) says how long the store holds them at the counter.', grey),
 ]
 for i, (t, f) in enumerate(steps, 1):

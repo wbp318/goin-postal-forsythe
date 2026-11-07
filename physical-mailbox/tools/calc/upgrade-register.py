@@ -51,9 +51,12 @@ CLEAR = 1 | 2 | 4 | 16  # values, dates, strings, formulas; the cell's fill, bor
 # the USPS chart and the item sizes to its right are the template's, except the CELLS below.
 TABLES = {'Holders': (0, 1, 300, 40), 'Payments': (0, 1, 1200, 20), 'Boxes': (0, 1, 300, 20), 'Measure': (12, 13, 312, 16), 'Prices': (0, 1, 4, 10)}
 KEEP_NEW_ROWS = {'Prices'}   # a size row the old file never had (Folder, v1.92.4) keeps the template's
-CELLS = {'Prices': ['B7'], 'Measure': ['X14:X18', 'S22:V26'], 'Lists': ['F1']}
+CELLS = {'Prices': ['B7', 'B8'], 'Measure': ['X14:X18', 'S22:V26'], 'Lists': ['F1']}
 REBUILT = {'Call list', 'USPS quarterly', 'Box report'}   # tabs the buttons and macros make again
 CHECK_COLS = ['Status', 'Paid through', 'ID check', 'Ready for a box']
+RENAMED = {'Term': 'Monthly / Yearly'}   # new heading: the old one it carries from (v1.92.5)
+CHART_ROWS = {'Measure': ('S14:S18', 'S22:S26')}   # labels that must sit in the same cells in both files before Measure's side cells are carried by address
+NEW_CELLS = {('Prices', 'B8')}           # a setting an older register never had: an empty old cell keeps the template's
 
 
 def pv(name, value):
@@ -143,6 +146,10 @@ def upgrade(desktop, old_path, template_path, out_path):
                 continue
             o, n = os_.getByName(tab), ns.getByName(tab)
             oh, nh = headings(o, hr, lc), headings(n, hr, lc)
+            for new_name, old_name in RENAMED.items():
+                if new_name in nh and new_name not in oh and old_name in oh:
+                    oh[new_name] = oh.pop(old_name)
+                    report.append(f'{tab}: the old column "{old_name}" carried into "{new_name}"')
             probe = r0 + 1 if r1 > r0 else r0          # the row under the example: formulas only where they belong
             cols = [(name, oh[name], nc, typed(n.getCellByPosition(nc, probe))) for name, nc in nh.items() if name in oh]
             for name in nh:
@@ -171,12 +178,18 @@ def upgrade(desktop, old_path, template_path, out_path):
             if not (os_.hasByName(tab) and ns.hasByName(tab)):
                 continue
             o, n = os_.getByName(tab), ns.getByName(tab)
+            moved = [r for r in CHART_ROWS.get(tab, ()) if o.getCellRangeByName(r).getDataArray() != n.getCellRangeByName(r).getDataArray()]
+            if moved:
+                warnings.append(f'{tab}: the chart on the right is not where the template has it (were rows deleted?), so the store sizes and Fits items keep the template values. Set them again on the new file.')
+                continue
             for ref in refs:
                 orng, nrng = o.getCellRangeByName(ref), n.getCellRangeByName(ref)
                 a = nrng.RangeAddress
                 for r in range(nrng.Rows.Count):
                     for c in range(nrng.Columns.Count):
                         src, dst = orng.getCellByPosition(c, r), nrng.getCellByPosition(c, r)
+                        if (tab, ref) in NEW_CELLS and src.getType() == EMPTY:
+                            continue
                         if typed(dst):
                             copy_cell(src, dst)
                             expected.append((n, a.StartColumn + c, a.StartRow + r, src.getString()))
@@ -244,7 +257,9 @@ def self_test(desktop):
     today = (dt.date.today() - dt.date(1899, 12, 30)).days
     for sh in (h, p, b):
         sh.Rows.removeByIndex(1, 1)                 # the store deleted the grey example rows
-    m.Rows.removeByIndex(13, 3)
+    for rr in range(13, 16):                    # Measure's examples are cleared, never deleted (the USPS chart shares the rows)
+        for cc in range(4):
+            m.getCellByPosition(cc, rr).clearContents(1 | 2 | 4 | 16)
     people = [('MB-002', 301, 'Ada Brown', 'Small'), ('MB-003', 302, 'Cy Dupree', 'Medium'), ('MB-004', '', 'Eve Fontenot', 'Small')]
     for i, (code, box, name, size) in enumerate(people):
         r = 1 + i
@@ -319,14 +334,28 @@ def self_test(desktop):
     if git.returncode == 0:
         v1923.write_bytes(git.stdout)
         report, warnings, failures = upgrade(desktop, v1923, template, tmp / 'from-1923.ods')
-        ok = not failures
+        ok, got = not failures, ()
         if ok:
             d = load(desktop, tmp / 'from-1923.ods', True)
             pr = d.Sheets.getByName('Prices')
             got = (pr.getCellByPosition(0, 4).getString(), pr.getCellByPosition(1, 4).getValue())
+            got += (pr.getCellByPosition(1, 7).getValue(), d.Sheets.getByName('Holders').getCellByPosition(7, 1).getString())
             d.close(True)
-            ok = got[0] == 'Folder' and got[1] > 0
-        check('a v1.92.3 register upgrades and gains the Folder size with its price', ok, (failures, report))
+            ok = got[0] == 'Folder' and got[1] > 0 and got[2] == 6 and got[3] == 'Monthly'
+        check('a v1.92.3 register upgrades: gains Folder and the 6-month setting, Monthly / Yearly carries into Term', ok, (failures, got))
+    # A register whose Measure rows were deleted (the USPS chart moved up with them): its side cells are not carried by address.
+    cut = tmp / 'cut.ods'
+    shutil.copy(template, cut)
+    d = load(desktop, cut, False)
+    d.Sheets.getByName('Measure').Rows.removeByIndex(13, 3)
+    d.store(); d.close(True)
+    report, warnings, failures = upgrade(desktop, cut, template, tmp / 'from-cut.ods')
+    sizes = ()
+    if not failures:
+        d = load(desktop, tmp / 'from-cut.ods', True)
+        sizes = tuple(r[0] for r in d.Sheets.getByName('Measure').getCellRangeByName('X14:X18').getDataArray())
+        d.close(True)
+    check('deleted Measure rows: a warning, and the store sizes keep the template values', not failures and any('chart' in w for w in warnings) and sizes == ('Small', 'Small', 'Medium', 'Large', 'Large'), (failures, warnings, sizes))
     shutil.rmtree(tmp, ignore_errors=True)
     return checks
 

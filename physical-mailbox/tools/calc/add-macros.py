@@ -194,6 +194,19 @@ def test(desktop):
     pr = s.getByName('Prices')
     check('the Prices tab has a Folder size with a price', (pr.getCellByPosition(0, 4).getString(), pr.getCellByPosition(1, 4).getValue() > 0) == ('Folder', True))
     code = run('AddCustomer', 'Test Person', '318 555 0100', 'test@example.com', 's', 'Monthly')
+    six = run('AddCustomer', 'Six Months', '', '', 'm', '6')
+    srow = run('FindHolder', six)
+    check('AddCustomer takes 6 for a 6-month term', h.getCellByPosition(7, srow).getString() == '6 months', h.getCellByPosition(7, srow).getString())
+    pr0 = s.getByName('Prices')
+    sm, sy = pr0.getCellByPosition(1, 2).getValue(), pr0.getCellByPosition(2, 2).getValue()   # Medium
+    p.getCellByPosition(1, 3).setString(six); p.getCellByPosition(3, 3).setValue(18); doc.calculateAll()
+    check('the suggested amount matches the Expected column (18 months: a year, then 6 months)', run('ExpectedAmount', srow, 18) == p.getCellByPosition(5, 3).getValue() == sy + 6 * sm, (run('ExpectedAmount', srow, 18), p.getCellByPosition(5, 3).getValue()))
+    check('a monthly customer prepaying 12 months is offered the yearly price, as Expected says', run('ExpectedAmount', 1, 12) == pr0.getCellByPosition(2, 1).getValue(), run('ExpectedAmount', 1, 12))
+    for col in (1, 3):
+        p.getCellByPosition(col, 3).clearContents(1 | 2 | 4 | 16)
+    for col in range(0, 27):
+        h.getCellByPosition(col, srow).clearContents(1 | 2 | 4 | 16)
+    doc.calculateAll()
     check('AddCustomer gives the next code', code == 'MB-002', code)
     row = run('FindHolder', 'MB-002')
     check('FindHolder by code', row == 2, row)
@@ -201,6 +214,14 @@ def test(desktop):
     check('start date is today', int(h.getCellByPosition(8, row).getValue()) == (dt.date.today() - dt.date(1899, 12, 30)).days)
     check('a payment for a code that does not exist is refused', run('AddPayment', 'MB-999', 1, 15.0, '', '') != '')
     check('AddPayment', run('AddPayment', 'MB-002', 1, 15.0, '1001', 'Tester') == '')
+    sixp = s.getByName('Prices')
+    sixp.getCellByPosition(1, 7).setValue(5)   # try 6 months for the price of 5
+    p.getCellByPosition(3, 2).setValue(14); doc.calculateAll()
+    small = (sixp.getCellByPosition(1, 1).getValue(), sixp.getCellByPosition(2, 1).getValue(), sixp.getCellByPosition(4, 1).getValue())
+    check('Payments expected: 14 months is a year plus 2 months', p.getCellByPosition(5, 2).getValue() == small[1] + 2 * small[0], (p.getCellByPosition(5, 2).getValue(), small))
+    p.getCellByPosition(3, 2).setValue(6); doc.calculateAll()
+    check('Payments expected: 6 months is the 6-month price (6 for the price of 5 here)', p.getCellByPosition(5, 2).getValue() == small[2] == 5 * small[0], (p.getCellByPosition(5, 2).getValue(), small))
+    sixp.getCellByPosition(1, 7).setValue(6); p.getCellByPosition(3, 2).setValue(1); doc.calculateAll()
     check('the payment row names the customer', p.getCellByPosition(2, 2).getString() == 'Test Person', p.getCellByPosition(2, 2).getString())
     check('status is Current after paying', h.getCellByPosition(12, row).getString() == 'Current', h.getCellByPosition(12, row).getString())
     check('not ready without IDs', 'IDs' in run('NotReadyReason', row))
@@ -214,6 +235,7 @@ def test(desktop):
     check('ready once IDs, 1583 and a payment are in', run('NotReadyReason', row) == '', run('NotReadyReason', row))
     check('FreeBoxes for Small', run('FreeBoxes', 'Small') == '102', run('FreeBoxes', 'Small'))
     check('a box that is not Free is refused', run('AssignBox', row, '101') != '')
+    check('a Free box of another size is refused, saying the sizes', 'Medium' in run('AssignBox', row, '201'), run('AssignBox', row, '201'))
     check('AssignBox', run('AssignBox', row, '102') == '')
     check('the Boxes tab shows the new holder', b.getCellByPosition(2, 2).getString() == 'MB-002', b.getCellByPosition(2, 2).getString())
     check('a second box is refused', run('AssignBox', row, '201') != '')
@@ -255,11 +277,22 @@ def test(desktop):
           (M(5, 16).getValue(), M(7, 16).getString(), M(9, 16).getString()) == (5, 'Large', 'add to Boxes'),
           (M(5, 16).getValue(), M(7, 16).getString(), M(9, 16).getString()))
     res = run('BoxesFromMeasure')
-    check('Boxes from measurements: 1 added, 1 Free box resized, 1 held box left alone', res == '1,1,1', res)
+    check('Boxes from measurements: 1 added, 1 Free box resized, 1 held box left alone', res == '1,1,1,0', res)
     sizes = {b.getCellByPosition(0, i).getString(): b.getCellByPosition(1, i).getString() for i in range(1, 6)}
     check('the Boxes tab has 301 Large and 201 Large, and 101 kept Small', (sizes.get('301'), sizes.get('201'), sizes.get('101')) == ('Large', 'Large', 'Small'), sizes)
     check('Check says OK for 301 and flags 101', (M(9, 16).getString(), M(9, 13).getString()) == ('OK', 'Boxes says Small'), (M(9, 16).getString(), M(9, 13).getString()))
-    check('running it again changes nothing', run('BoxesFromMeasure') == '0,0,1')
+    check('running it again changes nothing', run('BoxesFromMeasure') == '0,0,1,0')
+    fb = next(i for i in range(1, 30) if b.getCellByPosition(0, i).getString() == '')
+    b.getCellByPosition(0, fb).setValue(115); b.getCellByPosition(1, fb).setString('Folder')
+    for col, v in ((0, 115), (1, 5), (2, 5.5), (3, 14.75)):
+        M(col, 17).setValue(v)
+    res = run('BoxesFromMeasure')
+    check('a measured wall box with a folder number leaves the folder alone and says so', res == '0,0,1,1' and b.getCellByPosition(1, fb).getString() == 'Folder', (res, b.getCellByPosition(1, fb).getString()))
+    for col in range(4):
+        M(col, 17).clearContents(1 | 2 | 4 | 16)
+    for col in (0, 1):
+        b.getCellByPosition(col, fb).clearContents(1 | 2 | 4 | 16)
+    doc.calculateAll()
     # Typed by hand: a name on an empty row gets the next code and today; a payment code gets today's date.
     hr = 10
     h.getCellByPosition(2, hr).setString('Typed Byhand')
@@ -304,18 +337,24 @@ def test(desktop):
     import mailbox_tools  # the Python macro, called with the document as it would be from the menu
     n = mailbox_tools.build_box_report(doc)
     br = s.getByName('Box report')
-    got = [br.getCellByPosition(c, 4).getString() for c in range(4)]
+    got = [br.getCellByPosition(c, 5).getString() for c in range(4)]
     fr = 30
     for col, v in ((2, 'Folder Person'), (6, 'Folder'), (7, 'Monthly')):
         h.getCellByPosition(col, fr).setString(v)
     h.getCellByPosition(0, fr).setString('MB-050'); h.getCellByPosition(8, fr).setValue(today)
     doc.calculateAll()
+    h.getCellByPosition(7, fr).setString('6 months'); doc.calculateAll()
+    check('a 6-month customer is priced from the 6-month column', h.getCellByPosition(9, fr).getValue() == pr.getCellByPosition(4, 4).getValue() == pr.getCellByPosition(1, 4).getValue() * pr.getCellByPosition(1, 7).getValue(), (h.getCellByPosition(9, fr).getValue(), pr.getCellByPosition(4, 4).getValue()))
+    check('the suggested amount for 6 months on a 6-month term is the 6-month price', run('ExpectedAmount', fr, 6) == pr.getCellByPosition(4, 4).getValue(), run('ExpectedAmount', fr, 6))
+    h.getCellByPosition(7, fr).setString('Monthly'); doc.calculateAll()
     check('a Folder customer is priced from the Folder row', h.getCellByPosition(9, fr).getValue() == pr.getCellByPosition(1, 4).getValue(), h.getCellByPosition(9, fr).getValue())
     check('AddCustomer takes F for Folder', run('SizeName', 'f') == 'Folder')
     for col in (0, 2, 6, 7, 8):
         h.getCellByPosition(col, fr).clearContents(1 | 2 | 4 | 16)
     doc.calculateAll()
-    check('Python macro box_report: 4 boxes, 1 taken, 3 Free', n == 3 and got == ['All', '4', '1', '3'], (n, got))
+    check('Python macro box_report: 4 boxes, 1 taken, 3 Free', n == 4 and got == ['All', '4', '1', '3'], (n, got))
+    fold = [br.getCellByPosition(c, 4).getString() for c in range(5)]
+    check('Box report has a Folder row priced from the Prices tab', fold[0] == 'Folder' and fold[4] not in ('', '0'), fold)
     for name in ('Holders', 'Payments', 'Boxes', 'Measure'):
         sh = s.getByName(name)
         rng = sh.getCellRangeByPosition(0, 1, {'Holders': 27, 'Measure': 23}.get(name, 8), 40)
@@ -340,6 +379,7 @@ def test_typing(desktop):
     work = Path(tempfile.mkdtemp(prefix='mailbox-typing-')) / 'r.ods'
     shutil.copy(OUT, work)
     doc = desktop.loadComponentFromURL(url(work), '_blank', 0, (pv('MacroExecutionMode', 4),))   # not hidden: typing needs a view
+    time.sleep(3)   # let Open Document finish, as a person would before typing
     try:
         ctl = doc.CurrentController
         dh = REMOTE['smgr'].createInstanceWithContext('com.sun.star.frame.DispatchHelper', REMOTE['ctx'])

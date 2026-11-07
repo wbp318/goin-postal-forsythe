@@ -111,8 +111,10 @@ print dialog when you print.
 - **Yellow cells are for typing.** White cells are formulas: they fill themselves, so never type over
   them. Ctrl+F8 (value highlighting) shows the difference in any tab: typed text black, typed
   numbers blue, formulas green.
-- **Grey rows are examples**, one on each tab. Delete them before the first real customer:
-  right-click the row number on the left, then **Delete Rows**.
+- **Grey rows are examples**, one on each tab. On Holders, Payments and Boxes, delete them before the
+  first real customer: right-click the row number on the left, then **Delete Rows**. On **Measure**,
+  type your boxes over them or select their cells and press Delete: **never delete a Measure row**,
+  because the USPS chart and the Fits items share those rows and would move.
 - **Every typed column checks what goes in.** A cell that refuses an entry says why in a box. Columns
   with a fixed choice have a small arrow: click it and pick.
 - **A small red triangle in a heading** is a comment. Hover over it to read it.
@@ -159,8 +161,10 @@ template: see [section 8](#8-when-something-goes-wrong).
 | A2:A5 | Small, Medium, Large, Folder | The size names. Every size list in the register comes from these four cells. Folder is a file folder in the filing cabinet, for the customers moved off Anytime Mailbox (v1.92.4) |
 | B2:B5 | The monthly price | Yellow. 0 to 1,000 |
 | C2:C5 | The yearly price | Formula: the monthly price times B7 |
+| E2:E5 | The 6-month price | Formula: the monthly price times B8 (v1.92.5) |
 | D2:D5 | What fits | Words for the customer; the Measure tab's Fits columns help write them |
 | B7 | How many months a year costs | Yellow, 1 to 12. 10 means 12 months for the price of 10 |
+| B8 | How many months 6 months cost | Yellow, 1 to 6. 6 means no discount; 5 means 6 months for the price of 5. A placeholder until Peter and Rin decide |
 
 The prices in the template are placeholders until Peter and Rin set them. Change the yellow cells, and
 every formula follows: the price per term on Holders, and the expected amount on Payments.
@@ -179,9 +183,9 @@ frozen at D2).
 | E | Phone | type | Ten digits; spaces, dashes, dots and brackets are fine: `318 555 0100`. Text cell |
 | F | Email | type | Needs an @ and a dot after it, no spaces |
 | G | Size | type | Arrow: Small, Medium, Large, Folder (from Prices) |
-| H | Monthly / Yearly | type | Arrow |
+| H | Term | type | Arrow: Monthly, 6 months, Yearly (the heading was Monthly / Yearly before v1.92.5; the upgrade carries it) |
 | I | Start date | automatic, can be typed | Today, written with the code. Type over it for another day: from Jan 1, 2025 to a month ahead |
-| J | Price per term ($) | formula | From Prices: the monthly price, or the yearly price for Yearly |
+| J | Price per term ($) | formula | From Prices: the monthly price, the 6-month price for 6 months, or the yearly price for Yearly |
 | K | Months paid | formula | Adds up Months covered on every Payments row with this code |
 | L | Paid through | formula | Start date plus Months paid, by calendar month (EDATE): started Nov 7 with 2 months paid is Jan 7 |
 | M | Status | formula | **Closed** if there is a Closed date; **Overdue** (red) if Paid through is before today; **Due soon** (amber) if within 7 days; **Current** (green) otherwise |
@@ -219,7 +223,7 @@ frozen at D2).
 | C | Name | formula | The customer's name. Says **no such code** (red) if B is wrong |
 | D | Months covered | type | Whole number, 1 to 24: 1 for a month, 12 for a year |
 | E | Amount taken ($) | type | What the POS took, 0 to 5,000 |
-| F | Expected ($) | formula | What the Prices tab says it should be. 12 months is the yearly price; 14 months is a year plus 2 months. If it differs from E, check the POS |
+| F | Expected ($) | formula | What the Prices tab says it should be: each whole year at the yearly price, then each whole 6 months at the 6-month price, then single months. 12 months is the yearly price; 6 is the 6-month price; 14 is a year plus 2 months; 18 is a year plus a 6-month price. If it differs from E, check the POS |
 | G | POS receipt # | type | Text cell |
 | H | Staff | type | Who took it |
 | I | Note | type | Anything |
@@ -258,7 +262,9 @@ each box is measured once. The steps are at the top of the tab, and the table st
 | K to O | Fits: ... | yes when the item fits laid flat, without bending |
 | P | Note | type |
 
-To the right: the **USPS chart** (S13:X18). Column X, Store size, is yellow; it is Peter and Rin's
+To the right: the **USPS chart** (S13:X18). It shares rows 14 to 18 with the boxes, so never delete a row
+on this tab: clear a box's cells instead (select them, press Delete). The upgrade script warns, and keeps
+the template's chart, if it finds the chart moved. Column X, Store size, is yellow; it is Peter and Rin's
 choice. Below it is the **items for the Fits columns** (S21:V26), also yellow: a #10 envelope, a
 9 x 12 envelope, a Small and a Medium Flat Rate Box, and a shoebox, each longest side first.
 
@@ -284,8 +290,7 @@ tab of your own.
 
 ## 3. The buttons, step by step
 
-Every button works from any tab. On the Holders tab, click anywhere in a customer's row first, and a
-button that needs a customer uses that one instead of asking. Asked for a customer, you can type
+Every button works from any tab. A button that needs a customer asks for one, and you can type
 their code (MB-002), their box number (101), or part of their name (`fonte`). Part of a name must
 match only one customer.
 
@@ -301,8 +306,8 @@ wrong. Writing from a macro skips Calc's own typing checks, so the macros carry 
 ### New customer
 
 1. Asks for the name (required), then the phone (ten digits, or blank) and the email (or blank).
-2. Asks for the size: S, M or L.
-3. Asks Yearly? Answer Yes for yearly, No for monthly.
+2. Asks for the size: S, M, L, or F for a folder in the filing cabinet.
+3. Asks for the term: M for monthly, 6 for 6 months, Y for yearly.
 4. Adds them on the first empty Holders row with the **next MB- code** and **today as the start
    date**, and jumps to their ID 1 type cell.
 5. Says what to do next: both IDs (last 4 only), the 1583 date and your name, then Record a payment,
@@ -311,7 +316,7 @@ wrong. Writing from a macro skips Calc's own typing checks, so the macros carry 
 ### Record a payment
 
 1. Asks which customer (or uses the selected Holders row).
-2. Suggests the months: 1, or 12 for a yearly customer.
+2. Suggests the months: 1, 6 for a 6-month customer, or 12 for a yearly one.
 3. Suggests the amount from the Prices tab. Type what the POS actually took.
 4. Asks for the POS receipt number and your name.
 5. Writes a Payments row dated today and shows the new **Paid through** date.
@@ -322,7 +327,8 @@ wrong. Writing from a macro skips Calc's own typing checks, so the macros carry 
 2. Refuses if they already have a box.
 3. Refuses until they are ready, and says exactly what is missing: the two IDs (with what ID check
    says), the 1583 date, or a first payment. It then jumps to their ID cells.
-4. Lists the **Free boxes of their size** and suggests the first.
+4. Lists the **Free boxes of their size** and suggests the first. A box of another size is refused,
+   naming both sizes: change their Size on Holders first if they are moving to a bigger box.
 5. Writes the box number, asks whether two keys were handed over and the key receipt signed (Yes
    writes Keys given), and shows **their address** to read out or write down:
    `1800 Forsythe Ave Ste 2 #101, Monroe, LA 71201`.
@@ -367,6 +373,8 @@ After measuring on the Measure tab, it copies every measured box and its store s
 - it gives Free boxes their measured size;
 - it leaves alone a box someone holds, and says how many were left, so you can look at them (the
   Check column flags them).
+- it leaves alone a number that is already a **Folder** on the Boxes tab, and says how many: give
+  that wall box a number no folder uses.
 
 Running it twice changes nothing the second time.
 
@@ -919,7 +927,7 @@ Tips:
 LibreOffice ships its own Python with the `uno` module, at
 `C:\Program Files\LibreOffice\program\python.exe`. That Python starts a hidden Calc, opens files, runs
 macros and saves. [`add-macros.py`](add-macros.py) is the full example: it builds the Counter tab,
-puts the Basic in, and runs 62 checks. The smallest version opens the register hidden and reads a
+puts the Basic in, and runs 72 checks. The smallest version opens the register hidden and reads a
 count:
 
 ```python
@@ -997,7 +1005,7 @@ python physical-mailbox/tools/calc/build-register.py
 1. `build-register.py` (your Python with openpyxl) writes the tabs, formulas, typing checks, colours,
    text formats and unlocked yellow cells to `register-sheets.xlsx` (git-ignored).
 2. `add-macros.py` (LibreOffice's Python) adds the Counter tab, the buttons, the Basic and the two
-   document events, and saves `mailbox-register-TEMPLATE.ods`. It then reopens it and runs 62 checks:
+   document events, and saves `mailbox-register-TEMPLATE.ods`. It then reopens it and runs 72 checks:
    - every macro: a customer, a payment, the IDs, a box, both lists, a backup, closing;
    - the Measure tab and Boxes from measurements;
    - the Python macro;
@@ -1040,7 +1048,7 @@ Print this section. It fits on one page.
 | --- | --- |
 | `README.md` | This guide |
 | `build-register.py` | Step 1 of the build: the tabs, formulas, checks and formats (openpyxl) |
-| `add-macros.py` | Step 2: the Counter tab, buttons, Basic and events; then the 62 checks (LibreOffice's Python) |
+| `add-macros.py` | Step 2: the Counter tab, buttons, Basic and events; then the 72 checks (LibreOffice's Python) |
 | `upgrade-register.py` | Carries a filled register into a new template; `--self-test` |
 | `register-report.py` | The pandas report (walkthrough 1) |
 | `macros/Mailbox.bas` | The buttons' Basic, readable |
