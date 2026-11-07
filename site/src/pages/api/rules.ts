@@ -15,7 +15,7 @@ import { store } from '../../data/store';
 //  preview: a draft, applied to a real quote for a sample box, so the owner sees cost and price side by
 //           side before saving. Nothing is stored.
 //  save:    replace every rule. The draft is checked first; one bad row rejects the whole save.
-const CARRIERS = ['USPS', 'UPS', 'FedEx', 'DHL', 'Meest'];
+const CARRIERS = ['USPS', 'UPS', 'FedEx', 'DHL'];
 
 function clean(b: any): { enabled: boolean; round_to_99: boolean; rules: RuleRow[] } {
   const num = (v: unknown, what: string, min: number, max: number): number | null => {

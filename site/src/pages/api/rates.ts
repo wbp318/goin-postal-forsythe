@@ -30,7 +30,7 @@ export const POST: APIRoute = async ({ request }) => {
     // The Pirate Ship benchmark (T26): shown beside the rates and logged for the weekly share.
     const benchmark = benchmarkFor(destination, parcel, rates);
     if (benchmark) await logBenchmark(env, { source: b.online ? 'online' : 'counter', zone: benchmark.zone, weight_lb: parcel.weight_lb, store_price: benchmark.store, benchmark: benchmark.pirate_ship }).catch(() => {});
-    return json({ rates: offered, international: destination.country_alpha2 !== 'US', demo, oversize, extras, packing, address, benchmark });
+    return json({ rates: offered, demo, oversize, extras, packing, address, benchmark });
   } catch (e: any) {
     return json({ error: e.message }, 400);
   }

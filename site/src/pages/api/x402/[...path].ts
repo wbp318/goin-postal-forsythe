@@ -72,7 +72,6 @@ export const ALL: APIRoute = async ({ request, params }) => {
       const to = parseAddress(addr(body.to)), parcel = parseParcel(body.parcel);
       const check = checkAddress(to);
       if (check.errors.length) return json({ error: check.errors[0] }, 400);
-      if (to.country_alpha2 !== 'US') return json({ error: 'International shipments need customs paperwork; bring them to the counter for now' }, 400);
       const { rates } = await quote(env, store.origin, to, parcel);
       const rate = rates.find((r) => r.id === body.rate_id);
       if (!rate) return json({ error: 'rate_id is not one of the rates for this parcel; call /rates first' }, 400);

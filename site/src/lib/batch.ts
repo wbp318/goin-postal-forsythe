@@ -147,7 +147,6 @@ export function parseBatch(text: string, defaults: ParcelDefaults): { format: Fo
         value_usd: num('value_usd', defaults.value_usd ?? 1), description: col(r, 'description') || defaults.description || 'Merchandise',
       });
     } catch (e: any) { row.errors.push(e.message); }
-    if (row.to && row.to.country_alpha2 !== 'US') row.errors.push('International rows need customs paperwork; ship them one at a time at the counter');
     rows.push(row);
   }
   return { format, headers, rows, skipped };

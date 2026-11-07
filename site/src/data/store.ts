@@ -46,8 +46,7 @@ export const defaults: StoreFacts = {
     { days: "Sunday", key: "days.sun", open: "Closed", openKey: "hours.closed" },
   ],
   services: [
-    { key: "ship", name: "Shipping", blurb: "UPS, FedEx, USPS, DHL and Meest under one roof. We compare rates so you pay the least." },
-    { key: "meest", name: "Meest to Ukraine and Eastern Europe", blurb: "Parcels to Ukraine, Poland, the Baltics, Moldova, Georgia, Armenia and Central Asia by air or by sea, at the Meest agent rate. Quote online, bring the box in.", link: "/ship" },
+    { key: "ship", name: "Shipping", blurb: "UPS, FedEx, USPS and DHL under one roof. We compare rates so you pay the least." },
     { key: "pack", name: "Packing", blurb: "Bring it in loose. We box, cushion and label it so it arrives in one piece." },
     { key: "returns", name: "Returns drop-off", blurb: "Amazon, UPS, FedEx and USPS returns. We print the label from your phone, box it, and scan it in so you have proof.", link: "/returns" },
     { key: "mailbox", name: "Mailbox rental", blurb: "A real street address and package acceptance from every carrier. Sign up at the counter with two IDs." },

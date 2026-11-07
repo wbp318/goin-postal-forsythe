@@ -54,7 +54,7 @@ import { store } from '../../data/store';
       <legend data-i18n="st.q.return.legend">Return label?</legend>
       <label class="check"><input name="is_return" type="checkbox" id="isReturn" /> <span data-i18n="st.q.return.check">This is a return: the package is somewhere else and travels to us or to a local business. We pay here, then email the label to the sender.</span></label>
       <div id="returnFields" class="hidden">
-        <p class="muted" data-i18n="st.q.return.lead">Where the package is now (the sender). US addresses only; international returns need customs forms, so quote those on the Ship page.</p>
+        <p class="muted" data-i18n="st.q.return.lead">Where the package is now (the sender). US addresses only.</p>
         <label><span data-i18n="st.q.sender">Sender name</span> <input name="from_contact_name" /></label>
         <label><span data-i18n="ship.street">Street address</span> <input name="from_line_1" maxlength="35" /></label>
         <label><span data-i18n="ship.apt">Apt, suite (optional)</span> <input name="from_line_2" maxlength="35" /></label>
@@ -77,7 +77,7 @@ import { store } from '../../data/store';
         <label><span data-i18n="ship.city">City</span> <input name="city" required /></label>
         <label><span data-i18n="ship.state">State</span> <input name="state" placeholder="LA" maxlength="2" /></label>
         <label><span data-i18n="ship.zip">ZIP / postal code</span> <input name="postal_code" required /></label>
-        <label><span data-i18n="ship.country">Country</span> <input name="country_alpha2" value="US" maxlength="2" required /></label>
+        <input type="hidden" name="country_alpha2" value="US" />
       </div>
     </fieldset>
     <fieldset>

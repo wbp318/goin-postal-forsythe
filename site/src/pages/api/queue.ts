@@ -36,7 +36,6 @@ export const POST: APIRoute = async ({ request }) => {
       const isReturn = b.kind === 'return';
       if (isReturn && !b.origin?.line_1) throw new Error("Type the sender's address: where the package is now");
       const origin = isReturn ? parseAddress(b.origin) : store.origin;
-      if (isReturn && origin.country_alpha2 !== 'US') throw new Error('Return labels from outside the US need customs paperwork; quote it on the Ship page instead');
       const destination = isReturn && b.return_to === 'store' ? store.origin : parseAddress(b.destination);
       // Staff can push past an address error with force: true after reading it; online cannot.
       for (const a of [destination, ...(isReturn ? [origin] : [])]) { const c = checkAddress(a); if (c.errors.length && !b.force) throw new Error(c.errors[0]); }
@@ -59,7 +58,7 @@ export const POST: APIRoute = async ({ request }) => {
       const order: Order = {
         id: newOrderId(), status: 'reserved', created_at: new Date().toISOString(),
         email, phone: phone || undefined, sms, name: name || undefined, source: 'counter', staff: String(b.staff ?? '').trim().slice(0, 20) || user.name.slice(0, 20),
-        origin, destination, parcel, rate, international: destination.country_alpha2 !== 'US', kind: isReturn ? 'return' : 'ship',
+        origin, destination, parcel, rate, international: false, kind: isReturn ? 'return' : 'ship',
         addons: extras.addons.length ? extras.addons : undefined, insurance: extras.insurance, total,
         account_id: account?.id, account_name: account?.business_name, discount_percent: account?.discount_percent || undefined,
       };

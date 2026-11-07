@@ -142,8 +142,7 @@ The site runs in **test mode** because no keys are set: shipping rates are sampl
 | PeterShip landing page | http://localhost:4321/petership | Press the PeterShip tab. The page says what PeterShip does for anyone with a box, for online sellers, for connected shops and for developers, with Ship a package and Ask about a business account buttons |
 | Quote a package | http://localhost:4321/ship | Fill the address and parcel, press Get rates. Five sample rates appear with a yellow test-mode note |
 | Buy a domestic label | same page | Pick a rate, enter any email, press Pay and get label. You land on a done page with a pickup code like GP-7K3M9Q, a Download label link and a QR code |
-| Reserve an international label | same page, country Canada | The button reads Reserve and pay at the counter. The done page says Reserved |
-| Meest quote | same page, country Ukraine (under Meest in the country list) | Get rates shows Meest Air (7 to 14 days) and Meest Economy (sea, 30 to 45 days) beside the other carriers. Reserve, then on the counter page press Rung up on the POS, buy label: the order page shows a red note that the parcel is finished at the counter in the Meest portal, and the customer's done page says the same |
+| Domestic only | same page | There is no country picker: every label is US-to-US (the 50 states, DC, Puerto Rico, the territories, APO, FPO and DPO). A non-US address sent to the API is refused with "PeterShip ships within the United States only" |
 | Staff counter page | scan the QR, or open http://localhost:4321/counter/GP-XXXXXX with your code | Shows the order. PIN is **1234**. For a reserved order, press Rung up on the POS, buy label. For a paid one, Mark printed |
 | Staff queue | http://localhost:4321/counter/queue | PIN 1234, Show queue. Your reserved order is listed. Type a walk-up in below, Get rates, pick one, Add to queue; it appears at the top. Try Buy label, Print at the counter, Void and Cancel |
 | Return label | http://localhost:4321/counter/queue | In the walk-up form tick This is a return, type a Dallas address as the sender, Get rates, Add to queue. Buy label, then Email label with any address; the email text appears in the terminal window |
@@ -808,25 +807,20 @@ The repo is public, but both pages are private. They open only for people the ow
 
 The public website lives in [`site/`](site/README.md) and is built with [Astro](https://astro.build) on Cloudflare. It was started on October 21, 2026, the day a serious PHP exploit was disclosed, and PHP is deliberately not used anywhere. The marketing pages are plain static HTML. The shipping flow runs as a few Cloudflare functions.
 
-Rates and payments are kept separate on purpose, and there are two ways to pay. PeterShip's rating engine quotes USPS, UPS, FedEx, DHL and Meest: each carrier through its own adapter once the store's keys for it exist, Easyship as the bridge for any carrier that has no adapter yet, and Meest from a rate sheet the owners edit. The same engine buys the label from whichever adapter quoted it. Online, Stripe takes the card. In the shop, the Goin' Postal POS takes the card or cash, because the franchise requires it, and staff press one button to tell the site the order is rung up. None of the three knows about the others, so any one can be replaced on its own.
+Rates and payments are kept separate on purpose, and there are two ways to pay. PeterShip's rating engine quotes USPS, UPS, FedEx and DHL, within the United States only (international and Meest were taken out on November 7, 2026): each carrier through its own adapter once the store's keys for it exist, Easyship as the bridge for any carrier that has no adapter yet, and Meest from a rate sheet the owners edit. The same engine buys the label from whichever adapter quoted it. Online, Stripe takes the card. In the shop, the Goin' Postal POS takes the card or cash, because the franchise requires it, and staff press one button to tell the site the order is rung up. None of the three knows about the others, so any one can be replaced on its own.
 
 ```mermaid
 flowchart LR
-  C["Customer on /ship"]:::you -->|address, weight, size| E["PeterShip rating engine<br/>USPS · UPS · FedEx · DHL · Meest"]:::local
+  C["Customer on /ship"]:::you -->|address, weight, size| E["PeterShip rating engine<br/>USPS · UPS · FedEx · DHL<br/>US addresses only"]:::local
   E -.->|when keys set| CA["Carrier APIs<br/>USPS, UPS, FedEx, DHL"]:::cloud
   E -.->|carriers with no adapter| ES["Easyship<br/>bridge"]:::cloud
-  E -->|Meest| RS["meest-rates.json<br/>owner-edited rate sheet"]:::local
   E --> C
-  C -->|picks a rate| O{"Domestic?"}:::local
-  O -->|yes| P["Stripe Checkout<br/>online card"]:::cloud
+  C -->|picks a rate| P["Stripe Checkout<br/>online card"]:::cloud
   P -->|paid| L["Engine buys the label<br/>from the adapter that quoted it"]:::local
-  O -->|no, international| RES["Reserved"]:::local
   L --> D["Done page<br/>PDF label + QR code<br/>+ pickup code"]:::you
-  RES --> D
   D -->|scan QR| K["Counter page<br/>staff PIN"]:::local
-  K -->|international| POS["Goin' Postal POS<br/>in-person card or cash"]:::local
+  K -->|walk-up| POS["Goin' Postal POS<br/>in-person card or cash"]:::local
   POS -->|staff press Rung up| L
-  L -.->|Meest| MP["Meest agent portal<br/>label finished at the counter"]:::cloud
   K --> PR["Shop printer"]:::local
   classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
   classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
@@ -836,14 +830,14 @@ flowchart LR
 | Page | What's on it |
 |---|---|
 | Home | Hero, six service cards, a shipping-label style hours block, and a map |
-| Ship | Address and parcel form, rates from USPS, UPS, FedEx, DHL and Meest side by side, pay online or reserve |
+| Ship | Address and parcel form (US addresses only), rates from USPS, UPS, FedEx and DHL side by side, pay online |
 | Done | Label PDF to print at home, a QR code and a pickup code for printing at the counter |
-| Counter | Staff-only view of an order, opened by scanning the QR. For international orders: ring up on the POS, press the button to buy the label. Then mark printed |
+| Counter | Staff-only view of an order, opened by scanning the QR. For walk-ups: ring up on the POS, press the button to buy the label. Then mark printed |
 | Business cards | Vistaprint-style designer: 12 layouts in 12 color schemes, 6 typefaces, click any text on the card to edit it, drag it, resize it, add text and logos, front and back, undo and redo, free PNG download, pay by card online and pick up in the shop. Order-form upsells: thick or linen stock, gloss or soft-touch finish, rounded corners, rush pickup, each a priced line on the Stripe checkout and on the counter's print sheet |
 | Contact | Quote request form that posts to Formspree |
 | Any page | Language picker, text size (5 steps) and high contrast switches in the header, remembered per device |
 
-**How a customer ships:** they type the address and parcel size, see every carrier's price, pick one. Domestic orders pay by card on Stripe's hosted page, and the label is bought the moment Stripe confirms. International orders are reserved online and rung up on the Goin' Postal POS at the counter. Staff then press one button to buy the label with the customer present, so customs forms get done together. Either way the customer gets a pickup code like GP-7K3M9Q and a QR code. If they cannot print, they show the QR at the counter and the shop prints it.
+**How a customer ships:** they type the address and parcel size, see every carrier's price, pick one. Domestic orders pay by card on Stripe's hosted page, and the label is bought the moment Stripe confirms. PeterShip ships within the United States only. Either way the customer gets a pickup code like GP-7K3M9Q and a QR code. If they cannot print, they show the QR at the counter and the shop prints it.
 
 **Where prices come from.** Customers see one retail price per service and no vendor names. Cost comes from a single rates call through the store's existing Easyship account, kept on purpose instead of four separate carrier keys. Price is cost plus the store's retail rules in `site/src/data/ratepro.json`, which mirror GP Rate Pro, the system the counter quotes with, so the website and the counter say the same number. If Rate Pro turns out to have an export or an API (issue 11), it plugs into one file.
 

@@ -46,7 +46,7 @@ describe('parseBatch', () => {
     expect(b.rows[0].errors).toEqual([]);
     expect(b.rows[0].reference).toBe('555');
     expect(b.rows[1].errors.length).toBeGreaterThan(0);
-    expect(b.rows[2].errors.some((e) => /customs/.test(e))).toBe(true);
+    expect(b.rows[2].errors.some((e) => /United States only/.test(e))).toBe(true);
   });
   it('maps columns by alias and tells Shopify Name from a recipient name', () => {
     expect(stateCode('new york')).toBe('NY'); expect(stateCode('tx')).toBe('TX');

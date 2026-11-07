@@ -84,7 +84,7 @@ async function call(token: string, path: string, payload: unknown) {
 }
 
 export async function getRates(token: string | undefined, origin: Address, destination: Address, parcel: Parcel): Promise<Rate[]> {
-  if (!token) return mockRates(destination.country_alpha2 !== 'US');
+  if (!token) return mockRates();
   const json = await call(token, '/rates', body(origin, destination, parcel));
   return (json.rates as any[])
     .map((r) => ({
@@ -136,14 +136,14 @@ export async function cancelShipment(token: string | undefined, easyship_shipmen
 
 // ---- mock mode -------------------------------------------------------------
 
-function mockRates(international: boolean): Rate[] {
-  const base = international ? 48 : 9;
+function mockRates(): Rate[] {
+  const base = 9;
   return [
     { courier_service_id: 'mock-usps-ground', carrier: 'USPS', service: 'USPS Ground Advantage', total_charge: base + 0.65, currency: 'USD', min_days: 2, max_days: 5 },
     { courier_service_id: 'mock-ups-ground', carrier: 'UPS', service: 'UPS Ground', total_charge: base + 3.1, currency: 'USD', min_days: 1, max_days: 5 },
     { courier_service_id: 'mock-fedex-home', carrier: 'FedEx', service: 'FedEx Home Delivery', total_charge: base + 3.4, currency: 'USD', min_days: 1, max_days: 5 },
     { courier_service_id: 'mock-usps-priority', carrier: 'USPS', service: 'USPS Priority Mail', total_charge: base + 4.2, currency: 'USD', min_days: 1, max_days: 3 },
-    { courier_service_id: 'mock-dhl-express', carrier: 'DHL', service: 'DHL Express Worldwide', total_charge: base + 31, currency: 'USD', min_days: 1, max_days: 3 },
+    { courier_service_id: 'mock-dhl-ground', carrier: 'DHL', service: 'DHL Parcel Ground', total_charge: base + 2.2, currency: 'USD', min_days: 2, max_days: 8 },
   ];
 }
 

@@ -1,6 +1,9 @@
 import type { Address, Parcel } from '../shipping/types';
 
 const US_STATES = /^[A-Z]{2}$/;
+// Domestic only (Nov 7, 2026): international shipping is out of PeterShip. Territories and military
+// addresses ride as US with their two-letter codes (PR, GU, VI, AS, MP; AA, AE, AP).
+export const US_ONLY = 'PeterShip ships within the United States only: the 50 states, DC, Puerto Rico, the US territories and APO, FPO and DPO addresses.';
 
 export function parseAddress(v: any): Address {
   const req = (k: string) => {
@@ -8,9 +11,10 @@ export function parseAddress(v: any): Address {
     if (!s) throw new Error(`Missing ${k.replace(/_/g, ' ')}`);
     return s;
   };
-  const country = req('country_alpha2').toUpperCase();
+  const country = String(v?.country_alpha2 ?? 'US').trim().toUpperCase() || 'US';
+  if (country !== 'US') throw new Error(US_ONLY);
   const state = String(v?.state ?? '').trim().toUpperCase();
-  if (country === 'US' && !US_STATES.test(state)) throw new Error('State must be the two-letter code');
+  if (!US_STATES.test(state)) throw new Error('State must be the two-letter code');
   return {
     contact_name: req('contact_name'),
     contact_phone: String(v?.contact_phone ?? '').trim() || undefined,

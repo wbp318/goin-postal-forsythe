@@ -12,7 +12,7 @@ import { effectiveAddons, priceExtras, onlineFee, salesTax, taxableExtras, textU
 import { accountForContact } from '../../shipping/store';
 import { checkAddress } from '../../lib/address';
 
-// Customer picked a rate. Domestic: start Stripe Checkout. International: reserve and pay at the counter.
+// Customer picked a rate: start Stripe Checkout. Domestic only since Nov 7, 2026 (parseAddress refuses the rest).
 export const POST: APIRoute = async ({ request }) => {
   try {
     const b: any = await request.json();
@@ -33,7 +33,6 @@ export const POST: APIRoute = async ({ request }) => {
     if (!found) throw new Error('That rate is no longer available. Please quote again.');
     // A business account's email gets its discount online too; the card is still charged now.
     const account = await accountForContact(env, email, phone);
-    const international = destination.country_alpha2 !== 'US';
     const rate = account && account.discount_percent ? { ...found, total_charge: Math.round(found.total_charge * (1 - account.discount_percent / 100) * 100) / 100 } : found;
 
     const cfg = await effectiveAddons(env);
@@ -43,12 +42,12 @@ export const POST: APIRoute = async ({ request }) => {
     const extras = priceExtras(cfg, picks, parcel.value_usd, b.insure === true || b.insure === 'on');
     const subtotal = Math.round((rate.total_charge + extras.extras_total) * 100) / 100;
     const tax = salesTax(cfg, taxableExtras(extras));
-    const fee = international ? undefined : onlineFee(cfg, subtotal);
+    const fee = onlineFee(cfg, subtotal);
     const order: Order = {
       id: newOrderId(),
-      status: international ? 'reserved' : 'awaiting_payment',
+      status: 'awaiting_payment',
       created_at: new Date().toISOString(),
-      email, phone: sms ? phone : undefined, sms, origin, destination, parcel, rate, international,
+      email, phone: sms ? phone : undefined, sms, origin, destination, parcel, rate, international: false,
       addons: extras.addons.length ? extras.addons : undefined, insurance: extras.insurance, tax, fee, total: Math.round((subtotal + (tax?.amount ?? 0) + (fee?.amount ?? 0)) * 100) / 100,
       account_name: account?.business_name, discount_percent: account?.discount_percent || undefined,
     };
@@ -63,7 +62,6 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
-    if (international) return json({ order_id: order.id, next: `/ship/done?order=${order.id}` });
     const url = await createCheckout(env, order);
     return json({ order_id: order.id, next: url });
   } catch (e: any) {

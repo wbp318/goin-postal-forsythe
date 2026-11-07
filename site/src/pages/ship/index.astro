@@ -44,38 +44,7 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
         <label><span data-i18n="ship.state">State</span> <input name="state" placeholder="LA" maxlength="2" autocomplete="shipping address-level1" /></label>
         <label><span data-i18n="ship.zip">ZIP / postal code</span> <input name="postal_code" required autocomplete="shipping postal-code" inputmode="numeric" /></label>
       </div>
-      <label><span data-i18n="ship.country">Country</span>
-        <select name="country_alpha2" autocomplete="shipping country">
-          <option value="US" selected>United States</option>
-          <option value="CA">Canada</option>
-          <option value="MX">Mexico</option>
-          <option value="GB">United Kingdom</option>
-          <option value="AU">Australia</option>
-          <option value="DE">Germany</option>
-          <option value="FR">France</option>
-          <option value="JP">Japan</option>
-          <optgroup label="Meest (air or sea, at the agent rate)">
-            <option value="UA">Ukraine</option>
-            <option value="PL">Poland</option>
-            <option value="LT">Lithuania</option>
-            <option value="LV">Latvia</option>
-            <option value="EE">Estonia</option>
-            <option value="MD">Moldova</option>
-            <option value="GE">Georgia</option>
-            <option value="AM">Armenia</option>
-            <option value="KZ">Kazakhstan</option>
-            <option value="UZ">Uzbekistan</option>
-            <option value="KG">Kyrgyzstan</option>
-            <option value="CZ">Czechia</option>
-            <option value="SK">Slovakia</option>
-            <option value="HU">Hungary</option>
-            <option value="RO">Romania</option>
-            <option value="BG">Bulgaria</option>
-          </optgroup>
-          <option value="OTHER">Other country</option>
-        </select>
-      </label>
-      <label class="hidden" id="otherCountry"><span data-i18n="ship.other">Two-letter country code</span> <input name="country_other" maxlength="2" placeholder="e.g. IT" /></label>
+      <input type="hidden" name="country_alpha2" value="US" />
     </fieldset>
 
     <fieldset>
@@ -86,7 +55,7 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
         <label><span data-i18n="ship.width">Width (in)</span> <input name="width_in" type="number" min="1" required /></label>
         <label><span data-i18n="ship.height">Height (in)</span> <input name="height_in" type="number" min="1" required /></label>
       </div>
-      <label><span data-i18n="ship.desc">What's inside (needed for international)</span> <input name="description" maxlength="80" placeholder="Clothing" /></label>
+      <label><span data-i18n="ship.desc">What's inside</span> <input name="description" maxlength="80" placeholder="Clothing" /></label>
       <label><span data-i18n="ship.value">Value in USD</span> <input name="value_usd" type="number" min="1" placeholder="25" /></label>
     </fieldset>
 
@@ -96,7 +65,6 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
 
   <section id="results" hidden>
     <h2 data-i18n="ship.rates">Rates</h2>
-    <p id="intlNote" class="card" hidden data-i18n="ship.intl">International shipments are paid in the shop. Reserve the rate here, bring the package and the pickup code in, and we handle customs forms and payment with you at the counter.</p>
     <p id="addrNote" class="card" hidden></p>
     <p id="packNote" class="muted" hidden></p>
     <p id="mockNote" class="card" hidden data-i18n="ship.mock">Demo rates for testing. Live carrier rates appear once the store connects its accounts.</p>
@@ -124,9 +92,6 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
     const ratesEl = document.getElementById('rates')!;
     const buy = document.getElementById('buy') as HTMLFormElement;
     const buyBtn = document.getElementById('buyBtn')!;
-    const countrySel = f.querySelector('[name=country_alpha2]') as HTMLSelectElement;
-    const other = document.getElementById('otherCountry')!;
-    countrySel.addEventListener('change', () => other.classList.toggle('hidden', countrySel.value !== 'OTHER'));
     // Address autofill (v1.73.0): a five-digit US ZIP fills the city and state through /api/zip; the
     // autocomplete attributes above let the browser offer its saved addresses for the rest.
     const zipEl = f.querySelector('[name=postal_code]') as HTMLInputElement, cityEl = f.querySelector('[name=city]') as HTMLInputElement, stateEl = f.querySelector('[name=state]') as HTMLInputElement;
@@ -144,7 +109,7 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
       timer = window.setTimeout(async () => {
         const mine = ++seq;
         try {
-          const j = await (await fetch(`/api/address-suggest?q=${encodeURIComponent(q)}&country=${encodeURIComponent(countrySel.value)}`)).json();
+          const j = await (await fetch(`/api/address-suggest?q=${encodeURIComponent(q)}&country=US`)).json();
           if (mine !== seq) return;
           items = j.suggestions ?? [];
           if (!items.length) { close(); return; }
@@ -165,7 +130,7 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
     let lastZip = '';
     zipEl.addEventListener('input', async () => {
       const z = zipEl.value.trim().slice(0, 5);
-      if (countrySel.value !== 'US' || !/^\d{5}$/.test(z) || z === lastZip) return;
+      if (!/^\d{5}$/.test(z) || z === lastZip) return;
       lastZip = z;
       try {
         const j = await (await fetch(`/api/zip?zip=${z}`)).json();
@@ -191,7 +156,6 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
     let payload: any = null;
     let picked: string | null = null;
     let pickedPrice = 0;
-    let international = false;
     let extras: any = null;
     const insBox = buy.querySelector('[name=insure]') as HTMLInputElement;
     function total() {
@@ -199,7 +163,7 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
       const smsOn = (buy.querySelector('[name=sms]') as HTMLInputElement).checked;
       const text = smsOn && extras?.text_updates_price ? extras.text_updates_price : 0;
       const subtotal = pickedPrice + ins + text;
-      const f = extras?.online_fee && (extras.online_fee.percent || extras.online_fee.flat) && !international ? Math.round((subtotal * extras.online_fee.percent / 100 + extras.online_fee.flat) * 100) / 100 : 0;
+      const f = extras?.online_fee && (extras.online_fee.percent || extras.online_fee.flat) ? Math.round((subtotal * extras.online_fee.percent / 100 + extras.online_fee.flat) * 100) / 100 : 0;
       const feeRow = document.getElementById('feeRow')!;
       feeRow.hidden = !f;
       if (f) feeRow.textContent = t('ship.fee').replace('{fee}', f.toFixed(2)).replace('{pct}', String(extras.online_fee.percent));
@@ -209,11 +173,10 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
 
     function read() {
       const d = Object.fromEntries(new FormData(f).entries()) as Record<string, string>;
-      const country = d.country_alpha2 === 'OTHER' ? d.country_other.toUpperCase() : d.country_alpha2;
       return {
         online: true,
         origin: { contact_name: d.from_contact_name, line_1: d.from_line_1, line_2: d.from_line_2, city: d.from_city, state: d.from_state, postal_code: d.from_postal_code, country_alpha2: 'US' },
-        destination: { contact_name: d.contact_name, line_1: d.line_1, line_2: d.line_2, city: d.city, state: d.state, postal_code: d.postal_code, country_alpha2: country },
+        destination: { contact_name: d.contact_name, line_1: d.line_1, line_2: d.line_2, city: d.city, state: d.state, postal_code: d.postal_code, country_alpha2: 'US' },
         parcel: { weight_lb: d.weight_lb, length_in: d.length_in, width_in: d.width_in, height_in: d.height_in, description: d.description, value_usd: d.value_usd },
       };
     }
@@ -225,7 +188,6 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
       const a = SAVED.find((x) => String(x.id) === savedSel?.value);
       if (!a) return;
       for (const k of ['contact_name', 'line_1', 'line_2', 'city', 'state', 'postal_code']) { const el = f.querySelector<HTMLInputElement>(`[name=${k}]`); if (el) el.value = a.to[k] ?? ''; }
-      const c = f.querySelector<HTMLSelectElement>('[name=country_alpha2]'); if (c && a.to.country_alpha2) c.value = a.to.country_alpha2;
     }
     savedSel?.addEventListener('change', fillSaved); if (savedSel?.value) fillSaved();
     f.addEventListener('submit', async (e) => {
@@ -235,13 +197,11 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
       const res = await fetch('/api/rates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const j = await res.json();
       if (!res.ok) { err.textContent = j.error; err.hidden = false; return; }
-      international = j.international;
       extras = j.extras;
       document.getElementById('smsFee')!.textContent = extras?.text_updates_price ? t('ship.textfee').replace('{fee}', extras.text_updates_price.toFixed(2)) : '';
       const insRow = document.getElementById('insRow')!, insCovered = document.getElementById('insCovered')!;
       if (extras?.insurance.covered) { insRow.hidden = true; insBox.checked = false; insCovered.hidden = false; insCovered.textContent = t('ship.inscovered').replace('{n}', String(extras.insurance.included_usd)); }
       else { insRow.hidden = false; insCovered.hidden = true; document.getElementById('insFee')!.textContent = t('ship.insfee').replace('{fee}', extras.insurance.fee.toFixed(2)).replace('{value}', String(extras.insurance.declared_usd)); }
-      document.getElementById('intlNote')!.hidden = !international;
       const an = document.getElementById('addrNote')!, ad = j.address;
       if (ad && (ad.errors.length || ad.warnings.length)) { an.textContent = [...ad.errors, ...ad.warnings].join(' '); an.className = ad.errors.length ? 'err' : 'card'; an.hidden = false; } else an.hidden = true;
       const pk = j.packing, pn = document.getElementById('packNote')!;
@@ -249,7 +209,7 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
       else if (pk && pk.oversize) { pn.textContent = t('ship.packing.oversize'); pn.hidden = false; }
       else pn.hidden = true;
       document.getElementById('mockNote')!.hidden = !j.demo;
-      buyBtn.dataset.i18n = international ? 'ship.reserve' : 'ship.pay';
+      buyBtn.dataset.i18n = 'ship.pay';
       buyBtn.textContent = t(buyBtn.dataset.i18n);
       ratesEl.innerHTML = '';
       for (const r of j.rates) {

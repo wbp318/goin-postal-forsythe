@@ -3,7 +3,7 @@
 // and live here so a change is one line.
 import type { Parcel, Rate } from './types';
 
-const DIVISOR: Record<Rate['carrier'], number> = { USPS: 166, UPS: 139, FedEx: 139, DHL: 139, Meest: 166 };
+const DIVISOR: Record<Rate['carrier'], number> = { USPS: 166, UPS: 139, FedEx: 139, DHL: 139 };
 
 export function cubicInches(p: Parcel) {
   return p.length_in * p.width_in * p.height_in;
@@ -13,8 +13,6 @@ export function dimWeightLb(carrier: Rate['carrier'], p: Parcel) {
   const cubic = cubicInches(p);
   // USPS applies dimensional weight only above one cubic foot.
   if (carrier === 'USPS' && cubic <= 1728) return 0;
-  // Meest bills actual weight only (the agent rate sheet is per pound).
-  if (carrier === 'Meest') return 0;
   return cubic / DIVISOR[carrier];
 }
 

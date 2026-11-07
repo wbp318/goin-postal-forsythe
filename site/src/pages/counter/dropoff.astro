@@ -17,7 +17,7 @@ import Base from '../../layouts/Base.astro';
     <form id="accept" class="card" autocomplete="off">
       <label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
       <label><span data-i18n="st.d.barcode">Barcode or tracking number</span> <input name="barcode" required minlength="8" maxlength="40" autofocus autocapitalize="characters" placeholder="Scan here" data-i18n-ph="st.d.scanhere" /></label>
-      <label><span data-i18n="st.d.carrier">Carrier</span> <select name="carrier"><option value="" data-i18n="st.d.guess">Guess from the barcode</option><option>USPS</option><option>UPS</option><option>FedEx</option><option>DHL</option><option>Meest</option><option>Amazon</option></select></label>
+      <label><span data-i18n="st.d.carrier">Carrier</span> <select name="carrier"><option value="" data-i18n="st.d.guess">Guess from the barcode</option><option>USPS</option><option>UPS</option><option>FedEx</option><option>DHL</option><option>Amazon</option></select></label>
       <label><span data-i18n="st.d.custname">Customer name (optional)</span> <input name="customer_name" maxlength="60" /></label>
       <label><span data-i18n="st.d.custphone">Customer phone (optional)</span> <input name="customer_phone" maxlength="20" inputmode="tel" /></label>
       <label><span data-i18n="st.yourname">Your name or initials</span> <input name="staff" maxlength="20" /></label>
@@ -35,7 +35,6 @@ import Base from '../../layouts/Base.astro';
         <button class="btn kraft" data-handed="UPS">UPS <span data-i18n="st.d.pickedup">picked up</span></button>
         <button class="btn kraft" data-handed="FedEx">FedEx <span data-i18n="st.d.pickedup">picked up</span></button>
         <button class="btn kraft" data-handed="DHL">DHL <span data-i18n="st.d.pickedup">picked up</span></button>
-        <button class="btn kraft" data-handed="Meest">Meest <span data-i18n="st.d.pickedup">picked up</span></button>
       </p>
       <p class="muted" data-i18n="st.d.pickedup.lead">Tap a carrier when its driver leaves. Every drop-off for that carrier still at the counter is marked as handed over at that time.</p>
       <ol class="timeline" id="recent"></ol>

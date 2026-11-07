@@ -78,11 +78,10 @@ export const ALL: APIRoute = async ({ request, params }) => {
       const tax = salesTax(cfg, taxableExtras(extras));
       const order: Order = {
         id: newOrderId(), status: 'reserved', created_at: new Date().toISOString(), email: String(body.email ?? '').trim(), name: account.business_name,
-        source: 'counter', staff: `API:${key.label}`.slice(0, 20), origin: store.origin, destination: to, parcel, rate, international: to.country_alpha2 !== 'US', kind: 'ship',
+        source: 'counter', staff: `API:${key.label}`.slice(0, 20), origin: store.origin, destination: to, parcel, rate, international: false, kind: 'ship',
         addons: extras.addons.length ? extras.addons : undefined, insurance: extras.insurance, tax, total: Math.round((rate.total_charge + extras.extras_total + (tax?.amount ?? 0)) * 100) / 100,
         account_id: account.id, account_name: account.business_name, discount_percent: d || undefined,
       };
-      if (order.international) return json({ error: 'International shipments need customs paperwork; bring them to the counter for now' }, 400);
       await saveOrder(env, order);
       const done = await fulfil(env, { ...order, paid_at: new Date().toISOString() }, 'account');
       await billShipmentToAccount(env, done.id, account.id);
@@ -139,7 +138,6 @@ export const ALL: APIRoute = async ({ request, params }) => {
         const row: BatchRow = { line: i + 1, reference: String(r?.reference ?? '').slice(0, 40), to: null, parcel: null, errors: [], warnings: [] };
         try { row.to = parseAddress(addr(r?.to)); const c = checkAddress(row.to); row.errors.push(...c.errors); row.warnings.push(...c.warnings); } catch (e: any) { row.errors.push(e.message); }
         try { row.parcel = parseParcel(r?.parcel); } catch (e: any) { row.errors.push(e.message); }
-        if (row.to && row.to.country_alpha2 !== 'US') row.errors.push('International rows need customs paperwork; bring them to the counter');
         return row;
       });
       const rated = await rateBatch(env, rows, pick, account.discount_percent || 0);

@@ -6,15 +6,11 @@ import { usps } from './providers/usps';
 import { ups } from './providers/ups';
 import { fedex } from './providers/fedex';
 import { dhl } from './providers/dhl';
-import { meest } from './providers/meest';
 import { easyship } from './providers/easyship';
 import { retail } from '../lib/pricing';
 import { lengthPlusGirth } from './dim';
 
 const DIRECT = [usps, ups, fedex, dhl];
-// Meest rates come from the store's agent rate sheet, so they are added to every quote whatever is
-// configured, and never count toward "direct" for the demo or Easyship decisions.
-const TABLE = [meest];
 const CACHE_TTL = 300;
 
 export function activeProviders(env: Env) {
@@ -60,8 +56,6 @@ export async function getQuotes(env: Env, origin: Address, destination: Address,
     rates = rates.concat(fill.filter((r) => (missing as readonly string[]).includes(r.carrier)));
   }
 
-  for (const p of TABLE) rates = rates.concat(await p.rates(env, origin, destination, parcel).catch((e) => { errors.push({ carrier: p.id, message: String(e.message) }); return [] as Rate[]; }));
-
   const demo = direct.length === 0 && !env.EASYSHIP_TOKEN;
   if (env.ORDERS && rates.length) await env.ORDERS.put(key, JSON.stringify({ rates, demo, errors, oversize }), { expirationTtl: CACHE_TTL });
   const priced = (await retail(env, rates)).sort((a, b) => a.total_charge - b.total_charge);
@@ -71,14 +65,14 @@ export async function getQuotes(env: Env, origin: Address, destination: Address,
 /** Routes a label purchase to whichever adapter produced the rate id. */
 export async function buyLabel(env: Env, origin: Address, destination: Address, parcel: Parcel, rateId: string, opts: { qr: boolean; zpl: boolean }): Promise<Label> {
   const [carrier, code] = rateId.split(':');
-  const provider = [...DIRECT, ...TABLE, easyship].find((p) => p.id === carrier);
+  const provider = [...DIRECT, easyship].find((p) => p.id === carrier);
   if (!provider) throw new Error(`Unknown rate ${rateId}`);
   return provider.buyLabel(env, origin, destination, parcel, code, opts);
 }
 
 /** Every provider's answer side by side, for the parity test before switching Easyship off. */
 export async function compare(env: Env, origin: Address, destination: Address, parcel: Parcel) {
-  const all = [...DIRECT, ...TABLE, easyship];
+  const all = [...DIRECT, easyship];
   const rows = await Promise.all(all.map(async (p) => {
     if (!p.configured(env)) return { provider: p.id, configured: false, rates: [] as Rate[], error: null as string | null };
     try { return { provider: p.id, configured: true, rates: await p.rates(env, origin, destination, parcel), error: null }; }
@@ -88,7 +82,7 @@ export async function compare(env: Env, origin: Address, destination: Address, p
 }
 
 function providerFor(id: string) {
-  const provider = [...DIRECT, ...TABLE, easyship].find((p) => p.id === id.split(':')[0]);
+  const provider = [...DIRECT, easyship].find((p) => p.id === id.split(':')[0]);
   if (!provider) throw new Error(`Unknown provider in ${id}`);
   return provider;
 }

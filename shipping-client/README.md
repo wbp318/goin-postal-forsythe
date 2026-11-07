@@ -43,7 +43,7 @@ Do these in order the first time; each one leaves something for the next to find
 
 **3. A customer quotes and pays, `/ship`.** Under Return address type your own name and address (the ZIP fills the city and state); this is the sender on the label and where the rates ship from. Then fill in any US address, weight 2 lb, 10 by 8 by 4 inches, press **Get rates**. Demo rates appear under Rates with a note saying they are demo rates, one card per carrier and service. Pick one: the buy form opens with your email, Insure it for the full value, the online convenience fee line, the total, and Text me when it ships. Press **Pay and get label**. In mock mode Stripe is skipped and you land on `/ship/done`: "Paid. Your label is ready", a pickup code like `GP-7K3M9Q`, Download label (PDF), the tracking number with Track this package, and a QR code under "Can't print? Show this at the counter". Go back, do it again with Canada as the country: the button reads **Reserve and pay at the counter** and the done page says "Reserved. See you at the counter". That reserved order is what the queue is for.
 
-**4. A Meest parcel, `/ship`.** Quote a 5 lb box to Kyiv, country Ukraine (under "Meest (air or sea, at the agent rate)" in the country list). The rates include **Meest Air** (7 to 14 days) and **Meest Economy (sea)** (30 to 45 days) beside USPS, UPS, FedEx and DHL. Pick Meest Air and press Reserve and pay at the counter. The done page says Reserved. Now open `/counter/GP-XXXXXX` for that code, PIN, and press **Rung up on the POS. Buy label**: a red line appears under the buttons, "Meest parcel: finished at the counter in the Meest agent portal (customs list, recipient phone). Bring the box in." Reload the customer's done page: it now says "Meest parcels are finished at the counter: bring the box in and we enter it in the Meest system with the customs list. Your payment is on file under the code below." There is no PDF label for Meest; the label is made in the portal. Poland, the Baltics and Moldova offer both services; the other countries offer Meest Air only.
+**4. Domestic only, `/ship`.** There is no country picker: every quote and label is US-to-US. Try a Puerto Rico address (state PR, ZIP 00901): it quotes like any other US address. Send a Canadian address to `/api/v1/rates` with an API key: the answer is "PeterShip ships within the United States only". International shipping and Meest were taken out on November 7, 2026 (v1.92.0).
 
 **5. Tracking, `/track`.** Type the pickup code from step 3 in "Pickup code or tracking number" and press **Track**. The status (Label created, In transit, Out for delivery, Delivered) and a History list. In mock mode a fake scan advances once an hour. `/track?q=GP-XXXXXX` is the link customers get on the done page.
 
@@ -93,7 +93,7 @@ Do these in order the first time; each one leaves something for the next to find
 
 **27. Carrier invoices, `/counter/invoices`.** PIN, **Download a sample invoice to try**, open it in Invoice CSV: "N rows read". Check the guessed columns and the Carrier (USPS, UPS, FedEx, DHL or Meest), name the audit, **Check the invoice**: Carrier billed, We expected, To dispute, flagged lines first. **Save this audit**, then **Dispute** on a line with the claim number, and **Download flagged lines** for the carrier.
 
-**28. Prices, `/counter/rules`.** PIN, **Show rules**. The Default and carriers table has a row each for USPS, UPS, FedEx, DHL and Meest. Put 20 in Default percent and 1 in Default flat fee, tick Rules are on, **Preview**: each sample rate's carrier cost, price now and price after. **Save rules**, then quote on `/ship` again: the new prices. Untick and Save to go back. Under Add-ons and insurance: the four insurance numbers, the online fee, the sales tax percent, and the catalog of boxes and packing; change the small box, **Save add-ons**, and the next walk-up quote shows it. A counter PIN can look but not save.
+**28. Prices, `/counter/rules`.** PIN, **Show rules**. The Default and carriers table has a row each for USPS, UPS, FedEx and DHL. Put 20 in Default percent and 1 in Default flat fee, tick Rules are on, **Preview**: each sample rate's carrier cost, price now and price after. **Save rules**, then quote on `/ship` again: the new prices. Untick and Save to go back. Under Add-ons and insurance: the four insurance numbers, the online fee, the sales tax percent, and the catalog of boxes and packing; change the small box, **Save add-ons**, and the next walk-up quote shows it. A counter PIN can look but not save.
 
 **29. People, `/counter/staff`.** PIN, **Show**: "Signed in as Counter (shared PIN)". Under Add a person, add Rin as owner, Peter as manager, a counter person as counter, each with a PIN. Sign in on the queue with the counter PIN and run a walk-up: the Audit log here shows it with that name. Reset PIN and Deactivate take effect on the next request.
 
@@ -142,14 +142,11 @@ flowchart LR
   E --> UP["ups adapter"]:::local
   E --> F["fedex adapter"]:::local
   E --> D["dhl adapter"]:::local
-  E --> M["meest adapter<br/>rate sheet, no API yet"]:::local
   E --> ES["easyship adapter<br/>BRIDGE ONLY: asked for a carrier<br/>only while that carrier has no keys;<br/>never called once all four are live"]:::local
   U -.->|when keys set| UA["USPS APIs v3"]:::cloud
   UP -.->|when keys set| UPA["UPS REST"]:::cloud
   F -.->|when keys set| FA["FedEx REST"]:::cloud
-  D -.->|when keys set| DA["MyDHL API"]:::cloud
-  M --> MR["meest-rates.json<br/>owner-edited"]:::local
-  M -.->|"when MEEST_API_KEY is set"| MA["Meest API"]:::cloud
+  D -.->|when keys set| DA["MyDHL API<br/>domestic product only"]:::cloud
   ES -.->|"only while EASYSHIP_TOKEN is set"| ESA["Easyship"]:::cloud
   C["/api/compare<br/>PIN, parity test"]:::local --> E
   classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
@@ -241,7 +238,8 @@ flowchart LR
 | Low-stock alerts and label resend from the account page (to-do T31) | `/account`, `/counter/fulfillment`, `notify.ts` | Done Oct 29, v1.67.0 |
 | PeterShip on the home page, a `/petership` landing page and a PeterShip nav tab, the Fireworks look across the site, high contrast as an opt-in | `/`, `/petership`, `src/layouts/Base.astro`, `src/styles/global.css` | Done Nov 4, v1.70.0 |
 | The older look: one light theme, no dark mode, a 1200 px page with thin gutters, tabs in one row with a utility bar, 3 px corners and hard shadows, a sidebar on the home page | `src/layouts/Base.astro`, `src/styles/global.css`, `/` | Done Nov 4, v1.70.1 |
-| Meest America as a fifth carrier: rates from the owner-edited sheet `meest-rates.json` (base plus per pound per country: Ukraine, Poland, the Baltics, Moldova, Georgia, Armenia, Kazakhstan, Uzbekistan, Kyrgyzstan, Czechia, Slovakia, Hungary, Romania, Bulgaria; Meest Air 7 to 14 days and Meest Economy by sea 30 to 45 days where offered), quoted on every international quote beside USPS, UPS, FedEx and DHL; the label is finished at the counter in the Meest agent portal until Meest grants API access, when `MEEST_API_URL` and `MEEST_API_KEY` switch the adapter to the API. Meest is also in the price rules carrier list, the drop-off carrier select and picked up button, the invoice carrier select and the OpenAPI enum. The notary service is now on call | `src/shipping/providers/meest.ts`, `src/data/meest-rates.json`, `tests/meest.test.ts` | Done Nov 4, v1.71.0. The real rate sheet is issue 17 |
+| Domestic only: every address must be in the US; no country picker, no international reserve flow, no Meest, no customs; DHL for domestic service only (T43) | `site/src/lib/validate.ts`, `site/tests/domestic.test.ts` | v1.92.0 |
+| Meest America as a fifth carrier: rates from the owner-edited sheet `meest-rates.json` (base plus per pound per country: Ukraine, Poland, the Baltics, Moldova, Georgia, Armenia, Kazakhstan, Uzbekistan, Kyrgyzstan, Czechia, Slovakia, Hungary, Romania, Bulgaria; Meest Air 7 to 14 days and Meest Economy by sea 30 to 45 days where offered), quoted on every international quote beside USPS, UPS, FedEx and DHL; the label is finished at the counter in the Meest agent portal until Meest grants API access, when `MEEST_API_URL` and `MEEST_API_KEY` switch the adapter to the API. Meest is also in the price rules carrier list, the drop-off carrier select and picked up button, the invoice carrier select and the OpenAPI enum. The notary service is now on call  **Removed in v1.92.0: international and Meest are out of PeterShip.**| `src/shipping/providers/meest.ts`, `src/data/meest-rates.json`, `tests/meest.test.ts` | Done Nov 4, v1.71.0. The real rate sheet is issue 17 |
 
 Customers see service, price and days only. Cost and the provider that answered stay on the server.
 
@@ -345,7 +343,6 @@ site/
     providers/ups.ts
     providers/fedex.ts
     providers/dhl.ts
-    providers/meest.ts          Meest America: prices from src/data/meest-rates.json, the API when its keys exist
     providers/easyship.ts       the fallback that covers all four with one account, and mock mode
     store.ts                    every read and write to D1, with an in-memory copy when D1 is absent
     poll.ts                     refresh tracking for open shipments and send customer updates
@@ -441,7 +438,7 @@ The screen-by-screen test script now lives at the top of this file, under [Instr
 ```mermaid
 stateDiagram-v2
   [*] --> awaiting_payment: domestic, online, Stripe opened
-  [*] --> reserved: international online, or any walk-up
+  [*] --> reserved: any walk-up
   awaiting_payment --> labeled: Stripe webhook, fulfil()
   reserved --> labeled: staff press Buy label after the POS, fulfil()
   awaiting_payment --> cancelled: staff Cancel
@@ -586,7 +583,7 @@ What it does not replace: the Goin' Postal POS. In-person money still runs there
 mindmap
   root((PeterShip))
     Rating
-      Four carriers in one call, plus Meest from the rate sheet
+      Four carriers in one call, US addresses only
       Dimensional weight
       Surcharges and zones
       Retail markup rules
@@ -645,8 +642,7 @@ flowchart LR
     U["USPS"]:::cloud
     P["UPS"]:::cloud
     F["FedEx"]:::cloud
-    D["DHL Express"]:::cloud
-    ME["Meest<br/>agent portal"]:::cloud
+    D["DHL<br/>domestic only"]:::cloud
   end
   W --> Q
   PS --> W
@@ -683,10 +679,9 @@ The website already has the customer side, Stripe, orders in KV, the done page w
 | USPS | Business account with an Enterprise Payment System account | USPS APIs (OAuth 2.0): Prices, Labels, Tracking, SCAN forms | Self-serve developer portal, then a payment account for live labels | PDF, ZPL | Web Tools retired January 2026, so only the new APIs are an option. |
 | UPS | UPS account number in the store's name | UPS Developer Portal (OAuth 2.0): Rating, Shipping, Tracking, Pickup | Self-serve, production access after a test | PDF, ZPL, GIF | Negotiated rates need the account linked to the app. |
 | FedEx | FedEx account number | FedEx Developer Portal REST: Rates, Ship, Track, Pickup | Self-serve, production keys after certification checklist | PDF, ZPL, PNG | Web Services goes maintenance-only July 2026, REST is the target. |
-| DHL Express | DHL Express account | MyDHL API: Rates, Shipments, Tracking, Pickups | DHL approves API access per account, slowest of the four | PDF, ZPL | Customs documents are built into the shipment call. |
-| Meest America | Meest agent account | None yet. Rates come from `site/src/data/meest-rates.json`, which the owners edit (issue 17); `MEEST_API_URL` and `MEEST_API_KEY` switch the adapter to the API when Meest grants access | Meest grants API access per agent | Printed from the agent portal | Ukraine, Poland, the Baltics, Moldova, Georgia, Armenia, Kazakhstan, Uzbekistan, Kyrgyzstan, Czechia, Slovakia, Hungary, Romania and Bulgaria. Meest Air 7 to 14 days, Meest Economy by sea 30 to 45 days where offered. The label is finished at the counter in the portal. |
+| DHL Express | DHL Express account | MyDHL API: Rates, Shipments, Tracking, Pickups | DHL approves API access per account, slowest of the four | PDF, ZPL | **Domestic only since v1.92.0:** only DHL's domestic product is offered. DHL Express sells little or nothing US-to-US; DHL's domestic US service is DHL eCommerce, a separate account and API (T42). |
 
-All four carrier APIs are free to call. Costs are postage only. Meest costs nothing to quote either; the rate sheet is a file.
+All four carrier APIs are free to call. Costs are postage only.
 
 ## Phases
 
@@ -732,7 +727,7 @@ Nothing can be tested until each one lands. They can be requested in parallel on
 
 - [x] Buy and void per carrier, routed by the label id prefix, with the carrier's own QR drop-off code where it exists (USPS Label Broker, UPS and FedEx QR return codes). Untested live.
 - [x] PDF for home printing, ZPL for the counter's thermal printer. The adapters request both.
-- [ ] Customs forms for international: CN22, CN23, commercial invoice, built from the item list the customer already types. Waits on keys.
+- ~~Customs forms for international~~: not needed. PeterShip ships within the United States only since v1.92.0.
 - [ ] End-of-day: USPS SCAN form, UPS and FedEx manifests, pickup requests. Waits on keys.
 - [x] Printer agent: [`printer-agent/`](printer-agent/README.md), a small Node program on the counter PC that watches the `print_queue` table, so a staff tap on the tablet prints at the counter. Needs a test on the shop's Zebra (issue 5).
 

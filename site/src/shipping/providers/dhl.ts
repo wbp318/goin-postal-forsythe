@@ -1,5 +1,7 @@
 // DHL Express MyDHL API. https://developer.dhl.com/api-reference/dhl-express-mydhl-api
 // Needs DHL_API_KEY, DHL_API_SECRET and DHL_ACCOUNT_NUMBER. DHL_SANDBOX=1 for the test environment.
+// Domestic only (Nov 7, 2026): PeterShip quotes US-to-US, so only DHL's domestic product is offered. DHL Express
+// sells little or nothing US-to-US; DHL's domestic US service is DHL eCommerce, a separate account and API (T42).
 // Not yet exercised against DHL. DHL approves API access per account and is the slowest of the four.
 import type { Provider, Address, Parcel, Rate, Label } from '../types';
 import { callJson, money } from '../http';
@@ -8,7 +10,7 @@ import { billableWeightLb } from '../dim';
 const base = (env: Env) => (env.DHL_SANDBOX ? 'https://express.api.dhl.com/mydhlapi/test' : 'https://express.api.dhl.com/mydhlapi');
 const auth = (env: Env) => 'Basic ' + btoa(`${env.DHL_API_KEY}:${env.DHL_API_SECRET}`);
 
-const SERVICES: Record<string, string> = { P: 'DHL Express Worldwide', N: 'DHL Express Domestic', T: 'DHL Express 12:00', K: 'DHL Express 9:00', H: 'DHL Express Economy Select' };
+const SERVICES: Record<string, string> = { N: 'DHL Express Domestic' };
 
 const addr = (a: Address) => ({
   postalAddress: { postalCode: a.postal_code, cityName: a.city, countryCode: a.country_alpha2, provinceCode: a.state, addressLine1: a.line_1, addressLine2: a.line_2 },
@@ -26,7 +28,7 @@ export const dhl: Provider = {
       accountNumber: env.DHL_ACCOUNT_NUMBER!, originCountryCode: origin.country_alpha2, originPostalCode: origin.postal_code, originCityName: origin.city,
       destinationCountryCode: destination.country_alpha2, destinationPostalCode: destination.postal_code, destinationCityName: destination.city,
       weight: String(kg(parcel.weight_lb)), length: String(cm(parcel.length_in)), width: String(cm(parcel.width_in)), height: String(cm(parcel.height_in)),
-      plannedShippingDate: new Date(Date.now() + 86400000).toISOString().slice(0, 10), isCustomsDeclarable: String(destination.country_alpha2 !== 'US'), unitOfMeasurement: 'metric', nextBusinessDay: 'true',
+      plannedShippingDate: new Date(Date.now() + 86400000).toISOString().slice(0, 10), isCustomsDeclarable: 'false', unitOfMeasurement: 'metric', nextBusinessDay: 'true',
     });
     const json = await callJson<any>('dhl', `${base(env)}/rates?${q}`, { headers: { Authorization: auth(env) } });
     const list: any[] = json.products ?? [];
