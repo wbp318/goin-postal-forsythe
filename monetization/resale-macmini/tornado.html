@@ -92,6 +92,53 @@ td.who { width: 76px; }
 .mm-day { font-size: 12.5px; }
 .mm-day span:nth-child(even) { color: var(--muted); font-family: var(--body); }
 footer { color: var(--muted); font-size: 12px; margin-top: 14px; max-width: 110ch; line-height: 1.5; }
+
+/* ---------- marketplace guide and dropship (below the storm) ---------- */
+.guide { margin-top: 22px; display: grid; gap: 14px; }
+.guide > h2 { font-family: var(--display); font-weight: 700; font-size: clamp(24px, 3vw, 32px); margin: 0; text-wrap: balance; }
+.guide > .lead { color: #cbd5ee; font-size: 14px; line-height: 1.55; max-width: 80ch; margin: 0; }
+.guide a { color: var(--gold); }
+.guide a:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.mk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 12px; align-items: start; }
+.mk { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; min-width: 0; display: grid; gap: 8px; }
+.mk-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.mk h3 { font-family: var(--display); font-weight: 600; font-size: 21px; letter-spacing: 0.01em; margin: 0; }
+.pill { font: 500 11px/1.4 var(--mono); padding: 2px 7px; border-radius: 3px; white-space: nowrap; border: 1px solid; }
+.pill.scripts { color: var(--sky); background: var(--gold); border-color: var(--gold); }
+.pill.apply { color: #a9cdfa; border-color: var(--sonnet); }
+.pill.hand { color: #8fe0c0; border-color: var(--hand); }
+.pill.not { color: var(--muted); border-color: var(--unlisted); }
+.mk .fit { font-size: 13px; color: #cbd5ee; margin: 0; line-height: 1.45; }
+.mk dl { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 3px 10px; margin: 0; font-size: 12.5px; line-height: 1.45; }
+.mk dt { color: var(--muted); }
+.mk dd { margin: 0; font-variant-numeric: tabular-nums; }
+.mk details { border-top: 1px solid var(--line); padding-top: 6px; }
+.mk summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--ink); padding: 2px 0; }
+.mk summary:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.mk ol, .mk ul { margin: 6px 0 2px; padding-left: 20px; font-size: 12.5px; line-height: 1.5; color: #cbd5ee; display: grid; gap: 3px; }
+.mk h4 { font: 600 12px var(--body); color: var(--muted); margin: 8px 0 0; }
+.mk ul.yes li::marker { content: "✓  "; color: var(--hand); }
+.mk ul.no li::marker { content: "✕  "; color: #f08a6b; }
+.mk code { font: 11.5px var(--mono); color: var(--gold); overflow-wrap: anywhere; }
+.mk .src { font-size: 12px; }
+.ds { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 12px; align-items: start; }
+.flow { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.flow li { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; font-size: 13px; line-height: 1.45; color: #cbd5ee; }
+.flow b { color: var(--ink); }
+.flow .n { font: 600 15px/26px var(--display); text-align: center; height: 26px; border-radius: 3px; background: #2a1f4a; color: #c9a8f0; border: 1px solid #6b4fa8; }
+.tbl-wrap { overflow-x: auto; }
+.tbl { font-size: 12.5px; min-width: 520px; }
+.tbl th { text-align: left; font: 600 12px var(--body); color: var(--muted); padding: 4px 8px 4px 0; border-bottom: 1px solid var(--line); }
+.tbl td { padding: 5px 8px 5px 0; border-bottom: 1px solid #1b2850; vertical-align: top; }
+.tbl td.num { text-align: right; font-family: var(--mono); white-space: nowrap; }
+.tbl tr.total td { font-weight: 600; color: var(--gold); border-bottom: 0; }
+.api-yes { color: #8fe0c0; }
+.api-no { color: #f08a6b; }
+.phases { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 10px; }
+.phase { border-left: 3px solid #6b4fa8; padding: 2px 0 2px 10px; font-size: 12.5px; line-height: 1.5; color: #cbd5ee; }
+.phase b { display: block; font: 600 16px var(--display); color: var(--ink); margin-bottom: 2px; }
+.never { columns: 2 220px; font-size: 12.5px; line-height: 1.6; color: #cbd5ee; margin: 6px 0 0; padding-left: 18px; }
 </style>
 </head>
 <body>
@@ -200,8 +247,107 @@ Notes:</pre>
   </aside>
 </div>
 
+
+<section class="guide" id="markets" aria-labelledby="markets-h">
+  <h2 id="markets-h">Where each item can sell</h2>
+  <p class="lead">Every marketplace the resale business might use: what it sells well, what it costs, how a person lists an item there, and what software may and may not do. Checked November 7, 2026; fees change, so check before quoting. The full guide, with sources, is <a href="https://github.com/wbp318/goin-postal-forsythe/blob/main/monetization/resale-macmini/marketplaces/README.md">marketplaces/README.md</a>.</p>
+  <div class="filters">
+    <span class="lbl">Show</span>
+    <span class="seg" id="mkFilter"><button type="button" data-v="all" aria-pressed="true">All</button><button type="button" data-v="scripts" aria-pressed="false">Scripts list it</button><button type="button" data-v="apply" aria-pressed="false">Apply first</button><button type="button" data-v="hand" aria-pressed="false">By hand</button><button type="button" data-v="not" aria-pressed="false">Not for us</button></span>
+  </div>
+  <div class="mk-grid" id="mkGrid"></div>
+  <p class="note">The same rule everywhere: the official API with the store's own keys, a person approving every listing, no bots or browser automation, and nothing from a marketplace (buyer details included) ever goes to Claude. When the marketplace takes the payment it collects Louisiana sales tax; on the store's own shop and local cash sales, the store does.</p>
+</section>
+
+<section class="guide" id="dropship" aria-labelledby="dropship-h">
+  <h2 id="dropship-h">Dropship, start to finish</h2>
+  <p class="lead">The diamonds in the storm. The store lists goods it never stocks; when one sells, a script orders it from a US supplier, who ships it straight to the buyer. The store's own designs work the same way through a print partner. The store is still the seller: for eBay's standards, the FTC's shipping rule, returns and sales tax. Full plan: <a href="https://github.com/wbp318/goin-postal-forsythe/blob/main/monetization/resale-macmini/dropship/README.md">dropship/README.md</a>.</p>
+  <div class="ds">
+    <div class="card">
+      <h2>One sale, step by step</h2>
+      <ol class="flow">
+        <li><span class="n">1</span><div><b>Feed.</b> Every 15 to 60 minutes the supplier's API sends new items, stock and cost. Stock under 10 sets the listing to 0 at once.</div></li>
+        <li><span class="n">2</span><div><b>Draft.</b> Claude Haiku 5.5 writes from the supplier's facts in the store's words, never copying them.</div></li>
+        <li><span class="n">3</span><div><b>Approve.</b> A person checks it and sets the price at or above the script's floor. Listed 2 or 3 at a time.</div></li>
+        <li><span class="n">4</span><div><b>Sold.</b> The order job checks the address, the fraud score and the live cost. Below the floor or out of stock: held for a person.</div></li>
+        <li><span class="n">5</span><div><b>Order.</b> Through the supplier's API, shipped blind. For the first months a person confirms each one.</div></li>
+        <li><span class="n">6</span><div><b>Tracking.</b> The supplier's webhook brings it; the job posts it to eBay (<code>createShippingFulfillment</code>), Shopify or Etsy within handling time.</div></li>
+        <li><span class="n">7</span><div><b>Watchdog.</b> No tracking by handling time minus 12 hours, no scan 24 hours later, or not delivered by the estimate: a person is told.</div></li>
+      </ol>
+    </div>
+    <div class="card">
+      <h2>Where it may sell</h2>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Marketplace</th><th>Goods</th><th>The store's designs</th></tr></thead>
+        <tbody>
+          <tr><td>eBay</td><td class="api-yes">Wholesale suppliers only</td><td class="api-yes">Yes</td></tr>
+          <tr><td>Shopify (own shop)</td><td class="api-yes">Yes</td><td class="api-yes">Yes</td></tr>
+          <tr><td>Etsy</td><td class="api-no">Banned</td><td class="api-yes">Yes, print partner declared</td></tr>
+          <tr><td>Poshmark, Mercari, Depop, Facebook</td><td class="api-no">Never</td><td class="api-no">Never</td></tr>
+          <tr><td>Amazon, Walmart, TikTok Shop</td><td colspan="2">Not in this plan</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note" style="padding:8px 0 0">Never buy from Amazon, Walmart or another store to ship to a buyer: eBay bans it. US warehouses only: the small-parcel duty exemption is suspended for every country since August 2025, so China-direct means duty and weeks of delay.</p>
+    </div>
+    <div class="card">
+      <h2>Suppliers a script can use</h2>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Supplier</th><th>What</th><th>API</th><th>Cost</th></tr></thead>
+        <tbody>
+          <tr><td>CJdropshipping</td><td>General goods, US warehouses only</td><td class="api-yes">Public</td><td>Free</td></tr>
+          <tr><td>Doba</td><td>US suppliers</td><td class="api-yes">Standard plan</td><td>$57 / $142.67 a mo</td></tr>
+          <tr><td>Printify</td><td>The store's designs</td><td class="api-yes">Public, webhooks</td><td>Free / $39 a mo</td></tr>
+          <tr><td>Printful</td><td>The store's designs</td><td class="api-yes">Public, drafts</td><td>Free / $24.99 a mo</td></tr>
+          <tr><td>Gooten, Gelato, Spreadconnect</td><td>Backups for designs</td><td class="api-yes">Public</td><td>Pay per order</td></tr>
+          <tr><td>Essendant</td><td>Mailing and office supplies</td><td>EDI, by dealer account</td><td>Call them</td></tr>
+          <tr><td>Spocket, Zendrop, Syncee, Modalyst</td><td>General goods</td><td class="api-no">Shopify app only</td><td>$0 to $299 a mo</td></tr>
+          <tr><td>AutoDS</td><td>Amazon and Walmart sourcing</td><td class="api-no">Not for us</td><td>eBay bans the method</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <h2>Money: the floor</h2>
+      <p class="mm-lead">The script's floor is 15% kept after fees, ads and returns. On eBay that's a price of at least the supplier's delivered cost ÷ 0.62. A 25% markup keeps about $0.70 on this item.</p>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>$29.99 item, $19 delivered cost</th><th>eBay</th><th>Shopify</th></tr></thead>
+        <tbody>
+          <tr><td>Sale (Shopify adds $5.99 shipping)</td><td class="num">$29.99</td><td class="num">$35.98</td></tr>
+          <tr><td>Fees</td><td class="num">−$4.85</td><td class="num">−$1.34</td></tr>
+          <tr><td>Supplier</td><td class="num">−$19.00</td><td class="num">−$19.00</td></tr>
+          <tr><td>Ads 3%, returns 2% (eBay)</td><td class="num">−$1.58</td><td class="num">ads extra</td></tr>
+          <tr class="total"><td>Kept</td><td class="num">$4.56</td><td class="num">$15.65</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note" style="padding:8px 0 0">eBay's 13.6% is on the total with the buyer's sales tax, plus $0.40 an order. Shopify Basic is $39 a month ($29 yearly) at 2.9% + 30¢; its cost is finding buyers. An Etsy tee of the store's design at $26 keeps about $14 through Printify.</p>
+    </div>
+    <div class="card">
+      <h2>eBay's standards</h2>
+      <div class="kv mm-day">
+        <span>Defects (Below Standard over)</span><span>2%</span>
+        <span>Cases closed without the store</span><span>0.3%, min 2</span>
+        <span>Late shipments (Top Rated)</span><span>3% or less</span>
+        <span>Tracking on time (Top Rated)</span><span>95%</span>
+        <span>Below Standard costs</span><span>+6% fees</span>
+      </div>
+      <p class="note" style="padding:8px 0 0">An out-of-stock cancel is a defect: that's why the feed lists 2 or 3 at a time and zeroes stock under 10. Handling time starts at 3 business days (5 for designs). Rated on the 20th of each month.</p>
+    </div>
+    <div class="card">
+      <h2>The first 90 days</h2>
+      <div class="phases">
+        <div class="phase"><b>Days 1 to 30</b>Accounts in the LLC's name, the R-1064 resale certificate, an insurance quote, $250 to $400 of sample orders to two addresses, house rules written. Nothing sold.</div>
+        <div class="phase"><b>Days 31 to 60</b>10 to 15 designs on Etsy and Shopify, 15 to 25 goods on eBay. A person confirms every supplier order.</div>
+        <div class="phase"><b>Days 61 to 90</b>Automatic orders only for suppliers with 20 clean orders. Drop the slowest 30%. Review on the 21st, after eBay's rating.</div>
+      </div>
+      <h3 class="mm-h">Never list</h3>
+      <ul class="never">
+        <li>Lithium batteries, hazmat</li><li>Children's and baby goods</li><li>Cosmetics, supplements, anything eaten</li><li>Brand names without proof</li><li>Knives and weapons</li><li>Oversize, glass</li><li>FCC-regulated electronics</li><li>LSU, ULM, Saints, krewe marks</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
 <footer>
-  Mock data, from the plan in <span style="font-family:var(--mono)">monetization/resale-macmini/</span>: 20 items a day; about 10% flagged to Claude Sonnet 5.5 (designer brands, possible fakes, over $75), the rest drafted by Claude Haiku 5.5; about half of listed items sell within the month; marketplace fees shown as 13.5% for the example; Claude costs at the plan's estimates ($0.0065 a Haiku draft, $0.117 a Sonnet second opinion, $0.009 a daily note). eBay always; Etsy only for vintage; Poshmark, Mercari and the other by-hand marketplaces only after 14 days unsold. Dropship: about 4 new supplier listings a working day from CJdropshipping, Doba and Printify (the store's own designs), supplier price 55% to 72% of the sale price delivered, goods on eBay and Shopify and designs on Shopify and Etsy, about 3% a day chance to sell, fees of eBay 13.6% + $0.40, Etsy about 9.5% + $0.45 and Shopify 2.9% + $0.30, the supplier ships in 1 to 3 days and delivers in 3 to 6, and 3% of orders canceled because the supplier ran out. Nothing here is real sales data.
+  Mock data, from the plan in <span style="font-family:var(--mono)">monetization/resale-macmini/</span>: 20 items a day; about 10% flagged to Claude Sonnet 5.5 (designer brands, possible fakes, over $75), the rest drafted by Claude Haiku 5.5; about half of listed items sell within the month; marketplace fees shown as 13.5% for the example; Claude costs at the plan's estimates ($0.0065 a Haiku draft, $0.117 a Sonnet second opinion, $0.009 a daily note). eBay always; Etsy only for vintage; Poshmark, Mercari and the other by-hand marketplaces only after 14 days unsold. Dropship: about 4 new supplier listings a working day from CJdropshipping, Doba and Printify (the store's own designs), supplier price 50% to 62% of the sale price delivered (45% to 50% for the store's designs), so every listing clears the floor (15% kept on eBay, $8 on Etsy), goods on eBay and Shopify and designs on Shopify and Etsy, about 3% a day chance to sell, fees of eBay 13.6% of the total with about 9% buyer tax + $0.40, Etsy about 9.5% + $0.45 and Shopify 2.9% + $0.30, the supplier ships in 1 to 3 days and delivers in 3 to 6, and 3% of orders canceled because the supplier ran out. Nothing here is real sales data.
 </footer>
 
 <script>
@@ -264,7 +410,7 @@ Notes:</pre>
     ["Packing tape gun", 16], ["Insulated tumbler, 30 oz", 22], ["Phone tripod with remote", 26], ["LED ring light", 38],
     ["Bamboo cutting board set", 32], ["Cast iron care kit", 18], ["Pet hair remover roller", 15], ["Car phone mount", 17],
     ["Moving boxes, 10-pack", 36], ["Label rolls, 4x6, 4-pack", 28],
-    ["Monroe skyline tee (store design)", 26, "pod"], ["Bayou mug (store design)", 18, "pod"], ["Ouachita River poster (store design)", 22, "pod"]
+    ["Monroe skyline tee (store design)", 29, "pod"], ["Bayou mug (store design)", 25, "pod"], ["Ouachita River poster (store design)", 28, "pod"]
   ];
   const SUPPLIERS = ["CJdropshipping, US warehouse (API)", "Doba, US supplier (API)", "Printify, print on demand (API)"];
 
@@ -323,7 +469,7 @@ Notes:</pre>
     const price = Math.round(base[1] * between(0.9, 1.15));
     const it = { id: 1000 + S.nextDropSku, sku: "DS-" + String(S.nextDropSku).padStart(3, "0"), name: base[0], price, drop: true,
       supplier: base[2] === "pod" ? SUPPLIERS[2] : pick(SUPPLIERS.slice(0, 2)), pod: base[2] === "pod",
-      cost: Math.round(price * between(0.55, 0.72) * 100) / 100, stock: 20 + Math.floor(rnd() * 180),
+      cost: Math.round(price * (base[2] === "pod" ? between(0.45, 0.5) : between(0.5, 0.62)) * 100) / 100, stock: 20 + Math.floor(rnd() * 180),
       vintage: false, flagged: false, stage: 0, next: S.hour + between(0.2, 0.6), room: "drop", bin: "",
       markets: [], soldOn: null, listedAt: null, handAdded: false,
       a: rnd() * Math.PI * 2, ry: null, rr: null, alpha: 1, done: false, jy: 0, jr: 1 };
@@ -343,7 +489,7 @@ Notes:</pre>
     if (st === "approve") {
       // goods: eBay (wholesale supplier only) and Shopify; the store's own print-on-demand designs: Shopify and Etsy
       it.stage = 5; it.listedAt = S.hour; it.jy = between(-26, 26); it.jr = between(0.8, 1.35); it.markets = it.pod ? ["shop", "etsy"] : ["ebay", "shop"]; S.dropListed++;
-      log(it.sku + " approved by " + pick(NAMES) + " at " + money(it.price) + " (margin floor " + money(it.cost * 1.25) + "); dropship on " + it.markets.map(m => MARKET_NAME[m].split(" (")[0]).join(" and "));
+      log(it.sku + " approved by " + pick(NAMES) + " at " + money(it.price) + " (floor " + money(it.pod ? (it.cost + 8.45) / 0.905 : it.cost / 0.62) + ": " + (it.pod ? "$8 kept on Etsy" : "15% kept on eBay") + "); dropship on " + it.markets.map(m => MARKET_NAME[m].split(" (")[0]).join(" and "));
       it.next = S.hour + 1; return;
     }
     if (st === "listed") {
@@ -351,8 +497,8 @@ Notes:</pre>
       if (rnd() < 1 - Math.pow(1 - 0.03, 1 / 24)) {
         const on = rnd() < 0.6 ? it.markets[0] : it.markets[1];
         it.soldOn = on; it.stage = 6; it.step = "order"; it.next = S.hour + between(0.05, 0.15);
-        // eBay 13.6% + $0.40 an order; Etsy 6.5% + $0.20 listing + 3% + $0.25 payments; Shopify Payments 2.9% + $0.30
-        const fee = on === "ebay" ? it.price * 0.136 + 0.40 : on === "etsy" ? it.price * 0.095 + 0.45 : it.price * 0.029 + 0.30; it.fee = fee; S.revenue += it.price; S.fees += fee; S.soldBy[on]++; S.dropSold++;
+        // eBay 13.6% of the total with the buyer's tax (about 9%) + $0.40 an order; Etsy 6.5% + $0.20 listing + 3% + $0.25 payments; Shopify Payments 2.9% + $0.30
+        const fee = on === "ebay" ? it.price * 1.09 * 0.136 + 0.40 : on === "etsy" ? it.price * 0.095 + 0.45 : it.price * 0.029 + 0.30; it.fee = fee; S.revenue += it.price; S.fees += fee; S.soldBy[on]++; S.dropSold++;
         log(it.sku + " sold on " + MARKET_NAME[on] + " for " + money(it.price) + "; ended on " + it.markets.filter(m => m !== on).map(m => MARKET_NAME[m].split(" (")[0]).join(", "));
       } else it.next = S.hour + 1;
       return;
@@ -793,7 +939,7 @@ Notes:</pre>
     if (mode === "market") html = [["ebay", "eBay (API)"], ["etsy", "Etsy, vintage (API)"], ["hand", "By hand after 14 days"], ["shop", "Shopify (dropship is listed here)"], ["unlisted", "Not listed yet"]].map(([k, t]) => "<span><i style=\"background:" + COLORS[k] + "\"></i>" + t + "</span>").join("") + "<span>White ring: flagged to Sonnet 5.5</span>";
     if (mode === "model") html = "<span><i style=\"background:" + COLORS.haiku + "\"></i>Drafted by Claude Haiku 5.5 only</span><span><i style=\"background:" + COLORS.sonnet + "\"></i>Flagged: Haiku draft, then Sonnet 5.5 second opinion</span>";
     if (mode === "stage") html = "<span><i style=\"background:" + STAGE_RAMP[0] + "\"></i>Intake</span><span>darker to lighter, top to bottom</span><span><i style=\"background:" + STAGE_RAMP[7] + "\"></i>Shipped</span><span>White ring: flagged to Sonnet 5.5</span>";
-    $("legend").innerHTML = html + "<span><b style=\"color:#c9a8f0\">◆</b> Dropship: a supplier ships it, no shelf</span><span>Left: the Mac mini's layers, lit when they work. Bottom: the stockrooms and the dropship card, lit when they pick, pack, order or hand off. Hover any of them for what it is</span>";
+    $("legend").innerHTML = html + "<span><b style=\"color:#c9a8f0\">◆</b> Dropship: a supplier ships it, no shelf</span><span>Left: the Mac mini's layers, lit when they work. Bottom: the stockrooms and the dropship card, lit when they pick, pack, order or hand off. Hover any of them for what it is</span><span><a href=\"#markets\" style=\"color:var(--gold)\">Every marketplace, and how to list there</a> · <a href=\"#dropship\" style=\"color:var(--gold)\">Dropship, start to finish</a></span>";
   }
 
   function summary() {
@@ -908,6 +1054,101 @@ Notes:</pre>
   resize(); makeDust(); start(); legend(); panel();
   if (reduce) { $("play").textContent = "Play"; $("motion").textContent = "Paused because your system asks for reduced motion. Press Play to run it."; }
   requestAnimationFrame(frame);
+})();
+</script>
+
+<script>
+(function () {
+  "use strict";
+  const GH = "https://github.com/wbp318/goin-postal-forsythe/blob/main/monetization/resale-macmini/marketplaces/README.md#";
+  const GROUP = { scripts: "Scripts list it", apply: "Apply first", hand: "By hand only", not: "Not for us" };
+  const M = [
+    { k: "scripts", name: "eBay", a: "ebay", fit: "Everything goes here first: collectibles, cards, electronics, tools, clothing.",
+      fees: "13.6% of the total (tax included) + $0.40 an order; 250 free listings a month", ship: "The store's labels through PeterShip; signature at $750 and up", drop: "Wholesale suppliers only",
+      steps: ["Seller Hub, Create listing; scan the UPC or type a title and take the suggested category", "Title up to 80 characters: brand, item, model, size, color", "Condition: Pre-owned with its grade and every flaw; full sizes on clothing and shoes", "Every required item specific", "The store's own photos, 1,600 px, up to 24 free", "Buy It Now with Best Offer and an auto-decline floor", "Business policies: handling time, 30-day returns; list it and note the item number in the vault"],
+      may: ["Publish with the Sell Inventory API (<code>createOrReplaceInventoryItem</code>, <code>createOffer</code>, <code>publishOffer</code>)", "Read orders and post tracking (Fulfillment API): the eBay connector already does", "End the listing within minutes when it sells somewhere else"],
+      not: ["Browser automation or scraping of Seller Hub", "\u201cLLM-driven bots\u201d or order flows without human review (User Agreement, Feb 2026)", "eBay content or buyer data into Claude, or into AI training"] },
+    { k: "scripts", name: "Etsy", a: "etsy", fit: "Only vintage, 20 years or older (made 2006 or before), and the store's own designs.",
+      fees: "$0.20 a listing, 6.5% of the order, 3% + $0.25 processing", ship: "The store's labels or Etsy's; mark shipped with tracking", drop: "Banned; the store's designs through a declared print partner",
+      steps: ["Shop Manager, Listings, Add a listing", "About: another company or person, a finished product, made 20+ years ago", "Category, title, photos, including at least one unedited photo of the real item", "Price, quantity, shipping profile", "13 tags and the attributes; a person presses publish"],
+      may: ["Create drafts with Open API v3 (<code>createDraftListing</code>, <code>uploadListingImage</code>)", "Orders and tracking (<code>getShopReceipts</code>, <code>createReceiptShipment</code>): the Etsy connector does", "A Seller App for the store's own shop, approved fast"],
+      not: ["Publish without a person: listings without meaningful human involvement are removed (Oct 22, 2026)", "Use Etsy data to train AI (from Dec 16, 2026)", "Resell anything that isn't vintage"] },
+    { k: "scripts", name: "Shopify", a: "shopify-the-stores-own-shop", fit: "The store's own shop (phase 2): anything legal, with pickup at the counter.",
+      fees: "$39 a month ($29 yearly) + 2.9% + 30¢", ship: "The store's rules and PeterShip labels", drop: "Yes",
+      steps: ["Products, Add product", "Title, description, photos, price, the store's SKU", "Stock at the stockroom's location, shipping weight", "No condition field: put \u201cPre-owned\u201d in the title or a tag"],
+      may: ["Admin GraphQL API: <code>productSet</code>, <code>inventorySetQuantities</code>, <code>fulfillmentCreate</code>", "The <code>orders/create</code> webhook; the Shopify connector handles orders"],
+      not: ["Use shop data to train AI (API terms, Oct 7, 2026)", "Scrape or bulk-collect data"],
+      tax: "The store collects Louisiana's 5% plus the parish rate itself" },
+    { k: "scripts", name: "Reverb", a: "reverb", fit: "Music gear: guitars, amps, pedals, keyboards, pro audio.",
+      fees: "5% + 3.19% + $0.49; no listing fee", ship: "The store's labels or Reverb's; local pickup allowed", drop: "Authorized dealers only",
+      steps: ["Sell, then pick the make and model from Reverb's catalog", "Condition (Mint to Non-functioning) and photos", "Price from the Price Guide's recent sales, shipping, publish"],
+      may: ["The public API with a personal access token: listings and orders, 10,000 calls a day"], not: ["Robots or scrapers without Reverb's written OK"] },
+    { k: "scripts", name: "Discogs", a: "discogs", fit: "Records, CDs and tapes, priced by collectors from each release's page.",
+      fees: "9% of item and shipping, $150 at most", ship: "The store's labels or Discogs' USPS labels", drop: "No",
+      steps: ["Find the exact release: catalog number, matrix in the run-out groove", "Sell a copy; grade the media and the sleeve (M, NM, VG+, VG, G+, G, F, P)", "Price and shipping policy"],
+      may: ["The public API with a personal token: inventory, listings, orders"], not: ["List anything not in the store's hands"] },
+    { k: "apply", name: "TikTok Shop", a: "tiktok-shop", fit: "Trends and live selling; pre-owned needs category approval. Phase 3.",
+      fees: "About 8% (reported, unconfirmed)", ship: "Dispatch in about 2 business days; USPS labels bought through TikTok", drop: "From real suppliers only (unconfirmed)",
+      steps: ["Seller Center, Products, Add", "Category, title, up to 9 square photos, attributes", "Price, stock, package weight and size"],
+      may: ["A custom app on TikTok's Open API for the store's own shop; drafts reviewed by TikTok"], not: ["Ship from another retailer"] },
+    { k: "apply", name: "Whatnot", a: "whatnot", fit: "Live shows: trading cards, coins, sneakers, toys, vintage lots.",
+      fees: "8% + 2.9% + $0.30", ship: "Within 2 business days, Whatnot's label", drop: "Treat as no",
+      steps: ["In the app: add the item to a live show or the Shop", "Title, condition, photos, price or opening bid", "Ship with Whatnot's label; scan at drop-off"],
+      may: ["The Seller API (products, orders, shipments) once Whatnot grants access: ask"], not: ["Automated use, scraping"] },
+    { k: "apply", name: "Depop", a: "depop", fit: "Vintage, Y2K and streetwear for young buyers. eBay owns it since July 30, 2026.",
+      fees: "No selling fee; 3.3% + $0.45", ship: "Depop Shipping only, since Oct 28, 2026", drop: "No",
+      steps: ["Photos and video; a description with hashtags", "Brand, size, condition, price", "Depop Shipping size; no official refresh, boosting is the paid way up"],
+      may: ["The private Selling API, after applying by email", "Vendoo's official connection"], not: ["Auto-follow, like or refresh bots"] },
+    { k: "apply", name: "Amazon", a: "amazon", fit: "Not now: used goods are gated by category, and counterfeit claims mean suspension.",
+      fees: "15% most categories + $39.99 a month (Professional)", ship: "The store's labels", drop: "Seller of record only",
+      steps: ["Add Products: match the ASIN or UPC", "Condition (Used, Like New to Acceptable) and a note", "Price, quantity, SKU"],
+      may: ["SP-API from a Professional account"], not: ["AI agents that don't identify themselves (Agent Policy, Mar 4, 2026)"] },
+    { k: "apply", name: "Walmart", a: "walmart-marketplace", fit: "Not now: used goods only through Walmart Resold, by invitation.",
+      fees: "15% most categories; no monthly fee", ship: "The store's labels, 99% valid tracking", drop: "Strict packing-slip rules",
+      steps: ["Seller Center, Add items, match by GTIN"], may: ["The Marketplace API (items, inventory, orders)"], not: ["Pre-owned listings without the Resold invitation"] },
+    { k: "hand", name: "Poshmark", a: "poshmark", fit: "Clothing, shoes, bags, home décor, after 14 days unsold on eBay.",
+      fees: "$2.95 under $15, then 20%", ship: "Poshmark's label; the buyer pays $6.49 up to 5 lb, the store pays to upgrade heavier boxes", drop: "No",
+      steps: ["Sell: photos, title, description, size, brand, condition", "Original price and listing price", "Smart Sell offers only above a floor a person sets", "Share by hand now and then; ship within 7 days"],
+      may: ["Nothing: there's no API. Claude writes copy-ready text"], not: ["Sharing, follow, offer or relist bots: banned by its Community Guidelines", "Canceling over 3% of orders in 90 days"] },
+    { k: "hand", name: "Mercari", a: "mercari", fit: "Toys, electronics, cards, household goods, clothing.",
+      fees: "10% (the buyer pays 3.6% more)", ship: "Mercari's label or the store's; within 3 business days", drop: "Banned outright",
+      steps: ["Up to 12 photos, title, description, brand, condition", "Shipping, price", "Promote: cut 5% or more to resurface, once a day"],
+      may: ["Nothing: there's no API"], not: ["\u201cAutomated means or interface not provided by us\u201d", "The same item listed twice"] },
+    { k: "hand", name: "Facebook Marketplace", a: "facebook-marketplace", fit: "Furniture, appliances, tools, anything bulky, picked up at the store's counter.",
+      fees: "Free in person; 10% (min $0.80) when shipped", ship: "Within 7 days if shipped; protection up to $500", drop: "No",
+      steps: ["Photos, title, price, category, condition", "Location: the store; pickup at the counter, never a home"],
+      may: ["Nothing: there's no listing API"], not: ["Automated access without Meta's permission"], tax: "On cash sales, the store collects the sales tax" },
+    { k: "hand", name: "Grailed", a: "grailed", fit: "Menswear, designer, streetwear.",
+      fees: "6% under $120, 9% from $120, plus about 3.49% + $0.49", ship: "Grailed's label up to 20 lb; within 7 days", drop: "Not stated",
+      steps: ["Photos, designer, size, condition, price", "Ship with Grailed's label"], may: ["Nothing: no public API"], not: ["Bots or scraping"] },
+    { k: "hand", name: "Craigslist", a: "craigslist", fit: "Furniture and big items for local buyers.",
+      fees: "$5 a post for dealers (a store is one)", ship: "None: local pickup", drop: "No",
+      steps: ["Post under For sale by dealer", "Meet at the store; a paid post runs 30 days"], may: ["Nothing at the store's size (the bulk posting route is for hundreds a month)"], not: ["Any software that interacts with Craigslist"], tax: "The store collects the sales tax" },
+    { k: "hand", name: "OfferUp", a: "offerup", fit: "Local only: nationwide shipping ended September 23, 2025.",
+      fees: "Free in person", ship: "None", drop: "No",
+      steps: ["Photos, title, price, category; meet at the store"], may: ["Nothing"], not: ["Automated means or third-party apps without written consent"], tax: "The store collects the sales tax" },
+    { k: "not", name: "Vinted (US)", a: "vinted-us", fit: "US accounts are \u201cprivate, non-commercial use only\u201d, even with a registered business. Not for the store.",
+      fees: "No seller fee", ship: "Prepaid labels", drop: "No", steps: [], may: [], not: ["Selling as a business, reselling bought stock"] },
+    { k: "not", name: "Kidizen", a: "kidizen", fit: "Closed on October 29, 2024. Guides that still list it are out of date.", fees: "\u2014", ship: "\u2014", drop: "\u2014", steps: [], may: [], not: [] }
+  ];
+  const grid = document.getElementById("mkGrid");
+  function li(arr) { return arr.map(x => "<li>" + x + "</li>").join(""); }
+  function card(m) {
+    let h = "<article class=\"mk\" data-k=\"" + m.k + "\"><div class=\"mk-top\"><h3>" + m.name + "</h3><span class=\"pill " + m.k + "\">" + GROUP[m.k] + "</span></div>";
+    h += "<p class=\"fit\">" + m.fit + "</p><dl><dt>Fees</dt><dd>" + m.fees + "</dd><dt>Shipping</dt><dd>" + m.ship + "</dd><dt>Dropship</dt><dd>" + m.drop + "</dd>" + (m.tax ? "<dt>Tax</dt><dd>" + m.tax + "</dd>" : "") + "</dl>";
+    if (m.steps.length) h += "<details><summary>How a person lists it</summary><ol>" + li(m.steps) + "</ol></details>";
+    if (m.may.length || m.not.length) h += "<details><summary>What software may and may not do</summary>" + (m.may.length ? "<h4>May</h4><ul class=\"yes\">" + li(m.may) + "</ul>" : "") + (m.not.length ? "<h4>May not</h4><ul class=\"no\">" + li(m.not) + "</ul>" : "") + "</details>";
+    h += "<a class=\"src\" href=\"" + GH + m.a + "\">Full detail and sources</a></article>";
+    return h;
+  }
+  grid.innerHTML = M.map(card).join("");
+  const seg = document.getElementById("mkFilter");
+  seg.addEventListener("click", function (e) {
+    const b = e.target.closest("button"); if (!b) return;
+    seg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    const v = b.dataset.v;
+    grid.querySelectorAll(".mk").forEach(c => { c.hidden = !(v === "all" || c.dataset.k === v); });
+  });
 })();
 </script>
 </body>

@@ -45,7 +45,7 @@ The account to use is at the start of each step. Details are in [section 5](#5-t
 
 | Question | Answer |
 |---|---|
-| **Which marketplaces can be automated?** | **eBay, fully** (an official seller API, free; the repo already has the [eBay connector](../../shipping-client/ebay-connector/README.md) that turns its orders into PeterShip labels). **Etsy, for vintage only** (20 years or older; Etsy doesn't allow reselling anything else). **Shopify** as the store's own shop, which also feeds Google. **TikTok Shop** through a custom app for our own shop. **Whatnot** if it grants API access. **Depop and Vinted** only through approved partners. **Poshmark, Mercari and Facebook Marketplace: no.** No public listing API, and Poshmark's terms ban automated tools. There, Claude drafts and a person posts from the phone |
+| **Which marketplaces can be automated?** | **eBay, fully** (an official seller API, free; the repo already has the [eBay connector](../../shipping-client/ebay-connector/README.md) that turns its orders into PeterShip labels). **Etsy, for vintage only** (20 years or older; Etsy doesn't allow reselling anything else). **Shopify** as the store's own shop, which also feeds Google. **TikTok Shop** through a custom app for our own shop. **Reverb and Discogs** for music gear and records (public APIs). **Whatnot** if it grants API access. **Depop** only through its private partner API or Vendoo's official link. **Vinted (US) doesn't allow business sellers at all.** **Poshmark, Mercari and Facebook Marketplace: no.** No public listing API, and Poshmark's terms ban automated tools. There, Claude drafts and a person posts from the phone. Every marketplace in detail: [marketplaces/](marketplaces/README.md) |
 | **What gets automated?** | Everything but buying, photographing, approving and packing: the listing draft (title, specifics, condition, description, box and weight), publishing, the sale, ending the listing elsewhere, the label and tracking, the daily sales note, the weekly list of stale items |
 | **Which model?** | **Claude Haiku 5.5 for everything routine** (drafts, notes, checks): $0.10 in and $0.50 out per million tokens, about a cent per item. **Claude Sonnet 5.5 only when a job is flagged** (a designer brand, a possible fake, anything over $75): 20 times the price, still about 12 cents an item. No Opus. Roughly **$4 to $10 a month** at 20 items a day ([section 4](#4-which-model-haiku-55-by-default-sonnet-55-when-flagged)) |
 | **The device** | A Mac mini (the 2024 M4 is plenty) on the store's normal network, **not** the sealed deposit station. One of William's counter minis can do it, or one at the workroom desk |
@@ -63,7 +63,7 @@ flowchart LR
   C --> A["A person approves<br/>in Obsidian, sets the price"]:::you
   A --> S["Scripts publish"]:::local
   S --> E["eBay · Etsy vintage ·<br/>Shopify · TikTok Shop"]:::cloud
-  A -.->|"copy-ready text"| M["Poshmark · Mercari ·<br/>Facebook · Vinted · Depop<br/>posted by hand"]:::cloud
+  A -.->|"copy-ready text"| M["Poshmark · Mercari ·<br/>Facebook · Depop · Grailed<br/>posted by hand"]:::cloud
   E --> SOLD["Sold: end it everywhere,<br/>PeterShip label,<br/>ship from the counter"]:::local
   M --> SOLD
   classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
@@ -150,33 +150,38 @@ It needs no server, no install and no internet, except for its three Google font
 
 ## 1. Which marketplaces allow automated selling
 
-| Marketplace | Official way to list by software | What its rules say | This plan |
-|---|---|---|---|
-| **eBay** | **Yes.** The Sell APIs (Inventory: `createOrReplaceInventoryItem`, `createOffer`, `publishOffer`; Fulfillment for orders), free to join the developer program | Its API license restricts feeding eBay data into outside generative AI without consent, as reported when the license changed in 2025. Its 2026 rules require standard condition details through the API and full sizes on clothing and shoes | **Automate end to end.** Claude writes from our photos and notes only; nothing from eBay goes into Claude |
-| **Etsy** | **Yes.** Open API v3 creates listings | Only handmade, vintage (**20 years or older**) and craft supplies. Reselling anything else is not allowed | **Automate, vintage only.** The [Etsy connector](../../shipping-client/etsy-connector/README.md) already handles its orders |
-| **Shopify** | **Yes.** The store's own shop, full Admin API | Our own store, our rules. Its sales channels reach Google, and can feed TikTok Shop | **Phase 2:** the store's own resale shop, also on the website |
-| **TikTok Shop** | **Yes, with approval.** The Open Platform lets a seller register a **custom app for its own shop** (US sellers use the US partner center); products go in as drafts and TikTok reviews them | Pre-owned categories and their rules weren't confirmed | **Phase 3:** apply once eBay runs; confirm the pre-owned rules first |
-| **Whatnot** | **Partly.** A Seller API (products, orders, shipments, labels) is documented; an earlier page said Whatnot wasn't accepting new applicants, and today's access isn't confirmed | Live selling is a person on camera anyway | **Apply.** Live shows stay people's work |
-| **Depop** | **Partners only.** Its Selling API is private, for enterprise partners; crosslisting services like Vendoo connect through it | | **By hand,** or through a crosslister that uses the official API |
-| **Vinted** | **Pro only.** An API for selected Pro sellers at scale (designer and luxury, a 4 to 6 week setup). Vinted is growing fast in the US in 2026, with no seller fees | Its labels are prepaid by the platform, so the store earns on drop-offs anyway | **By hand** |
-| **Poshmark** | **No API** | Its terms forbid using "any technology, software or automated systems to collect any information or data" and anything that "overburden[s]" the service; sharing bots are the usual way accounts get flagged | **By hand, no bots.** Claude writes copy-ready text |
-| **Mercari** | **No public API found** | It uses AI to detect terms violations, and accounts can be ended at its discretion | **By hand** |
-| **Facebook Marketplace** | **No API for us.** Meta's listing API is for approved partners only. Facebook and Instagram Shops lost their own checkout in 2025 and now send buyers to the seller's website | Heavy commercial selling on Marketplace gets listings removed | **By hand** for local pickups. A Shopify shop can put its catalog on Facebook and Instagram later |
-| **Amazon** | Yes (SP-API) | Used goods are gated by category | **Not now** |
+**The full guide is [marketplaces/](marketplaces/README.md):** for each marketplace, how to open the account, fees, step-by-step listing by hand, what software may and may not do, shipping, standards and sources. It was checked on November 7, 2026. This is the summary.
+
+| Marketplace | What software may do | This plan |
+|---|---|---|
+| **eBay** | **Scripts list it:** Sell APIs (Inventory `createOrReplaceInventoryItem`, `createOffer`, `publishOffer`; Fulfillment for orders and tracking), with the store's own app keys. Its User Agreement bans "LLM-driven bots" and order flows "without human review", and its API license bars using eBay content to train AI | **Automate end to end,** a person approving each item. Claude writes from our photos and notes only; nothing from eBay goes into Claude |
+| **Etsy** | **Scripts list it:** Open API v3, a seller app for our own shop. Only vintage (**20+ years old**), craft supplies, and the store's own designs through a print partner. Since October 22, 2026, listings need meaningful human involvement | **Vintage only,** drafts by script, published by a person. The [Etsy connector](../../shipping-client/etsy-connector/README.md) handles orders |
+| **Shopify** | **Scripts list it:** Admin GraphQL API; its API terms bar using data to train AI | **Phase 2:** the store's own shop |
+| **Reverb** | **Scripts list it:** public API, personal token; fees 5% + 3.19% + $0.49 | **Yes, for music gear** |
+| **Discogs** | **Scripts list it:** public API, personal token; fee 9% | **Yes, for records, CDs and tapes** |
+| **TikTok Shop** | **Apply first:** a custom app for our own shop; drafts reviewed by TikTok; about 8% *(unconfirmed)* | **Phase 3** |
+| **Whatnot** | **Apply first:** a Seller API exists, access unclear; live selling is a person on camera | **Apply** |
+| **Depop** | **Apply first:** eBay owns it since July 30, 2026; its Selling API is private (apply by email); Vendoo connects through it officially | **By hand,** or through Vendoo's official link |
+| **Amazon, Walmart** | APIs exist; used goods gated (Amazon) or invite-only (Walmart Resold) | **Not now** |
+| **Poshmark** | **No API.** Its rules ban "unauthorized programs or other forms of automation", **sharing bots included** | **By hand, no bots.** Claude writes copy-ready text |
+| **Mercari** | **No API;** bans "automated means or interface not provided by us" | **By hand** |
+| **Facebook Marketplace** | **No listing API;** Meta's Seller app (July 2026) is for people; Shops lost their checkout in 2025 | **By hand** for bulky local pickups |
+| **Grailed, Craigslist, OfferUp** | No API; Craigslist charges dealers $5 a post; OfferUp is local only since September 2025 | **By hand,** as each item suits |
+| **Vinted (US)** | US accounts are "private, non-commercial use only" | **Not for the store** |
 
 ```mermaid
 flowchart TD
   Q["A marketplace"]:::you --> API{"Official listing API<br/>a store like ours can use?"}
-  API -->|"yes"| AUTO["Automate: scripts publish,<br/>sync sales, end listings<br/>eBay · Etsy vintage · Shopify<br/>TikTok Shop custom app"]:::local
-  API -->|"only after approval"| APPLY["Apply, by hand until approved<br/>Whatnot · Depop partners ·<br/>Vinted Pro"]:::cloud
-  API -->|"no"| HAND["Claude drafts, a person posts<br/>Poshmark · Mercari ·<br/>Facebook Marketplace"]:::cloud
+  API -->|"yes"| AUTO["Automate: scripts publish,<br/>sync sales, end listings<br/>eBay · Etsy vintage · Shopify ·<br/>Reverb · Discogs"]:::local
+  API -->|"only after approval"| APPLY["Apply, by hand until approved<br/>TikTok Shop · Whatnot ·<br/>Depop partner API"]:::cloud
+  API -->|"no"| HAND["Claude drafts, a person posts<br/>Poshmark · Mercari · Facebook ·<br/>Grailed · Craigslist"]:::cloud
   HAND -.->|"never"| BOT["Bots that click or scrape:<br/>bans and held payouts"]:::you
   classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
   classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
   classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
 ```
 
-**Crosslisting services** (Vendoo, List Perfectly, Crosslist and others) post one listing to many marketplaces for a monthly fee. Some connect through official APIs (Vendoo says its Depop link is official since July 2026); others work as browser extensions that click for you, which the marketplaces' terms don't welcome. If the store uses one for the by-hand marketplaces, pick one that names the official connection for each platform. That's decision 3.
+**Crosslisting services** (Vendoo, List Perfectly, Crosslist and others) post one listing to many marketplaces. Most work as a browser extension or a cloud bot holding the seller's login; only Vendoo uses official connections, for eBay, Etsy and (since July 20, 2026) Depop. If the store uses one, it's Vendoo with sharing and offer bots off ([the comparison](marketplaces/README.md#crosslisting-tools)). That's decision 3.
 
 **One item, one sale.** A one-of-a-kind item listed in five places can sell twice. The API marketplaces end automatically within minutes of a sale. The by-hand ones can't, so they get a **Delist now** task in the vault and on the staff screen. Start the by-hand marketplaces only on items that have sat unsold on eBay for 14 days.
 
@@ -314,6 +319,8 @@ PeterShip's public API (`POST /api/v1/shipments`) takes no ship-from address tod
 
 ## Dropship: selling what the store doesn't stock
 
+**The full plan is [dropship/](dropship/README.md):** marketplace rules, eBay's standards, every supplier and its API, products to pick and avoid, the automation step by step, print-on-demand, money, tax and the law, testing suppliers, and the first 90 days. This is the summary.
+
 A side line to the resale business, at William's ask (November 6, 2026). The store lists goods it never buys or shelves. When one sells, a script orders it from the supplier, who ships it straight to the buyer with no supplier invoice in the box, and the supplier's tracking goes back to the marketplace. Nothing is bought until it's sold, nothing takes a shelf, and no one at the store packs it. **The store still owns the sale:** the marketplaces hold the seller responsible for on-time delivery, returns and refunds, whoever shipped the box.
 
 In the [tornado](tornado.html), dropship items are **diamonds**, and the fourth card under the funnel is **Dropship · suppliers ship**.
@@ -366,7 +373,7 @@ Only suppliers with an API a script can use fit this plan; the rest work only th
 | Supplier | What | Cost | API | US delivery | Notes |
 |---|---|---|---|---|---|
 | **CJdropshipping** | General goods | Free account; storage and custom packaging paid | **Yes, free and public** (products, orders, tracking) | US warehouses, about a week | The first one to connect |
-| **Doba** | US suppliers | About $15 to $175 a month (sources differ) | Retailer API, on request | About 90% ship from US warehouses | Ask sales for API terms |
+| **Doba** | US suppliers | Limited $28.67, Basic $57, Standard $142.67 a month | Retailer API on **Standard** and Enterprise only | About 90% ship from US warehouses | Browse on Basic; Standard when the API is needed |
 | **Printify** | The store's own designs on shirts, mugs, posters | Free; Premium $39 a month | **Yes, public**, with webhooks | US print providers | Fits the [screen-printing plan](../screen-printing/README.md) for designs too small to print a run of |
 | **Printful** | Same | Free; Growth $24.99 a month | Yes, public | US facilities | Unbranded by default |
 | Spocket, Zendrop, DSers, Syncee | General goods | $0 to $300 a month | **App only** | Mixed; DSers ships mostly from China, too slow | Not for this plan |
@@ -384,7 +391,7 @@ Only suppliers with an API a script can use fit this plan; the rest work only th
 ### The rules
 
 - **Wholesale suppliers only.** Never list something to buy it from Amazon, Walmart or another store; eBay bans it, and the margin isn't there anyway.
-- **The margin floor is in the script:** no listing goes live below **25% over the supplier's delivered price** (item plus its shipping). The model never sets or checks a price.
+- **The margin floor is in the script:** at least **15% kept** after fees, ads and a returns allowance. On eBay that's a price of at least the supplier's delivered cost ÷ 0.62; on Shopify ÷ 0.75; on Etsy designs at least $8 kept. (The first draft's 25% markup kept almost nothing on eBay; see [the math](dropship/README.md#9-money).) The model never sets or checks a price.
 - **Handling time is 3 business days** on every dropship listing, so a supplier's 1 to 3 days still scans on time.
 - **No brand names** unless the supplier proves it's an authorized distributor: catalog goods draw VeRO takedowns on eBay.
 - **Claude writes from the supplier's facts in the store's words,** never copying the supplier's text, and says nothing the supplier's listing doesn't support.
@@ -393,16 +400,16 @@ Only suppliers with an API a script can use fit this plan; the rest work only th
 
 ### Money: one item
 
-A shipping scale that sells for $42, from a supplier at $27.50 delivered:
+A shipping scale from a supplier at $27.50 delivered. The floor on eBay is $27.50 ÷ 0.62 = $44.35, so it lists at $45:
 
 | | On eBay | On Shopify |
 |---|---|---|
-| Sale | $42.00 | $42.00 |
+| Sale | $45.00 | $45.00 |
 | Supplier, delivered | −$27.50 | −$27.50 |
-| Fees | −$6.11 (13.6% + $0.40) | −$1.52 (2.9% + $0.30) |
-| **Kept** | **$8.39** | **$12.98** |
+| Fees | −$7.07 (13.6% of $49.05 with the buyer's 9% tax, + $0.40) | −$1.61 (2.9% + $0.30) |
+| **Kept** | **$10.43** | **$15.89** |
 
-No box, no label, no packing time, and no money tied up in stock. Shopify's plan is $39 a month ($29 a month billed yearly), so its side pays once it sells about four of these a month. Shopify Collective quotes 20% to 50% gross margins for dropship goods; blogs put the net at 10% to 25%. Each return or cancellation eats several sales' margin, which is why the floor and the stock check matter.
+No box, no label, no packing time, and no money tied up in stock. Shopify's plan is $39 a month ($29 a month billed yearly), so its side pays once it sells about three of these a month. Shopify Collective quotes 20% to 50% gross margins for dropship goods; blogs put the net at 10% to 25%. Each return or cancellation eats several sales' margin, which is why the floor and the stock check matter.
 
 ### Sales tax
 
@@ -702,7 +709,7 @@ LuLu: `claude` may reach `api.anthropic.com` only; `git` reaches `github.com`; t
 
 ## 6. Rules that keep the accounts safe
 
-- **No bots, no scraping, on any marketplace.** Nothing clicks, shares, follows or sends offers by itself on Poshmark, Mercari, Facebook, Vinted or Depop. A banned account holds its payouts.
+- **No bots, no scraping, on any marketplace.** Nothing clicks, shares, follows or sends offers by itself on Poshmark, Mercari, Facebook, Depop or Grailed. A banned account holds its payouts.
 - **eBay's data stays out of Claude.** No eBay search results, sold prices or insights go into any AI. Price notes come from the store's own sales in the vault; a person checks comparable sales by hand when it matters.
 - **Describe what's there.** Brands, sizes and materials come from the tags in the photos; flaws are photographed and named. Returns cost more than a slower listing.
 - **Vintage means 20 years or older, with proof** (a tag, a date code, a partner's tick) before it goes on Etsy.

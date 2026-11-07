@@ -108,7 +108,7 @@ Written November 5, 2026 (agenda item 60). You can't buy an "Allpoint ATM": Allp
 
 ## Resale on a Mac mini
 
-Written November 6, 2026 (agenda item 63), in [`resale-macmini/`](resale-macmini/README.md). The store buys secondhand stock, and a Mac mini runs the listing work. A person photographs and approves, Claude Haiku 5.5 drafts (Sonnet 5.5 on flagged items), and scripts publish to eBay, Etsy (vintage only), Shopify and TikTok Shop, sync the sales, and ship through PeterShip. Poshmark, Mercari and Facebook Marketplace stay by hand, with no bots. Also in it: a workroom floor plan, the model guide for every Mac mini plan with cost charts, and seven decisions.
+Written November 6, 2026 (agenda item 63), in [`resale-macmini/`](resale-macmini/README.md), with two companions added November 7: [`marketplaces/`](resale-macmini/marketplaces/README.md), a section per marketplace (account, fees, listing by hand, what software may and may not do), and [`dropship/`](resale-macmini/dropship/README.md), the full dropship plan. The store buys secondhand stock, and a Mac mini runs the listing work. A person photographs and approves, Claude Haiku 5.5 drafts (Sonnet 5.5 on flagged items), and scripts publish to eBay, Etsy (vintage only), Shopify and TikTok Shop, sync the sales, and ship through PeterShip. Poshmark, Mercari and Facebook Marketplace stay by hand, with no bots. Also in it: a workroom floor plan, the model guide for every Mac mini plan with cost charts, and seven decisions.
 
 ## Funding and sites
 
