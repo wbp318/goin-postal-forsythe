@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.92.5] - 2026-11-07
+
+**mailbox register launch check, 6-month terms**
+
+This is the last recheck of the [mailbox register](https://github.com/wbp318/goin-postal-forsythe/blob/main/physical-mailbox/README.md) before launch. It adds the **6-month term** the owners sell, and fixes everything an independent review of the code found.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.92.5) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.92.5) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.92.4...v1.92.5)
+
 ## [v1.92.4] - 2026-11-07
 
 **Folder size for the Anytime Mailbox customers**
