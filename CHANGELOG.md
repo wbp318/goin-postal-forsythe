@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.93.0] - 2026-11-07
+
+**every marketplace, and dropship in full**
+
+William asked for detailed instructions for every marketplace in the resale plan: what allows automation and what doesn't. He also asked for the dropship side built out in full. Three research passes checked each marketplace's own pages, supplier docs and government sites on November 7, 2026. *(unconfirmed)* marks anything from secondary sources.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.93.0) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.93.0) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.92.7...v1.93.0)
+
 ## [v1.92.7] - 2026-11-07
 
 **mailbox terms are 6 months or a year**
