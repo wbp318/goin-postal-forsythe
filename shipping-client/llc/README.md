@@ -2,6 +2,8 @@
 
 How to put PeterShip into a company of its own, so the software has an owner that can sign a license, open a bank account, take an acquirer's offer and outlive any one person. Written October 29, 2026 at the owners' request. The members and their domiciles come from [`../LICENSE`](../LICENSE).
 
+**Update, November 7, 2026:** the company-structure plan in [`monetization/it-llc/`](../../monetization/it-llc/README.md) widens this LLC into the owners' **tech LLC**. It owns PeterShip and all their other software, and sits as a sister company next to **Wholesome Postal, LLC**, the store's franchise company, not under it. The same plan has the parish (Ouachita, as below), the start-up steps and every funding option. The papers here still apply, widened from "PeterShip" to all the owners' software.
+
 **These are drafts, written by the site's AI assistant, not by a lawyer.** A Louisiana attorney should read the operating agreement and the IP assignment before anyone signs. Filing fees and tax rules were checked online on the date above; confirm them on the Secretary of State's and the Department of Revenue's own sites.
 
 ### How to read the charts
