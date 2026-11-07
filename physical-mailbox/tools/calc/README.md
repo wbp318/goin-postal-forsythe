@@ -141,7 +141,7 @@ and below them is one button per job. The buttons are described in [section 3](#
 
 | Count | What it counts |
 | --- | --- |
-| Open boxes | Customers with a box who are not closed |
+| Rented boxes | Customers with a box who are not closed |
 | Free boxes | Boxes the Boxes tab shows as Free |
 | Overdue | Customers whose Status is Overdue |
 | Due within a week | Customers whose Status is Due soon |
@@ -939,7 +939,7 @@ for _ in range(30):                                   # wait for LibreOffice to 
 desktop = ctx.ServiceManager.createInstanceWithContext('com.sun.star.frame.Desktop', ctx)
 hidden = PropertyValue(); hidden.Name = 'Hidden'; hidden.Value = True
 doc = desktop.loadComponentFromURL(uno.systemPathToFileUrl(r'C:\Mailbox\mailbox-register.ods'), '_blank', 0, (hidden,))
-print('Open boxes:', doc.Sheets.getByName('Counter').getCellByPosition(1, 3).getValue())
+print('Rented boxes:', doc.Sheets.getByName('Counter').getCellByPosition(1, 3).getValue())
 doc.close(True)                                       # close without saving
 desktop.terminate()
 ```

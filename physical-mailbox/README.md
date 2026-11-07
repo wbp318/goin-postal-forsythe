@@ -73,7 +73,7 @@ asks its questions in small boxes and fills in the right tabs.
 | **Save and back up** | Saves, and puts a dated copy in `Documents\Mailbox backups`. |
 
 **Automatic:** every save (Ctrl+S) also writes the day's copy to `Documents\Mailbox backups`, one
-file per day. The counts at the top of the Counter tab (open boxes, Free boxes, overdue, due within
+file per day. The counts at the top of the Counter tab (rented boxes, Free boxes, overdue, due within
 a week, IDs to fix, ready and waiting on a box, money taken this month) update by themselves.
 
 Every button works from any tab. On the Holders tab, click a customer's row first and the button

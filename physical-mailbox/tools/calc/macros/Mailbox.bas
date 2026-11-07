@@ -389,7 +389,7 @@ Function BuildUSPSList() As Long
 	Next i
 	u = NewSheet("USPS quarterly")
 	PutRow(u, 0, Array("Goin' Postal Forsythe, " & STORE_LINE & "..., " & STORE_CITY))
-	PutRow(u, 1, Array("CMRA customer list, " & DateText(TodaySerial()) & ". " & n & " open boxes."))
+	PutRow(u, 1, Array("CMRA customer list, " & DateText(TodaySerial()) & ". " & n & " rented boxes."))
 	u.getCellByPosition(0, 0).CharWeight = 150
 	PutRow(u, 3, Array("Name", "Business", "Box #", "Since"))
 	For i = 0 To n - 1
@@ -638,7 +638,7 @@ Sub btnUSPSList(Optional oEvent)
 	Dim n As Long
 	n = BuildUSPSList()
 	JumpTo("USPS quarterly", 0, 3)
-	MsgBox n & " open boxes, in name order, on the USPS quarterly tab. Check it against the USPS CMRA database before the quarterly certification (Jan 15, Apr 15, Jul 15, Oct 15), or print it with Ctrl+P if the postmaster wants paper.", 64, APP
+	MsgBox n & " rented boxes, in name order, on the USPS quarterly tab. Check it against the USPS CMRA database before the quarterly certification (Jan 15, Apr 15, Jul 15, Oct 15), or print it with Ctrl+P if the postmaster wants paper.", 64, APP
 End Sub
 
 Sub btnBoxesFromMeasure(Optional oEvent)

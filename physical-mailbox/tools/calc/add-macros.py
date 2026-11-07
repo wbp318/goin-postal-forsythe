@@ -52,7 +52,7 @@ BUTTONS = [
 ]
 # setFormula takes Calc's own syntax: $Sheet.$A$1 (a dot, not Excel's Sheet!A1) and ; between arguments.
 COUNTS = [
-    ('Open boxes', '=COUNTIFS($Holders.$A$2:$A$301;"<>";$Holders.$Z$2:$Z$301;"";$Holders.$B$2:$B$301;"<>")'),
+    ('Rented boxes', '=COUNTIFS($Holders.$A$2:$A$301;"<>";$Holders.$Z$2:$Z$301;"";$Holders.$B$2:$B$301;"<>")'),
     ('Free boxes', '=COUNTIF($Boxes.$E$2:$E$301;"Free")'),
     ('Overdue', '=COUNTIF($Holders.$M$2:$M$301;"Overdue")'),
     ('Due within a week', '=COUNTIF($Holders.$M$2:$M$301;"Due soon")'),
@@ -218,7 +218,7 @@ def test(desktop):
     check('Call list builds (nobody overdue in the template)', n == 0 and s.hasByName('Call list'), n)
     n = run('BuildUSPSList')
     u = s.getByName('USPS quarterly')
-    check('USPS list has both open boxes in name order', n == 2 and u.getCellByPosition(0, 4).getString() == 'EXAMPLE Jane Doe' and u.getCellByPosition(0, 5).getString() == 'Test Person', n)
+    check('USPS list has both rented boxes in name order', n == 2 and u.getCellByPosition(0, 4).getString() == 'EXAMPLE Jane Doe' and u.getCellByPosition(0, 5).getString() == 'Test Person', n)
     bdir = Path(tempfile.mkdtemp(prefix='mailbox-backup-'))
     path = run('Backup', str(bdir))
     check('Backup writes a dated .ods', Path(path).exists() and Path(path).suffix == '.ods', path)
