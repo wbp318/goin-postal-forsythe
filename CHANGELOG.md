@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.92.4] - 2026-11-07
+
+**Folder size for the Anytime Mailbox customers**
+
+**The owners' plan:** buy a filing cabinet and give each Anytime Mailbox customer a folder in it. Each customer's virtual box becomes a real one at the store, run on the [mailbox register](https://github.com/wbp318/goin-postal-forsythe/blob/main/physical-mailbox/README.md#anytime-mailbox-customers-moving-them-into-the-filing-cabinet).
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.92.4) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.92.4) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.92.3...v1.92.4)
+
 ## [v1.92.3] - 2026-11-07
 
 **Rented boxes on the mailbox Counter tab**
