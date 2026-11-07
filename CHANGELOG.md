@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.92.2] - 2026-11-07
+
+**mailbox register ready for Calc**
+
+The [physical mailbox register](https://github.com/wbp318/goin-postal-forsythe/blob/main/physical-mailbox/README.md) has been checked for go-live the week of Nov 9, which is when the owners want it running.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.92.2) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.92.2) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.92.1...v1.92.2)
+
 ## [v1.92.1] - 2026-11-07
 
 **Tech LLC: federal programs, Arkansas, Mississippi and the path**

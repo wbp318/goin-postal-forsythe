@@ -1071,20 +1071,20 @@ python scripts/export_designs.py
 ## Languages
 
 <!-- languages:start -->
-Every language GitHub counts in this repo, exact, as of November 7, 2026 (4,355,413 bytes in all). GitHub's sidebar shows the top six and folds the rest into "Other"; this is the whole list, from the same count. Refreshed by `python scripts/languages.py`.
+Every language GitHub counts in this repo, exact, as of November 7, 2026 (4,359,235 bytes in all). GitHub's sidebar shows the top six and folds the rest into "Other"; this is the whole list, from the same count. Refreshed by `python scripts/languages.py`.
 
 | Language | Share | Bytes | What it is here |
 | --- | ---: | ---: | --- |
-| Markdown | 38.85% | 1,691,993 | Plans, guides, READMEs, the agenda and the changelog |
-| TypeScript | 30.86% | 1,343,926 | PeterShip and the website's APIs, libraries and tests (`site/src`) |
-| Astro | 7.91% | 344,479 | The website's pages and layouts |
+| Markdown | 38.86% | 1,694,165 | Plans, guides, READMEs, the agenda and the changelog |
+| TypeScript | 30.83% | 1,343,926 | PeterShip and the website's APIs, libraries and tests (`site/src`) |
+| Astro | 7.90% | 344,479 | The website's pages and layouts |
 | JSON | 6.41% | 279,304 | Rate sheets, the 14-language strings, store facts, package files |
 | HTML | 5.19% | 226,086 | The mailbox intake packet, the design gallery, page previews |
-| SVG | 5.18% | 225,460 | Ad and sponsorship designs (the banner's machine-made traces are left out) |
-| Python | 3.15% | 137,331 | Build and release scripts, the mailbox register's builder, tests and tools |
+| SVG | 5.17% | 225,460 | Ad and sponsorship designs (the banner's machine-made traces are left out) |
+| Python | 3.16% | 137,960 | Build and release scripts, the mailbox register's builder, tests and tools |
 | JavaScript | 0.94% | 41,046 | Marketplace connectors and the printer agent (`.mjs`) |
+| Visual Basic 6.0 | 0.71% | 30,772 | The mailbox register's LibreOffice Basic macros (GitHub's name for `.bas`) |
 | CSS | 0.69% | 29,890 | The website's styles |
-| Visual Basic 6.0 | 0.68% | 29,751 | The mailbox register's LibreOffice Basic macros (GitHub's name for `.bas`) |
 | YAML | 0.10% | 4,563 | CI workflows |
 | PowerShell | 0.03% | 1,272 | Windows setup scripts |
 | CSV | 0.01% | 312 | Small data files |
