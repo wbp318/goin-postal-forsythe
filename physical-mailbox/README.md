@@ -29,14 +29,15 @@ a copy in a clone stays off GitHub. When a newer template comes out, do not copy
 register. The upgrade script carries your customers into it
 ([guide section 7](tools/calc/README.md#7-upgrading-to-a-new-template)).
 
-## Instructions: Friday in six steps
+## Instructions: go live in six steps
 
-The owner checklist is also GitHub issue 23, with boxes to tick.
+The owner checklist is also GitHub issues 24 (the postmaster), 25 (the register) and 26 (the
+packet), with boxes to tick.
 
 1. **Confirm the CMRA registration.** A store that rents mailboxes is a Commercial Mail Receiving
    Agency. It files **PS Form 1583-A** with the postmaster. Goin' Postal stores usually are already
    registered. Call the Monroe post office and confirm before the first customer. This is the one
-   thing that can stop Friday.
+   thing that can stop the first customer.
 2. **Install LibreOffice** (free, from libreoffice.org, or `winget install TheDocumentFoundation.LibreOffice`)
    on each machine that will open the register.
 3. **Make your copy of the register** from the template, as in [Start here](#start-here-download-the-template-then-work-in-your-own-copy):
@@ -193,7 +194,7 @@ python physical-mailbox/tools/calc/build-register.py
 ```
 
 The second step adds the Counter tab, the buttons and the macros, saves
-`mailbox-register-TEMPLATE.ods`, then reopens it and runs 56 checks:
+`mailbox-register-TEMPLATE.ods`, then reopens it and runs 58 checks:
 
 - every macro: a customer, a payment, the IDs, a box, both lists, a backup and closing the box;
 - automatic codes: a name typed on an empty row gets the next code and today, and a new box number typed by hand lands on the Boxes tab, both typed through Calc's own input as the keyboard does;

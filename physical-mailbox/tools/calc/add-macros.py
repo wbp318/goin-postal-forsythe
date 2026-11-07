@@ -222,6 +222,11 @@ def test(desktop):
     bdir = Path(tempfile.mkdtemp(prefix='mailbox-backup-'))
     path = run('Backup', str(bdir))
     check('Backup writes a dated .ods', Path(path).exists() and Path(path).suffix == '.ods', path)
+    docs = uno.fileUrlToSystemPath(REMOTE['smgr'].createInstanceWithContext('com.sun.star.util.PathSettings', REMOTE['ctx']).Work)
+    check("the backup folder is in the Documents folder Windows uses (OneDrive's too), unless Lists F1 names one",
+          run('BackupFolder') == docs + '\Mailbox backups' and Path(docs).is_dir(), (run('BackupFolder'), docs))
+    money = [run('MoneyValue', v) for v in ('$15', '15.00', ' 1,200 ', 'fifteen', '')]
+    check('amounts typed as $15, 15.00 or 1,200 read as dollars; words are refused', money == [15, 15, 1200, -1, -1], money)
     run('CloseHolder', row, 'PO Box 1, Lake Providence')
     doc.calculateAll()
     check('closing writes the date and frees the box', h.getCellByPosition(25, row).getValue() == today and b.getCellByPosition(4, 2).getString() == 'Free', b.getCellByPosition(4, 2).getString())
@@ -330,7 +335,7 @@ def test_typing(desktop):
             # Enter a cell the way the keyboard does, then wait for the macro's fill, as a person's pace would.
             ctl.setActiveSheet(sheet); ctl.select(sheet.getCellByPosition(col, row))
             dh.executeDispatch(ctl.Frame, '.uno:EnterString', '', 0, (pv('StringName', text),))
-            for _ in range(50):
+            for _ in range(200):   # up to 20 s: the first macro call compiles the module
                 if filled is None or filled():
                     break
                 time.sleep(0.1)

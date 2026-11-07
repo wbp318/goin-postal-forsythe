@@ -446,11 +446,32 @@ Function BoxesFromMeasure() As String
 	BoxesFromMeasure = added & "," & changed & "," & held
 End Function
 
+REM Lists F1 when set; otherwise "Mailbox backups" in the Documents folder File Explorer shows. LibreOffice's
+REM Work path follows Windows, so a Documents folder OneDrive has moved is found too.
 Function BackupFolder() As String
 	Dim f As String
 	f = CellText(Sh("Lists"), 5, 0)
-	If f = "" Then f = Environ("USERPROFILE") & "\Documents\Mailbox backups"
+	If f = "" Then f = DocumentsFolder() & "\Mailbox backups"
 	BackupFolder = f
+End Function
+
+Function DocumentsFolder() As String
+	Dim w As String
+	On Error Resume Next
+	w = ConvertFromURL(CreateUnoService("com.sun.star.util.PathSettings").Work)
+	If w = "" Or Dir(w, 16) = "" Then w = Environ("USERPROFILE") & "\Documents"
+	DocumentsFolder = w
+End Function
+
+REM A dollar amount as typed: "$15", "15.00" or "1,200" all read as the number. -1 when it is not one.
+Function MoneyValue(s As String) As Double
+	Dim t As String
+	t = Trim(Replace(Replace(s, "$", ""), ",", ""))
+	If t = "" Or Not IsNumeric(t) Then
+		MoneyValue = -1
+	Else
+		MoneyValue = CDbl(t)
+	End If
 End Function
 
 REM Saves a dated copy (one per day; a second backup the same day replaces the first). Returns the file path.
@@ -534,15 +555,23 @@ Sub btnPayment(Optional oEvent)
 	m = InputBox("Months this payment covers for " & CellText(h, H_NAME, r) & " (" & CellText(h, H_TERM, r) & "):", APP & ": payment", IIf(CellText(h, H_TERM, r) = "Yearly", "12", "1"))
 	If Trim(m) = "" Then Exit Sub
 	If Not IsNumeric(m) Then
-		MsgBox "Months is a number, like 1 or 12.", 48, APP
+		MsgBox "Months is a whole number, like 1 or 12.", 48, APP
+		Exit Sub
+	End If
+	If CDbl(m) <> Fix(CDbl(m)) Then
+		MsgBox "Months is a whole number, like 1 or 12.", 48, APP
 		Exit Sub
 	End If
 	months = CLng(m)
 	amt = InputBox("Amount taken on the POS, in dollars:", APP & ": payment", Format(ExpectedAmount(r, months), "0.00"))
-	If Trim(amt) = "" Or Not IsNumeric(amt) Then Exit Sub
+	If Trim(amt) = "" Then Exit Sub
+	If MoneyValue(amt) < 0 Then
+		MsgBox """" & amt & """ is not an amount. Type dollars, like 15 or 15.00. Nothing was recorded.", 48, APP
+		Exit Sub
+	End If
 	rc = InputBox("POS receipt number:", APP & ": payment")
 	staff = InputBox("Your name:", APP & ": payment")
-	res = AddPayment(code, months, CDbl(amt), rc, staff)
+	res = AddPayment(code, months, MoneyValue(amt), rc, staff)
 	If res <> "" Then
 		MsgBox res, 48, APP
 		Exit Sub

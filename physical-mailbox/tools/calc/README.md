@@ -270,6 +270,9 @@ Holds the ID choices for the arrows (column A: photo IDs; column B: everything I
 it, right-click any tab name and choose **Show Sheet...**, then hide it again the same way.
 **F1** is a setting: type a folder there (such as `E:\Mailbox backups` for a USB stick that stays
 plugged in), and the daily backup goes there instead of `Documents\Mailbox backups`.
+Without it, `Documents` is the Documents folder File Explorer shows. On a PC where OneDrive has
+moved Documents, that is `OneDrive\Documents\Mailbox backups`, and OneDrive copies the backups to
+the owner's Microsoft account (see 6.3).
 
 ### 2.9 Tabs the buttons make
 
@@ -641,7 +644,9 @@ customer's Name cell ("prefers texts", "spouse also on 1583") stays with the cel
 
 ### 6.3 Synced folders
 
-OneDrive or Google Drive is fine for the **backups** folder, and risky for the live register. A sync
+OneDrive or Google Drive is fine for the **backups** folder, and risky for the live register. On a
+PC where OneDrive keeps Documents, the backups are already synced this way; type a folder in Lists F1
+if the owners would rather they stay on the PC and the USB stick only. A sync
 during a save can leave two versions, or a "conflicted copy". Keep the real register in a plain local
 folder.
 
@@ -914,7 +919,7 @@ Tips:
 LibreOffice ships its own Python with the `uno` module, at
 `C:\Program Files\LibreOffice\program\python.exe`. That Python starts a hidden Calc, opens files, runs
 macros and saves. [`add-macros.py`](add-macros.py) is the full example: it builds the Counter tab,
-puts the Basic in, and runs 56 checks. The smallest version opens the register hidden and reads a
+puts the Basic in, and runs 58 checks. The smallest version opens the register hidden and reads a
 count:
 
 ```python
@@ -992,7 +997,7 @@ python physical-mailbox/tools/calc/build-register.py
 1. `build-register.py` (your Python with openpyxl) writes the tabs, formulas, typing checks, colours,
    text formats and unlocked yellow cells to `register-sheets.xlsx` (git-ignored).
 2. `add-macros.py` (LibreOffice's Python) adds the Counter tab, the buttons, the Basic and the two
-   document events, and saves `mailbox-register-TEMPLATE.ods`. It then reopens it and runs 56 checks:
+   document events, and saves `mailbox-register-TEMPLATE.ods`. It then reopens it and runs 58 checks:
    - every macro: a customer, a payment, the IDs, a box, both lists, a backup, closing;
    - the Measure tab and Boxes from measurements;
    - the Python macro;
@@ -1035,7 +1040,7 @@ Print this section. It fits on one page.
 | --- | --- |
 | `README.md` | This guide |
 | `build-register.py` | Step 1 of the build: the tabs, formulas, checks and formats (openpyxl) |
-| `add-macros.py` | Step 2: the Counter tab, buttons, Basic and events; then the 56 checks (LibreOffice's Python) |
+| `add-macros.py` | Step 2: the Counter tab, buttons, Basic and events; then the 58 checks (LibreOffice's Python) |
 | `upgrade-register.py` | Carries a filled register into a new template; `--self-test` |
 | `register-report.py` | The pandas report (walkthrough 1) |
 | `macros/Mailbox.bas` | The buttons' Basic, readable |
