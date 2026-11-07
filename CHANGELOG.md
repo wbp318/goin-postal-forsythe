@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.92.3] - 2026-11-07
+
+**Rented boxes on the mailbox Counter tab**
+
+The mailbox register's Counter tab says **Rented boxes** where it said **Open boxes**. William asked for it: "open" read like an available box, which is what **Free boxes** counts.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.92.3) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.92.3) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.92.2...v1.92.3)
+
 ## [v1.92.2] - 2026-11-07
 
 **mailbox register ready for Calc**
