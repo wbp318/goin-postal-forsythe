@@ -190,6 +190,9 @@ def test(desktop):
         check(f'{tab}: Content changed runs {sub}', ev.get('Script', '').endswith(f'Mailbox.{sub}?language=Basic&location=document'), ev)
     check('a bad name is refused', str(run('AddCustomer', 'X', '', '', 'S', 'Monthly')).startswith('!'))
     check('a nine-digit phone is refused', str(run('AddCustomer', 'Test Person', '318 555 010', '', 'S', 'Monthly')).startswith('!'))
+    check('a size that is not Small, Medium, Large or Folder is refused', str(run('AddCustomer', 'Test Person', '318 555 0100', '', 'x', 'Monthly')).startswith('!'))
+    pr = s.getByName('Prices')
+    check('the Prices tab has a Folder size with a price', (pr.getCellByPosition(0, 4).getString(), pr.getCellByPosition(1, 4).getValue() > 0) == ('Folder', True))
     code = run('AddCustomer', 'Test Person', '318 555 0100', 'test@example.com', 's', 'Monthly')
     check('AddCustomer gives the next code', code == 'MB-002', code)
     row = run('FindHolder', 'MB-002')
@@ -224,7 +227,7 @@ def test(desktop):
     check('Backup writes a dated .ods', Path(path).exists() and Path(path).suffix == '.ods', path)
     docs = uno.fileUrlToSystemPath(REMOTE['smgr'].createInstanceWithContext('com.sun.star.util.PathSettings', REMOTE['ctx']).Work)
     check("the backup folder is in the Documents folder Windows uses (OneDrive's too), unless Lists F1 names one",
-          run('BackupFolder') == docs + '\Mailbox backups' and Path(docs).is_dir(), (run('BackupFolder'), docs))
+          run('BackupFolder') == docs + '\\Mailbox backups' and Path(docs).is_dir(), (run('BackupFolder'), docs))
     money = [run('MoneyValue', v) for v in ('$15', '15.00', ' 1,200 ', 'fifteen', '')]
     check('amounts typed as $15, 15.00 or 1,200 read as dollars; words are refused', money == [15, 15, 1200, -1, -1], money)
     run('CloseHolder', row, 'PO Box 1, Lake Providence')
@@ -302,6 +305,16 @@ def test(desktop):
     n = mailbox_tools.build_box_report(doc)
     br = s.getByName('Box report')
     got = [br.getCellByPosition(c, 4).getString() for c in range(4)]
+    fr = 30
+    for col, v in ((2, 'Folder Person'), (6, 'Folder'), (7, 'Monthly')):
+        h.getCellByPosition(col, fr).setString(v)
+    h.getCellByPosition(0, fr).setString('MB-050'); h.getCellByPosition(8, fr).setValue(today)
+    doc.calculateAll()
+    check('a Folder customer is priced from the Folder row', h.getCellByPosition(9, fr).getValue() == pr.getCellByPosition(1, 4).getValue(), h.getCellByPosition(9, fr).getValue())
+    check('AddCustomer takes F for Folder', run('SizeName', 'f') == 'Folder')
+    for col in (0, 2, 6, 7, 8):
+        h.getCellByPosition(col, fr).clearContents(1 | 2 | 4 | 16)
+    doc.calculateAll()
     check('Python macro box_report: 4 boxes, 1 taken, 3 Free', n == 3 and got == ['All', '4', '1', '3'], (n, got))
     for name in ('Holders', 'Payments', 'Boxes', 'Measure'):
         sh = s.getByName(name)

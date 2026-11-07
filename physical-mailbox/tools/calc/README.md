@@ -156,10 +156,10 @@ template: see [section 8](#8-when-something-goes-wrong).
 
 | Cell | What | Notes |
 | --- | --- | --- |
-| A2:A4 | Small, Medium, Large | The size names. Every size list in the register comes from these three cells |
-| B2:B4 | The monthly price | Yellow. 0 to 1,000 |
-| C2:C4 | The yearly price | Formula: the monthly price times B7 |
-| D2:D4 | What fits | Words for the customer; the Measure tab's Fits columns help write them |
+| A2:A5 | Small, Medium, Large, Folder | The size names. Every size list in the register comes from these four cells. Folder is a file folder in the filing cabinet, for the customers moved off Anytime Mailbox (v1.92.4) |
+| B2:B5 | The monthly price | Yellow. 0 to 1,000 |
+| C2:C5 | The yearly price | Formula: the monthly price times B7 |
+| D2:D5 | What fits | Words for the customer; the Measure tab's Fits columns help write them |
 | B7 | How many months a year costs | Yellow, 1 to 12. 10 means 12 months for the price of 10 |
 
 The prices in the template are placeholders until Peter and Rin set them. Change the yellow cells, and
@@ -178,7 +178,7 @@ frozen at D2).
 | D | Business (optional) | type | The business name if the box is for one |
 | E | Phone | type | Ten digits; spaces, dashes, dots and brackets are fine: `318 555 0100`. Text cell |
 | F | Email | type | Needs an @ and a dot after it, no spaces |
-| G | Size | type | Arrow: Small, Medium, Large (from Prices) |
+| G | Size | type | Arrow: Small, Medium, Large, Folder (from Prices) |
 | H | Monthly / Yearly | type | Arrow |
 | I | Start date | automatic, can be typed | Today, written with the code. Type over it for another day: from Jan 1, 2025 to a month ahead |
 | J | Price per term ($) | formula | From Prices: the monthly price, or the yearly price for Yearly |
@@ -232,7 +232,7 @@ themselves.
 | Col | Heading | Type or formula | What |
 | --- | --- | --- | --- |
 | A | Box # | type | The number on the door: letters and digits up to 6, each once. Boxes typed on Holders and boxes from Measure land here by themselves |
-| B | Size | type | Arrow: Small, Medium, Large |
+| B | Size | type | Arrow: Small, Medium, Large, Folder |
 | C | Holder code | formula | The open customer with this box |
 | D | Holder | formula | Their name |
 | E | Status | formula | **Free** (green) with no open holder; otherwise the holder's Status, so **Overdue** shows red here too |
@@ -919,7 +919,7 @@ Tips:
 LibreOffice ships its own Python with the `uno` module, at
 `C:\Program Files\LibreOffice\program\python.exe`. That Python starts a hidden Calc, opens files, runs
 macros and saves. [`add-macros.py`](add-macros.py) is the full example: it builds the Counter tab,
-puts the Basic in, and runs 58 checks. The smallest version opens the register hidden and reads a
+puts the Basic in, and runs 62 checks. The smallest version opens the register hidden and reads a
 count:
 
 ```python
@@ -997,7 +997,7 @@ python physical-mailbox/tools/calc/build-register.py
 1. `build-register.py` (your Python with openpyxl) writes the tabs, formulas, typing checks, colours,
    text formats and unlocked yellow cells to `register-sheets.xlsx` (git-ignored).
 2. `add-macros.py` (LibreOffice's Python) adds the Counter tab, the buttons, the Basic and the two
-   document events, and saves `mailbox-register-TEMPLATE.ods`. It then reopens it and runs 58 checks:
+   document events, and saves `mailbox-register-TEMPLATE.ods`. It then reopens it and runs 62 checks:
    - every macro: a customer, a payment, the IDs, a box, both lists, a backup, closing;
    - the Measure tab and Boxes from measurements;
    - the Python macro;
@@ -1040,7 +1040,7 @@ Print this section. It fits on one page.
 | --- | --- |
 | `README.md` | This guide |
 | `build-register.py` | Step 1 of the build: the tabs, formulas, checks and formats (openpyxl) |
-| `add-macros.py` | Step 2: the Counter tab, buttons, Basic and events; then the 58 checks (LibreOffice's Python) |
+| `add-macros.py` | Step 2: the Counter tab, buttons, Basic and events; then the 62 checks (LibreOffice's Python) |
 | `upgrade-register.py` | Carries a filled register into a new template; `--self-test` |
 | `register-report.py` | The pandas report (walkthrough 1) |
 | `macros/Mailbox.bas` | The buttons' Basic, readable |

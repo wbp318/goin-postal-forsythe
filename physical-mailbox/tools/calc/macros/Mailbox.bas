@@ -94,6 +94,7 @@ Function SizeName(s As String) As String
 		Case "S" : SizeName = "Small"
 		Case "M" : SizeName = "Medium"
 		Case "L" : SizeName = "Large"
+		Case "F" : SizeName = "Folder"
 		Case Else : SizeName = ""
 	End Select
 End Function
@@ -213,7 +214,7 @@ Function AddCustomer(sName As String, sPhone As String, sEmail As String, sSize 
 		Exit Function
 	End If
 	If SizeName(sSize) = "" Then
-		AddCustomer = "!The size is Small, Medium or Large."
+		AddCustomer = "!The size is Small, Medium, Large or Folder."
 		Exit Function
 	End If
 	h = Sh("Holders")
@@ -529,7 +530,7 @@ Sub btnNewCustomer(Optional oEvent)
 	If Trim(nm) = "" Then Exit Sub
 	ph = InputBox("Phone, ten digits (or leave blank):", APP & ": new customer")
 	em = InputBox("Email (or leave blank):", APP & ": new customer")
-	sz = InputBox("Box size: type S for Small, M for Medium, L for Large.", APP & ": new customer", "S")
+	sz = InputBox("Box size: type S for Small, M for Medium, L for Large, or F for a Folder in the filing cabinet.", APP & ": new customer", "S")
 	If Trim(sz) = "" Then Exit Sub
 	If MsgBox("Paying by the year?" & Chr(10) & "Yes = yearly, No = monthly.", 4 + 32, APP & ": new customer") = 6 Then
 		tm = "Yearly"
