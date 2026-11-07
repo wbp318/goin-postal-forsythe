@@ -49,8 +49,8 @@ CLEAR = 1 | 2 | 4 | 16  # values, dates, strings, formulas; the cell's fill, bor
 
 # tab: (header row, first data row, last data row, last column), all counted from 0. Measure stops at Q:
 # the USPS chart and the item sizes to its right are the template's, except the CELLS below.
-TABLES = {'Holders': (0, 1, 300, 40), 'Payments': (0, 1, 1200, 20), 'Boxes': (0, 1, 300, 20), 'Measure': (12, 13, 312, 16), 'Prices': (0, 1, 4, 10)}
-KEEP_NEW_ROWS = {'Prices'}   # a size row the old file never had (Folder, v1.92.4) keeps the template's
+TABLES = {'Holders': (0, 1, 300, 40), 'Payments': (0, 1, 1200, 20), 'Boxes': (0, 1, 300, 20), 'Measure': (12, 13, 312, 16), 'Prices': (0, 1, 3, 10)}
+KEEP_NEW_ROWS = {'Prices'}   # a size row the old file never had keeps the template's
 CELLS = {'Prices': ['B7', 'B8'], 'Measure': ['X14:X18', 'S22:V26'], 'Lists': ['F1']}
 REBUILT = {'Call list', 'USPS quarterly', 'Box report'}   # tabs the buttons and macros make again
 CHECK_COLS = ['Status', 'Paid through', 'ID check', 'Ready for a box']
@@ -328,7 +328,7 @@ def self_test(desktop):
         v1821.write_bytes(git.stdout)
         report, warnings, failures = upgrade(desktop, v1821, template, tmp / 'from-1821.ods')
         check('a v1.82.1 register upgrades (no Measure tab in it)', not failures and any('Measure: not in the old file' in x for x in report), (failures, report))
-    # A register from v1.92.3, before the Folder size: its Prices tab has three rows, and the Folder row must survive.
+    # A register from v1.92.3, before the 6-month term: it gains the 6-month setting, and Monthly / Yearly carries into Term.
     v1923 = tmp / 'v1.92.3.ods'
     git = subprocess.run(['git', 'show', 'v1.92.3:physical-mailbox/mailbox-register-TEMPLATE.ods'], cwd=ROOT, capture_output=True)
     if git.returncode == 0:
@@ -338,11 +338,23 @@ def self_test(desktop):
         if ok:
             d = load(desktop, tmp / 'from-1923.ods', True)
             pr = d.Sheets.getByName('Prices')
-            got = (pr.getCellByPosition(0, 4).getString(), pr.getCellByPosition(1, 4).getValue())
+            got = (pr.getCellByPosition(0, 4).getString(), pr.getCellByPosition(4, 1).getValue())
             got += (pr.getCellByPosition(1, 7).getValue(), d.Sheets.getByName('Holders').getCellByPosition(7, 1).getString())
             d.close(True)
-            ok = got[0] == 'Folder' and got[1] > 0 and got[2] == 6 and got[3] == 'Monthly'
-        check('a v1.92.3 register upgrades: gains Folder and the 6-month setting, Monthly / Yearly carries into Term', ok, (failures, got))
+            ok = got[0] == '' and got[1] > 0 and got[2] == 6 and got[3] == 'Monthly'
+        check('a v1.92.3 register upgrades: gains the 6-month price and setting, Monthly / Yearly carries into Term', ok, (failures, got))
+    # A register from v1.92.5, which had a Folder size: the Folder row does not come across.
+    v1925 = tmp / 'v1.92.5.ods'
+    git = subprocess.run(['git', 'show', 'v1.92.5:physical-mailbox/mailbox-register-TEMPLATE.ods'], cwd=ROOT, capture_output=True)
+    if git.returncode == 0:
+        v1925.write_bytes(git.stdout)
+        report, warnings, failures = upgrade(desktop, v1925, template, tmp / 'from-1925.ods')
+        row5 = ()
+        if not failures:
+            d = load(desktop, tmp / 'from-1925.ods', True)
+            row5 = tuple(d.Sheets.getByName('Prices').getCellRangeByName('A5:E5').getDataArray()[0])
+            d.close(True)
+        check('a v1.92.5 register upgrades and its Folder size is gone', not failures and all(v in ('', 0) for v in row5), (failures, row5))
     # A register whose Measure rows were deleted (the USPS chart moved up with them): its side cells are not carried by address.
     cut = tmp / 'cut.ods'
     shutil.copy(template, cut)

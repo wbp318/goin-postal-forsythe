@@ -33,7 +33,7 @@ def build_box_report(doc):
     """
     doc.calculateAll()
     boxes = _rows(_sheet(doc, 'Boxes'), [0, 1, 4])           # Box #, Size, Status
-    prices = {size: float(p or 0) for size, p in _rows(_sheet(doc, 'Prices'), [0, 1], 1, 4)}
+    prices = {size: float(p or 0) for size, p in _rows(_sheet(doc, 'Prices'), [0, 1], 1, 3)}
     sizes = list(prices) + sorted({b[1] for b in boxes if b[1] and b[1] not in prices})
     if doc.Sheets.hasByName('Box report'):
         doc.Sheets.removeByName('Box report')

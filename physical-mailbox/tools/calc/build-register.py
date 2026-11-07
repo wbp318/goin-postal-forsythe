@@ -81,8 +81,7 @@ st.column_dimensions['A'].width = 120
 pr = wb.create_sheet('Prices')
 pr['A1'] = 'Size'; pr['B1'] = 'Monthly price ($)'; pr['C1'] = 'Yearly price ($)'; pr['D1'] = 'Fits'; pr['E1'] = '6-month price ($)'
 for c in 'ABCDE': pr[f'{c}1'].font = head; pr[f'{c}1'].fill = HEAD
-sizes = [('Small', 15, 'Letters and small envelopes'), ('Medium', 22, 'Letters, magazines, small parcels'), ('Large', 30, 'Everything, with package acceptance'),
-         ('Folder', 10, 'A file folder in the filing cabinet: letters and flat mail; parcels wait at the counter')]
+sizes = [('Small', 15, 'Letters and small envelopes'), ('Medium', 22, 'Letters, magazines, small parcels'), ('Large', 30, 'Everything, with package acceptance')]
 for i, (n, m, fits) in enumerate(sizes, 2):
     pr[f'A{i}'] = n; pr[f'B{i}'] = m; pr[f'B{i}'].font = blue; pr[f'B{i}'].fill = INPUT
     pr[f'C{i}'] = f'=B{i}*$B$7'; pr[f'D{i}'] = fits; pr[f'E{i}'] = f'=B{i}*$B$8'
@@ -119,7 +118,7 @@ for r in range(2, ROWS + 2):
     for i, (n, _, inp) in enumerate(cols, 1):
         c = ho.cell(row=r, column=i); c.font = base; c.border = box
         if inp: c.fill = INPUT
-    ho[f'{L["Price per term ($)"]}{r}'] = f'=IF(OR({A}="",{L["Size"]}{r}=""),"",IF({L["Term"]}{r}="Yearly",INDEX(Prices!$C$2:$C$5,MATCH({L["Size"]}{r},Prices!$A$2:$A$5,0)),IF({L["Term"]}{r}="6 months",INDEX(Prices!$E$2:$E$5,MATCH({L["Size"]}{r},Prices!$A$2:$A$5,0)),INDEX(Prices!$B$2:$B$5,MATCH({L["Size"]}{r},Prices!$A$2:$A$5,0)))))'
+    ho[f'{L["Price per term ($)"]}{r}'] = f'=IF(OR({A}="",{L["Size"]}{r}=""),"",IF({L["Term"]}{r}="Yearly",INDEX(Prices!$C$2:$C$4,MATCH({L["Size"]}{r},Prices!$A$2:$A$4,0)),IF({L["Term"]}{r}="6 months",INDEX(Prices!$E$2:$E$4,MATCH({L["Size"]}{r},Prices!$A$2:$A$4,0)),INDEX(Prices!$B$2:$B$4,MATCH({L["Size"]}{r},Prices!$A$2:$A$4,0)))))'
     ho[f'{L["Months paid"]}{r}'] = f'=IF({A}="","",SUMIFS(Payments!$D:$D,Payments!$B:$B,{A}))'
     ho[f'{L["Paid through"]}{r}'] = f'=IF(OR({A}="",{L["Start date"]}{r}=""),"",EDATE({L["Start date"]}{r},{L["Months paid"]}{r}))'
     pt = f'{L["Paid through"]}{r}'
@@ -156,7 +155,7 @@ def rule(sheet, rng, kind, f1, f2=None, op=None, title='', prompt='', error=''):
                        errorStyle='stop', errorTitle=title[:32], error=error[:255], promptTitle=title[:32], prompt=prompt[:255])
     sheet.add_data_validation(d); d.add(rng)
 last = ROWS + 1
-dv(ho, '=Prices!$A$2:$A$5', f'{L["Size"]}2:{L["Size"]}{last}')
+dv(ho, '=Prices!$A$2:$A$4', f'{L["Size"]}2:{L["Size"]}{last}')
 dv(ho, '"Monthly,6 months,Yearly"', f'{L["Term"]}2:{L["Term"]}{last}')
 ids1 = "Driver's license or state ID,Passport,US passport card,Military ID,Government employee ID,University ID,Permanent resident card,Certificate of naturalization,Tribal ID"
 # list over 255 chars is not allowed inline: put the lists on a hidden sheet
@@ -194,9 +193,9 @@ for r in range(2, ROWS * 4 + 2):
         c = pa.cell(row=r, column=i); c.font = base; c.border = box
         if inp: c.fill = INPUT
     pa[f'C{r}'] = f'=IF(B{r}="","",IFERROR(INDEX(Holders!$C:$C,MATCH(B{r},Holders!$A:$A,0)),"no such code"))'
-    _i = f'MATCH(INDEX(Holders!$G:$G,MATCH(B{r},Holders!$A:$A,0)),Prices!$A$2:$A$5,0)'
+    _i = f'MATCH(INDEX(Holders!$G:$G,MATCH(B{r},Holders!$A:$A,0)),Prices!$A$2:$A$4,0)'
     # Each whole year at the yearly price, then each whole 6 months at the 6-month price, then single months.
-    pa[f'F{r}'] = f'=IF(OR(B{r}="",D{r}=""),"",IFERROR(INDEX(Prices!$C$2:$C$5,{_i})*INT(D{r}/12)+INDEX(Prices!$E$2:$E$5,{_i})*INT(MOD(D{r},12)/6)+INDEX(Prices!$B$2:$B$5,{_i})*MOD(D{r},6),""))'
+    pa[f'F{r}'] = f'=IF(OR(B{r}="",D{r}=""),"",IFERROR(INDEX(Prices!$C$2:$C$4,{_i})*INT(D{r}/12)+INDEX(Prices!$E$2:$E$4,{_i})*INT(MOD(D{r},12)/6)+INDEX(Prices!$B$2:$B$4,{_i})*MOD(D{r},6),""))'
     pa[f'A{r}'].number_format = 'mmm d, yyyy'; pa[f'E{r}'].number_format = pa[f'F{r}'].number_format = '$#,##0.00'
 for n, v in zip('ABDEGHI', (today, 'MB-001', 1, 15, '1043', 'Peter', 'Example row: delete')):
     pa[f'{n}2'] = v
@@ -221,7 +220,7 @@ for r in range(2, ROWS + 2):
     bx[f'E{r}'] = f'=IF(A{r}="","",IF(C{r}="","Free",INDEX(Holders!${S}:${S},MATCH(C{r},Holders!$A:$A,0))))'
     bx[f'F{r}'] = f'=IF(C{r}="","",INDEX(Holders!${L["Paid through"]}:${L["Paid through"]},MATCH(C{r},Holders!$A:$A,0)))'
     bx[f'F{r}'].number_format = 'mmm d, yyyy'
-dv(bx, '=Prices!$A$2:$A$5', f'B2:B{ROWS+1}')
+dv(bx, '=Prices!$A$2:$A$4', f'B2:B{ROWS+1}')
 for i, (n, sz) in enumerate([(101, 'Small'), (102, 'Small'), (201, 'Medium')], 2):
     bx[f'A{i}'] = n; bx[f'B{i}'] = sz
     for c in range(1, 8): bx.cell(row=i, column=c).fill = EX
@@ -269,9 +268,9 @@ dv(pa, f'=Holders!$A$2:$A${last}', f'B2:B{PL}', "Pick the customer's code (MB-..
 rule(pa, f'D2:D{PL}', 'whole', '1', '24', 'between', title='Months covered', prompt='1 for a month, 12 for a year.', error='Months covered is a whole number from 1 to 24: 1 for a month, 12 for a year.')
 rule(pa, f'E2:E{PL}', 'decimal', '0', '5000', 'between', title='Amount', prompt='What the POS took, in dollars.', error='Type the amount in dollars, like 15 or 150.00.')
 
-rule(bx, f'A2:A{last}', 'custom', f'AND(COUNTIF($A$2:$A${last},A2)=1,LEN(A2)<=6,ISERROR(FIND(" ",A2)))', title='Box number', prompt='The number on the box door or the folder tab: letters and digits, up to 6, like 101 or A12.', error='Each box once, letters and digits only, up to 6 characters (101, A12).')
+rule(bx, f'A2:A{last}', 'custom', f'AND(COUNTIF($A$2:$A${last},A2)=1,LEN(A2)<=6,ISERROR(FIND(" ",A2)))', title='Box number', prompt='The number on the box door: letters and digits, up to 6, like 101 or A12.', error='Each box once, letters and digits only, up to 6 characters (101, A12).')
 
-for cell in ('B2', 'B3', 'B4', 'B5'):
+for cell in ('B2', 'B3', 'B4'):
     rule(pr, cell, 'decimal', '0', '1000', 'between', title='Monthly price', error='Type the monthly price in dollars, like 15.')
 rule(pr, 'B7', 'whole', '1', '12', 'between', title='Months a year costs', error='A whole number from 1 to 12. 10 means 12 months for the price of 10.')
 rule(pr, 'B8', 'whole', '1', '6', 'between', title='Months 6 months cost', error='A whole number from 1 to 6. 5 means 6 months for the price of 5.')
@@ -293,7 +292,7 @@ steps = [
     ('3. One row per door, by the number on the door. A bank of identical boxes: measure one, then copy its three numbers down to the rest.', base),
     ('4. The sheet works out the cubic inches, the USPS size and the store size. Which USPS sizes count as Small, Medium and Large is for Peter and Rin: the yellow Store size cells in the chart on the right. The prices follow from the Prices tab.', base),
     ('5. The Fits columns say yes when that item goes in flat without bending (the item sizes are on the right; change them if yours differ). Use them for the Fits words on the Prices tab and to answer "will my packages fit?".', base),
-    ('6. Counter tab, Boxes from measurements: copies every measured box and its store size to the Boxes tab. It never changes the size of a box someone holds, or of a folder. Check says OK when both tabs agree.', base),
+    ('6. Counter tab, Boxes from measurements: copies every measured box and its store size to the Boxes tab. It never changes the size of a box someone holds. Check says OK when both tabs agree.', base),
     ('Never delete a row on this tab: the USPS chart on the right shares rows 14 to 18. To remove a box or the grey examples, select its cells and press Delete.', bold),
     ('Parcels too big for the box: USPS sets no rule for a private mailbox; the service agreement (OWNERS terms) says how long the store holds them at the counter.', grey),
 ]
@@ -361,7 +360,7 @@ rule(me, f'A{MT+1}:A{MLAST}', 'custom', f'COUNTIF($A${MT+1}:$A${MLAST},A{MT+1})=
      prompt='The number on the box door.', error='That box number is already on this tab. One row per box.')
 rule(me, f'B{MT+1}:D{MLAST}', 'decimal', '0.5', '60', 'between', title='Inches', prompt='Inches, fractions as decimals: 5 1/2 = 5.5.',
      error='Type inches between 0.5 and 60, fractions as decimals: 5 1/2 = 5.5, 14 3/4 = 14.75.')
-dv(me, '=Prices!$A$2:$A$5', f'X{U0}:X{U0 + 4}', 'Which store size this USPS size is sold as.')
+dv(me, '=Prices!$A$2:$A$4', f'X{U0}:X{U0 + 4}', 'Which store size this USPS size is sold as.')
 for k in range(len(FITS)):
     rule(me, f'T{IT+k}:V{IT+k}', 'decimal', '0', '60', 'between', title='Inches', error='Type inches, fractions as decimals.')
 me.conditional_formatting.add(f'J{MT+1}:J{MLAST}', FormulaRule(formula=[f'J{MT+1}="OK"'], fill=green))

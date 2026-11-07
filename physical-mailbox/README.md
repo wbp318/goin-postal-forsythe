@@ -56,56 +56,21 @@ packet), with boxes to tick.
    (`intake-packet.html` is the source: edit it, open it in a browser, print to PDF). Print blank
    **PS Form 1583**s from usps.com.
 
-## Anytime Mailbox customers: moving them into the filing cabinet
+## Virtual mailboxes stay on Anytime Mailbox
 
-The owners' plan: buy a filing cabinet, give each virtual customer a folder in it, and move them off
-Anytime Mailbox onto this register. **A folder is a box like any other here,** with its own size,
-**Folder**, and its own price on the Prices tab ($10 a month to start, a placeholder until Peter and
-Rin set it). Folders hold letters and flat mail; a parcel waits behind the counter with the folder
-number on it.
+The store's virtual mailboxes run on **Anytime Mailbox**, which keeps those customers' PS Form 1583s,
+IDs and billing. **This register is for the boxes on the wall only:** a virtual customer is never
+typed in here.
 
-```mermaid
-flowchart LR
-  A[Anytime Mailbox customer<br>unit #115] --> F[Folder labeled 115<br>in the filing cabinet]
-  F --> R[Register: Boxes tab<br>115, size Folder]
-  R --> H[Holders row: size Folder<br>IDs, 1583, first POS payment]
-  H --> G[Give a box: 115]
-  G --> X[Cancel their Anytime Mailbox plan<br>USPS database updated]
-  P{{Postmaster: same number,<br>new 1583 or not? issue 24}} -.-> H
-  classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
-  classDef cloud fill:#0f1d3a,stroke:#0f1d3a,color:#ffffff
-  classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
-  class F,R,H,G local
-  class A,X cloud
-  class P you
-```
-
-For each customer:
-
-1. **Label a folder with the number they already have** in Anytime Mailbox, such as 115. The same
-   number keeps the same address (`1800 Forsythe Ave Ste 2 #115`), so their mail, their bank and
-   their customers change nothing.
-2. **Add the folder on the Boxes tab:** the number, and Folder as the size.
-3. **Add them as a customer:** press **New customer** and type **F** for the size, or type the name on
-   an empty Holders row and pick Folder.
-4. **The 1583 and the IDs.** From the Anytime Mailbox operator dashboard, download their PS Form 1583
-   and ID copies for the locked drawer, and type the IDs (last 4 only) and the 1583's date on their
-   row. Until the postmaster says otherwise (issue 24), sign a **new 1583** with them at the counter
-   when anything on the old one is different, and always when the number changes.
-5. **Take the first payment on the POS** and press **Record a payment**, then **Give a box** and pick
-   their folder.
-6. **Cancel their Anytime Mailbox plan** once that first payment is in, so they are not billed twice.
-   Tell them the scans in the app stop and their mail is now picked up at the counter.
-7. **The USPS database:** make sure their record shows the store and the right number, and put an
-   end date on anything left from Anytime Mailbox. Ask Anytime Mailbox's operator support whether
-   their platform entered them for the store, or the store did.
-
-A customer who wants to keep the app's mail scanning stays on Anytime Mailbox and is not typed in
-here. **Wall boxes and folders never share a number:** before numbering the wall boxes, list every
-folder number on the Boxes tab. The Boxes tab refuses a number typed twice, **Boxes from
-measurements** leaves a folder's number alone and says so, and **Give a box** only offers a box of
-the customer's own size. The cabinet locks,
-and mail in it is handled like mail in a box: only staff open it.
+- **Never share a number.** Virtual and wall boxes both use `1800 Forsythe Ave Ste 2 #...`, so a
+  number Anytime Mailbox has given out is never a wall box number, or mail goes to the wrong person.
+  Give the wall boxes their own range.
+- **A virtual customer who wants a wall box** signs up here as a new customer: two IDs, a **new PS
+  Form 1583** with the wall box's number (a changed number needs a new form; USPS does not let a
+  store edit an old one), the first POS payment, then Give a box. Then cancel their Anytime Mailbox
+  plan so they are not billed twice, and update their record in USPS's CMRA database.
+- Ask Anytime Mailbox's operator support whether their platform enters the virtual customers in
+  USPS's database for the store, and ask the postmaster about moves between the two (issue 24).
 
 ## The Counter tab
 
@@ -114,7 +79,7 @@ asks its questions in small boxes and fills in the right tabs.
 
 | Button | What it does |
 | --- | --- |
-| **New customer** | (Or just type the name on an empty Holders row: the code and start date are automatic.) Asks name, phone, email, size (S, M, L or F for a folder) and the term (M monthly, 6 for 6 months, Y yearly). Adds the row on Holders with the next MB- code and today as the start date, then jumps to the ID cells and says what to fill in next. |
+| **New customer** | (Or just type the name on an empty Holders row: the code and start date are automatic.) Asks name, phone, email, size (S, M or L) and the term (M monthly, 6 for 6 months, Y yearly). Adds the row on Holders with the next MB- code and today as the start date, then jumps to the ID cells and says what to fill in next. |
 | **Record a payment** | Asks which customer, suggests the months (1, 6 for a 6-month term, 12 for yearly) and the amount the Prices tab says (the same as the Expected column), takes the POS receipt number and your name, writes the Payments row, and shows the new paid-through date. |
 | **Give a box** | Refuses until both IDs, the 1583 date and a payment are in, and says which is missing. Then offers the Free boxes of their size, writes the box number, asks about the keys, and shows their new address. |
 | **Find a customer** | By code, box number or part of a name. Jumps to their row. |
@@ -246,7 +211,7 @@ python physical-mailbox/tools/calc/build-register.py
 ```
 
 The second step adds the Counter tab, the buttons and the macros, saves
-`mailbox-register-TEMPLATE.ods`, then reopens it and runs 72 checks:
+`mailbox-register-TEMPLATE.ods`, then reopens it and runs 70 checks:
 
 - every macro: a customer, a payment, the IDs, a box, both lists, a backup and closing the box;
 - automatic codes: a name typed on an empty row gets the next code and today, and a new box number typed by hand lands on the Boxes tab, both typed through Calc's own input as the keyboard does;
@@ -261,8 +226,8 @@ FAIL line if anything is off. A filled register gets the new template through th
 
 ## Decisions for Peter and Rin
 
-1. **Prices.** The template starts at $15 small, $22 medium, $30 large and $10 for a folder in the
-   filing cabinet a month, with a year at 10 months and 6 months at 6 (no discount yet). Change them
+1. **Prices.** The template starts at $15 small, $22 medium and $30 large a month, with a year at 10
+   months and 6 months at 6 (no discount yet). Change them
    on the Prices tab (B7 and B8 for the terms).
 2. **The agreement terms** marked OWNERS: days late before mail is held (15) and before the box closes
    (30), how long oversized parcels wait (14 days), the lost-key fee ($25), notice to close (30

@@ -158,11 +158,11 @@ template: see [section 8](#8-when-something-goes-wrong).
 
 | Cell | What | Notes |
 | --- | --- | --- |
-| A2:A5 | Small, Medium, Large, Folder | The size names. Every size list in the register comes from these four cells. Folder is a file folder in the filing cabinet, for the customers moved off Anytime Mailbox (v1.92.4) |
-| B2:B5 | The monthly price | Yellow. 0 to 1,000 |
-| C2:C5 | The yearly price | Formula: the monthly price times B7 |
-| E2:E5 | The 6-month price | Formula: the monthly price times B8 (v1.92.5) |
-| D2:D5 | What fits | Words for the customer; the Measure tab's Fits columns help write them |
+| A2:A4 | Small, Medium, Large | The size names. Every size list in the register comes from these three cells |
+| B2:B4 | The monthly price | Yellow. 0 to 1,000 |
+| C2:C4 | The yearly price | Formula: the monthly price times B7 |
+| E2:E4 | The 6-month price | Formula: the monthly price times B8 (v1.92.5) |
+| D2:D4 | What fits | Words for the customer; the Measure tab's Fits columns help write them |
 | B7 | How many months a year costs | Yellow, 1 to 12. 10 means 12 months for the price of 10 |
 | B8 | How many months 6 months cost | Yellow, 1 to 6. 6 means no discount; 5 means 6 months for the price of 5. A placeholder until Peter and Rin decide |
 
@@ -182,7 +182,7 @@ frozen at D2).
 | D | Business (optional) | type | The business name if the box is for one |
 | E | Phone | type | Ten digits; spaces, dashes, dots and brackets are fine: `318 555 0100`. Text cell |
 | F | Email | type | Needs an @ and a dot after it, no spaces |
-| G | Size | type | Arrow: Small, Medium, Large, Folder (from Prices) |
+| G | Size | type | Arrow: Small, Medium, Large (from Prices) |
 | H | Term | type | Arrow: Monthly, 6 months, Yearly (the heading was Monthly / Yearly before v1.92.5; the upgrade carries it) |
 | I | Start date | automatic, can be typed | Today, written with the code. Type over it for another day: from Jan 1, 2025 to a month ahead |
 | J | Price per term ($) | formula | From Prices: the monthly price, the 6-month price for 6 months, or the yearly price for Yearly |
@@ -236,7 +236,7 @@ themselves.
 | Col | Heading | Type or formula | What |
 | --- | --- | --- | --- |
 | A | Box # | type | The number on the door: letters and digits up to 6, each once. Boxes typed on Holders and boxes from Measure land here by themselves |
-| B | Size | type | Arrow: Small, Medium, Large, Folder |
+| B | Size | type | Arrow: Small, Medium, Large |
 | C | Holder code | formula | The open customer with this box |
 | D | Holder | formula | Their name |
 | E | Status | formula | **Free** (green) with no open holder; otherwise the holder's Status, so **Overdue** shows red here too |
@@ -306,7 +306,7 @@ wrong. Writing from a macro skips Calc's own typing checks, so the macros carry 
 ### New customer
 
 1. Asks for the name (required), then the phone (ten digits, or blank) and the email (or blank).
-2. Asks for the size: S, M, L, or F for a folder in the filing cabinet.
+2. Asks for the size: S, M or L.
 3. Asks for the term: M for monthly, 6 for 6 months, Y for yearly.
 4. Adds them on the first empty Holders row with the **next MB- code** and **today as the start
    date**, and jumps to their ID 1 type cell.
@@ -373,8 +373,6 @@ After measuring on the Measure tab, it copies every measured box and its store s
 - it gives Free boxes their measured size;
 - it leaves alone a box someone holds, and says how many were left, so you can look at them (the
   Check column flags them).
-- it leaves alone a number that is already a **Folder** on the Boxes tab, and says how many: give
-  that wall box a number no folder uses.
 
 Running it twice changes nothing the second time.
 
@@ -927,7 +925,7 @@ Tips:
 LibreOffice ships its own Python with the `uno` module, at
 `C:\Program Files\LibreOffice\program\python.exe`. That Python starts a hidden Calc, opens files, runs
 macros and saves. [`add-macros.py`](add-macros.py) is the full example: it builds the Counter tab,
-puts the Basic in, and runs 72 checks. The smallest version opens the register hidden and reads a
+puts the Basic in, and runs 70 checks. The smallest version opens the register hidden and reads a
 count:
 
 ```python
@@ -1005,7 +1003,7 @@ python physical-mailbox/tools/calc/build-register.py
 1. `build-register.py` (your Python with openpyxl) writes the tabs, formulas, typing checks, colours,
    text formats and unlocked yellow cells to `register-sheets.xlsx` (git-ignored).
 2. `add-macros.py` (LibreOffice's Python) adds the Counter tab, the buttons, the Basic and the two
-   document events, and saves `mailbox-register-TEMPLATE.ods`. It then reopens it and runs 72 checks:
+   document events, and saves `mailbox-register-TEMPLATE.ods`. It then reopens it and runs 70 checks:
    - every macro: a customer, a payment, the IDs, a box, both lists, a backup, closing;
    - the Measure tab and Boxes from measurements;
    - the Python macro;
@@ -1048,7 +1046,7 @@ Print this section. It fits on one page.
 | --- | --- |
 | `README.md` | This guide |
 | `build-register.py` | Step 1 of the build: the tabs, formulas, checks and formats (openpyxl) |
-| `add-macros.py` | Step 2: the Counter tab, buttons, Basic and events; then the 72 checks (LibreOffice's Python) |
+| `add-macros.py` | Step 2: the Counter tab, buttons, Basic and events; then the 70 checks (LibreOffice's Python) |
 | `upgrade-register.py` | Carries a filled register into a new template; `--self-test` |
 | `register-report.py` | The pandas report (walkthrough 1) |
 | `macros/Mailbox.bas` | The buttons' Basic, readable |

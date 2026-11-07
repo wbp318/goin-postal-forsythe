@@ -94,7 +94,6 @@ Function SizeName(s As String) As String
 		Case "S" : SizeName = "Small"
 		Case "M" : SizeName = "Medium"
 		Case "L" : SizeName = "Large"
-		Case "F" : SizeName = "Folder"
 		Case Else : SizeName = ""
 	End Select
 End Function
@@ -163,7 +162,7 @@ Function ExpectedAmount(r As Long, months As Long) As Double
 	h = Sh("Holders")
 	pr = Sh("Prices")
 	sz = CellText(h, H_SIZE, r)
-	For i = 1 To 4
+	For i = 1 To 3
 		If CellText(pr, 0, i) = sz Then
 			pm = pr.getCellByPosition(1, i).getValue()
 			py = pr.getCellByPosition(2, i).getValue()
@@ -220,7 +219,7 @@ Function AddCustomer(sName As String, sPhone As String, sEmail As String, sSize 
 		Exit Function
 	End If
 	If SizeName(sSize) = "" Then
-		AddCustomer = "!The size is Small, Medium, Large or Folder."
+		AddCustomer = "!The size is Small, Medium or Large."
 		Exit Function
 	End If
 	h = Sh("Holders")
@@ -433,7 +432,7 @@ REM that are not there yet and sets the size of Free ones; a box someone holds k
 REM Returns "added,changed,held" (held = sizes that differ on a box with a holder, left alone).
 Function BoxesFromMeasure() As String
 	Dim m As Object, b As Object, r As Long, br As Long, sBox As String, sSize As String, found As Long
-	Dim added As Long, changed As Long, held As Long, folders As Long, oFrom As Object
+	Dim added As Long, changed As Long, held As Long, oFrom As Object
 	ThisComponent.calculateAll()
 	m = Sh("Measure")
 	b = Sh("Boxes")
@@ -459,8 +458,6 @@ Function BoxesFromMeasure() As String
 				End If
 				b.getCellByPosition(B_SIZE, found).setString(sSize)
 				added = added + 1
-			ElseIf CellText(b, B_SIZE, found) = "Folder" Then
-				folders = folders + 1
 			ElseIf CellText(b, B_SIZE, found) <> sSize Then
 				If CellText(b, B_STATUS, found) = "Free" Or CellText(b, B_STATUS, found) = "" Then
 					b.getCellByPosition(B_SIZE, found).setString(sSize)
@@ -472,7 +469,7 @@ Function BoxesFromMeasure() As String
 		End If
 	Next r
 	ThisComponent.calculateAll()
-	BoxesFromMeasure = added & "," & changed & "," & held & "," & folders
+	BoxesFromMeasure = added & "," & changed & "," & held
 End Function
 
 REM Lists F1 when set; otherwise "Mailbox backups" in the Documents folder File Explorer shows. LibreOffice's
@@ -558,7 +555,7 @@ Sub btnNewCustomer(Optional oEvent)
 	If Trim(nm) = "" Then Exit Sub
 	ph = InputBox("Phone, ten digits (or leave blank):", APP & ": new customer")
 	em = InputBox("Email (or leave blank):", APP & ": new customer")
-	sz = InputBox("Box size: type S for Small, M for Medium, L for Large, or F for a Folder in the filing cabinet.", APP & ": new customer", "S")
+	sz = InputBox("Box size: type S for Small, M for Medium, L for Large.", APP & ": new customer", "S")
 	If Trim(sz) = "" Then Exit Sub
 	tm = InputBox("Term: type M for monthly, 6 for 6 months, Y for yearly.", APP & ": new customer", "M")
 	If Trim(tm) = "" Then Exit Sub
@@ -676,7 +673,6 @@ Sub btnBoxesFromMeasure(Optional oEvent)
 	res = Split(BoxesFromMeasure(), ",")
 	msg = res(0) & " boxes added to the Boxes tab, " & res(1) & " Free boxes given their measured size."
 	If CLng(res(2)) > 0 Then msg = msg & Chr(10) & res(2) & " boxes someone holds measure as a different size: they kept theirs. See Check on the Measure tab."
-	If CLng(res(3)) > 0 Then msg = msg & Chr(10) & res(3) & " measured box numbers are already folders on the Boxes tab, so they were left as folders. Give those wall boxes numbers no folder uses."
 	JumpTo("Boxes", B_SIZE, R0)
 	MsgBox msg, 64, APP
 End Sub

@@ -190,9 +190,9 @@ def test(desktop):
         check(f'{tab}: Content changed runs {sub}', ev.get('Script', '').endswith(f'Mailbox.{sub}?language=Basic&location=document'), ev)
     check('a bad name is refused', str(run('AddCustomer', 'X', '', '', 'S', 'Monthly')).startswith('!'))
     check('a nine-digit phone is refused', str(run('AddCustomer', 'Test Person', '318 555 010', '', 'S', 'Monthly')).startswith('!'))
-    check('a size that is not Small, Medium, Large or Folder is refused', str(run('AddCustomer', 'Test Person', '318 555 0100', '', 'x', 'Monthly')).startswith('!'))
+    check('a size that is not Small, Medium or Large is refused', str(run('AddCustomer', 'Test Person', '318 555 0100', '', 'x', 'Monthly')).startswith('!'))
     pr = s.getByName('Prices')
-    check('the Prices tab has a Folder size with a price', (pr.getCellByPosition(0, 4).getString(), pr.getCellByPosition(1, 4).getValue() > 0) == ('Folder', True))
+    check('the Prices tab has three sizes, Small, Medium and Large', [pr.getCellByPosition(0, i).getString() for i in range(1, 5)] == ['Small', 'Medium', 'Large', ''])
     code = run('AddCustomer', 'Test Person', '318 555 0100', 'test@example.com', 's', 'Monthly')
     six = run('AddCustomer', 'Six Months', '', '', 'm', '6')
     srow = run('FindHolder', six)
@@ -277,22 +277,11 @@ def test(desktop):
           (M(5, 16).getValue(), M(7, 16).getString(), M(9, 16).getString()) == (5, 'Large', 'add to Boxes'),
           (M(5, 16).getValue(), M(7, 16).getString(), M(9, 16).getString()))
     res = run('BoxesFromMeasure')
-    check('Boxes from measurements: 1 added, 1 Free box resized, 1 held box left alone', res == '1,1,1,0', res)
+    check('Boxes from measurements: 1 added, 1 Free box resized, 1 held box left alone', res == '1,1,1', res)
     sizes = {b.getCellByPosition(0, i).getString(): b.getCellByPosition(1, i).getString() for i in range(1, 6)}
     check('the Boxes tab has 301 Large and 201 Large, and 101 kept Small', (sizes.get('301'), sizes.get('201'), sizes.get('101')) == ('Large', 'Large', 'Small'), sizes)
     check('Check says OK for 301 and flags 101', (M(9, 16).getString(), M(9, 13).getString()) == ('OK', 'Boxes says Small'), (M(9, 16).getString(), M(9, 13).getString()))
-    check('running it again changes nothing', run('BoxesFromMeasure') == '0,0,1,0')
-    fb = next(i for i in range(1, 30) if b.getCellByPosition(0, i).getString() == '')
-    b.getCellByPosition(0, fb).setValue(115); b.getCellByPosition(1, fb).setString('Folder')
-    for col, v in ((0, 115), (1, 5), (2, 5.5), (3, 14.75)):
-        M(col, 17).setValue(v)
-    res = run('BoxesFromMeasure')
-    check('a measured wall box with a folder number leaves the folder alone and says so', res == '0,0,1,1' and b.getCellByPosition(1, fb).getString() == 'Folder', (res, b.getCellByPosition(1, fb).getString()))
-    for col in range(4):
-        M(col, 17).clearContents(1 | 2 | 4 | 16)
-    for col in (0, 1):
-        b.getCellByPosition(col, fb).clearContents(1 | 2 | 4 | 16)
-    doc.calculateAll()
+    check('running it again changes nothing', run('BoxesFromMeasure') == '0,0,1')
     # Typed by hand: a name on an empty row gets the next code and today; a payment code gets today's date.
     hr = 10
     h.getCellByPosition(2, hr).setString('Typed Byhand')
@@ -337,24 +326,23 @@ def test(desktop):
     import mailbox_tools  # the Python macro, called with the document as it would be from the menu
     n = mailbox_tools.build_box_report(doc)
     br = s.getByName('Box report')
-    got = [br.getCellByPosition(c, 5).getString() for c in range(4)]
+    got = [br.getCellByPosition(c, 4).getString() for c in range(4)]
     fr = 30
-    for col, v in ((2, 'Folder Person'), (6, 'Folder'), (7, 'Monthly')):
+    for col, v in ((2, 'Six Person'), (6, 'Small'), (7, 'Monthly')):
         h.getCellByPosition(col, fr).setString(v)
     h.getCellByPosition(0, fr).setString('MB-050'); h.getCellByPosition(8, fr).setValue(today)
     doc.calculateAll()
     h.getCellByPosition(7, fr).setString('6 months'); doc.calculateAll()
-    check('a 6-month customer is priced from the 6-month column', h.getCellByPosition(9, fr).getValue() == pr.getCellByPosition(4, 4).getValue() == pr.getCellByPosition(1, 4).getValue() * pr.getCellByPosition(1, 7).getValue(), (h.getCellByPosition(9, fr).getValue(), pr.getCellByPosition(4, 4).getValue()))
-    check('the suggested amount for 6 months on a 6-month term is the 6-month price', run('ExpectedAmount', fr, 6) == pr.getCellByPosition(4, 4).getValue(), run('ExpectedAmount', fr, 6))
+    check('a 6-month customer is priced from the 6-month column', h.getCellByPosition(9, fr).getValue() == pr.getCellByPosition(4, 1).getValue() == pr.getCellByPosition(1, 1).getValue() * pr.getCellByPosition(1, 7).getValue(), (h.getCellByPosition(9, fr).getValue(), pr.getCellByPosition(4, 1).getValue()))
+    check('the suggested amount for 6 months on a 6-month term is the 6-month price', run('ExpectedAmount', fr, 6) == pr.getCellByPosition(4, 1).getValue(), run('ExpectedAmount', fr, 6))
     h.getCellByPosition(7, fr).setString('Monthly'); doc.calculateAll()
-    check('a Folder customer is priced from the Folder row', h.getCellByPosition(9, fr).getValue() == pr.getCellByPosition(1, 4).getValue(), h.getCellByPosition(9, fr).getValue())
-    check('AddCustomer takes F for Folder', run('SizeName', 'f') == 'Folder')
+    check('a monthly customer is priced at the monthly price', h.getCellByPosition(9, fr).getValue() == pr.getCellByPosition(1, 1).getValue(), h.getCellByPosition(9, fr).getValue())
     for col in (0, 2, 6, 7, 8):
         h.getCellByPosition(col, fr).clearContents(1 | 2 | 4 | 16)
     doc.calculateAll()
-    check('Python macro box_report: 4 boxes, 1 taken, 3 Free', n == 4 and got == ['All', '4', '1', '3'], (n, got))
-    fold = [br.getCellByPosition(c, 4).getString() for c in range(5)]
-    check('Box report has a Folder row priced from the Prices tab', fold[0] == 'Folder' and fold[4] not in ('', '0'), fold)
+    check('Python macro box_report: 4 boxes, 1 taken, 3 Free', n == 3 and got == ['All', '4', '1', '3'], (n, got))
+    sm = [br.getCellByPosition(c, 1).getString() for c in range(5)]
+    check('Box report prices each size from the Prices tab', sm[0] == 'Small' and sm[4] == str(int(pr.getCellByPosition(1, 1).getValue())), sm)
     for name in ('Holders', 'Payments', 'Boxes', 'Measure'):
         sh = s.getByName(name)
         rng = sh.getCellRangeByPosition(0, 1, {'Holders': 27, 'Measure': 23}.get(name, 8), 40)
