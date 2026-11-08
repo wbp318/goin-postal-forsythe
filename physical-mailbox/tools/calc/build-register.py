@@ -71,7 +71,7 @@ lines = [
     ("Measure tab: measure every box once, the USPS way. It works out the USPS size and the store size, and its button on the Counter tab fills the Boxes tab.", base),
     ("", base),
     ("Prices", bold),
-    ("The prices on the Prices tab are placeholders from the website (src/data/mailboxes.json). Peter and Rin set the real ones there; every formula follows.", base),
+    ("Terms are 6 months or a year; there is no monthly term. The Prices tab holds a monthly rate per size, and the 6-month and yearly prices are worked out from it (B8 and B7). The numbers are placeholders until Peter and Rin type the real ones; every formula follows.", base),
 ]
 for i, (t, f) in enumerate(lines, 1):
     c = st.cell(row=i, column=1, value=t); c.font = f; c.alignment = Alignment(wrap_text=True, vertical='top')
@@ -87,10 +87,10 @@ for i, (n, m, fits) in enumerate(sizes, 2):
     pr[f'C{i}'] = f'=B{i}*$B$7'; pr[f'D{i}'] = fits; pr[f'E{i}'] = f'=B{i}*$B$8'
     pr[f'B{i}'].number_format = pr[f'C{i}'].number_format = pr[f'E{i}'].number_format = '$#,##0.00'
 pr['A7'] = 'A year costs this many months'; pr['B7'] = 10; pr['B7'].font = blue; pr['B7'].fill = INPUT
-pr['B7'].comment = Comment('12 months for the price of 10, as on the website. Source: site/src/data/mailboxes.json, placeholder until the owners confirm.', 'PeterShip')
+pr['B7'].comment = Comment('10 means a year for the price of 10 months. A placeholder until Peter and Rin decide.', 'PeterShip')
 pr['A8'] = '6 months cost this many months'; pr['B8'] = 6; pr['B8'].font = blue; pr['B8'].fill = INPUT
 pr['B8'].comment = Comment('6 means no discount for paying 6 months at once; 5 would be 6 months for the price of 5. Placeholder until the owners decide.', 'PeterShip')
-pr['A9'] = 'Placeholders until Peter and Rin confirm (the same numbers as the website). Change the yellow cells; everything else follows.'; pr['A9'].font = grey
+pr['A9'] = 'Placeholders until Peter and Rin set the real prices. Change the yellow cells; everything else follows.'; pr['A9'].font = grey
 for col, w in zip('ABCDE', (32, 18, 18, 40, 18)): pr.column_dimensions[col].width = w
 for r in pr.iter_rows(min_row=2, max_row=8):
     for c in r:
