@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.93.1] - 2026-11-08
+
+**mailbox template ready for Peter**
+
+The mailbox register template is ready to send to Peter. Its Start here tab, the Prices note and the comment on B7 no longer say the prices come from the website (that file was removed when mailboxes left PeterShip). They now say: terms are 6 months or a year, the 6-month and yearly prices come from a monthly rate, and the numbers are placeholders until Peter and Rin set them.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.93.1) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.93.1) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.93.0...v1.93.1)
+
 ## [v1.93.0] - 2026-11-07
 
 **every marketplace, and dropship in full**
