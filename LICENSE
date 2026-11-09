@@ -44,7 +44,8 @@ PART C. PETERSHIP: PROPRIETARY
    .github/workflows/track-poll.yml workflow, and the carrier, printer
    and messaging configuration in site/.dev.vars.example and
    site/wrangler.jsonc. shipping-client/LICENSE lists them in full.
-   PeterShip is the store's own shipping client. It may be read and run
+   PeterShip is copyright William Parker alone, not the three holders
+   named above, and is the store's shipping client. It may be read and run
    locally for evaluation only; it may not be deployed, distributed,
    modified or used by any other business. Full terms are in
    shipping-client/LICENSE, which controls over this file for those files.
