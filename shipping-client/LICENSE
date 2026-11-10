@@ -1,9 +1,11 @@
 PETERSHIP PROPRIETARY LICENSE
-Version 1.2, November 9, 2026
+Version 1.3, November 10, 2026
 
 Copyright (c) 2026
+  Peter Ho, domiciled in Ouachita Parish, Louisiana
+  Rin Ho, domiciled in Ouachita Parish, Louisiana
   William Parker, domiciled in East Carroll Parish, Louisiana
-(the "Owner")
+(together, the "Owners")
 
 All rights reserved.
 
@@ -29,7 +31,7 @@ source code, wherever it lives in this repository, including:
    - the scheduled tracking poll in .github/workflows/track-poll.yml
    - the carrier, printer and messaging configuration keys in
      site/.dev.vars.example and site/wrangler.jsonc
-   - any later file that the Owner marks as part of PeterShip, and any
+   - any later file that the Owners mark as part of PeterShip, and any
      documentation, design or test written for the above
 
 PeterShip is NOT covered by the Apache License, Version 2.0 or the
@@ -46,7 +48,7 @@ You may:
 
    a. Read the PeterShip source code, and study how it works.
    b. Run it on your own machine for the purpose of evaluating it or
-      proposing changes to the Owner.
+      proposing changes to the Owners.
    c. Copy short excerpts (under fifty lines) into a bug report, question
       or review about PeterShip.
 
@@ -57,7 +59,7 @@ anyone for them.
 3. WHAT YOU MAY NOT DO
 ==========================================================================
 
-Unless you have a signed, written license from the Owner, you
+Unless you have a signed, written license from all of the Owners, you
 may not:
 
    a. Use PeterShip, or any part of it, to run a shipping, mailbox,
@@ -65,7 +67,7 @@ may not:
       sell or print shipping labels for anyone, other than the Goin' Postal
       store at 1800 Forsythe Ave Ste 2, Monroe, Louisiana.
    b. Deploy PeterShip to any server, Cloudflare account or other hosting
-      that the Owner does not control.
+      that the Owners do not control.
    c. Sell, rent, lease, sublicense, lend or otherwise distribute
       PeterShip or any part of it, whether as source, object code or a
       hosted service.
@@ -82,10 +84,10 @@ may not:
 4. CONTRIBUTIONS
 ==========================================================================
 
-If you send the Owner a change to PeterShip (by pull request, patch,
-issue or any other means), you assign to the Owner all
+If you send the Owners a change to PeterShip (by pull request, patch,
+issue or any other means), you assign to the Owners, jointly, all
 copyright in that change, and you warrant that you have the right to do
-so. The Owner may use your change under any terms. You keep the right
+so. The Owners may use your change under any terms. You keep the right
 to be named as the author of the change in commit history.
 
 ==========================================================================
@@ -111,14 +113,14 @@ PETERSHIP IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT. RATES,
 LABELS AND TRACKING COME FROM THE CARRIERS AND MAY BE WRONG, LATE OR
-UNAVAILABLE. THE OWNER DOES NOT WARRANT THAT A LABEL PRODUCED BY PETERSHIP
+UNAVAILABLE. THE OWNERS DO NOT WARRANT THAT A LABEL PRODUCED BY PETERSHIP
 WILL BE ACCEPTED BY ANY CARRIER OR BILLED AT ANY PARTICULAR RATE.
 
 ==========================================================================
 7. LIMITATION OF LIABILITY
 ==========================================================================
 
-TO THE FULLEST EXTENT PERMITTED BY LAW, THE OWNER SHALL NOT BE LIABLE
+TO THE FULLEST EXTENT PERMITTED BY LAW, THE OWNERS SHALL NOT BE LIABLE
 FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL OR
 EXEMPLARY DAMAGES ARISING OUT OF OR RELATED TO PETERSHIP OR THIS
 LICENSE, INCLUDING LOST PACKAGES, LOST PROFITS, POSTAGE OVERCHARGES,
@@ -148,10 +150,10 @@ the personal jurisdiction of those courts.
 10. ASKING FOR MORE
 ==========================================================================
 
-The Owner may license PeterShip to other stores on separate written
-terms. To ask, open an issue on the repository or contact the Owner
+The Owners may license PeterShip to other stores on separate written
+terms. To ask, open an issue on the repository or contact the Owners
 through the store at Forsythe Avenue and North 18th Street, Monroe,
-Louisiana. Nothing is granted until the Owner signs.
+Louisiana. Nothing is granted until all three Owners sign.
 
-This license is not legal advice. The Owner should have a Louisiana
+This license is not legal advice. The Owners should have a Louisiana
 attorney review it before relying on it against a third party.
