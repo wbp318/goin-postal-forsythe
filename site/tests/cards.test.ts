@@ -1,6 +1,6 @@
 // Card order pricing: quantity tiers plus the upsells, always from the server's table.
 import { describe, it, expect } from 'vitest';
-import { priceCards, priceCardOptions, chosenOptions, CARD_OPTIONS, OPTION_GROUPS, PRICES, sanitizeDesign, routeCard } from '../src/lib/cards';
+import { priceCards, priceCardOptions, chosenOptions, CARD_OPTIONS, OPTION_GROUPS, PRICES, sanitizeDesign, routeCard, renderCard } from '../src/lib/cards';
 
 describe('card options', () => {
   it('every group has exactly one free default', () => {
@@ -67,5 +67,22 @@ describe('routeCard (T27)', () => {
     expect(routeCard({ quantity: 100, options: [{ group: 'stock', code: 'linen' }] }).printer).toBe('trade');
     expect(routeCard({ quantity: 100, options: [{ group: 'stock', code: 'linen' }, { group: 'speed', code: 'rush' }] }).printer).toBe('local');
     expect(routeCard({ quantity: 1000, options: [{ group: 'speed', code: 'rush' }] }).printer).toBe('local');
+  });
+});
+
+describe('element ids', () => {
+  it('keeps simple ids and replaces anything else', () => {
+    const d = sanitizeDesign({ front: { elements: [
+      { type: 'text', id: 'e12ab', text: 'Hi' },
+      { type: 'text', id: 'a"b<c>', text: 'Odd' },
+      { type: 'text', id: 'x'.repeat(30), text: 'Long' },
+    ] } });
+    expect(d.front.elements[0].id).toBe('e12ab');
+    for (const el of d.front.elements) expect(el.id).toMatch(/^[A-Za-z0-9_-]{1,24}$/);
+  });
+  it('the renderer escapes ids on its own too', () => {
+    const svg = renderCard({ template: 'classic', font: 'sans', front: { bg: '#ffffff', elements: [{ type: 'text', id: 'a"b', x: 0, y: 0, w: 10, text: 'Hi', size: 12, weight: 400, italic: false, color: '#000000', align: 'start' }] }, back: { bg: '#ffffff', elements: [] } } as any, 'front', { editing: true });
+    expect(svg).not.toContain('a"b');
+    expect(svg).toContain('data-id="a&quot;b"');
   });
 });

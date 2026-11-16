@@ -76,9 +76,9 @@ These are plans: nothing in them is built or bought until the owners decide. Pri
 
 ## Security review on every code change
 
-Every code change gets a security review before it is committed, whoever makes it: William, Peter, or anyone working for them. Run the `security-review` skill (`/security-review`) on the pending changes, fix every high and medium finding in the same change, and end the commit message body with one line giving the outcome: `Security review: no findings`, or `Security review: fixed <what>; open <what> (#N)`. Anything left open gets a GitHub issue. Code means any change under `site/` (other than images and `.md` files), `scripts/`, `shipping-client/**/*.mjs` and `physical-mailbox/tools/`. Plans, READMEs and charts on their own need no review.
+Every code change gets a security review before it is committed, whoever makes it: William, Peter, or anyone working for them. Run the `security-review` skill (`/security-review`) on the pending changes, fix what it finds in the same change, and end the commit message body with the line `Security review: done`. The repo is public, so security findings are fixed quietly. They are never written up in a GitHub issue, a commit message, a release note, `AGENDA.md`, a README or a code comment. A finding that can't be fixed in the same change goes to the owners directly and is fixed next. Code means any change under `site/` (other than images and `.md` files), `scripts/`, `shipping-client/**/*.mjs` and `physical-mailbox/tools/`. Plans, READMEs and charts on their own need no review.
 
-Peter works on the `peter` branch of his fork, `Petoria-ai/goin-postal-forsythe`. On that branch the same outcome line also goes in the edit's `peter/EDIT-LOG.md` entry. Before his branch is merged into `main`, the whole branch is reviewed again (`/security-review` against `main`), and the merge waits until its high findings are fixed.
+Peter works on the `peter` branch of his fork, `Petoria-ai/goin-postal-forsythe`. On that branch the same `Security review: done` line also goes in the edit's `peter/EDIT-LOG.md` entry. A security problem is fixed there, not written up in `peter/FOR-WILLIAM.md` or the edit log. Before his branch is merged into `main`, the whole branch is reviewed again (`/security-review` against `main`), and the merge waits until its findings are fixed.
 
 ## Releases and docs
 

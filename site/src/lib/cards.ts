@@ -228,15 +228,15 @@ export function textHeight(el: TextEl) {
 
 function renderEl(el: El, opts: { editing?: boolean }) {
   if (el.type === 'image') {
-    return `<image data-id="${el.id}" href="${el.href}" x="${el.x}" y="${el.y}" width="${el.w}" height="${el.h}" preserveAspectRatio="none"/>`;
+    return `<image data-id="${esc(el.id)}" href="${el.href}" x="${el.x}" y="${el.y}" width="${el.w}" height="${el.h}" preserveAspectRatio="none"/>`;
   }
   const lines = el.text.split('\n');
   const ax = el.align === 'middle' ? el.x + el.w / 2 : el.align === 'end' ? el.x + el.w : el.x;
   const lh = el.size * 1.25;
   const fill = el.placeholder && opts.editing ? '#8a93a3' : el.color;
   const tspans = lines.map((l, i) => `<tspan x="${ax}" dy="${i === 0 ? 0 : lh}">${esc(l) || ' '}</tspan>`).join('');
-  return `<text data-id="${el.id}" x="${ax}" y="${el.y + el.size}" font-size="${el.size}" font-weight="${el.weight}" font-style="${el.italic ? 'italic' : 'normal'}" fill="${fill}" text-anchor="${el.align}" xml:space="preserve">${tspans}</text>`
-    + (opts.editing ? `<rect data-id="${el.id}" x="${el.x}" y="${el.y}" width="${el.w}" height="${textHeight(el)}" fill="transparent"/>` : '');
+  return `<text data-id="${esc(el.id)}" x="${ax}" y="${el.y + el.size}" font-size="${el.size}" font-weight="${el.weight}" font-style="${el.italic ? 'italic' : 'normal'}" fill="${fill}" text-anchor="${el.align}" xml:space="preserve">${tspans}</text>`
+    + (opts.editing ? `<rect data-id="${esc(el.id)}" x="${el.x}" y="${el.y}" width="${el.w}" height="${textHeight(el)}" fill="transparent"/>` : '');
 }
 
 export function renderCard(d: Design, side: 'front' | 'back', opts: { guides?: boolean; editing?: boolean; selected?: string | null } = {}): string {
@@ -264,7 +264,8 @@ const num = (v: any, min: number, max: number, fb: number) => (Number.isFinite(N
 function sanitizeSide(v: any, fallbackBg: string): Side {
   const els: El[] = [];
   for (const e of Array.isArray(v?.elements) ? v.elements.slice(0, 40) : []) {
-    const base = { id: String(e?.id ?? uid()).slice(0, 24), x: num(e?.x, -CARD_W, 2 * CARD_W, 0), y: num(e?.y, -CARD_H, 2 * CARD_H, 0), w: num(e?.w, 1, 2 * CARD_W, 100) };
+    const id = String(e?.id ?? '');
+    const base = { id: /^[A-Za-z0-9_-]{1,24}$/.test(id) ? id : uid(), x: num(e?.x, -CARD_W, 2 * CARD_W, 0), y: num(e?.y, -CARD_H, 2 * CARD_H, 0), w: num(e?.w, 1, 2 * CARD_W, 100) };
     if (e?.type === 'image') {
       const href = String(e?.href ?? '');
       if (!DATA_IMG.test(href) || href.length > 400_000) continue;
