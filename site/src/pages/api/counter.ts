@@ -73,7 +73,9 @@ export const POST: APIRoute = async ({ request }) => {
         `${store.name}, ${store.address}, ${store.phone}. Pickup code ${order.id}.`,
       ].filter((x) => x !== null);
       const mock = await sendEmail(env, email, `${isReturn ? 'Your return label' : 'Your shipping label'} ${order.id}`, lines.join('\n'));
-      const next = { ...order, email, emailed_at: new Date().toISOString() };
+      // Emailing a label to someone (a return's sender, say) doesn't make them the walk-up's customer: a new address
+      // here is no longer staff-typed customer details, so it never joins the walk-up's record.
+      const next = { ...order, email, emailed_at: new Date().toISOString(), staff_entry: email === order.email ? order.staff_entry : false };
       await saveOrder(env, next);
       const c = await getContacts(env, order.id);
       if (c && c.email !== email) await saveContacts(env, order.id, { ...c, email });

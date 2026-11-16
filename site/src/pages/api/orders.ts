@@ -9,7 +9,7 @@ import { saveCustomerAddress, listCustomerAddresses } from '../../shipping/store
 import { parseAddress, parseParcel, json } from '../../lib/validate';
 import { store } from '../../data/store';
 import { effectiveAddons, priceExtras, onlineFee, salesTax, taxableExtras, textUpdatesPrice, TEXT_UPDATES } from '../../lib/addons';
-import { accountForContact } from '../../shipping/store';
+import { accountForContact, getCustomer } from '../../shipping/store';
 import { checkAddress } from '../../lib/address';
 
 // Customer picked a rate: start Stripe Checkout. Domestic only since Nov 7, 2026 (parseAddress refuses the rest).
@@ -31,8 +31,11 @@ export const POST: APIRoute = async ({ request }) => {
     const { rates } = await quote(env, origin, destination, parcel);
     const found = rates.find((r) => r.id === b.rate_id);
     if (!found) throw new Error('That rate is no longer available. Please quote again.');
-    // A business account's email gets its discount online too; the card is still charged now.
-    const account = await accountForContact(env, email, phone);
+    // A business account gets its discount online too when its holder is signed in (the email is proven by the
+    // sign-in link); the card is still charged now.
+    const meId = await readSession(env, request.headers.get('cookie'));
+    const me = meId ? await getCustomer(env, meId) : null;
+    const account = me?.email ? await accountForContact(env, me.email, null) : null;
     const rate = account && account.discount_percent ? { ...found, total_charge: Math.round(found.total_charge * (1 - account.discount_percent / 100) * 100) / 100 } : found;
 
     const cfg = await effectiveAddons(env);

@@ -22,6 +22,7 @@ export interface Order {
   kind?: 'ship' | 'return';      // return: the package travels from origin (the far end) back to us or to a local business
   emailed_at?: string;           // when the label was last emailed from the counter
   staff?: string;         // walk-ups: who typed it in
+  staff_entry?: boolean;  // a walk-up typed in by staff at the counter: its customer details are trusted
   voided_at?: string;
   void_reason?: string;   // required when staff void (T3); goes to the audit log too
   cancelled_at?: string;

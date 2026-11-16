@@ -57,6 +57,7 @@ const thisMonth = new Date().toISOString().slice(0, 7);
           <button class="btn small kraft" id="d-toggle"></button>
         </p>
         <label><span data-i18n="st.b.notes.short">Notes</span> <input id="d-notes" maxlength="300" /></label>
+        <label><span data-i18n="st.c.th.email">Email</span> <input id="d-email" type="email" maxlength="120" autocomplete="off" /></label>
         <p><a class="btn small kraft" id="d-pickup" href="/counter/pickups" data-i18n="st.pu.schedule">Schedule a pickup</a> <a class="btn small kraft" id="d-ff" href="/counter/fulfillment" data-i18n="st.nav.fulfillment">Fulfillment</a></p>
       </div>
       <div class="card">
@@ -154,7 +155,7 @@ const thisMonth = new Date().toISOString().slice(0, 7);
         ($('d-pickup') as HTMLAnchorElement).href = `/counter/pickups?account=${a.id}`;
         ($('d-ff') as HTMLAnchorElement).href = `/counter/fulfillment?account=${a.id}`;
         $('d-contact').textContent = [c?.name, c?.phone, c?.email].filter(Boolean).join(' · ');
-        ($('d-discount') as HTMLInputElement).value = String(a.discount_percent); ($('d-notes') as HTMLInputElement).value = a.notes ?? '';
+        ($('d-discount') as HTMLInputElement).value = String(a.discount_percent); ($('d-notes') as HTMLInputElement).value = a.notes ?? ''; ($('d-email') as HTMLInputElement).value = c?.email ?? '';
         $('d-toggle').textContent = a.active ? t('st.s.deactivate') : t('st.s.reactivate');
         const ub = $('unbilled').querySelector('tbody')!; ub.innerHTML = '';
         for (const s of j.unbilled) { const tr = document.createElement('tr'); cell(tr, fmt(s.created_at)); const code = cell(tr, ''); code.innerHTML = `<a href="/counter/${s.id}"></a>`; code.querySelector('a')!.textContent = s.id; cell(tr, s.to); cell(tr, `${s.carrier} ${s.service}`); cell(tr, usd(s.total)); ub.appendChild(tr); }
@@ -182,7 +183,7 @@ const thisMonth = new Date().toISOString().slice(0, 7);
     }
     $('load').addEventListener('click', load);
     $('pin').addEventListener('change', load);
-    $('d-save').addEventListener('click', async () => { if (!current) return; try { await api({ action: 'update', id: current.account.id, discount_percent: ($('d-discount') as HTMLInputElement).value, notes: ($('d-notes') as HTMLInputElement).value }); msg.className = ''; msg.textContent = t('st.s.saved'); load(); open(current.account.id); } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; } });
+    $('d-save').addEventListener('click', async () => { if (!current) return; try { await api({ action: 'update', id: current.account.id, discount_percent: ($('d-discount') as HTMLInputElement).value, notes: ($('d-notes') as HTMLInputElement).value, email: ($('d-email') as HTMLInputElement).value }); msg.className = ''; msg.textContent = t('st.s.saved'); load(); open(current.account.id); } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; } });
     $('d-toggle').addEventListener('click', async () => { if (!current) return; try { await api({ action: 'update', id: current.account.id, active: !current.account.active }); load(); open(current.account.id); } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; } });
     $('issue').addEventListener('click', async () => {
       if (!current) return;

@@ -55,3 +55,14 @@ describe('merchant returns links (T22)', () => {
     expect((await store.getReturnLink(env, l.token))?.active).toBe(0);
   });
 });
+
+describe('session numbers', () => {
+  it('ending a customer\'s sessions signs out older cookies; a new cookie works', async () => {
+    const { endSessions } = await import('../src/lib/session');
+    const old = await signSession(env, 'C-END-1');
+    expect(await readSession(env, `gp_customer=${old}`)).toBe('C-END-1');
+    await endSessions(env, 'C-END-1');
+    expect(await readSession(env, `gp_customer=${old}`)).toBeNull();
+    expect(await readSession(env, `gp_customer=${await signSession(env, 'C-END-1')}`)).toBe('C-END-1');
+  });
+});

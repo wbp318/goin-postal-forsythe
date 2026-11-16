@@ -820,15 +820,39 @@ export async function findCustomer(env: Env, email: string | null, phone: string
   return [...mem.customers.values()].find((c) => (email && c.email === email) || (phone && c.phone === phone)) ?? null;
 }
 
-/** Create or refresh the customer for an order. Returns the id, or null when there is nothing to match on. */
-export async function upsertCustomer(env: Env, c: { name: string; email?: string | null; phone?: string | null; sms?: boolean }): Promise<string | null> {
+/** Create or refresh the customer for an order. Returns the id, or null when there is nothing to match on.
+ *  An email is how a customer signs in, so details typed on the website never add one to a customer found by phone,
+ *  never add a phone, and never rename anyone. Staff typing in a walk-up (trusted) may join the email to the same
+ *  person's phone-only record, add a phone to a customer found by email, and correct a name, but never join an
+ *  email to a business account's record: that changes only on purpose, from the account. A phone already on
+ *  another customer is never copied to a second one. */
+export async function upsertCustomer(env: Env, c: { name: string; email?: string | null; phone?: string | null; sms?: boolean }, opts: { trusted?: boolean } = {}): Promise<string | null> {
   const email = normEmail(c.email), phone = normalizePhone(c.phone);
   if (!email && !phone) return null;
   const t = now();
-  const existing = await findCustomer(env, email, phone);
+  const trusted = !!opts.trusted;
+  let existing = email ? await findCustomer(env, email, null) : await findCustomer(env, null, phone);
+  if (!existing && trusted && email && phone) {
+    const byPhone = await findCustomer(env, null, phone);
+    const business = byPhone && (env.DB
+      ? await env.DB.prepare('SELECT id FROM accounts WHERE customer_id = ?1 AND active = 1').bind(byPhone.id).first()
+      : mem.accounts.some((a) => a.customer_id === byPhone.id && a.active));
+    if (byPhone && !byPhone.email && !business) existing = byPhone;
+  }
+  const phoneFree = !!phone && !(await findCustomer(env, null, phone));
+  const placeholder = (n: string | null | undefined) => !n || n === 'Customer';
+  const rowPhone = existing ? (existing.phone ?? (trusted && phoneFree ? phone : null)) : (phoneFree ? phone : null);
   const row: CustomerRow = existing
-    ? { ...existing, name: c.name.trim() || existing.name, email: existing.email ?? email, phone: existing.phone ?? phone, consent_sms: existing.consent_sms || (c.sms && phone ? 1 : 0), consent_email: existing.consent_email || (email ? 1 : 0), last_seen_at: t }
-    : { id: newCustomerId(), name: c.name.trim() || 'Customer', email, phone, consent_sms: c.sms && phone ? 1 : 0, consent_email: email ? 1 : 0, signup_code: null, created_at: t, last_seen_at: t };
+    ? {
+        ...existing,
+        email: existing.email ?? email,
+        name: trusted || placeholder(existing.name) ? (c.name.trim() || existing.name) : existing.name,
+        phone: rowPhone,
+        consent_sms: existing.consent_sms || (c.sms && phone && rowPhone === phone ? 1 : 0),
+        consent_email: existing.consent_email || (email ? 1 : 0),
+        last_seen_at: t,
+      }
+    : { id: newCustomerId(), name: c.name.trim() || 'Customer', email, phone: rowPhone, consent_sms: c.sms && rowPhone ? 1 : 0, consent_email: email ? 1 : 0, signup_code: null, created_at: t, last_seen_at: t };
   if (env.DB) {
     await env.DB.prepare('INSERT OR REPLACE INTO customers (id, name, email, phone, consent_sms, consent_email, signup_code, created_at, last_seen_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)')
       .bind(row.id, row.name, row.email, row.phone, row.consent_sms, row.consent_email, row.signup_code, row.created_at, row.last_seen_at).run();
@@ -866,13 +890,16 @@ export async function searchCustomers(env: Env, q: string, limit = 50): Promise<
 }
 
 /** Every quote that belongs to this customer, newest first, with the shipment's tracking status when a label was bought. */
-export async function customerQuotes(env: Env, c: CustomerRow): Promise<(QuoteRow & { shipment_status: string | null; tracking_number: string | null })[]> {
+/** A customer's orders, by email and phone. The customer's own account page passes byPhone false: a phone number
+ *  on an account isn't proven, so there only the signed-in email counts. */
+export async function customerQuotes(env: Env, c: CustomerRow, opts: { byPhone?: boolean } = {}): Promise<(QuoteRow & { shipment_status: string | null; tracking_number: string | null })[]> {
+  const phone = opts.byPhone === false ? null : c.phone;
   if (env.DB) {
     return (await env.DB.prepare(
       `SELECT q.*, s.status AS shipment_status, s.tracking_number FROM quotes q LEFT JOIN shipments s ON s.id = q.id
-       WHERE (?1 IS NOT NULL AND LOWER(q.email) = ?1) OR (?2 IS NOT NULL AND q.phone = ?2) ORDER BY q.created_at DESC LIMIT 200`).bind(c.email, c.phone).all<QuoteRow & { shipment_status: string | null; tracking_number: string | null }>()).results;
+       WHERE (?1 IS NOT NULL AND LOWER(q.email) = ?1) OR (?2 IS NOT NULL AND q.phone = ?2) ORDER BY q.created_at DESC LIMIT 200`).bind(c.email, phone).all<QuoteRow & { shipment_status: string | null; tracking_number: string | null }>()).results;
   }
-  return [...mem.quotes.values()].filter((q) => (c.email && (q.email ?? '').toLowerCase() === c.email) || (c.phone && q.phone === c.phone))
+  return [...mem.quotes.values()].filter((q) => (c.email && (q.email ?? '').toLowerCase() === c.email) || (phone && q.phone === phone))
     .sort((a, b) => b.created_at.localeCompare(a.created_at))
     .map((q) => ({ ...q, shipment_status: mem.shipments.get(q.id)?.status ?? null, tracking_number: mem.shipments.get(q.id)?.tracking_number ?? null }));
 }
@@ -935,7 +962,7 @@ export async function upsertQuote(env: Env, order: Order) {
   } else {
     mem.quotes.set(row.id, row);
   }
-  await upsertCustomer(env, { name: row.customer_name ?? '', email: row.email, phone: row.phone, sms: order.sms });
+  await upsertCustomer(env, { name: row.customer_name ?? '', email: row.email, phone: row.phone, sms: order.sms }, { trusted: !!order.staff_entry });
   return row;
 }
 
@@ -1259,6 +1286,19 @@ export async function setReturnLinkActive(env: Env, accountId: number, id: numbe
 }
 
 // ---- customer accounts online (to-do T20) ---------------------------------------------------------
+/** The customer, other than `id`, who has this phone number already, if any. */
+export async function phoneHolder(env: Env, phone: string, id: string): Promise<CustomerRow | null> {
+  const p = normalizePhone(phone);
+  if (!p) return null;
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM customers WHERE phone = ?1 AND id != ?2 LIMIT 1').bind(p, id).first<CustomerRow>()) ?? null;
+  return [...mem.customers.values()].find((c) => c.phone === p && c.id !== id) ?? null;
+}
+/** A business account holder's email, set by a manager from the account (audited by the caller). */
+export async function setCustomerEmail(env: Env, id: string, email: string | null) {
+  const e = normEmail(email);
+  if (env.DB) { await env.DB.prepare('UPDATE customers SET email = ?2 WHERE id = ?1').bind(id, e).run(); return; }
+  const c = mem.customers.get(id); if (c) c.email = e;
+}
 export async function setCustomerName(env: Env, id: string, name: string, phone: string | null) {
   if (env.DB) { await env.DB.prepare('UPDATE customers SET name = ?2, phone = COALESCE(?3, phone) WHERE id = ?1').bind(id, name, phone).run(); return; }
   const c = mem.customers.get(id); if (c) { c.name = name; if (phone) c.phone = phone; }

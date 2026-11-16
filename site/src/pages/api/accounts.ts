@@ -3,10 +3,11 @@ import type { APIRoute } from 'astro';
 import { env } from '../../lib/env';
 import { json } from '../../lib/validate';
 import { authenticate, CAN } from '../../lib/auth';
+import { endSessions } from '../../lib/session';
 import { addReturnLink, listReturnLinks, setReturnLinkActive, accountOpenFees } from '../../shipping/store';
 import { parseAddress } from '../../lib/validate';
 import { store } from '../../data/store';
-import { listAccounts, getAccount, addAccount, updateAccount, accountOpenShipments, saveStatement, listStatements, markStatementPaid, getCustomer, searchCustomers, upsertCustomer, logAudit, addApiKey, listApiKeys, revokeApiKey } from '../../shipping/store';
+import { listAccounts, getAccount, addAccount, updateAccount, accountOpenShipments, saveStatement, listStatements, markStatementPaid, getCustomer, searchCustomers, upsertCustomer, findCustomer, setCustomerEmail, logAudit, addApiKey, listApiKeys, revokeApiKey } from '../../shipping/store';
 import { newApiKey, newWebhookSecret } from '../../lib/apikeys';
 import { createInvoice } from '../../lib/stripe';
 import { sendEmail } from '../../shipping/notify';
@@ -37,8 +38,13 @@ export const POST: APIRoute = async ({ request }) => {
       if (!customerId) {
         const name = String(b.name ?? '').trim();
         if (!name) throw new Error('A contact name is needed');
-        customerId = (await upsertCustomer(env, { name, email: b.email, phone: b.phone })) ?? '';
+        customerId = (await upsertCustomer(env, { name, email: b.email, phone: b.phone }, { trusted: true })) ?? '';
         if (!customerId) throw new Error('An email or a mobile number is needed to open an account');
+        // The account goes to the customer the email names. A mobile number alone may already belong to a customer
+        // with an email, who would then see the account online: open it from that customer instead, on purpose.
+        const typed = String(b.email ?? '').trim().toLowerCase();
+        const holder = await getCustomer(env, customerId);
+        if (holder?.email && holder.email !== typed) throw new Error(`That mobile number is on file for ${holder.email}. If that is this business, open the account from that customer; if not, type the business's own email.`);
       }
       const business = String(b.business_name ?? '').trim().slice(0, 80);
       if (!business) throw new Error('A business name is needed');
@@ -57,6 +63,20 @@ export const POST: APIRoute = async ({ request }) => {
       if (b.active != null) patch.active = b.active ? 1 : 0;
       const ok = await updateAccount(env, Number(b.id), patch);
       if (!ok) return json({ error: 'No such account' }, 404);
+      // The holder's email (managers and owners): the email that signs in to see the account online. Never one that
+      // is already another customer's.
+      if (b.email != null) {
+        const email = String(b.email).trim().toLowerCase();
+        const holder = await getCustomer(env, (await getAccount(env, Number(b.id)))!.customer_id);
+        if (holder && email !== (holder.email ?? '')) {
+          if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error('That email does not look right');
+          const other = email ? await findCustomer(env, email, null) : null;
+          if (other && other.id !== holder.id) throw new Error(`${email} is already on another customer (${other.name}). Open the account from that customer instead.`);
+          await setCustomerEmail(env, holder.id, email || null);
+          await endSessions(env, holder.id); // whoever was signed in with the old email is signed out
+          await logAudit(env, user, 'account.email', String(b.id), `${holder.email ?? '(none)'} -> ${email || '(none)'}`);
+        }
+      }
       await logAudit(env, user, 'account.update', String(b.id), Object.entries(patch).map(([k, v]) => `${k}=${v}`).join(', '));
       return json({ ok: true, account: await getAccount(env, Number(b.id)) });
     }

@@ -57,7 +57,7 @@ export const POST: APIRoute = async ({ request }) => {
       const total = Math.round((rate.total_charge + extras.extras_total) * 100) / 100;
       const order: Order = {
         id: newOrderId(), status: 'reserved', created_at: new Date().toISOString(),
-        email, phone: phone || undefined, sms, name: name || undefined, source: 'counter', staff: String(b.staff ?? '').trim().slice(0, 20) || user.name.slice(0, 20),
+        email, phone: phone || undefined, sms, name: name || undefined, source: 'counter', staff_entry: true, staff: String(b.staff ?? '').trim().slice(0, 20) || user.name.slice(0, 20),
         origin, destination, parcel, rate, international: false, kind: isReturn ? 'return' : 'ship',
         addons: extras.addons.length ? extras.addons : undefined, insurance: extras.insurance, total,
         account_id: account?.id, account_name: account?.business_name, discount_percent: account?.discount_percent || undefined,

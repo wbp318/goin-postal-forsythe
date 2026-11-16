@@ -20,10 +20,10 @@ if (token) {
 const id = await readSession(env, Astro.request.headers.get('cookie'));
 const me = id ? await getCustomer(env, id) : null;
 const expired = Astro.url.searchParams.get('expired');
-const quotes = me ? (await customerQuotes(env, me)).slice(0, 30) : [];
+const quotes = me ? (await customerQuotes(env, me, { byPhone: false })).slice(0, 30) : [];
 const saved = me ? await listCustomerAddresses(env, me.id) : [];
 // The seller dashboard (business accounts online): everything the counter keeps for the account, read-only here.
-const biz = me ? await accountForContact(env, me.email, me.phone) : null;
+const biz = me?.email ? await accountForContact(env, me.email, null) : null; // by the signed-in email
 const unbilled = biz ? [...(await accountOpenShipments(env, biz)), ...(await accountOpenFees(env, biz.id))] : [];
 const unbilledTotal = Math.round(unbilled.reduce((a, l) => a + l.total, 0) * 100) / 100;
 const statements = biz ? await listStatements(env, biz.id) : [];

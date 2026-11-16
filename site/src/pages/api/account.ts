@@ -5,6 +5,7 @@ import { json, parseAddress } from '../../lib/validate';
 import { createLoginToken, readSession, clearCookie } from '../../lib/session';
 import { sendEmail } from '../../shipping/notify';
 import { store } from '../../data/store';
+import { phoneHolder } from '../../shipping/store';
 import { upsertCustomer, getCustomer, findCustomer, saveCustomerAddress, deleteCustomerAddress, setCustomerName, normalizePhone, logAudit } from '../../shipping/store';
 import { getOrder, saveOrder } from '../../lib/orders';
 
@@ -32,6 +33,8 @@ export const POST: APIRoute = async ({ request }) => {
       const name = String(b.name ?? '').trim().slice(0, 60);
       if (!name) return json({ error: 'A name is needed' }, 400);
       const phone = String(b.phone ?? '').trim().slice(0, 20);
+      // A number already on another customer's record stays theirs; the counter can sort out a real mix-up.
+      if (phone && await phoneHolder(env, phone, c.id)) return json({ error: 'That number is on file for another customer. Ask us at the counter to change it.', code: 'phone_taken' }, 409);
       await setCustomerName(env, c.id, name, phone ? normalizePhone(phone) : null);
       return json({ ok: true });
     }

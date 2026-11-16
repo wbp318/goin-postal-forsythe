@@ -11,7 +11,7 @@ const parcel = { weight_lb: 2, length_in: 10, width_in: 8, height_in: 4, descrip
 const rate = (price = 9.65) => ({ id: 'easyship:mock-usps-ground', carrier: 'USPS' as const, service: 'USPS Ground Advantage', cost: price, total_charge: price, currency: 'USD', min_days: 2, max_days: 5, billable_weight_lb: 2 });
 const label = (n: string): Label => ({ id: `easyship:${n}`, carrier: 'USPS', service: '', label_url: '/demo-label.html', label_zpl: null, qr_url: null, tracking_number: `9400${n.padStart(18, '0')}`, tracking_page_url: null, cost: 0 });
 let seq = 100;
-const order = (over: Partial<Order> = {}): Order => ({ id: `GP-T${++seq}`, status: 'reserved', created_at: new Date().toISOString(), email: '', origin: dest, destination: dest, parcel, rate: rate(), international: false, source: 'counter', ...over });
+const order = (over: Partial<Order> = {}): Order => ({ id: `GP-T${++seq}`, status: 'reserved', created_at: new Date().toISOString(), email: '', origin: dest, destination: dest, parcel, rate: rate(), international: false, source: 'counter', staff_entry: true, ...over });
 
 describe('customers and quotes', () => {
   it('normalizes phone and email, merges the same person, leaves name-only walk-ups unlinked', async () => {
