@@ -1,6 +1,7 @@
 // Insurance and add-on pricing: always on the server, from the catalog.
 import { describe, it, expect } from 'vitest';
-import { onlineFee, returnPrices, salesTax, taxableExtras, textUpdatesPrice, TEXT_UPDATES, addonsFromFile, insuranceFee, priceExtras, extrasOffer } from '../src/lib/addons';
+import { onlineFee, returnPrices, salesTax, taxableExtras, textUpdatesPrice, TEXT_UPDATES, addonsFromFile, insuranceFee, priceExtras, extrasOffer, shipPagePicks, signaturePrice, SIGNATURE_OFF } from '../src/lib/addons';
+import { includedFor, termsFor } from '../src/lib/insurance';
 
 const cfg = addonsFromFile();
 
@@ -80,5 +81,39 @@ describe('returnPrices', () => {
   it('reads the label-print and box prices from the catalog, zero when missing', () => {
     expect(returnPrices(cfg)).toEqual({ label: 2, box: 2 });
     expect(returnPrices({ ...cfg, items: cfg.items.filter((i) => i.code !== 'return-box') })).toEqual({ label: 2, box: 0 });
+  });
+});
+
+describe('insurance cover by service', () => {
+  it('Media Mail and Library Mail include none; other services the configured cover', () => {
+    expect(includedFor(cfg.insurance, 'USPS Media Mail')).toBe(0);
+    expect(includedFor(cfg.insurance, 'usps:LIBRARY_MAIL')).toBe(0);
+    expect(includedFor(cfg.insurance, 'USPS Priority Mail')).toBe(cfg.insurance.included_usd);
+    expect(includedFor(cfg.insurance, undefined)).toBe(cfg.insurance.included_usd);
+    expect(termsFor(cfg.insurance, 'USPS Media Mail')).toEqual({ ...cfg.insurance, included_usd: 0 });
+  });
+  it('so $80 of books by Media Mail is charged for, while $80 by Priority Mail is covered', () => {
+    expect(insuranceFee(termsFor(cfg.insurance, 'USPS Media Mail'), 80)).toMatchObject({ fee: 2.75, covered: false });
+    expect(priceExtras(cfg, [], 80, true, 'USPS Media Mail').insurance).toEqual({ declared_usd: 80, fee: 2.75 });
+    expect(priceExtras(cfg, [], 80, true, 'USPS Priority Mail').insurance).toBeUndefined();
+  });
+});
+
+describe('shipPagePicks: what a ship page order is charged', () => {
+  it('charges signature once, from the ticked option, at the catalog price', () => {
+    const picks = shipPagePicks(cfg, [], { signature: true, sms: false });
+    expect(picks).toEqual([{ code: 'signature', qty: 1 }]);
+    expect(priceExtras(cfg, picks, 1, false).addons[0]).toMatchObject({ code: 'signature', total: signaturePrice(cfg)! });
+  });
+  it('ignores signature and text-update lines the browser sent, and lines with no quantity', () => {
+    const sent = [{ code: 'signature', qty: 0 }, { code: 'signature', qty: 3 }, { code: TEXT_UPDATES, qty: 2 }, { code: 'box-m', qty: 0 }, { code: 'box-s', qty: 0.5 }, { code: 'pack', qty: 1 }, null];
+    expect(shipPagePicks(cfg, sent, { signature: false, sms: false })).toEqual([{ code: 'pack', qty: 1 }]);
+    expect(shipPagePicks(cfg, [{ code: 'signature', qty: 0 }], { signature: true, sms: true })).toEqual([{ code: TEXT_UPDATES, qty: 1 }, { code: 'signature', qty: 1 }]);
+  });
+  it('refuses signature while its add-on is switched off', () => {
+    const off = { ...cfg, items: cfg.items.map((i) => (i.code === 'signature' ? { ...i, active: 0 } : i)) };
+    expect(signaturePrice(off)).toBeNull();
+    expect(() => shipPagePicks(off, [], { signature: true, sms: false })).toThrow(SIGNATURE_OFF);
+    expect(shipPagePicks(off, [], { signature: false, sms: false })).toEqual([]);
   });
 });

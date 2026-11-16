@@ -4,6 +4,8 @@
 import type { Provider, Address, Parcel, Rate, Label } from '../types';
 import { callJson, oauthToken, money } from '../http';
 import { billableWeightLb } from '../dim';
+import { upsPackageOptions } from '../../lib/labelExtras';
+import { upsPackagingCode } from '../../lib/packaging';
 
 const base = (env: Env) => (env.UPS_SANDBOX ? 'https://wwwcie.ups.com' : 'https://onlinetools.ups.com');
 const V = 'v2403';
@@ -20,10 +22,13 @@ const addr = (a: Address) => ({
   Address: { AddressLine: [a.line_1, a.line_2].filter(Boolean), City: a.city, StateProvinceCode: a.state, PostalCode: a.postal_code, CountryCode: a.country_alpha2, ResidentialAddressIndicator: a.residential ? '' : undefined },
 });
 const pkg = (p: Parcel) => ({
-  PackagingType: { Code: '02' },
   Dimensions: { UnitOfMeasurement: { Code: 'IN' }, Length: String(p.length_in), Width: String(p.width_in), Height: String(p.height_in) },
   PackageWeight: { UnitOfMeasurement: { Code: 'LBS' }, Weight: String(p.weight_lb) },
 });
+// The packaging code (UPS Express packaging: lib/packaging.ts) sits under a different name in each API, per UPS's
+// published specs: Rating's Package.PackagingType.Code, Shipping's Package.Packaging.Code.
+export const ratePkg = (p: Parcel) => ({ PackagingType: { Code: upsPackagingCode(p.packaging) }, ...pkg(p) });
+export const shipPkg = (p: Parcel) => ({ Packaging: { Code: upsPackagingCode(p.packaging) }, ...pkg(p) });
 
 export const ups: Provider = {
   id: 'ups',
@@ -37,7 +42,7 @@ export const ups: Provider = {
         Shipper: { ...addr(origin), ShipperNumber: env.UPS_ACCOUNT_NUMBER },
         ShipTo: addr(destination), ShipFrom: addr(origin),
         PaymentDetails: { ShipmentCharge: [{ Type: '01', BillShipper: { AccountNumber: env.UPS_ACCOUNT_NUMBER } }] },
-        Package: [pkg(parcel)],
+        Package: [ratePkg(parcel)],
         ShipmentRatingOptions: { NegotiatedRatesIndicator: '' },
       },
     } };
@@ -60,7 +65,7 @@ export const ups: Provider = {
         ShipTo: addr(destination), ShipFrom: addr(origin),
         PaymentInformation: { ShipmentCharge: { Type: '01', BillShipper: { AccountNumber: env.UPS_ACCOUNT_NUMBER } } },
         Service: { Code: serviceCode },
-        Package: { ...pkg(parcel), Description: parcel.description || 'Merchandise' },
+        Package: { ...shipPkg(parcel), Description: parcel.description || 'Merchandise', ...upsPackageOptions(parcel) }, // signature and declared value: lib/labelExtras.ts
         ShipmentRatingOptions: { NegotiatedRatesIndicator: '' },
       },
       LabelSpecification: { LabelImageFormat: { Code: opts.zpl ? 'ZPL' : 'PDF' }, LabelStockSize: { Height: '6', Width: '4' } },

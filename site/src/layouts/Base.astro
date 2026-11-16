@@ -1,4 +1,5 @@
 ---
+import '@fontsource-variable/nunito'; // Theme B's rounded font, served from this site (Peter, Nov 14 2026)
 import '../styles/global.css';
 import { LANGS } from '../i18n/strings';
 // The picker's order: English, then Vietnamese, Afrikaans, Spanish, French, Portuguese and Dutch at the top (the owners' ask), the rest as listed.
@@ -8,10 +9,12 @@ import { store } from '../data/store';
 interface Props { title: string; description?: string }
 const { title, description = `Shipping, packing, mailboxes and printing at ${store.address}.` } = Astro.props;
 // The brand reads "Goin' Postal" plus the store's own word: Forsythe, Oak Grove.
-const brandRest = store.name.replace(/^Goin' Postal\s*/i, '') || store.name;
+// Beside the logo: the store's header label (the address, for Forsythe; Peter Nov 15 2026), else the last part of its name.
+const brandRest = store.headerLabel || store.name.replace(/^Goin' Postal\s*/i, '') || store.name;
 // The nav tab for the page being viewed is drawn pressed (aria-current).
 const here = Astro.url.pathname.replace(/\/$/, '') || '/';
 const cur = (p: string) => (here === p || (p !== '/' && here.startsWith(p + '/')) ? 'page' : undefined);
+import CarrierBadges from '../components/CarrierBadges.astro';
 ---
 <!doctype html>
 <html lang="en">
@@ -24,37 +27,69 @@ const cur = (p: string) => (here === p || (p !== '/' && here.startsWith(p + '/')
   </head>
   <body>
     <a class="skip" href="#main" data-i18n="a11y.skip">Skip to content</a>
+    <!-- Theme B (Peter, Nov 14 2026): language, text size and contrast sit in a slim bar above the header, like ups.com. -->
+    <div class="utility">
+      <div class="wrap utility-in">
+          {Astro.url.pathname.startsWith('/counter') && store.siblings && store.siblings.length > 0 && (
+          <select id="storeSwitch" aria-label="Store" title="Store">
+            <option value="">{store.name}</option>
+            {store.siblings.map((s) => <option value={s.url}>{s.name}</option>)}
+          </select>
+        )}
+        <label class="lang-label" for="lang"><span lang="en">Language</span> / <span lang="vi">Ngôn ngữ</span></label>
+        <select id="lang" aria-label="Language / Ngôn ngữ" title="Language / Ngôn ngữ">
+          {[...LANGS].sort((a, b) => LANG_MENU_ORDER.indexOf(a.code) - LANG_MENU_ORDER.indexOf(b.code)).map((l) => <option value={l.code}>{l.name}</option>)}
+        </select>
+        <span class="a11y" role="group" aria-label="Text size">
+          <span class="a11y-label" data-i18n="a11y.text">Text size</span>
+          <button type="button" class="size" data-size="0" aria-label="Smaller text">A&minus;</button>
+          <button type="button" class="size" data-size="1" aria-label="Normal text">A</button>
+          <button type="button" class="size" data-size="2" aria-label="Larger text">A+</button>
+          <button type="button" class="size" data-size="3" aria-label="Even larger text">A++</button>
+          <button type="button" class="size" data-size="4" aria-label="Largest text">A+++</button>
+          <button type="button" class="size contrast" id="contrast" aria-pressed="false"><span data-i18n="a11y.contrast">High contrast</span></button>
+        </span>
+      </div>
+    </div>
     <header class="top">
       <div class="wrap">
-        <a class="brand" href="/">Goin' Postal <span>{brandRest}</span></a>
-        <nav>
+        <div class="top-row">
+          <!-- The franchise's own logo file, used as supplied: never redrawn or recolored. -->
+          <a class="brand" href="/"><img src="/brand/goin-postal-logo.png" alt="Goin' Postal" width="170" height="35" /><span class="brand-store">{brandRest}</span></a>
+          <!-- The carriers the store ships with (Peter, Nov 15 2026), in the space between the logo and Log in. Wide screens only. -->
+          <div class="hdr-carriers"><span class="muted" data-i18n="carr.weship">Authorized for</span><CarrierBadges /></div>
+          <!-- Log in, top right of every page (Peter, Nov 14 2026). Signed in, it greets the customer and opens their account. -->
+          <a class="login-btn" id="loginBtn" href="/account" data-i18n="acct.login">Log in</a>
+        </div>
+        <nav aria-label="Main">
           <a href="/ship" class="ps-tab" aria-current={cur('/ship')} data-i18n="home.cta">Ship a package</a>
-          <a href="/track" aria-current={cur('/track')} data-i18n="nav.track">Track</a>
-          <a href="/cards" aria-current={cur('/cards')} data-i18n="nav.cards">Business cards</a>
+          <!-- Tracking menu (Peter, Nov 14 2026, like ups.com): opens on hover or keyboard focus; the arrow opens it on a phone. -->
+          <div class="nav-drop" id="trackDrop">
+            <a href="/track" aria-current={cur('/track')} data-i18n="nav.track">Tracking</a>
+            <button type="button" class="nav-caret" aria-expanded="false" aria-controls="trackMenu" aria-label="Tracking menu">▾</button>
+            <div class="nav-menu" id="trackMenu">
+              <a href="/track" data-i18n="nav.trackone">Track a shipment</a>
+              <a href="/account#orders" data-i18n="nav.allships">View all shipments</a>
+            </div>
+          </div>
+          <!-- Printing menu (Peter, Nov 14 2026): every printing product, then "See all printing" at the bottom. Same behavior as Tracking. -->
+          <div class="nav-drop" id="printDrop">
+            <a href="/printing" aria-current={cur('/printing') ?? cur('/cards')} data-i18n="nav.printing">Printing</a>
+            <button type="button" class="nav-caret" aria-expanded="false" aria-controls="printMenu" aria-label="Printing menu">▾</button>
+            <div class="nav-menu" id="printMenu">
+              <a href="/cards" data-i18n="nav.print.cards">Business Cards</a>
+              <a href="/printing/banners" data-i18n="nav.print.banners">Banners & Yard Signs</a>
+              <a href="/printing/t-shirts" data-i18n="nav.print.shirts">Custom T-Shirts</a>
+              <a href="/printing/promo" data-i18n="nav.print.promo">Pens & Promo Items</a>
+              <div class="nav-sep" role="separator"></div>
+              <a href="/printing" data-i18n="nav.print.all">See all printing</a>
+            </div>
+          </div>
           <a href="/#services" data-i18n="nav.services">Services</a>
           <a href="/#hours" data-i18n="nav.hours">Hours</a>
           <a href="/contact" aria-current={cur('/contact')} data-i18n="nav.contact">Contact</a>
           <a href="/account" aria-current={cur('/account')} data-i18n="nav.account">Account</a>
           <a href="/petership" aria-current={cur('/petership')} data-i18n="nav.about">About PeterShip</a>
-          {Astro.url.pathname.startsWith('/counter') && store.siblings && store.siblings.length > 0 && (
-            <select id="storeSwitch" aria-label="Store" title="Store">
-              <option value="">{store.name}</option>
-              {store.siblings.map((s) => <option value={s.url}>{s.name}</option>)}
-            </select>
-          )}
-          <label class="lang-label" for="lang"><span lang="en">Language</span> / <span lang="vi">Ngôn ngữ</span></label>
-          <select id="lang" aria-label="Language / Ngôn ngữ" title="Language / Ngôn ngữ">
-            {[...LANGS].sort((a, b) => LANG_MENU_ORDER.indexOf(a.code) - LANG_MENU_ORDER.indexOf(b.code)).map((l) => <option value={l.code}>{l.name}</option>)}
-          </select>
-          <span class="a11y" role="group" aria-label="Text size">
-            <span class="a11y-label" data-i18n="a11y.text">Text size</span>
-            <button type="button" class="size" data-size="0" aria-label="Smaller text">A&minus;</button>
-            <button type="button" class="size" data-size="1" aria-label="Normal text">A</button>
-            <button type="button" class="size" data-size="2" aria-label="Larger text">A+</button>
-            <button type="button" class="size" data-size="3" aria-label="Even larger text">A++</button>
-            <button type="button" class="size" data-size="4" aria-label="Largest text">A+++</button>
-            <button type="button" class="size contrast" id="contrast" aria-pressed="false"><span data-i18n="a11y.contrast">High contrast</span></button>
-          </span>
         </nav>
       </div>
     </header>
@@ -63,6 +98,7 @@ const cur = (p: string) => (here === p || (p !== '/' && here.startsWith(p + '/')
     </main>
     <footer>
       <div class="wrap">
+        <div class="foot-carriers"><span data-i18n="carr.footer">Authorized shipping location for</span><CarrierBadges /></div>
         {store.name} · {store.address}.
         <span data-i18n="footer">Goin' Postal's name and logo belong to GP Brands. Independently owned and operated.</span>
         · <a href="/counter" data-i18n="st.in.link">Staff sign-in</a>
@@ -86,6 +122,35 @@ const cur = (p: string) => (here === p || (p !== '/' && here.startsWith(p + '/')
       contrast(get('gp-contrast') === '1'); // off unless the visitor turned it on (v1.70.0: the glossy look is the default; High contrast is one click away)
       document.querySelectorAll<HTMLElement>('.size[data-size]').forEach((b) => b.addEventListener('click', () => size(b.dataset.size!)));
       document.getElementById('contrast')!.addEventListener('click', () => contrast(root.dataset.contrast !== 'high'));
+      // Log in button: ask who is signed in. Signed out, the link comes back to this page after signing in.
+      const loginBtn = document.getElementById('loginBtn') as HTMLAnchorElement | null;
+      let me: { signed_in: boolean; name?: string } | null = null;
+      const paintLogin = () => {
+        if (!loginBtn) return;
+        if (me?.signed_in) { delete loginBtn.dataset.i18n; loginBtn.textContent = me.name ? t('acct.hi').replace('{name}', me.name) : t('nav.account'); loginBtn.href = '/account'; loginBtn.classList.add('in'); }
+        else if (!location.pathname.startsWith('/account')) loginBtn.href = `/account?next=${encodeURIComponent(location.pathname + location.search)}`;
+      };
+      if (loginBtn && !location.pathname.startsWith('/counter')) fetch('/api/account', { credentials: 'same-origin' }).then((r) => r.json()).then((j) => { me = j; paintLogin(); }).catch(() => {});
+      paintLogin(); document.addEventListener('langchange', paintLogin);
+      // Tracking and Printing menus: the arrow button opens and closes one (hover and keyboard focus open it through CSS);
+      // opening one closes the other; Escape or a click elsewhere closes it.
+      const drops = [['trackDrop', 'nav.trackmenu'], ['printDrop', 'nav.printmenu']].map(([id, label]) => {
+        const drop = document.getElementById(id)!, caret = drop.querySelector<HTMLButtonElement>('.nav-caret')!;
+        return { drop, caret, label };
+      });
+      const openDrop = (d: (typeof drops)[number], on: boolean) => {
+        if (on) d.drop.style.setProperty('--menu-top', `${Math.round((d.drop.closest('nav') ?? d.caret).getBoundingClientRect().bottom + 4)}px`); // phones: the panel sits under the bar
+        d.drop.classList.toggle('open', on); d.caret.setAttribute('aria-expanded', String(on));
+      };
+      // Phones: scrolling the page closes an open panel, so it never floats away from the bar.
+      window.addEventListener('scroll', () => drops.forEach((o) => { if (o.drop.classList.contains('open')) openDrop(o, false); }), { passive: true });
+      for (const d of drops) {
+        d.caret.addEventListener('click', (e) => { e.stopPropagation(); const on = !d.drop.classList.contains('open'); drops.forEach((o) => openDrop(o, false)); openDrop(d, on); });
+        d.drop.addEventListener('keydown', (e) => { if (e.key === 'Escape') { openDrop(d, false); d.caret.focus(); } });
+      }
+      document.addEventListener('click', (e) => { for (const d of drops) if (!d.drop.contains(e.target as Node)) openDrop(d, false); });
+      const caretLabel = () => drops.forEach((d) => d.caret.setAttribute('aria-label', t(d.label)));
+      caretLabel(); document.addEventListener('langchange', caretLabel);
       document.getElementById('lang')!.addEventListener('change', (e) => { const el = e.target as HTMLSelectElement; setLang(el.value as Lang); el.blur(); });
     </script>
       <script>

@@ -414,6 +414,47 @@ CREATE TABLE IF NOT EXISTS customer_addresses (
 );
 CREATE INDEX IF NOT EXISTS customer_addresses_customer ON customer_addresses(customer_id);
 
+-- Recently tracked (Peter, Nov 14 2026): what a signed-in customer looked up on /track, newest first.
+-- One row per customer and code or tracking number; tracking it again moves it to the top.
+CREATE TABLE IF NOT EXISTS customer_tracked (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id TEXT NOT NULL REFERENCES customers(id),
+  query TEXT NOT NULL,                 -- the pickup code or tracking number as typed, upper case
+  carrier TEXT,                        -- USPS, UPS, FedEx, DHL when known
+  label TEXT,                          -- what the list shows: "USPS Ground Advantage to Dallas, TX"
+  tracked_at TEXT NOT NULL,
+  UNIQUE (customer_id, query)
+);
+CREATE INDEX IF NOT EXISTS customer_tracked_customer ON customer_tracked(customer_id, tracked_at);
+
+-- Marketing consent (Peter, Nov 14 2026): every yes or no a customer gives to marketing email or texts,
+-- with the exact wording they saw, where, and when. Kept as proof (texts need express written consent
+-- under the TCPA). Never inferred: customers.consent_email and consent_sms mean receipts and tracking
+-- messages, not marketing. A customer's current choice is their newest row per channel.
+CREATE TABLE IF NOT EXISTS marketing_consents (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id TEXT NOT NULL REFERENCES customers(id),
+  channel TEXT NOT NULL,               -- email | sms
+  granted INTEGER NOT NULL,            -- 1 yes, 0 no or withdrawn
+  contact TEXT,                        -- the email address or phone number it applies to
+  wording TEXT NOT NULL,               -- the exact sentence next to the box
+  source TEXT NOT NULL,                -- where: ship_page, account_page, counter, stop_reply
+  at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS marketing_consents_customer ON marketing_consents(customer_id, channel, at);
+
+-- Customer passwords (Peter, Nov 14 2026): PBKDF2-SHA256, salted, never the password itself (lib/password.ts).
+-- A password is only ever set after the email was confirmed by a link, or by a customer already signed in.
+-- email_verified_at: when the customer last proved the email is theirs (a link opened, or confirmed sign-up).
+CREATE TABLE IF NOT EXISTS customer_logins (
+  customer_id TEXT PRIMARY KEY REFERENCES customers(id),
+  pw_hash TEXT,
+  pw_salt TEXT,
+  pw_iter INTEGER,
+  email_verified_at TEXT,
+  updated_at TEXT NOT NULL
+);
+
 -- Merchant returns portal (to-do T22): a public link per business account; its customers make prepaid return labels billed to the account.
 CREATE TABLE IF NOT EXISTS return_links (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -500,3 +541,78 @@ CREATE TABLE IF NOT EXISTS fulfillment_fees (
   statement_id INTEGER REFERENCES account_statements(id)
 );
 CREATE INDEX IF NOT EXISTS fulfillment_fees_account ON fulfillment_fees(account_id, statement_id);
+
+-- Site switches the owners flip at /counter/settings (Peter, Nov 14 2026). One row per switch.
+-- online_labels: 'on' = customers pay for labels online; 'off' (the default when no row) = the Ship page
+-- still quotes, but the order is reserved and paid at the counter.
+CREATE TABLE IF NOT EXISTS site_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  updated_by TEXT NOT NULL
+);
+
+-- Saved designs (Peter, Nov 15 2026): a signed-in customer's designs, kept on their account to edit or reorder.
+-- One list for every printed product: product is 'card' for business cards now; 't-shirt', 'banner', 'yard-sign'
+-- and 'promo' join it when those are ordered online (TODO P7). Saved when the customer presses "Save to my account"
+-- and every time they order. last_* hold the quantity and options picked the last time it was ordered, so Reorder
+-- can fill them in; prices are always worked out again at today's prices. design_json holds the design (pictures
+-- inside it as data URLs, at most 1.5 MB).
+CREATE TABLE IF NOT EXISTS saved_designs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id TEXT NOT NULL REFERENCES customers(id),
+  product TEXT NOT NULL DEFAULT 'card',
+  name TEXT NOT NULL,
+  design_json TEXT NOT NULL,
+  last_quantity INTEGER,
+  last_options_json TEXT,
+  last_order_id TEXT,
+  last_ordered_at TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS saved_designs_customer ON saved_designs(customer_id, product);
+
+-- Physical mailboxes on the website (Peter, Nov 15 2026). The counter's LibreOffice register (physical-mailbox/)
+-- stays the full record (IDs, PS Form 1583, payments); these two tables are what the website needs.
+-- A reservation made online (size and term), finished at the counter with two IDs and the 1583.
+CREATE TABLE IF NOT EXISTS mailbox_reservations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT NOT NULL UNIQUE,            -- MR-XXXXX, for the counter
+  customer_id TEXT NOT NULL REFERENCES customers(id),
+  size TEXT NOT NULL,                   -- small, medium, large (src/data/mailboxes.json)
+  term INTEGER NOT NULL,                -- 6 or 12 months
+  status TEXT NOT NULL DEFAULT 'waiting', -- waiting, done (a box was assigned), cancelled
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS mailbox_reservations_customer ON mailbox_reservations(customer_id);
+-- A box assigned to a website account, so the holder sees it on their account and gets renewal reminders.
+-- reminders: JSON list of reminders sent, as "paid-through-date:stage", so none goes out twice.
+CREATE TABLE IF NOT EXISTS mailboxes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  box_no INTEGER NOT NULL,
+  customer_id TEXT NOT NULL REFERENCES customers(id),
+  size TEXT NOT NULL,
+  term INTEGER NOT NULL,
+  start_date TEXT NOT NULL,             -- YYYY-MM-DD
+  paid_through TEXT NOT NULL,           -- YYYY-MM-DD
+  status TEXT NOT NULL DEFAULT 'active', -- active, closed
+  reminders TEXT NOT NULL DEFAULT '[]',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  closed_at TEXT
+);
+CREATE INDEX IF NOT EXISTS mailboxes_customer ON mailboxes(customer_id);
+CREATE INDEX IF NOT EXISTS mailboxes_box ON mailboxes(box_no, status);
+
+-- One box number in use at a time; the code checks too, and this keeps two assignments made at once apart.
+CREATE UNIQUE INDEX IF NOT EXISTS mailboxes_active_box ON mailboxes(box_no) WHERE status = 'active';
+
+-- Short-lived counters for limits: sign-in tries, sign-ups, AI designs a day (Nov 15 2026). Each count is one
+-- atomic step, so requests sent at the same moment are all counted. Rows past expires_at are dead and get swept.
+CREATE TABLE IF NOT EXISTS counters (
+  k TEXT PRIMARY KEY,
+  n INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL            -- epoch milliseconds
+);

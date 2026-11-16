@@ -64,13 +64,13 @@ export async function notifyEvents(env: Env, s: ShipmentRow, fresh: TrackingEven
   return out;
 }
 
-/** Resend. Returns true when it only logged (mock). */
-export async function sendEmail(env: Env, to: string, subject: string, text: string): Promise<boolean> {
-  if (!env.RESEND_API_KEY) { console.log(`[mock email] to ${to}: ${subject}\n${text}`); return true; }
+/** Resend. Returns true when it only logged (mock). `attachments` are files sent with it, content in base64. */
+export async function sendEmail(env: Env, to: string, subject: string, text: string, attachments?: { filename: string; content: string }[]): Promise<boolean> {
+  if (!env.RESEND_API_KEY) { console.log(`[mock email] to ${to}: ${subject}\n${text}${attachments?.length ? `\n[attached: ${attachments.map((a) => a.filename).join(', ')}]` : ''}`); return true; }
   const from = env.MAIL_FROM || `${store.name} <updates@${new URL(env.SITE_URL).hostname}>`;
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST', headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from, to: [to], subject, text, html: `<pre style="font:16px/1.5 system-ui,sans-serif;white-space:pre-wrap">${escapeHtml(text)}</pre>` }),
+    body: JSON.stringify({ from, to: [to], subject, text, html: `<pre style="font:16px/1.5 system-ui,sans-serif;white-space:pre-wrap">${escapeHtml(text)}</pre>`, ...(attachments?.length ? { attachments } : {}) }),
   });
   if (!res.ok) throw new Error(`email: Resend ${res.status} ${await res.text()}`);
   return false;

@@ -69,3 +69,9 @@ export function checkAddress(a: Address): AddressCheck {
 export async function validateWithCarrier(_env: Env, _a: Address): Promise<{ standardized: Address; dpv: boolean } | null> {
   return null;
 }
+
+/** True when typed address text is a street alone, with no city or ZIP: no comma and no ZIP at the end.
+ *  The street typeahead then also tries the store's own city (Peter, Nov 14 2026). */
+export function withoutPlace(q: string): boolean {
+  return !q.includes(',') && !/\s\d{5}(-\d{4})?\s*$/.test(q.trim());
+}

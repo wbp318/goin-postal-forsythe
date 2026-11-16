@@ -70,3 +70,9 @@ DHL_ACCOUNT_NUMBER=
 DHL_SANDBOX=1
 # Street-address typeahead on the ship page: a Google Places (New) API key with Places API enabled. Blank uses the US Census Bureau geocoder (free, no key, US only).
 GOOGLE_PLACES_KEY=
+# "Design with AI" for business cards (Peter, Nov 15 2026). Blank = demo mode: designs are picked by matching words, no AI, no cost.
+# With a key from console.anthropic.com each request uses Claude (about 2 cents). Set a monthly spending limit in the Anthropic console.
+ANTHROPIC_API_KEY=
+AI_DAILY_LIMIT=10
+# AI designs for the whole site per day, whoever asks (a ceiling on the bill).
+AI_SITE_DAILY_LIMIT=200

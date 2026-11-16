@@ -8,6 +8,7 @@ import { env as cfEnv } from 'cloudflare:workers';
 export interface StoreFacts {
   id: string;                 // short slug, used in logs and the Z-report: forsythe, west-carroll
   name: string;
+  headerLabel?: string;       // the words beside the logo in the header (Peter, Nov 15 2026); the store name's last part when blank
   address: string;
   phone: string;
   email: string;
@@ -23,14 +24,15 @@ export interface StoreFacts {
 export const defaults: StoreFacts = {
   id: 'forsythe',
   name: "Goin' Postal Forsythe",
+  headerLabel: "1800 Forsythe Ave, Suite 2, Monroe, LA 71201", // Peter, Nov 15 2026
   address: "1800 Forsythe Ave Ste 2, Monroe, LA 71201",
-  phone: "(318) 000-0000", // TODO: real store number
+  phone: "(318) 570-2132", // Peter, Nov 14 2026
   email: "wbp93623@gmail.com",
-  // Ship-from address printed on labels. TODO: phone.
+  // Ship-from address printed on labels.
   origin: {
     contact_name: "Goin' Postal Forsythe",
     company_name: "Goin' Postal Forsythe",
-    contact_phone: "+13180000000",
+    contact_phone: "+13185702132",
     contact_email: "wbp93623@gmail.com",
     line_1: "1800 Forsythe Ave Ste 2",
     city: "Monroe",
@@ -41,15 +43,16 @@ export const defaults: StoreFacts = {
   formEndpoint: "https://formspree.io/f/REPLACE_ME", // TODO: create a Formspree form and paste its ID
   reviewUrl: "", // TODO: the Google review link from the Business Profile (issue 7); blank sends no review ask
   hours: [
-    { days: "Monday to Friday", key: "days.monfri", open: "9:00 am to 6:00 pm" }, // TODO: confirm
-    { days: "Saturday", key: "days.sat", open: "10:00 am to 2:00 pm" }, // TODO: confirm
-    { days: "Sunday", key: "days.sun", open: "Closed", openKey: "hours.closed" },
+    // Peter, Nov 14 2026
+    { days: "Monday to Friday", key: "days.monfri", open: "9:00 am to 6:30 pm" },
+    { days: "Saturday", key: "days.sat", open: "9:00 am to 3:00 pm" },
+    { days: "Sunday", key: "days.sun", open: "10:00 am to 3:00 pm" },
   ],
   services: [
     { key: "ship", name: "Shipping", blurb: "UPS, FedEx, USPS and DHL under one roof. We compare rates so you pay the least." },
     { key: "pack", name: "Packing", blurb: "Bring it in loose. We box, cushion and label it so it arrives in one piece." },
     { key: "returns", name: "Returns drop-off", blurb: "Amazon, UPS, FedEx and USPS returns. We print the label from your phone, box it, and scan it in so you have proof.", link: "/returns" },
-    { key: "mailbox", name: "Mailbox rental", blurb: "A real street address and package acceptance from every carrier. Sign up at the counter with two IDs." },
+    { key: "mailbox", name: "Mailbox rental", blurb: "A real street address and package acceptance from every carrier. Reserve online, finish at the counter with two IDs.", link: "/mailbox" },
     { key: "print", name: "Printing and copies", blurb: "Flyers, banners and everyday copies, often same day. Design your own business cards online.", link: "/cards" },
     { key: "notary", name: "Notary", blurb: "Notary on call. Phone ahead and we will have one here when you arrive." },
     { key: "shred", name: "Shredding", blurb: "Drop off a bag or a box. Secure, by the pound." },

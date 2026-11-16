@@ -119,6 +119,9 @@ const mem = {
   pickups: [] as PickupRow[],
   photos: [] as PhotoRow[],
   customerAddresses: [] as CustomerAddress[],
+  tracked: [] as TrackedRow[],
+  consents: [] as ConsentRow[],
+  logins: new Map<string, LoginRow>(),
   returnLinks: [] as ReturnLink[],
   products: [] as ProductRow[],
   stockMoves: [] as StockMove[],
@@ -143,12 +146,17 @@ const mem = {
   heartbeats: new Map<string, AgentHeartbeat>(),
   apiKeys: [] as ApiKeyRow[],
   x402: [] as X402PaymentRow[],
+  settings: new Map<string, SettingRow>(),
+  counters: new Map<string, { n: number; expires_at: number }>(),
+  savedDesigns: [] as SavedDesignRow[],
+  mbReservations: [] as MailboxReservation[],
+  mailboxes: [] as MailboxRow[],
   seq: 1,
 };
 
 // ---- Export (T10) --------------------------------------------------------------------------------
 /** Every table in the schema, in schema order. The allow-list for the export; nothing else can be named. */
-export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees'] as const;
+export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'customer_tracked', 'marketing_consents', 'customer_logins', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees', 'site_settings', 'saved_designs', 'mailbox_reservations', 'mailboxes', 'counters'] as const;
 export type ExportTable = typeof EXPORT_TABLES[number];
 const memTable = (name: ExportTable): unknown[] => {
   switch (name) {
@@ -180,12 +188,20 @@ const memTable = (name: ExportTable): unknown[] => {
     case 'pickups': return mem.pickups;
     case 'shipment_photos': return mem.photos;
     case 'customer_addresses': return mem.customerAddresses;
+    case 'customer_tracked': return mem.tracked;
+    case 'marketing_consents': return mem.consents;
+    case 'customer_logins': return [...mem.logins.values()];
     case 'return_links': return mem.returnLinks;
     case 'benchmark_log': return mem.benchmarks;
     case 'products': return mem.products;
     case 'stock_moves': return mem.stockMoves;
     case 'fulfillment_orders': return mem.fulfillmentOrders;
     case 'fulfillment_fees': return mem.fees;
+    case 'site_settings': return [...mem.settings.values()];
+    case 'saved_designs': return mem.savedDesigns;
+    case 'mailbox_reservations': return mem.mbReservations;
+    case 'mailboxes': return mem.mailboxes;
+    case 'counters': return [...mem.counters.entries()].map(([k, v]) => ({ k, ...v }));
     default: return [];
   }
 };
@@ -193,7 +209,7 @@ const memTable = (name: ExportTable): unknown[] => {
 export async function exportTable(env: Env, name: ExportTable): Promise<Record<string, unknown>[]> {
   if (!(EXPORT_TABLES as readonly string[]).includes(name)) throw new Error(`No such table: ${name}`);
   const rows = env.DB ? (await env.DB.prepare(`SELECT * FROM ${name}`).all<Record<string, unknown>>()).results : (memTable(name) as Record<string, unknown>[]).map((r) => ({ ...r }));
-  for (const r of rows) for (const k of ['pin_hash', 'key_hash', 'webhook_secret']) if (k in r) r[k] = '';
+  for (const r of rows) for (const k of ['pin_hash', 'key_hash', 'webhook_secret', 'pw_hash', 'pw_salt']) if (k in r) r[k] = '';
   return rows;
 }
 /** Row counts for every table, for the export page. */
@@ -657,6 +673,168 @@ export async function listAudit(env: Env, o: { staff_id?: number; limit?: number
     return (await env.DB.prepare(`SELECT * FROM audit_log ORDER BY id DESC LIMIT ${limit}`).all<AuditRow>()).results;
   }
   return mem.audit.filter((a) => !o.staff_id || a.staff_id === o.staff_id).slice(0, limit);
+}
+
+// ---- physical mailboxes (Peter, Nov 15 2026) ------------------------------------------------------------
+// Reservations made online and boxes assigned to website accounts. Prices, ranges and reminder rules are in
+// lib/mailbox.ts; the counter's register stays the full record of IDs and the 1583.
+export interface MailboxReservation { id: number; code: string; customer_id: string; size: string; term: number; status: 'waiting' | 'done' | 'cancelled'; created_at: string; updated_at: string }
+export interface MailboxRow { id: number; box_no: number; customer_id: string; size: string; term: number; start_date: string; paid_through: string; status: 'active' | 'closed'; reminders: string; created_at: string; updated_at: string; closed_at: string | null }
+const mbCode = () => 'MR-' + Array.from(crypto.getRandomValues(new Uint8Array(5)), (x) => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[x % 32]).join('');
+
+/** A customer's reservation: a new one replaces their earlier one that is still waiting. */
+export async function reserveMailbox(env: Env, r: { customer_id: string; size: string; term: number }): Promise<MailboxReservation> {
+  const t = now();
+  const old = await waitingReservation(env, r.customer_id);
+  if (old) await setReservationStatus(env, old.id, 'cancelled');
+  const row = { code: mbCode(), customer_id: r.customer_id, size: r.size, term: r.term, status: 'waiting' as const, created_at: t, updated_at: t };
+  if (env.DB) { const x = await env.DB.prepare('INSERT INTO mailbox_reservations (code, customer_id, size, term, status, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7) RETURNING id').bind(row.code, row.customer_id, row.size, row.term, row.status, t, t).first<{ id: number }>(); return { id: x!.id, ...row }; }
+  const full = { id: mem.seq++, ...row }; mem.mbReservations.push(full); return full;
+}
+export async function waitingReservation(env: Env, customerId: string): Promise<MailboxReservation | null> {
+  if (env.DB) return (await env.DB.prepare("SELECT * FROM mailbox_reservations WHERE customer_id = ?1 AND status = 'waiting' ORDER BY id DESC LIMIT 1").bind(customerId).first<MailboxReservation>()) ?? null;
+  return [...mem.mbReservations].reverse().find((r) => r.customer_id === customerId && r.status === 'waiting') ?? null;
+}
+export async function listWaitingReservations(env: Env): Promise<MailboxReservation[]> {
+  if (env.DB) return (await env.DB.prepare("SELECT * FROM mailbox_reservations WHERE status = 'waiting' ORDER BY id").all<MailboxReservation>()).results;
+  return mem.mbReservations.filter((r) => r.status === 'waiting');
+}
+export async function getReservation(env: Env, code: string): Promise<MailboxReservation | null> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM mailbox_reservations WHERE code = ?1').bind(code).first<MailboxReservation>()) ?? null;
+  return mem.mbReservations.find((r) => r.code === code) ?? null;
+}
+export async function setReservationStatus(env: Env, id: number, status: MailboxReservation['status']) {
+  const t = now();
+  if (env.DB) { await env.DB.prepare('UPDATE mailbox_reservations SET status = ?1, updated_at = ?2 WHERE id = ?3').bind(status, t, id).run(); return; }
+  const r = mem.mbReservations.find((x) => x.id === id); if (r) Object.assign(r, { status, updated_at: t });
+}
+
+/** The box with this number that is in use, if any. */
+export async function activeBox(env: Env, boxNo: number): Promise<MailboxRow | null> {
+  if (env.DB) return (await env.DB.prepare("SELECT * FROM mailboxes WHERE box_no = ?1 AND status = 'active' LIMIT 1").bind(boxNo).first<MailboxRow>()) ?? null;
+  return mem.mailboxes.find((b) => b.box_no === boxNo && b.status === 'active') ?? null;
+}
+export async function assignMailbox(env: Env, b: { box_no: number; customer_id: string; size: string; term: number; start_date: string; paid_through: string }): Promise<MailboxRow> {
+  if (await activeBox(env, b.box_no)) throw new Error(`Box #${b.box_no} is already in use`);
+  const t = now();
+  const row = { ...b, status: 'active' as const, reminders: '[]', created_at: t, updated_at: t, closed_at: null };
+  if (env.DB) {
+    try {
+      const x = await env.DB.prepare('INSERT INTO mailboxes (box_no, customer_id, size, term, start_date, paid_through, status, reminders, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10) RETURNING id').bind(b.box_no, b.customer_id, b.size, b.term, b.start_date, b.paid_through, 'active', '[]', t, t).first<{ id: number }>();
+      return { id: x!.id, ...row };
+    } catch (e: any) {
+      // The unique index on active box numbers: another assignment of this box got in first.
+      if (/UNIQUE/i.test(String(e?.message ?? e))) throw new Error(`Box #${b.box_no} is already in use`);
+      throw e;
+    }
+  }
+  const full = { id: mem.seq++, ...row }; mem.mailboxes.push(full); return full;
+}
+export async function getMailbox(env: Env, id: number): Promise<MailboxRow | null> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM mailboxes WHERE id = ?1').bind(id).first<MailboxRow>()) ?? null;
+  return mem.mailboxes.find((b) => b.id === id) ?? null;
+}
+export async function listActiveMailboxes(env: Env): Promise<MailboxRow[]> {
+  if (env.DB) return (await env.DB.prepare("SELECT * FROM mailboxes WHERE status = 'active' ORDER BY box_no").all<MailboxRow>()).results;
+  return mem.mailboxes.filter((b) => b.status === 'active').sort((a, b) => a.box_no - b.box_no);
+}
+export async function mailboxesFor(env: Env, customerId: string): Promise<MailboxRow[]> {
+  if (env.DB) return (await env.DB.prepare("SELECT * FROM mailboxes WHERE customer_id = ?1 AND status = 'active' ORDER BY box_no").bind(customerId).all<MailboxRow>()).results;
+  return mem.mailboxes.filter((b) => b.customer_id === customerId && b.status === 'active');
+}
+export async function updateMailbox(env: Env, id: number, patch: Partial<Pick<MailboxRow, 'term' | 'paid_through' | 'status' | 'reminders' | 'closed_at'>>) {
+  const t = now();
+  const b = await getMailbox(env, id); if (!b) return;
+  const next = { ...b, ...patch, updated_at: t };
+  if (env.DB) { await env.DB.prepare('UPDATE mailboxes SET term = ?1, paid_through = ?2, status = ?3, reminders = ?4, closed_at = ?5, updated_at = ?6 WHERE id = ?7').bind(next.term, next.paid_through, next.status, next.reminders, next.closed_at, t, id).run(); return; }
+  Object.assign(mem.mailboxes.find((x) => x.id === id)!, next);
+}
+
+// ---- saved designs (Peter, Nov 15 2026) ---------------------------------------------------------------
+// A customer's designs on their account, to edit or reorder: business cards now, and t-shirts, banners, yard signs
+// and promo items when those are ordered online. Every read and write is scoped to the customer, so one customer
+// can never open, change or delete another's design.
+export type SavedProduct = 'card' | 't-shirt' | 'banner' | 'yard-sign' | 'promo';
+export const SAVED_PRODUCTS: SavedProduct[] = ['card', 't-shirt', 'banner', 'yard-sign', 'promo'];
+export interface SavedDesignRow { id: number; customer_id: string; product: SavedProduct; name: string; design_json: string; last_quantity: number | null; last_options_json: string | null; last_order_id: string | null; last_ordered_at: string | null; created_at: string; updated_at: string }
+export const SAVED_DESIGNS_MAX = 30; // per product
+export async function listSavedDesigns(env: Env, customerId: string, product?: SavedProduct): Promise<SavedDesignRow[]> {
+  if (env.DB) {
+    const q = product ? env.DB.prepare('SELECT * FROM saved_designs WHERE customer_id = ?1 AND product = ?2 ORDER BY updated_at DESC, id DESC').bind(customerId, product)
+      : env.DB.prepare('SELECT * FROM saved_designs WHERE customer_id = ?1 ORDER BY updated_at DESC, id DESC').bind(customerId);
+    return (await q.all<SavedDesignRow>()).results;
+  }
+  return mem.savedDesigns.filter((c) => c.customer_id === customerId && (!product || c.product === product)).sort((a, b) => b.updated_at.localeCompare(a.updated_at) || b.id - a.id);
+}
+export async function getSavedDesign(env: Env, customerId: string, id: number): Promise<SavedDesignRow | null> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM saved_designs WHERE id = ?1 AND customer_id = ?2').bind(id, customerId).first<SavedDesignRow>()) ?? null;
+  return mem.savedDesigns.find((c) => c.id === id && c.customer_id === customerId) ?? null;
+}
+/** Save a design: updates the customer's design `id` of the same product when given, otherwise adds a new one. */
+export async function saveSavedDesign(env: Env, c: { customer_id: string; product: SavedProduct; id?: number | null; name: string; design_json: string }): Promise<SavedDesignRow> {
+  if (!SAVED_PRODUCTS.includes(c.product)) throw new Error('Unknown product');
+  const t = now();
+  const found = c.id ? await getSavedDesign(env, c.customer_id, c.id) : null;
+  const existing = found && found.product === c.product ? found : null;
+  if (existing) {
+    if (env.DB) await env.DB.prepare('UPDATE saved_designs SET name = ?1, design_json = ?2, updated_at = ?3 WHERE id = ?4 AND customer_id = ?5').bind(c.name, c.design_json, t, existing.id, c.customer_id).run();
+    else Object.assign(existing, { name: c.name, design_json: c.design_json, updated_at: t });
+    return { ...existing, name: c.name, design_json: c.design_json, updated_at: t };
+  }
+  if ((await listSavedDesigns(env, c.customer_id, c.product)).length >= SAVED_DESIGNS_MAX) throw new Error(`You can keep up to ${SAVED_DESIGNS_MAX} of these. Delete one on your account page first.`);
+  const row = { customer_id: c.customer_id, product: c.product, name: c.name, design_json: c.design_json, last_quantity: null, last_options_json: null, last_order_id: null, last_ordered_at: null, created_at: t, updated_at: t };
+  if (env.DB) { const r = await env.DB.prepare('INSERT INTO saved_designs (customer_id, product, name, design_json, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6) RETURNING id').bind(row.customer_id, row.product, row.name, row.design_json, t, t).first<{ id: number }>(); return { id: r!.id, ...row }; }
+  const full = { id: mem.seq++, ...row }; mem.savedDesigns.push(full); return full;
+}
+/** Remember what was picked when this design was ordered, for Reorder. */
+export async function markSavedDesignOrdered(env: Env, customerId: string, id: number, o: { order_id: string; quantity: number; options_json: string }) {
+  const t = now();
+  if (env.DB) { await env.DB.prepare('UPDATE saved_designs SET last_quantity = ?1, last_options_json = ?2, last_order_id = ?3, last_ordered_at = ?4, updated_at = ?4 WHERE id = ?5 AND customer_id = ?6').bind(o.quantity, o.options_json, o.order_id, t, id, customerId).run(); return; }
+  const c = mem.savedDesigns.find((x) => x.id === id && x.customer_id === customerId);
+  if (c) Object.assign(c, { last_quantity: o.quantity, last_options_json: o.options_json, last_order_id: o.order_id, last_ordered_at: t, updated_at: t });
+}
+export async function deleteSavedDesign(env: Env, customerId: string, id: number): Promise<boolean> {
+  if (env.DB) return ((await env.DB.prepare('DELETE FROM saved_designs WHERE id = ?1 AND customer_id = ?2').bind(id, customerId).run()).meta.changes ?? 0) > 0;
+  const n = mem.savedDesigns.length; mem.savedDesigns = mem.savedDesigns.filter((c) => !(c.id === id && c.customer_id === customerId)); return mem.savedDesigns.length < n;
+}
+
+// ---- site switches (Peter, Nov 14 2026) ---------------------------------------------------------
+// Owner switches from /counter/settings, one row per key. A key with no row has never been set.
+export interface SettingRow { key: string; value: string; updated_at: string; updated_by: string }
+export async function getSetting(env: Env, key: string): Promise<SettingRow | null> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM site_settings WHERE key = ?1').bind(key).first<SettingRow>()) ?? null;
+  return mem.settings.get(key) ?? null;
+}
+export async function setSetting(env: Env, key: string, value: string, by: string): Promise<SettingRow> {
+  const row: SettingRow = { key, value, updated_at: now(), updated_by: by };
+  if (env.DB) await env.DB.prepare('INSERT INTO site_settings (key, value, updated_at, updated_by) VALUES (?1, ?2, ?3, ?4) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by').bind(row.key, row.value, row.updated_at, row.updated_by).run();
+  else mem.settings.set(key, row);
+  return row;
+}
+
+// ---- counters for limits (Nov 15 2026) ----------------------------------------------------------
+// bumpCounter counts one more and returns the count, in one atomic step, so requests sent at the same moment
+// are all counted. The window (ttlSec) starts with the first count, and the count starts again after it.
+export async function bumpCounter(env: Env, key: string, ttlSec: number, at = Date.now()): Promise<number> {
+  const exp = at + ttlSec * 1000;
+  if (env.DB) {
+    const r = await env.DB.prepare('INSERT INTO counters (k, n, expires_at) VALUES (?1, 1, ?2) ON CONFLICT(k) DO UPDATE SET n = CASE WHEN counters.expires_at <= ?3 THEN 1 ELSE counters.n + 1 END, expires_at = CASE WHEN counters.expires_at <= ?3 THEN excluded.expires_at ELSE counters.expires_at END RETURNING n').bind(key, exp, at).first<{ n: number }>();
+    if (Math.random() < 0.02) await env.DB.prepare('DELETE FROM counters WHERE expires_at <= ?1').bind(at).run();
+    return r?.n ?? 1;
+  }
+  const cur = mem.counters.get(key);
+  const next = cur && cur.expires_at > at ? { n: cur.n + 1, expires_at: cur.expires_at } : { n: 1, expires_at: exp };
+  mem.counters.set(key, next);
+  return next.n;
+}
+export async function readCounter(env: Env, key: string, at = Date.now()): Promise<number> {
+  if (env.DB) return (await env.DB.prepare('SELECT n FROM counters WHERE k = ?1 AND expires_at > ?2').bind(key, at).first<{ n: number }>())?.n ?? 0;
+  const cur = mem.counters.get(key);
+  return cur && cur.expires_at > at ? cur.n : 0;
+}
+export async function clearCounter(env: Env, key: string): Promise<void> {
+  if (env.DB) await env.DB.prepare('DELETE FROM counters WHERE k = ?1').bind(key).run();
+  else mem.counters.delete(key);
 }
 
 // ---- add-ons and insurance ----------------------------------------------------------------------
@@ -1318,6 +1496,83 @@ export async function getCustomerAddress(env: Env, customerId: string, id: numbe
 export async function deleteCustomerAddress(env: Env, customerId: string, id: number): Promise<boolean> {
   if (env.DB) return ((await env.DB.prepare('DELETE FROM customer_addresses WHERE id = ?1 AND customer_id = ?2').bind(id, customerId).run()).meta.changes ?? 0) > 0;
   const n = mem.customerAddresses.length; mem.customerAddresses = mem.customerAddresses.filter((a) => !(a.id === id && a.customer_id === customerId)); return mem.customerAddresses.length < n;
+}
+
+// ---- recently tracked (Peter, Nov 14 2026) ------------------------------------------------------------
+export interface TrackedRow { id: number; customer_id: string; query: string; carrier: string | null; label: string | null; tracked_at: string }
+/** Remember a lookup for a signed-in customer; tracking the same thing again moves it to the top. */
+export async function recordTracked(env: Env, t: { customer_id: string; query: string; carrier?: string | null; label?: string | null }): Promise<void> {
+  const query = t.query.trim().toUpperCase().slice(0, 40), at = now();
+  if (!query) return;
+  if (env.DB) {
+    await env.DB.prepare(`INSERT INTO customer_tracked (customer_id, query, carrier, label, tracked_at) VALUES (?1, ?2, ?3, ?4, ?5)
+      ON CONFLICT (customer_id, query) DO UPDATE SET carrier = COALESCE(excluded.carrier, carrier), label = COALESCE(excluded.label, label), tracked_at = excluded.tracked_at`)
+      .bind(t.customer_id, query, t.carrier ?? null, t.label ?? null, at).run();
+    return;
+  }
+  const hit = mem.tracked.find((r) => r.customer_id === t.customer_id && r.query === query);
+  if (hit) { hit.tracked_at = at; hit.carrier = t.carrier ?? hit.carrier; hit.label = t.label ?? hit.label; return; }
+  mem.tracked.push({ id: mem.seq++, customer_id: t.customer_id, query, carrier: t.carrier ?? null, label: t.label ?? null, tracked_at: at });
+}
+export async function listTracked(env: Env, customerId: string, limit = 10): Promise<TrackedRow[]> {
+  if (env.DB) return (await env.DB.prepare(`SELECT * FROM customer_tracked WHERE customer_id = ?1 ORDER BY tracked_at DESC LIMIT ${Math.min(50, limit)}`).bind(customerId).all<TrackedRow>()).results;
+  return mem.tracked.filter((r) => r.customer_id === customerId).sort((a, b) => b.tracked_at.localeCompare(a.tracked_at)).slice(0, limit);
+}
+export async function removeTracked(env: Env, customerId: string, query: string): Promise<void> {
+  const q = query.trim().toUpperCase();
+  if (env.DB) { await env.DB.prepare('DELETE FROM customer_tracked WHERE customer_id = ?1 AND query = ?2').bind(customerId, q).run(); return; }
+  mem.tracked = mem.tracked.filter((r) => !(r.customer_id === customerId && r.query === q));
+}
+
+// ---- passwords and email confirmation (Peter, Nov 14 2026) ---------------------------------------------
+export interface LoginRow { customer_id: string; pw_hash: string | null; pw_salt: string | null; pw_iter: number | null; email_verified_at: string | null; updated_at: string }
+export async function getLogin(env: Env, customerId: string): Promise<LoginRow | null> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM customer_logins WHERE customer_id = ?1').bind(customerId).first<LoginRow>()) ?? null;
+  return mem.logins.get(customerId) ?? null;
+}
+/** Set or replace a customer's password hash. Callers must have proven the email first (a link) or be signed in. */
+export async function setPasswordHash(env: Env, customerId: string, h: { hash: string; salt: string; iter: number }): Promise<void> {
+  const t = now();
+  if (env.DB) {
+    await env.DB.prepare(`INSERT INTO customer_logins (customer_id, pw_hash, pw_salt, pw_iter, updated_at) VALUES (?1, ?2, ?3, ?4, ?5)
+      ON CONFLICT (customer_id) DO UPDATE SET pw_hash = excluded.pw_hash, pw_salt = excluded.pw_salt, pw_iter = excluded.pw_iter, updated_at = excluded.updated_at`).bind(customerId, h.hash, h.salt, h.iter, t).run();
+    return;
+  }
+  const r = mem.logins.get(customerId);
+  mem.logins.set(customerId, { customer_id: customerId, pw_hash: h.hash, pw_salt: h.salt, pw_iter: h.iter, email_verified_at: r?.email_verified_at ?? null, updated_at: t });
+}
+/** The customer just proved the email is theirs. */
+export async function markEmailVerified(env: Env, customerId: string): Promise<void> {
+  const t = now();
+  if (env.DB) {
+    await env.DB.prepare(`INSERT INTO customer_logins (customer_id, email_verified_at, updated_at) VALUES (?1, ?2, ?2)
+      ON CONFLICT (customer_id) DO UPDATE SET email_verified_at = excluded.email_verified_at, updated_at = excluded.updated_at`).bind(customerId, t).run();
+    return;
+  }
+  const r = mem.logins.get(customerId);
+  mem.logins.set(customerId, { customer_id: customerId, pw_hash: r?.pw_hash ?? null, pw_salt: r?.pw_salt ?? null, pw_iter: r?.pw_iter ?? null, email_verified_at: t, updated_at: t });
+}
+
+// ---- marketing consent (Peter, Nov 14 2026) -----------------------------------------------------------
+// Separate from customers.consent_email / consent_sms, which mean receipts and tracking messages.
+export interface ConsentRow { id: number; customer_id: string; channel: 'email' | 'sms'; granted: number; contact: string | null; wording: string; source: string; at: string }
+/** Log a yes or a no, with the wording the customer saw. Nothing is ever inferred or pre-ticked. */
+export async function recordConsent(env: Env, c: { customer_id: string; channel: 'email' | 'sms'; granted: boolean; contact: string | null; wording: string; source: string }): Promise<void> {
+  const row = { customer_id: c.customer_id, channel: c.channel, granted: c.granted ? 1 : 0, contact: c.contact, wording: c.wording, source: c.source, at: now() };
+  if (env.DB) {
+    await env.DB.prepare('INSERT INTO marketing_consents (customer_id, channel, granted, contact, wording, source, at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)')
+      .bind(row.customer_id, row.channel, row.granted, row.contact, row.wording, row.source, row.at).run();
+    return;
+  }
+  mem.consents.push({ id: mem.seq++, ...row });
+}
+/** A customer's current marketing choices: the newest row per channel. Never asked means no. */
+export async function marketingConsent(env: Env, customerId: string): Promise<{ email: boolean; sms: boolean }> {
+  const rows: ConsentRow[] = env.DB
+    ? (await env.DB.prepare('SELECT * FROM marketing_consents WHERE customer_id = ?1 ORDER BY at DESC, id DESC').bind(customerId).all<ConsentRow>()).results
+    : mem.consents.filter((r) => r.customer_id === customerId).sort((a, b) => b.at.localeCompare(a.at) || b.id - a.id);
+  const latest = (ch: string) => rows.find((r) => r.channel === ch);
+  return { email: latest('email')?.granted === 1, sms: latest('sms')?.granted === 1 };
 }
 
 // ---- intake photos (to-do T17): the rows; the bytes are in lib/photos.ts -----------------------------

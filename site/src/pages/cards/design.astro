@@ -1,0 +1,661 @@
+---
+// The card designer. Since Nov 14 2026 (Peter) it lives at /cards/design and /cards is the shop page in front of it.
+// It is built on each visit so ?cancelled= shows; ?type=, ?t=&p=, ?upload=1 and ?stock=/finish=/corners= are read in the browser.
+export const prerender = false;
+import { store } from '../../data/store';
+import Base from '../../layouts/Base.astro';
+import { TEMPLATES, PALETTES, QUANTITIES, PRICES, FONT_NAMES, CARD_OPTIONS, OPTION_GROUPS } from '../../lib/cards';
+import { BG_COLORS, PATTERNS, PATTERN_COLORS, ICONS, SHAPES, patternSvg, iconSvg, shapeSvg } from '../../lib/cardArt';
+const cancelled = Astro.url.searchParams.get('cancelled');
+---
+<Base title={`Design business cards · ${store.name}`} description="Design your own business cards in the browser like Vistaprint, pay online, and pick them up at Goin' Postal Forsythe.">
+  <section class="hero" id="edHero">
+    <h1 data-i18n="cards.h1">Design your business cards</h1>
+    <p class="lead" data-i18n="cards.lead">Pick a design, then click any text on the card to change it. Drag things where you want them. Pay online, pick up in the shop.</p>
+    {cancelled && <p class="card" data-i18n="cards.cancelled">Payment was cancelled, so no order was placed. Your design is still here.</p>}
+  </section>
+
+  <!-- Step 1: gallery -->
+  <section id="step1">
+    <h2 data-i18n="cards.step1">1. Pick a design</h2>
+    <!-- Design with AI (Peter, Nov 15 2026): a starting point that skips the gallery. -->
+    <p class="ai-start"><button type="button" class="btn kraft" id="aiStart"><span aria-hidden="true">✦</span> <span data-i18n="ai.start">Describe your business and let AI design it</span></button></p>
+    <p class="card" id="resume" hidden><span data-i18n="cards.resume">You have a design in progress on this device.</span> <button type="button" class="btn small" id="resumeBtn" data-i18n="cards.continue">Continue it</button> <button type="button" class="tool" id="discardBtn" data-i18n="cards.discard">Discard it</button></p>
+    <p class="muted">{TEMPLATES.length} <span data-i18n="cards.pick">layouts in</span> {PALETTES.length} <span data-i18n="cards.pick2">color schemes, shown with sample details. Pick a color, then a layout. Everything can be changed in the next step.</span></p>
+    <div class="swatches" id="palettes">
+      {PALETTES.map((p, i) => (
+        <label class="swatch" title={p.name}><input type="radio" name="palette" value={i} checked={i === 0} /><span style={`background:${p.accent}`}></span></label>
+      ))}
+      <span class="muted" id="palName">{PALETTES[0].name}</span>
+    </div>
+    <div class="gallery" id="gallery"></div>
+  </section>
+
+  <!-- Step 2: the editor (Peter, Nov 15 2026), laid out like an online print shop's: the tools down the left, each
+       opening its own panel; the card big in the middle with Front and Back on the right; the price and Next at the
+       top right. Next goes to step 3, the options and order. Same element ids as before, so the editing code is unchanged. -->
+  <section id="step2" class="ed" hidden>
+    <div class="ed-top">
+      <span class="ed-product" data-i18n="nav.print.cards">Business Cards</span>
+      <span class="ed-group">
+        <button type="button" class="ed-btn" id="undo" title="Ctrl+Z"><span aria-hidden="true">↶</span> <span data-i18n="cards.undo">Undo</span></button>
+        <button type="button" class="ed-btn" id="redo" title="Ctrl+Y"><span aria-hidden="true">↷</span> <span data-i18n="cards.redo">Redo</span></button>
+        <button type="button" class="ed-btn" id="saveCard"><span aria-hidden="true">💾</span> <span data-i18n="ed.save">Save</span></button>
+      </span>
+      <span class="ed-spacer"></span>
+      <button type="button" class="ed-btn" id="preview3d"><span aria-hidden="true">👁</span> <span data-i18n="ed.preview">Preview</span></button>
+      <span class="ed-price"><strong id="edPrice">$0.00</strong></span>
+      <button type="button" class="btn" id="nextBtn" data-i18n="ed.next">Next</button>
+    </div>
+    <!-- Let us design it for you (Peter, Nov 15 2026): a paid add-on; it ticks the option and goes to step 3 to tell us what you want. -->
+    <p class="ed-help"><button type="button" class="linkish" id="helpBtn"><span aria-hidden="true">✎</span> <span data-i18n="help.link">Let us design it for you</span> <span id="helpPrice"></span></button></p>
+    <p id="saveMsg" role="status" hidden></p>
+
+    <div class="ed-body">
+      <nav class="ed-rail" aria-label="Tools">
+        <button type="button" class="ed-tool" data-panel="designs"><span aria-hidden="true">▦</span><span data-i18n="ed.templates">Templates</span></button>
+        <button type="button" class="ed-tool active" data-panel="text"><span aria-hidden="true">T</span><span data-i18n="cards.text">Text</span></button>
+        <button type="button" class="ed-tool" data-panel="uploads"><span aria-hidden="true">⇪</span><span data-i18n="ed.uploads">Uploads</span></button>
+        <button type="button" class="ed-tool" data-panel="graphics"><span aria-hidden="true">◆</span><span data-i18n="ed.graphics">Graphics</span></button>
+        <button type="button" class="ed-tool" data-panel="background"><span aria-hidden="true">◐</span><span data-i18n="cards.bg">Background</span></button>
+        <button type="button" class="ed-tool ai" data-panel="ai"><span aria-hidden="true">✦</span><span data-i18n="ai.tool">AI design</span></button>
+        <button type="button" class="ed-tool" data-panel="more"><span aria-hidden="true">＋</span><span data-i18n="ed.more">More</span></button>
+      </nav>
+
+      <aside class="ed-panel" id="props">
+        <!-- Templates (Peter, Nov 15 2026): change layout or colors without leaving the editor; what was typed stays. -->
+        <div class="ed-pane" data-pane="designs" hidden>
+          <h3 data-i18n="ed.templates">Templates</h3>
+          <p class="muted" data-i18n="ed.templates.p">Try another layout or colors. Your words and pictures come along.</p>
+          <div class="ed-swatches" id="tplPalettes">{PALETTES.map((p, i) => <button type="button" class="ed-swatch" data-pal={i} title={p.name} style={`background:${p.accent}`}></button>)}</div>
+          <div class="ed-tpls" id="tplGrid"></div>
+          <label><span data-i18n="ed.font">Font for the whole card</span> <select id="font">{Object.entries(FONT_NAMES).map(([k, v]) => <option value={k}>{v}</option>)}</select></label>
+          <button type="button" class="linkish" id="changeDesign" data-i18n="ed.startover">Start over from the full gallery</button>
+        </div>
+        <div class="ed-pane" data-pane="text">
+          <h3 data-i18n="cards.text">Text</h3>
+          <button type="button" class="btn small ed-wide" id="addText"><span data-i18n="ed.addtext">+ Add text</span></button>
+          <p class="muted" id="noSel" data-i18n="cards.clicksel">Click something on the card to edit it.</p>
+        </div>
+        <div class="ed-pane" data-pane="uploads" hidden>
+          <h3 data-i18n="ed.uploads">Uploads</h3>
+          <label class="btn small ed-wide"><span data-i18n="cards.addimg">+ Logo or photo</span> <input type="file" id="addImage" accept="image/png,image/jpeg,image/svg+xml" hidden /></label>
+          <p class="muted" data-i18n="ed.uploads.p">A logo or photo goes on the card where you can move and resize it.</p>
+          <label class="btn small kraft ed-wide"><span data-i18n="cards.uploadside">Upload a finished design</span> <input type="file" id="uploadFull" accept="image/png,image/jpeg" hidden /></label>
+          <p class="muted" data-i18n="cards.uploadhint">A PNG or JPG of the whole side, 3.5 × 2 inches. It fills the card.</p>
+        </div>
+        <!-- Background (Peter, Nov 15 2026): curated colors and patterns drawn by the store, for this side of the card. -->
+        <div class="ed-pane" data-pane="background" hidden>
+          <h3 data-i18n="cards.bg">Background</h3>
+          <h4 data-i18n="ed.colors">Colors</h4>
+          <div class="ed-swatches">{BG_COLORS.map((c) => <button type="button" class="ed-swatch round" data-bg={c} title={c} style={`background:${c}`}></button>)}</div>
+          <label class="ed-color"><span data-i18n="ed.bgcustom">Any color</span> <input type="color" id="bg" /></label>
+          <h4 data-i18n="ed.patterns">Patterns</h4>
+          <div class="ed-swatches" id="patColors">{PATTERN_COLORS.map(([bg, fg], i) => <button type="button" class={`ed-swatch pair${i === 0 ? ' on' : ''}`} data-pair={i} title={`${bg} / ${fg}`} style={`background:linear-gradient(135deg, ${bg} 50%, ${fg} 50%)`}></button>)}</div>
+          <div class="ed-pats" id="patGrid">{PATTERNS.map((pt) => <button type="button" class="ed-pat" data-pat={pt.kind} title={pt.name}><img alt={pt.name} src={patternSvg(pt.kind, PATTERN_COLORS[0][0], PATTERN_COLORS[0][1], 0.6)} /></button>)}</div>
+          <button type="button" class="btn small kraft" id="clearPat" data-i18n="ed.nopattern">Remove pattern</button>
+        </div>
+
+        <!-- Graphics (Peter, Nov 15 2026): icons and shapes drawn by the store, in the color picked here. -->
+        <div class="ed-pane" data-pane="graphics" hidden>
+          <h3 data-i18n="ed.graphics">Graphics</h3>
+          <label class="ed-color"><span data-i18n="ed.gcolor">Color</span> <input type="color" id="gColor" value="#29276e" /></label>
+          <h4 data-i18n="ed.icons">Icons</h4>
+          <div class="ed-icons" id="iconGrid">{Object.entries(ICONS).map(([k, ic]) => <button type="button" class="ed-icon" data-icon={k} title={ic.name}><img alt={ic.name} src={iconSvg(k, '#29276e')} /></button>)}</div>
+          <h4 data-i18n="ed.shapes">Shapes</h4>
+          <div class="ed-icons" id="shapeGrid">{Object.entries(SHAPES).map(([k, sh]) => <button type="button" class="ed-icon" data-shape={k} title={sh.name}><img alt={sh.name} src={shapeSvg(k, '#29276e')} /></button>)}</div>
+        </div>
+
+        <!-- More (Peter, Nov 15 2026): a QR code that opens a website, menu or review page when scanned. -->
+        <div class="ed-pane" data-pane="more" hidden>
+          <h3 data-i18n="ed.more">More</h3>
+          <h4 data-i18n="ed.qr">QR code</h4>
+          <p class="muted" data-i18n="ed.qr.p">People scan it with a phone camera to open your website, menu, booking page or reviews.</p>
+          <label><span data-i18n="ed.qr.url">Web address</span> <input id="qrUrl" type="url" inputmode="url" placeholder="https://yourwebsite.com" /></label>
+          <button type="button" class="btn small ed-wide" id="qrAdd" data-i18n="ed.qr.add">Add QR code</button>
+          <p class="err" id="qrErr" hidden></p>
+        </div>
+
+        <!-- Design with AI (Peter, Nov 15 2026): describe the business, get three designs from the store's own pieces. -->
+        <div class="ed-pane" data-pane="ai" hidden>
+          <h3 data-i18n="ai.h">Design with AI</h3>
+          <p class="muted" data-i18n="ai.p">Describe your business and the look you want. We'll make three designs you can edit.</p>
+          <textarea id="aiPrompt" rows="4" maxlength="400" data-i18n-ph="ai.ph" placeholder="A modern card for my crawfish restaurant, Bayou Boil, red and gold, fun but professional"></textarea>
+          <button type="button" class="btn small ed-wide" id="aiGo" data-i18n="ai.go">Design it for me</button>
+          <p class="muted" id="aiStatus" role="status"></p>
+          <div class="ed-ai-results" id="aiResults"></div>
+        </div>
+
+        <!-- The selected item: shown under whichever panel is open. -->
+        <div id="textProps" class="ed-sel" hidden>
+          <h4 data-i18n="ed.seltext">Selected text</h4>
+          <label><span data-i18n="cards.text">Text</span> <textarea id="pText" rows="3"></textarea></label>
+          <label><span data-i18n="cards.size">Size</span> <input id="pSize" type="range" min="12" max="160" /> <span id="pSizeVal"></span></label>
+          <div class="btnrow">
+            <button type="button" class="tool" id="pBold"><b>B</b></button>
+            <button type="button" class="tool" id="pItalic"><i>I</i></button>
+            <button type="button" class="tool" data-align="start" data-i18n="cards.left">Left</button>
+            <button type="button" class="tool" data-align="middle" data-i18n="cards.center">Center</button>
+            <button type="button" class="tool" data-align="end" data-i18n="cards.right">Right</button>
+          </div>
+          <label><span data-i18n="cards.color">Color</span> <input id="pColor" type="color" /></label>
+          <label><span data-i18n="cards.width">Width</span> <input id="pWidth" type="range" min="60" max="1050" /></label>
+        </div>
+        <div id="imageProps" class="ed-sel" hidden>
+          <h4 data-i18n="ed.selimg">Selected picture</h4>
+          <label><span data-i18n="cards.width">Width</span> <input id="iWidth" type="range" min="20" max="1050" /></label>
+          <label><span data-i18n="cards.height">Height</span> <input id="iHeight" type="range" min="4" max="600" /></label>
+          <label><input id="iLock" type="checkbox" checked /> <span data-i18n="cards.lock">Keep proportions</span></label>
+        </div>
+        <div class="btnrow ed-sel" id="selActions" hidden>
+          <button type="button" class="tool" id="pFront" data-i18n="cards.tofront">Bring to front</button>
+          <button type="button" class="tool" id="pBack" data-i18n="cards.toback">Send to back</button>
+          <button type="button" class="tool" id="pDup" data-i18n="cards.dup">Duplicate</button>
+          <button type="button" class="tool danger" id="pDel" data-i18n="cards.del">Delete</button>
+        </div>
+      </aside>
+
+      <div class="ed-stage">
+        <div class="ed-guides"><span class="ed-chip safe" data-i18n="ed.safe">Safety area</span></div>
+        <div class="canvas-box" id="canvasBox">
+          <div class="canvas card-wrap" id="canvas"></div>
+          <!-- Upload your design (Peter, Nov 14 2026): on a blank side, a finished design from the customer's own designer fills the card. -->
+          <div class="upload-cta" id="uploadCta" hidden>
+            <button type="button" class="btn" id="uploadBtn" data-i18n="cards.uploadbtn">Upload your design</button>
+            <p class="muted" data-i18n="cards.uploadhint">A PNG or JPG of the whole side, 3.5 × 2 inches. It fills the card.</p>
+          </div>
+        </div>
+        <p class="err" id="uploadWarn" hidden></p>
+        <p class="muted ed-note" data-i18n="cards.safe">Dashed line is the safe area. Keep text inside it. Grey text is sample copy, click it and type yours. Delete key removes the selected item, arrow keys nudge it.</p>
+        <div class="ed-zoom" role="group" aria-label="Zoom">
+          <button type="button" class="ed-btn" id="zoomOut" aria-label="Zoom out">−</button>
+          <span id="zoomVal">100%</span>
+          <button type="button" class="ed-btn" id="zoomIn" aria-label="Zoom in">+</button>
+          <button type="button" class="linkish" id="png" data-i18n="cards.png">Download PNG (free)</button>
+        </div>
+      </div>
+
+      <div class="ed-sides" role="group" aria-label="Sides">
+        <button type="button" class="tab ed-side active" data-side="front"><span class="ed-thumb card-wrap" data-thumb="front"></span><span data-i18n="cards.front">Front</span></button>
+        <button type="button" class="tab ed-side" data-side="back"><span class="ed-thumb card-wrap" data-thumb="back"></span><span data-i18n="cards.back">Back</span></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Step 3: options and order (Next from the editor). -->
+  <section id="step3" hidden>
+    <p><button type="button" class="linkish" id="backToDesign">← <span data-i18n="ed.back">Back to the design</span></button></p>
+    <div class="ed-step3">
+      <div>
+        <div class="card-wrap" id="step3Card"></div>
+      </div>
+    <form id="order" class="order card">
+      <h3 data-i18n="ed.options">Choose your options</h3>
+      <p class="muted" data-i18n="cards.paynow">Pay by card now. We print them and you pick them up in the shop.</p>
+      <label><span data-i18n="cards.qty">Quantity</span>
+        <select name="quantity">
+          {QUANTITIES.map((q) => <option value={q} data-price={PRICES[q]}>{q} · ${PRICES[q].toFixed(2)}</option>)}
+        </select>
+      </label>
+      {OPTION_GROUPS.map((g) => (
+        <fieldset class="opts">
+          <legend data-i18n={`cards.g.${g}`}>{g}</legend>
+          {CARD_OPTIONS.filter((o) => o.group === g).map((o) => (
+            <label class="opt"><input type="radio" name={g} value={o.code} data-price={o.price} checked={!!o.default} /> <span data-i18n={`cards.opt.${o.code}`}>{o.name}</span> <em>{o.price ? `+$${o.price.toFixed(2)}` : <span data-i18n="cards.included">included</span>}</em></label>
+          ))}
+        </fieldset>
+      ))}
+      <p class="card" id="helpNote" hidden data-i18n="help.note">We'll design your cards for you. Tell us below what you'd like: your business name, details, colors and any ideas. If you have a logo, add it in the designer first (Uploads). We send you a proof to approve before anything is printed.</p>
+      <p class="subtotal"><span data-i18n="cards.subtotal">Total before the online fee</span>: <strong id="subtotal">$0.00</strong></p>
+      <label><span data-i18n="cards.notes">Notes</span> <textarea name="notes" maxlength="600" rows="3" placeholder="Anything else we should know"></textarea></label>
+      <!-- Review order (Peter, Nov 14 2026): the next page shows the cards and the total, asks to sign in if needed, then Stripe takes payment. -->
+      <button class="btn" type="submit" id="orderBtn" data-i18n="cards.review">Review order</button>
+      <p class="err" id="err" hidden></p>
+    </form>
+    </div>
+  </section>
+
+  <dialog id="dlg3d" class="c3d-dialog" aria-labelledby="dlg3dH">
+    <div class="c3d-head"><h2 id="dlg3dH" data-i18n="c3d.title">See it in 3D</h2> <button type="button" class="btn small kraft" id="close3d" data-i18n="c3d.close">Close</button></div>
+    <div id="card3d"></div>
+  </dialog>
+
+  <script>
+    import { mountCard3D } from '../../lib/card3d';
+    import QRCode from 'qrcode';
+    import { setPattern, clearPattern, isPattern, graphicEl, patternSvg, PATTERN_COLORS, type PatternKind } from '../../lib/cardArt';
+    import { swapTemplate, cardFromSpec, type AiSpec } from '../../lib/cardDesign';
+    import { renderCard, makeTemplate, PALETTES, TEMPLATES, SAMPLE, uid, CARD_W, CARD_H, type Design, type TextEl, type ImageEl, type TemplateId } from '../../lib/cards';
+    import { t } from '../../i18n';
+    import { businessType } from '../../lib/cardShop';
+
+    const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+    const step1 = $('step1'), step2 = $('step2'), step3 = $('step3'), canvas = $('canvas');
+    // Steps (Peter, Nov 15 2026): 1 pick a design, 2 the editor, 3 options and order. The page heading only shows on step 1.
+    function showStep(n: 1 | 2 | 3) {
+      step1.hidden = n !== 1; step2.hidden = n !== 2; step3.hidden = n !== 3; $('edHero').hidden = n !== 1;
+      if (n === 3) $('step3Card').innerHTML = renderCard(printable(), 'front');
+      window.scrollTo({ top: 0 });
+    }
+
+    // Placeholder copy the customer replaces. Same layout as the sample, generic words.
+    const BLANK = { name: 'Your Name', title: 'Your Title', company: 'Company Name', phone: '(000) 000-0000', email: 'you@example.com', website: 'yourwebsite.com', address: 'Street, City, State', tagline: 'Your tagline here' };
+
+    let design: Design;
+    let side: 'front' | 'back' = 'front';
+    let selected: string | null = null;
+    const undoStack: string[] = [], redoStack: string[] = [];
+
+    function snapshot() { undoStack.push(JSON.stringify(design)); if (undoStack.length > 60) undoStack.shift(); redoStack.length = 0; }
+    function restore(s: string) { design = JSON.parse(s); selected = null; render(); }
+
+    const cur = () => design[side];
+    const sel = () => cur().elements.find((e) => e.id === selected) ?? null;
+
+    let thumbTimer: ReturnType<typeof setTimeout> | undefined;
+    let uploadMode = false; // started from "Upload your design": an empty side offers the upload button
+    // Saved cards (Peter, Nov 15 2026): the account card this design came from, so saving or ordering updates it.
+    const SAVED_KEY = 'gp-card-saved-id';
+    let savedId: number | null = null;
+    try { savedId = Number(localStorage.getItem(SAVED_KEY)) || null; } catch {}
+    const setSaved = (id: number | null) => { savedId = id; try { if (id) localStorage.setItem(SAVED_KEY, String(id)); else localStorage.removeItem(SAVED_KEY); } catch {} };
+    function render() {
+      canvas.innerHTML = renderCard(design, side, { guides: true, editing: true, selected });
+      $('uploadCta').hidden = !(uploadMode && cur().elements.length === 0);
+      ($('bg') as HTMLInputElement).value = cur().bg;
+      ($('font') as HTMLSelectElement).value = design.font;
+      document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', (t as HTMLElement).dataset.side === side));
+      clearTimeout(thumbTimer);
+      thumbTimer = setTimeout(() => document.querySelectorAll<HTMLElement>('[data-thumb]').forEach((el) => { el.innerHTML = renderCard(design, el.dataset.thumb as 'front' | 'back'); }), 150);
+      renderProps();
+      try { localStorage.setItem('gp-card-design', JSON.stringify(design)); } catch {}
+    }
+
+    // The tool rail: each button opens its panel.
+    function openPane(name: string) {
+      document.querySelectorAll<HTMLElement>('.ed-pane').forEach((p) => { p.hidden = p.dataset.pane !== name; });
+      document.querySelectorAll<HTMLElement>('.ed-tool').forEach((b) => b.classList.toggle('active', b.dataset.panel === name));
+    }
+    function renderProps() {
+      const e = sel();
+      $('noSel').hidden = !!e;
+      $('selActions').hidden = !e;
+      $('textProps').hidden = !(e && e.type === 'text');
+      $('imageProps').hidden = !(e && e.type === 'image');
+      if (!e) return;
+      // Text opens the Text panel; a picture's size settings show under whichever panel is open (Graphics, Uploads...).
+      if (e.type === 'text') openPane('text');
+      if (e.type === 'text') {
+        const ta = $('pText') as HTMLTextAreaElement;
+        if (document.activeElement !== ta) { ta.value = e.placeholder ? '' : e.text; ta.placeholder = e.placeholder ? e.text : ''; }
+        ($('pSize') as HTMLInputElement).value = String(e.size); $('pSizeVal').textContent = `${e.size}`;
+        ($('pColor') as HTMLInputElement).value = e.color;
+        ($('pWidth') as HTMLInputElement).value = String(e.w);
+        $('pBold').classList.toggle('active', e.weight === 700);
+        $('pItalic').classList.toggle('active', e.italic);
+        document.querySelectorAll('[data-align]').forEach((b) => b.classList.toggle('active', (b as HTMLElement).dataset.align === e.align));
+      } else {
+        ($('iWidth') as HTMLInputElement).value = String(e.w);
+        ($('iHeight') as HTMLInputElement).value = String(e.h);
+      }
+    }
+
+    function start(t: TemplateId, pi: number) {
+      design = makeTemplate(t, PALETTES[pi], BLANK, true);
+      uploadMode = false; setSaved(null);
+      undoStack.length = 0; redoStack.length = 0; selected = null; side = 'front';
+      showStep(2); render();
+    }
+
+    // ---- gallery: one thumbnail per layout in the chosen palette, drawn with Rin Ho's sample details
+    const gallery = $('gallery');
+    // Coming from the shop page: ?type= starts the gallery in that business's colors with its sample details.
+    const q = new URLSearchParams(location.search);
+    const bt = businessType(q.get('type'));
+    const gallerySample = bt?.sample ?? SAMPLE;
+    if (bt) { const r = document.querySelector<HTMLInputElement>(`[name=palette][value="${bt.palette}"]`); if (r) r.checked = true; }
+    function drawGallery() {
+      const pi = Number((document.querySelector('[name=palette]:checked') as HTMLInputElement).value);
+      $('palName').textContent = PALETTES[pi].name;
+      gallery.innerHTML = TEMPLATES.map((tp) => `<button type="button" class="thumb" data-t="${tp.id}" data-p="${pi}" title="${tp.name}"><div class="card-wrap">${renderCard(makeTemplate(tp.id, PALETTES[pi], gallerySample, false), 'front')}</div><span>${tp.name}</span></button>`).join('');
+      gallery.querySelectorAll<HTMLElement>('.thumb').forEach((b) => b.addEventListener('click', () => start(b.dataset.t as TemplateId, Number(b.dataset.p))));
+    }
+    $('palettes').addEventListener('change', drawGallery);
+    drawGallery();
+
+    // ---- upload a finished design: the picture is cropped to the card's shape, shrunk to print size (300 dpi)
+    // and saved as a JPEG small enough for the order; a picture smaller than print size gets a warning.
+    function startBlank() {
+      design = { template: 'minimal', font: 'sans', front: { bg: '#ffffff', elements: [] }, back: { bg: '#ffffff', elements: [] } };
+      uploadMode = true; setSaved(null); undoStack.length = 0; redoStack.length = 0; selected = null; side = 'front';
+      showStep(2); render();
+    }
+    function uploadFull(file: File) {
+      const warn = $('uploadWarn'); warn.hidden = true;
+      if (!/^image\/(png|jpeg)$/.test(file.type)) { warn.textContent = t('cards.uploadtype'); warn.hidden = false; return; }
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const want = CARD_W / CARD_H, have = img.width / img.height;
+        const sw = have > want ? img.height * want : img.width, sh = have > want ? img.height : img.width / want;
+        const c = document.createElement('canvas'); c.width = CARD_W; c.height = CARD_H;
+        const g = c.getContext('2d')!; g.fillStyle = '#ffffff'; g.fillRect(0, 0, CARD_W, CARD_H);
+        g.drawImage(img, (img.width - sw) / 2, (img.height - sh) / 2, sw, sh, 0, 0, CARD_W, CARD_H);
+        URL.revokeObjectURL(url);
+        let href = '', qual = 0.92;
+        do { href = c.toDataURL('image/jpeg', qual); qual -= 0.08; } while (href.length > 390_000 && qual > 0.3);
+        snapshot();
+        cur().elements = cur().elements.filter((e) => !(e.type === 'image' && e.w >= CARD_W && e.h >= CARD_H));
+        cur().elements.unshift({ id: uid(), type: 'image', x: 0, y: 0, w: CARD_W, h: CARD_H, href });
+        selected = null; render();
+        const msgs = [];
+        if (sw < CARD_W * 0.75 || sh < CARD_H * 0.75) msgs.push(t('cards.uploadsmall'));
+        if (Math.abs(have - want) > 0.08) msgs.push(t('cards.uploadcrop'));
+        if (msgs.length) { warn.textContent = msgs.join(' '); warn.hidden = false; }
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); warn.textContent = t('cards.uploadtype'); warn.hidden = false; };
+      img.src = url;
+    }
+    $('uploadFull').addEventListener('change', (e) => { const i = e.target as HTMLInputElement; const f = i.files?.[0]; if (f) uploadFull(f); i.value = ''; });
+    $('uploadBtn').addEventListener('click', () => $('uploadFull').click());
+
+    // Preview in 3D: the card as it is in the editor, with the paper, finish and corners ticked in the order form.
+    // (Sample text the customer never changes is still left off the print; the review page shows exactly that.)
+    const dlg = $('dlg3d') as HTMLDialogElement;
+    $('preview3d').addEventListener('click', () => {
+      const d = design;
+      mountCard3D($('card3d'), renderCard(d, 'front'), renderCard(d, 'back'), picks(), { front: t('cards.front'), back: t('cards.back'), hint: t('c3d.hint') });
+      dlg.showModal();
+    });
+    $('close3d').addEventListener('click', () => dlg.close());
+
+    // Tool rail, Next / Back, zoom (Peter, Nov 15 2026).
+    document.querySelectorAll<HTMLElement>('.ed-tool').forEach((b) => b.addEventListener('click', () => { openPane(b.dataset.panel!); if (b.dataset.panel === 'designs') drawTemplates(); }));
+
+    // ---- Templates (Peter, Nov 15 2026): every layout in the chosen colors, drawn with the customer's own words.
+    let tplPal = 0;
+    function drawTemplates() {
+      const grid = $('tplGrid'); grid.innerHTML = '';
+      document.querySelectorAll<HTMLElement>('#tplPalettes .ed-swatch').forEach((b) => b.classList.toggle('on', Number(b.dataset.pal) === tplPal));
+      for (const tp of TEMPLATES) {
+        const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'ed-tpl'; btn.title = tp.name;
+        btn.innerHTML = `<span class="card-wrap">${renderCard(swapTemplate(design, tp.id, tplPal), 'front')}</span>`;
+        btn.classList.toggle('on', tp.id === design.template);
+        btn.addEventListener('click', () => { snapshot(); design = swapTemplate(design, tp.id, tplPal); selected = null; render(); drawTemplates(); });
+        grid.appendChild(btn);
+      }
+    }
+    document.querySelectorAll<HTMLElement>('#tplPalettes .ed-swatch').forEach((b) => b.addEventListener('click', () => { tplPal = Number(b.dataset.pal); drawTemplates(); }));
+
+    // ---- Background: a curated color, or a pattern in one of the color pairs.
+    document.querySelectorAll<HTMLElement>('[data-bg]').forEach((b) => b.addEventListener('click', () => { snapshot(); const sd = clearPattern(cur()); sd.bg = b.dataset.bg!; design[side] = sd; render(); }));
+    let pair = 0;
+    document.querySelectorAll<HTMLElement>('#patColors [data-pair]').forEach((b) => b.addEventListener('click', () => {
+      pair = Number(b.dataset.pair);
+      document.querySelectorAll('#patColors [data-pair]').forEach((x) => x.classList.toggle('on', x === b));
+      const [bg, fg] = PATTERN_COLORS[pair];
+      document.querySelectorAll<HTMLImageElement>('#patGrid img').forEach((img) => { const k = (img.closest('[data-pat]') as HTMLElement).dataset.pat as PatternKind; img.src = patternPreview(k, bg, fg); });
+    }));
+    const patternPreview = (k: PatternKind, bg: string, fg: string) => patternSvg(k, bg, fg, 0.6);
+    document.querySelectorAll<HTMLElement>('[data-pat]').forEach((b) => b.addEventListener('click', () => {
+      snapshot(); const [bg, fg] = PATTERN_COLORS[pair]; design[side] = setPattern(cur(), b.dataset.pat as PatternKind, bg, fg); render();
+    }));
+    $('clearPat').addEventListener('click', () => { if (!cur().elements.some((e) => isPattern(e))) return; snapshot(); design[side] = clearPattern(cur()); render(); });
+
+    // ---- Graphics: an icon or shape in the picked color, dropped in the middle of the card, ready to move.
+    const addGraphic = (kind: 'icon' | 'shape', key: string) => { snapshot(); const el = graphicEl(kind, key, ($('gColor') as HTMLInputElement).value); cur().elements.push(el); selected = el.id; render(); };
+    document.querySelectorAll<HTMLElement>('[data-icon]').forEach((b) => b.addEventListener('click', () => addGraphic('icon', b.dataset.icon!)));
+    document.querySelectorAll<HTMLElement>('[data-shape]').forEach((b) => b.addEventListener('click', () => addGraphic('shape', b.dataset.shape!)));
+
+    // ---- More: a QR code for a web address.
+    $('qrAdd').addEventListener('click', async () => {
+      const err = $('qrErr'); err.hidden = true;
+      let url = ($('qrUrl') as HTMLInputElement).value.trim();
+      if (url && !/^https?:\/\//i.test(url)) url = 'https://' + url;
+      // A real-looking address: no spaces, and a name with a dot in it (yourwebsite.com).
+      let okUrl = false; try { okUrl = !/\s/.test(url) && /^[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/i.test(new URL(url).hostname); } catch {}
+      if (!okUrl) { err.textContent = t('ed.qr.bad'); err.hidden = false; return; }
+      const svg = await QRCode.toString(url, { type: 'svg', margin: 1, color: { dark: ($('gColor') as HTMLInputElement).value || '#111111', light: '#ffffff' } });
+      snapshot();
+      const size = 180;
+      const el: ImageEl = { id: `g${uid()}`, type: 'image', x: CARD_W - 56 - size, y: CARD_H - 56 - size, w: size, h: size, href: 'data:image/svg+xml;base64,' + btoa(svg) };
+      cur().elements.push(el); selected = el.id; render();
+    });
+
+    // ---- Design with AI: three designs from the store's own pieces; the customer picks one and edits it.
+    async function askAi() {
+      const status = $('aiStatus'), out = $('aiResults');
+      const prompt = ($('aiPrompt') as HTMLTextAreaElement).value.trim();
+      if (prompt.length < 3) { status.textContent = t('ai.need'); return; }
+      status.textContent = t('ai.working'); out.innerHTML = ''; ($('aiGo') as HTMLButtonElement).disabled = true;
+      try {
+        const res = await fetch('/api/card-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) });
+        const j = await res.json().catch(() => ({}));
+        if (res.status === 401) { status.textContent = t('ai.signin') + ' '; const a = document.createElement('a'); a.href = `/account?next=${encodeURIComponent('/cards/design')}`; a.textContent = t('acct.signin'); status.append(a); return; }
+        if (!res.ok || !j.designs) { status.textContent = j.error ?? 'Try again'; return; }
+        status.textContent = (j.demo ? t('ai.demo') + ' ' : '') + (j.left != null ? t('ai.left').replace('{n}', String(j.left)) : '');
+        (j.designs as AiSpec[]).forEach((spec) => {
+          const d = cardFromSpec(spec);
+          const box = document.createElement('div'); box.className = 'ed-ai-item';
+          box.innerHTML = `<span class="card-wrap">${renderCard(d, 'front')}</span>`;
+          const why = document.createElement('p'); why.className = 'muted'; why.textContent = spec.why; box.appendChild(why);
+          const use = document.createElement('button'); use.type = 'button'; use.className = 'btn small'; use.textContent = t('ai.use');
+          use.addEventListener('click', () => { snapshot(); design = d; side = 'front'; selected = null; uploadMode = false; render(); openPane('text'); });
+          box.appendChild(use); out.appendChild(box);
+        });
+      } finally { ($('aiGo') as HTMLButtonElement).disabled = false; }
+    }
+    $('aiGo').addEventListener('click', askAi);
+    $('aiStart').addEventListener('click', () => { start('classic', 0); openPane('ai'); ($('aiPrompt') as HTMLTextAreaElement).focus(); });
+    if (q.get('ai') === '1') { start('classic', 0); openPane('ai'); }
+    $('nextBtn').addEventListener('click', () => showStep(3));
+    $('backToDesign').addEventListener('click', () => { showStep(2); render(); });
+    let zoom = 100;
+    const setZoom = (z: number) => { zoom = Math.max(60, Math.min(200, z)); $('canvasBox').style.width = `${zoom}%`; $('zoomVal').textContent = `${zoom}%`; };
+    $('zoomIn').addEventListener('click', () => setZoom(zoom + 20));
+    $('zoomOut').addEventListener('click', () => setZoom(zoom - 20));
+
+    // Let us design it for you (Peter, Nov 15 2026): a paid option. The link at the top ticks it and goes to the
+    // options, where the customer tells us what they want; we design it and send a proof before printing.
+    const helpRadio = () => document.querySelector<HTMLInputElement>('#order input[name=help][value=designhelp]');
+    const helpOn = () => !!helpRadio()?.checked;
+    const paintHelp = () => {
+      $('helpNote').hidden = !helpOn();
+      (document.querySelector('#order [name=notes]') as HTMLTextAreaElement).required = helpOn();
+    };
+    const hp = Number(helpRadio()?.dataset.price ?? 0);
+    $('helpPrice').textContent = hp ? `(+$${hp.toFixed(2)})` : '';
+    $('helpBtn').addEventListener('click', () => {
+      const r = helpRadio(); if (r) { r.checked = true; r.dispatchEvent(new Event('change', { bubbles: true })); }
+      showStep(3); (document.querySelector('#order [name=notes]') as HTMLTextAreaElement).focus();
+    });
+    document.getElementById('order')!.addEventListener('change', paintHelp); paintHelp();
+
+    // Save to my account: signed in, it saves (or updates) the card on the account; signed out, it explains and links
+    // to sign in. The design stays on this device meanwhile, and the designer offers to continue it.
+    $('saveCard').addEventListener('click', async () => {
+      const m = $('saveMsg'); m.hidden = false; m.className = 'muted'; m.textContent = t('saved.saving');
+      const res = await fetch('/api/account', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'design_save', product: 'card', id: savedId, design: printable() }) });
+      const j = await res.json().catch(() => ({}));
+      if (res.status === 401) {
+        m.className = 'card'; m.textContent = t('saved.signin') + ' ';
+        const a = document.createElement('a'); a.href = `/account?next=${encodeURIComponent('/cards/design')}`; a.textContent = t('acct.signin'); m.append(a);
+        return;
+      }
+      if (!res.ok) { m.className = 'err'; m.textContent = j.error ?? 'Try again'; return; }
+      setSaved(j.id); m.className = 'ok-msg'; m.textContent = t('saved.done') + ' ';
+      const a = document.createElement('a'); a.href = '/account#designs'; a.textContent = t('saved.see'); m.append(a);
+    });
+    dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+
+    // Coming from the shop page: ?t=&p= opens a layout straight away, ?upload=1 a blank card with the upload button,
+    // ?stock= / ?finish= / ?corners= preselect the paper, finish and corners in the order form.
+    // ?saved=ID opens a card kept on the customer's account, with the quantity and options from its last order.
+    const savedParam = Number(q.get('saved')) || 0;
+    if (savedParam) {
+      fetch('/api/account', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'design_get', id: savedParam }) })
+        .then(async (r) => { if (r.status === 401) { location.href = `/account?next=${encodeURIComponent(location.pathname + location.search)}`; return; } const j = await r.json(); if (!r.ok) throw new Error(j.error);
+          if (j.design.product !== 'card') throw new Error('That design is not a business card'); design = j.design.design; setSaved(j.design.id); uploadMode = false; side = 'front'; selected = null; undoStack.length = 0; redoStack.length = 0;
+          showStep(2); render();
+          if (j.design.quantity) (document.querySelector('#order [name=quantity]') as HTMLSelectElement).value = String(j.design.quantity);
+          for (const [g, v] of Object.entries(j.design.options ?? {})) { const r2 = document.querySelector<HTMLInputElement>(`#order input[name=${g}][value="${CSS.escape(String(v))}"]`); if (r2) r2.checked = true; }
+          document.getElementById('order')!.dispatchEvent(new Event('change'));
+        })
+        .catch((e) => { const m = $('saveMsg'); m.className = 'err'; m.textContent = e.message; m.hidden = false; });
+    } else if (q.get('upload') === '1') startBlank();
+    else if (q.get('t') && TEMPLATES.some((x) => x.id === q.get('t'))) start(q.get('t') as TemplateId, Math.min(PALETTES.length - 1, Math.max(0, Number(q.get('p')) || 0)));
+    for (const g of ['stock', 'finish', 'corners']) {
+      const v = q.get(g); const r = v ? document.querySelector<HTMLInputElement>(`#order input[name=${g}][value="${CSS.escape(v)}"]`) : null;
+      if (r) r.checked = true;
+    }
+    $('changeDesign').addEventListener('click', () => { if (confirm(t('cards.changeconfirm'))) { showStep(1); } });
+
+    // A saved design is offered, never forced: the gallery always shows first.
+    try {
+      const saved = localStorage.getItem('gp-card-design');
+      if (saved) {
+        $('resume').hidden = false;
+        $('resumeBtn').addEventListener('click', () => { design = JSON.parse(saved); side = 'front'; selected = null; showStep(2); render(); });
+        $('discardBtn').addEventListener('click', () => { localStorage.removeItem('gp-card-design'); $('resume').hidden = true; });
+      }
+    } catch {}
+
+    // ---- tabs, background, font, undo
+    document.querySelectorAll<HTMLElement>('.tab').forEach((t) => t.addEventListener('click', () => { side = t.dataset.side as 'front' | 'back'; selected = null; render(); }));
+    $('bg').addEventListener('input', (e) => { const side0 = clearPattern(cur()); side0.bg = (e.target as HTMLInputElement).value; design[side] = side0; render(); });
+    $('bg').addEventListener('change', snapshot);
+    $('font').addEventListener('change', (e) => { snapshot(); design.font = (e.target as HTMLSelectElement).value as Design['font']; render(); });
+    $('undo').addEventListener('click', () => { const s = undoStack.pop(); if (s) { redoStack.push(JSON.stringify(design)); restore(s); } });
+    $('redo').addEventListener('click', () => { const s = redoStack.pop(); if (s) { undoStack.push(JSON.stringify(design)); restore(s); } });
+
+    // ---- add elements
+    $('addText').addEventListener('click', () => {
+      snapshot();
+      const el: TextEl = { id: uid(), type: 'text', x: 200, y: 260, w: 650, text: 'New text', size: 32, weight: 400, italic: false, color: side === 'back' ? '#ffffff' : '#17202d', align: 'middle' };
+      cur().elements.push(el); selected = el.id; render(); ($('pText') as HTMLTextAreaElement).focus();
+    });
+    $('addImage').addEventListener('change', (e) => {
+      const input = e.target as HTMLInputElement;
+      const file = input.files?.[0]; if (!file) return;
+      if (file.size > 400_000) { alert(t('cards.imgbig')); input.value = ''; return; }
+      const r = new FileReader();
+      r.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          snapshot();
+          const w = 300, h = Math.round(w * img.height / img.width) || 150;
+          const el: ImageEl = { id: `u${uid()}`, type: 'image', x: (CARD_W - w) / 2, y: (CARD_H - h) / 2, w, h, href: String(r.result) }; // "u": the customer's own picture, kept when the layout changes
+          cur().elements.push(el); selected = el.id; render();
+        };
+        img.src = String(r.result);
+      };
+      r.readAsDataURL(file);
+      input.value = '';
+    });
+
+    // ---- properties
+    const upd = (fn: (e: any) => void, snap = false) => () => { const e = sel(); if (!e) return; if (snap) snapshot(); fn(e); render(); };
+    $('pText').addEventListener('input', upd((e: TextEl) => { e.text = ($('pText') as HTMLTextAreaElement).value; e.placeholder = false; }));
+    $('pText').addEventListener('focus', () => { if (sel()?.type === 'text') snapshot(); });
+    $('pSize').addEventListener('input', upd((e: TextEl) => { e.size = Number(($('pSize') as HTMLInputElement).value); }));
+    $('pWidth').addEventListener('input', upd((e: TextEl) => { e.w = Number(($('pWidth') as HTMLInputElement).value); }));
+    $('pColor').addEventListener('input', upd((e: TextEl) => { e.color = ($('pColor') as HTMLInputElement).value; }));
+    for (const id of ['pSize', 'pWidth', 'pColor', 'iWidth', 'iHeight']) $(id).addEventListener('change', snapshot);
+    $('pBold').addEventListener('click', upd((e: TextEl) => { e.weight = e.weight === 700 ? 400 : 700; }, true));
+    $('pItalic').addEventListener('click', upd((e: TextEl) => { e.italic = !e.italic; }, true));
+    document.querySelectorAll<HTMLElement>('[data-align]').forEach((b) => b.addEventListener('click', upd((e: TextEl) => { e.align = b.dataset.align as TextEl['align']; }, true)));
+    $('iWidth').addEventListener('input', upd((e: ImageEl) => { const w = Number(($('iWidth') as HTMLInputElement).value); if (($('iLock') as HTMLInputElement).checked) e.h = Math.max(4, Math.round(e.h * w / e.w)); e.w = w; }));
+    $('iHeight').addEventListener('input', upd((e: ImageEl) => { const h = Number(($('iHeight') as HTMLInputElement).value); if (($('iLock') as HTMLInputElement).checked) e.w = Math.max(20, Math.round(e.w * h / e.h)); e.h = h; }));
+    $('pDel').addEventListener('click', () => { if (!sel()) return; snapshot(); cur().elements = cur().elements.filter((e) => e.id !== selected); selected = null; render(); });
+    $('pDup').addEventListener('click', () => { const e = sel(); if (!e) return; snapshot(); const c = { ...e, id: uid(), x: e.x + 30, y: e.y + 30 }; cur().elements.push(c); selected = c.id; render(); });
+    $('pFront').addEventListener('click', () => { const e = sel(); if (!e) return; snapshot(); cur().elements = [...cur().elements.filter((x) => x !== e), e]; render(); });
+    $('pBack').addEventListener('click', () => { const e = sel(); if (!e) return; snapshot(); cur().elements = [e, ...cur().elements.filter((x) => x !== e)]; render(); });
+
+    // ---- select and drag on the canvas
+    let drag: { id: string; dx: number; dy: number; moved: boolean } | null = null;
+    function toCard(ev: PointerEvent) {
+      const svg = canvas.querySelector('svg')!;
+      const r = svg.getBoundingClientRect();
+      return { x: (ev.clientX - r.left) * CARD_W / r.width, y: (ev.clientY - r.top) * CARD_H / r.height };
+    }
+    canvas.addEventListener('pointerdown', (ev) => {
+      const id = (ev.target as Element).closest('[data-id]')?.getAttribute('data-id') ?? null;
+      selected = id;
+      if (id) {
+        const e = sel()!; const p = toCard(ev);
+        drag = { id, dx: p.x - e.x, dy: p.y - e.y, moved: false };
+        canvas.setPointerCapture(ev.pointerId);
+      }
+      render();
+    });
+    canvas.addEventListener('pointermove', (ev) => {
+      if (!drag) return;
+      const e = sel(); if (!e) return;
+      if (!drag.moved) { snapshot(); drag.moved = true; }
+      const p = toCard(ev);
+      e.x = Math.round(p.x - drag.dx); e.y = Math.round(p.y - drag.dy);
+      render();
+    });
+    canvas.addEventListener('pointerup', () => { drag = null; });
+    canvas.addEventListener('dblclick', () => { if (sel()?.type === 'text') ($('pText') as HTMLTextAreaElement).focus(); });
+
+    document.addEventListener('keydown', (ev) => {
+      const inField = ['INPUT', 'TEXTAREA', 'SELECT'].includes((ev.target as HTMLElement).tagName);
+      if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'z') { ev.preventDefault(); $('undo').click(); return; }
+      if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'y') { ev.preventDefault(); $('redo').click(); return; }
+      if (inField) return;
+      const e = sel(); if (!e) return;
+      const step = ev.shiftKey ? 20 : 4;
+      if (ev.key === 'Delete' || ev.key === 'Backspace') { ev.preventDefault(); $('pDel').click(); }
+      else if (ev.key.startsWith('Arrow')) {
+        ev.preventDefault(); snapshot();
+        if (ev.key === 'ArrowLeft') e.x -= step; if (ev.key === 'ArrowRight') e.x += step; if (ev.key === 'ArrowUp') e.y -= step; if (ev.key === 'ArrowDown') e.y += step;
+        render();
+      }
+    });
+
+    // ---- export
+    function printable(): Design {
+      // Placeholder text the customer never edited is dropped, not printed.
+      const strip = (s: Design['front']) => ({ ...s, elements: s.elements.filter((e) => !(e.type === 'text' && e.placeholder)) });
+      return { ...design, front: strip(design.front), back: strip(design.back) };
+    }
+    $('png').addEventListener('click', async () => {
+      const d = printable();
+      for (const s of ['front', 'back'] as const) {
+        const img = new Image();
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(renderCard(d, s));
+        await img.decode();
+        const c = document.createElement('canvas'); c.width = CARD_W; c.height = CARD_H;
+        c.getContext('2d')!.drawImage(img, 0, 0);
+        const a = document.createElement('a'); a.download = `business-card-${s}.png`; a.href = c.toDataURL('image/png'); a.click();
+      }
+    });
+
+    const order = $('order') as HTMLFormElement, err = $('err');
+    // Live total: the quantity price plus the picked options. The server prices the same table again when ordering.
+    const subtotal = () => {
+      const qty = order.querySelector<HTMLSelectElement>('[name=quantity]')!;
+      let sum = Number(qty.selectedOptions[0]?.dataset.price ?? 0);
+      order.querySelectorAll<HTMLInputElement>('.opts input:checked').forEach((i) => { sum += Number(i.dataset.price ?? 0); });
+      $('subtotal').textContent = `$${sum.toFixed(2)}`; $('edPrice').textContent = `$${sum.toFixed(2)}`;
+    };
+    order.addEventListener('change', subtotal); subtotal();
+    const picks = () => Object.fromEntries(['stock', 'finish', 'corners', 'speed', 'help'].map((g) => [g, (order.querySelector(`input[name=${g}]:checked`) as HTMLInputElement | null)?.value ?? '']));
+    order.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const d = printable();
+      const left = [...design.front.elements, ...design.back.elements].filter((e) => e.type === 'text' && e.placeholder).length;
+      const help = helpOn();
+      if (help && !String((document.querySelector('#order [name=notes]') as HTMLTextAreaElement).value).trim()) { err.textContent = t('help.neednotes'); err.hidden = false; return; }
+      if (!help && left && !confirm(`${left} ${t('cards.leftph')}`)) return;
+      // The front needs some text, or a whole uploaded design (an image that fills the card).
+      if (!help && !d.front.elements.some((e) => e.type === 'text' || (e.type === 'image' && e.w >= CARD_W && e.h >= CARD_H))) { err.textContent = t('cards.nofront'); err.hidden = false; return; }
+      const o = Object.fromEntries(new FormData(order).entries()) as Record<string, string>;
+      // The order waits on this device for the review page (and through a sign-in); nothing is charged yet.
+      try { localStorage.setItem('gp-card-order', JSON.stringify({ at: Date.now(), design: d, quantity: Number(o.quantity), options: picks(), notes: o.notes, saved_id: savedId })); }
+      catch { err.textContent = 'This browser is blocking saved data, so the order cannot continue. Try another browser.'; err.hidden = false; return; }
+      location.href = '/cards/review';
+    });
+  </script>
+</Base>

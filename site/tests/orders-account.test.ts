@@ -1,4 +1,4 @@
-// A business account's discount online goes to its holder signed in, not to whoever types its email.
+// A business account's discount online goes to its holder signed in, not to another customer.
 import { describe, it, expect } from 'vitest';
 import { env } from 'cloudflare:workers';
 import * as store from '../src/shipping/store';
@@ -7,33 +7,33 @@ import { quote } from '../src/lib/quote';
 import { getOrder } from '../src/lib/orders';
 import { store as facts } from '../src/data/store';
 import { parseAddress, parseParcel } from '../src/lib/validate';
+import { setOnlineLabels } from '../src/lib/siteSettings';
 
 const E = env as any;
 const dest = { contact_name: 'Pat Lee', line_1: '200 Main St', city: 'Monroe', state: 'LA', postal_code: '71201' };
 const parcel = { weight_lb: 2, length_in: 10, width_in: 8, height_in: 4, description: 'Shirt', value_usd: 20 };
 
-async function placeOrder(email: string, cookie?: string) {
+async function placeOrder(cookie: string, phone: string) {
   const { rates } = await quote(E, facts.origin, parseAddress(dest), parseParcel(parcel));
   const { POST } = await import('../src/pages/api/orders');
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (cookie) headers.cookie = cookie;
-  const res = await (POST as any)({ request: new Request('http://x/api/orders', { method: 'POST', headers, body: JSON.stringify({ destination: dest, parcel, rate_id: rates[0].id, email }) }) });
+  const res = await (POST as any)({ request: new Request('http://x/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json', cookie }, body: JSON.stringify({ destination: dest, parcel, rate_id: rates[0].id, acct_phone: phone }) }) });
   const j = await res.json();
   expect(j.error).toBeUndefined();
   return getOrder(E, j.order_id);
 }
+const cookieFor = async (id: string) => sessionCookie(await signSession(E, id), false).split(';')[0];
 
 describe('business discount online', () => {
-  it('needs the account holder signed in', async () => {
+  it('goes to the account holder signed in, not to another signed-in customer', async () => {
+    await setOnlineLabels(E, true, 'test');
     const cid = (await store.upsertCustomer(E, { name: 'Bayou Crafts', email: 'disc-holder@example.com' }))!;
     await store.addAccount(E, { customer_id: cid, business_name: 'Bayou Crafts', discount_percent: 20, notes: '' });
+    const other = (await store.upsertCustomer(E, { name: 'Other Person', email: 'disc-other@example.com' }))!;
 
-    const typedOnly = await placeOrder('disc-holder@example.com');
-    expect(typedOnly?.discount_percent).toBeUndefined();
-
-    const cookie = sessionCookie(await signSession(E, cid), false).split(';')[0];
-    const signedIn = await placeOrder('disc-holder@example.com', cookie);
-    expect(signedIn?.discount_percent).toBe(20);
+    const asOther = await placeOrder(await cookieFor(other), '3185550142');
+    expect(asOther?.discount_percent).toBeUndefined();
+    const asHolder = await placeOrder(await cookieFor(cid), '3185550143');
+    expect(asHolder?.discount_percent).toBe(20);
   });
 });
 

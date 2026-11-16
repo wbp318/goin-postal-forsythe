@@ -40,7 +40,7 @@ Other chart kinds you will meet: a **state diagram** shows the statuses one thin
 ```mermaid
 flowchart LR
   A["1 · Install Node.js<br/>and Git (once)"]:::you --> B["2 · Get the repo<br/>git clone or Download ZIP"]:::you
-  B --> C["3 · cd site<br/>npm install (once)"]:::local
+  B --> C["3 · cd site<br/>npm install, then<br/>npm run db:local (once)"]:::local
   C --> D["4 · npm run dev<br/>leave the window open"]:::local
   D --> E["5 · Open<br/>http://localhost:4321"]:::you
   E --> F["6 · Test every page:<br/>home, Ship, Business cards,<br/>Contact, counter pages"]:::you
@@ -105,9 +105,14 @@ Already have the folder? Get the latest version with `git pull` from inside it.
 ```
 cd site
 npm install
+npm run db:local
 ```
 
-This downloads the pieces the site is built from into a `node_modules` folder. It takes a minute or two and prints a lot. The last lines should say something like `added 400 packages` and `found 0 vulnerabilities`. Warnings in yellow are fine. Red `ERR!` lines are not; the usual cause is being in the wrong folder, so check that `cd site` worked.
+`npm install` downloads the pieces the site is built from into a `node_modules` folder. It takes a minute or two and prints a lot. The last lines should say something like `added 400 packages` and `found 0 vulnerabilities`. Warnings in yellow are fine. Red `ERR!` lines are not; the usual cause is being in the wrong folder, so check that `cd site` worked.
+
+`npm run db:local` sets up the site's database on your computer. Without it, Get rates fails with `no such table: retail_rules`. Run it again whenever an update changes the database (the release notes say so).
+
+On Windows, if PowerShell says **running scripts is disabled on this system**, run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once, answer **Y**, and try again.
 
 ### Step 4: start it
 

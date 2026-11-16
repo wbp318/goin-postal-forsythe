@@ -4,13 +4,30 @@ import { store } from '../../data/store';
 import Base from '../../layouts/Base.astro';
 import { env } from '../../lib/env';
 import { readSession } from '../../lib/session';
-import { getCustomer, listCustomerAddresses } from '../../shipping/store';
+import { getCustomer, listCustomerAddresses, marketingConsent } from '../../shipping/store';
+import { CONSENT_WORDING } from '../../lib/consent';
+import { effectiveAddons } from '../../lib/addons';
+import { PACKAGING, DEFAULT_PACKAGING } from '../../lib/packaging';
+import { onlineLabelsOn } from '../../lib/siteSettings';
 const cancelled = Astro.url.searchParams.get('cancelled');
 // Signed-in customers (T20) get their saved addresses and their email filled in.
 const meId = await readSession(env, Astro.request.headers.get('cookie'));
 const me = meId ? await getCustomer(env, meId) : null;
 const saved = me ? (await listCustomerAddresses(env, me.id)).map((a) => ({ id: a.id, label: a.label, to: JSON.parse(a.address_json) })) : [];
 const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
+// Buying needs an account (Peter, Nov 14 2026): their current marketing choices decide which boxes to offer.
+const consent = me ? await marketingConsent(env, me.id) : null;
+// The signature confirmation price shown beside its checkbox, from the add-on catalog (/counter/rules).
+const addonCfg = await effectiveAddons(env);
+const sigPrice = addonCfg.items.find((i) => i.active && i.code === 'signature')?.price ?? null;
+// Insurance terms for the page, so the fee shows as soon as a value is typed, before rates (Peter, Nov 14 2026).
+const insTerms = addonCfg.insurance;
+// The packaging picker's groups, in Pirate Ship's order: own packaging, then USPS, UPS, FedEx.
+const pkgGroups = (['own', 'USPS', 'UPS', 'FedEx'] as const).map((g) => ({ g, items: PACKAGING.filter((x) => x.group === g) }));
+const pkgDefault = PACKAGING.find((x) => x.id === DEFAULT_PACKAGING)!;
+// The owners' switch (/counter/settings, Peter Nov 14 2026): Off means no prices online; the in-store page instead.
+if (!(await onlineLabelsOn(env))) return Astro.rewrite('/ship/in-store');
+import CarrierBadges from '../../components/CarrierBadges.astro';
 ---
 <Base title={`Ship a package · ${store.name}`} description="Compare USPS, UPS, FedEx and DHL rates and buy a label online. Print at home or show a QR code at the counter.">
   <section class="hero">
@@ -20,28 +37,34 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
     {cancelled && <p class="card" data-i18n="ship.cancelled">Payment was cancelled. Your quote is below if you want to try again.</p>}
   </section>
 
+  <!-- The carriers, big (Peter, Nov 15 2026). -->
+  <section class="carrier-band" aria-labelledby="carrH">
+    <h2 id="carrH" data-i18n="carr.band">Authorized for every major carrier</h2>
+    <CarrierBadges size="lg" />
+  </section>
+
   {me && <p class="card"><span data-i18n="acct.hello">Signed in as</span> <strong>{me.name}</strong> · <a href="/account" data-i18n="acct.h1">Your account</a>{saved.length > 0 && <> · <label><span data-i18n="acct.useaddr">Ship to a saved address</span> <select id="savedSel"><option value="">…</option>{saved.map((a) => <option value={a.id} selected={a.id === wantTo}>{a.label}: {a.to.contact_name}, {a.to.city}</option>)}</select></label></>}</p>}
   <form id="quote" class="ship-form">
     <fieldset>
       <legend data-i18n="ship.from">Return address (who is sending it)</legend>
       <p class="muted" data-i18n="ship.from.lead">Printed on the label as the sender. The carrier brings the package back here if it cannot be delivered.</p>
       <label><span data-i18n="ship.sender">Your name</span> <input name="from_contact_name" required maxlength="35" autocomplete="name" value={me?.name ?? ''} /></label>
-      <label><span data-i18n="ship.street">Street address</span> <input name="from_line_1" required maxlength="35" autocomplete="address-line1" /></label>
+      <label class="typeahead"><span data-i18n="ship.street">Street address</span> <input name="from_line_1" required maxlength="35" autocomplete="address-line1" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="fromAddrList" /><ul id="fromAddrList" class="suggest" role="listbox" hidden></ul></label>
       <label><span data-i18n="ship.apt">Apt, suite (optional)</span> <input name="from_line_2" maxlength="35" autocomplete="address-line2" /></label>
       <div class="row">
         <label><span data-i18n="ship.city">City</span> <input name="from_city" required autocomplete="address-level2" /></label>
-        <label><span data-i18n="ship.state">State</span> <input name="from_state" required placeholder="LA" maxlength="2" autocomplete="address-level1" /></label>
+        <label><span data-i18n="ship.state">State</span> <input name="from_state" required placeholder="State" data-i18n-ph="ship.state" maxlength="2" autocomplete="address-level1" /></label>
         <label><span data-i18n="ship.zip">ZIP / postal code</span> <input name="from_postal_code" required autocomplete="postal-code" inputmode="numeric" maxlength="10" /></label>
       </div>
     </fieldset>
     <fieldset>
       <legend data-i18n="ship.where">Where is it going?</legend>
       <label><span data-i18n="ship.recipient">Recipient name</span> <input name="contact_name" required autocomplete="shipping name" /></label>
-      <label class="typeahead"><span data-i18n="ship.street">Street address</span> <input name="line_1" required maxlength="35" autocomplete="shipping address-line1" placeholder="1800 Forsythe Ave, Monroe" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="addrList" /><ul id="addrList" class="suggest" role="listbox" hidden></ul></label>
+      <label class="typeahead"><span data-i18n="ship.street">Street address</span> <input name="line_1" required maxlength="35" autocomplete="shipping address-line1" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="addrList" /><ul id="addrList" class="suggest" role="listbox" hidden></ul></label>
       <label><span data-i18n="ship.apt">Apt, suite (optional)</span> <input name="line_2" maxlength="35" autocomplete="shipping address-line2" /></label>
       <div class="row">
         <label><span data-i18n="ship.city">City</span> <input name="city" required autocomplete="shipping address-level2" /></label>
-        <label><span data-i18n="ship.state">State</span> <input name="state" placeholder="LA" maxlength="2" autocomplete="shipping address-level1" /></label>
+        <label><span data-i18n="ship.state">State</span> <input name="state" placeholder="State" data-i18n-ph="ship.state" maxlength="2" autocomplete="shipping address-level1" /></label>
         <label><span data-i18n="ship.zip">ZIP / postal code</span> <input name="postal_code" required autocomplete="shipping postal-code" inputmode="numeric" /></label>
       </div>
       <input type="hidden" name="country_alpha2" value="US" />
@@ -49,17 +72,74 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
 
     <fieldset>
       <legend data-i18n="ship.what">What is it?</legend>
+      <div id="savedPkgRow" class="saved-pkg" hidden><label><span data-i18n="ship.x.saved">Saved packages</span> <select id="savedPkg"><option value="">…</option></select></label> <button type="button" class="linkish" id="forgetPkg" data-i18n="ship.x.forget">Forget saved packages</button></div>
+      <!-- Packaging (Peter, Nov 14 2026, like Pirate Ship): pictures of each choice; carrier packaging fills its own size. -->
+      <div class="pkg-field">
+        <span class="pkg-label" data-i18n="pkg.h">Packaging</span>
+        <details class="pkg-picker" id="pkgPicker">
+          <summary>
+            <span class="pkg-thumb"><img id="pkgImg" src={pkgDefault.img} alt="" width="64" height="64" /></span>
+            <span class="pkg-text"><strong id="pkgName" data-i18n={pkgDefault.nameKey}>{pkgDefault.name}</strong><span id="pkgDesc" class="muted" data-i18n={pkgDefault.descKey}>Any box or thick parcel.</span></span>
+            <span class="pkg-change" data-i18n="pkg.change">Change</span>
+          </summary>
+          <div class="pkg-list" role="radiogroup" aria-labelledby="pkgPicker">
+            {pkgGroups.map(({ g, items }) => (
+              <>
+                {g === 'own' ? <p class="pkg-group" data-i18n="pkg.own">Your own packaging</p> : <p class="pkg-group">{g}</p>}
+                {items.map((x) => (
+                  <label class="pkg-opt">
+                    <input type="radio" name="packaging" value={x.id} checked={x.id === DEFAULT_PACKAGING} />
+                    <span class="pkg-thumb"><img src={x.img} alt="" width="64" height="64" loading="lazy" /></span>
+                    <span class="pkg-text"><strong data-i18n={x.nameKey}>{x.name}</strong><span class="muted" data-i18n={x.descKey}></span></span>
+                  </label>
+                ))}
+              </>
+            ))}
+          </div>
+        </details>
+      </div>
+      <p id="pkgSized" class="muted" hidden data-i18n="pkg.sized">The size comes from the packaging: just type the weight.</p>
       <div class="row">
         <label><span data-i18n="ship.weight">Weight (lb)</span> <input name="weight_lb" type="number" step="0.1" min="0.1" max="150" required /></label>
-        <label><span data-i18n="ship.length">Length (in)</span> <input name="length_in" type="number" min="1" required /></label>
-        <label><span data-i18n="ship.width">Width (in)</span> <input name="width_in" type="number" min="1" required /></label>
-        <label><span data-i18n="ship.height">Height (in)</span> <input name="height_in" type="number" min="1" required /></label>
+        <label class="dim"><span data-i18n="ship.length">Length (in)</span> <input name="length_in" type="number" min="1" step="any" required /></label>
+        <label class="dim"><span data-i18n="ship.width">Width (in)</span> <input name="width_in" type="number" min="1" step="any" required /></label>
+        <label class="dim"><span data-i18n="ship.height">Height (in)</span> <input name="height_in" type="number" min="1" step="any" required /></label>
       </div>
-      <label><span data-i18n="ship.desc">What's inside</span> <input name="description" maxlength="80" placeholder="Clothing" /></label>
-      <label><span data-i18n="ship.value">Value in USD</span> <input name="value_usd" type="number" min="1" placeholder="25" /></label>
+      <!-- Extra services (Peter, Nov 14 2026, modelled on Pirate Ship). They change which rates are offered, so they sit before Get rates. -->
+      <!-- Insurance sits above Extra services, highlighted, so every customer sees the offer before rates (Peter, Nov 14 2026).
+           Ticking it opens the declared value, like Pirate Ship; the fee updates as the value is typed. -->
+      <div class="upsell">
+        <label class="check" id="insRow"><input name="insure" type="checkbox" /> <span><strong data-i18n="ship.insure">Insure it for the full value</strong> <span id="insFee" class="muted"></span></span></label>
+        <label id="insValueRow" hidden><span data-i18n="ship.value">Value in USD</span> <input name="declared_usd" type="number" min="1" step="0.01" inputmode="decimal" placeholder="250" /></label>
+        <!-- What's inside: asked only with insurance, the one time it matters (for a claim). Peter, Nov 14 2026. Carriers get "Merchandise" otherwise. -->
+        <label id="insDescRow" hidden><span data-i18n="ship.desc">What's inside</span> <input name="description" maxlength="80" placeholder="Clothing" /></label>
+        <p id="insCovered" class="muted" hidden></p>
+      </div>
+      <script type="application/json" id="insTermsJson" set:html={JSON.stringify(insTerms)} />
+      <details class="extras">
+        <summary data-i18n="ship.x.h">Extra services</summary>
+        <!-- Hidden and off while the signature add-on is inactive at /counter/rules: the server refuses it then (lib/addons.ts). -->
+        <label class="check" hidden={sigPrice == null}><input name="opt_signature" type="checkbox" disabled={sigPrice == null} /> <span><strong data-i18n="ship.x.sig">Signature confirmation</strong>{sigPrice != null && <span class="muted"> (+${sigPrice.toFixed(2)})</span>} <span class="muted" data-i18n="ship.x.sig.d">Someone must sign for it when it is delivered.</span></span></label>
+        <!-- Return labels (Peter, Nov 14 2026, like Pirate Ship): "only" swaps the addresses; "included" adds a return label to the outgoing one. -->
+        <label class="check"><input name="opt_return" type="checkbox" /> <span><strong data-i18n="ship.x.ret">Return label</strong> <span class="muted" data-i18n="ship.x.ret.d">A prepaid label to send the package back.</span></span></label>
+        <div id="retModes" class="ret-modes" hidden>
+          <label class="ret-mode"><input type="radio" name="opt_return_mode" value="only" checked /> <span><strong data-i18n="ship.x.ret.only">Return label only</strong> <span class="muted" data-i18n="ship.x.ret.only.d">Swaps the addresses: one label from the “Where is it going?” address back to the return address.</span></span></label>
+          <label class="ret-mode"><input type="radio" name="opt_return_mode" value="included" /> <span><strong data-i18n="ship.x.ret.inc">Return label included</strong> <span class="muted" data-i18n="ship.x.ret.inc.d">The outgoing label plus a return label, so the receiver can send it back.</span></span></label>
+          <p class="muted" data-i18n="ship.x.ret.now">Return labels are charged now, at the price shown.</p>
+        </div>
+        <label class="check"><input name="opt_media_mail" type="checkbox" /> <span><strong data-i18n="ship.x.media">Qualifies for Media Mail</strong> <span class="muted" data-i18n="ship.x.media.d">Books, printed music, recordings and films only, with no ads and no other products. A cheaper, slower USPS service; USPS may open it to check.</span></span></label>
+        <label class="check"><input name="opt_irregular" type="checkbox" /> <span><strong data-i18n="ship.x.irr">Irregular package</strong> <span class="muted" data-i18n="ship.x.irr.d">Not a regular box: tubes, rolls, odd shapes, or anything a sorting machine can't handle.</span></span></label>
+      </details>
+      <div class="hz-row">
+        <label class="check"><input name="opt_hazmat" type="checkbox" /> <span><strong data-i18n="ship.x.hz">Hazardous materials</strong> <span class="muted" data-i18n="ship.x.hz.d">Perfume, nail polish, hair spray, aerosols, lithium batteries, paint, lighter fluid and similar.</span></span></label>
+        <button type="button" class="linkish" id="hzLink" aria-haspopup="dialog" data-i18n="ship.x.hz.link">Learn how to ship hazardous materials</button>
+      </div>
+      <p id="hzNote" class="card hz-note" hidden data-i18n="ship.x.hz.on">Only USPS Ground Advantage can carry this. Put a Limited Quantity mark on the label side of the box.</p>
+      <label class="check"><input name="opt_save" type="checkbox" /> <span><strong data-i18n="ship.x.save">Save this package for next time</strong> <span class="muted" data-i18n="ship.x.save.d">Keeps the size, weight and choices on this device.</span></span></label>
     </fieldset>
 
     <button class="btn" type="submit" data-i18n="ship.getrates">Get rates</button>
+    <p id="requote" class="card" hidden data-i18n="ship.x.requote">Your choices changed, so the prices did too. Press Get rates again.</p>
     <p id="err" class="err" hidden></p>
   </form>
 
@@ -71,21 +151,56 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
     <div id="rates" class="rates"></div>
     <p id="bench" class="muted" hidden></p>
     <form id="buy" class="buy" hidden>
-      <label><span data-i18n="ship.email">Your email (for the receipt and label)</span> <input name="email" type="email" required autocomplete="email" value={me?.email ?? ''} /></label>
+      {me ? (
+        <label><span data-i18n="ship.email">Your email (for the receipt and label)</span> <input name="email" type="email" required autocomplete="email" value={me.email ?? ''} readonly /></label>
+      ) : (
+        <div id="signinGate" class="card gate" data-note="Buying needs a free account (Peter, Nov 14 2026). Rates are open to all; the form and rates are kept while the customer opens the sign-in link.">
+          <h3 data-i18n="ship.gate.h">Sign in to buy your label</h3>
+          <p data-i18n="ship.gate.p">Labels are bought with a free account, so your shipments and tracking stay in one place. We keep this form and your rates while you open the link in your email.</p>
+          <p class="btnrow"><a class="btn" href="/account?next=%2Fship%3Fresume%3D1" data-gate data-i18n="acct.signin">Sign in</a> <a class="btn kraft" href="/account?next=%2Fship%3Fresume%3D1" data-gate data-i18n="acct.create">Create an account</a></p>
+        </div>
+      )}
+      {me && !me.phone && <label><span data-i18n="ship.acctphone">Your mobile number (for problems with this shipment)</span> <input name="acct_phone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="318 555 0100" /></label>}
       {me && <label class="check"><input name="save_address" type="checkbox" /> <span data-i18n="acct.savethis">Save this address to my account</span></label>}
-      <label class="check" id="insRow" hidden><input name="insure" type="checkbox" /> <span data-i18n="ship.insure">Insure it for the full value</span> <span id="insFee" class="muted"></span></label>
-      <p id="insCovered" class="muted" hidden></p>
       <p id="feeRow" class="muted" hidden></p>
       <p id="totalRow" class="price"><span data-i18n="ship.total">Total</span>: <strong id="totalAmt"></strong></p>
       <label class="check"><input name="sms" type="checkbox" /> <span data-i18n="ship.sms">Text me when it ships and when it is delivered</span> <span id="smsFee" class="muted"></span></label>
       <label id="phoneRow" hidden><span data-i18n="ship.phone">Your mobile number</span> <input name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="318 555 0100" /></label>
-      <button class="btn" type="submit" id="buyBtn" data-i18n="ship.continue">Continue</button>
+      {me && consent && (!consent.email || !consent.sms) && (
+        <fieldset class="mkt">
+          <legend data-i18n="mkt.h">Deals and news (optional)</legend>
+          {!consent.email && <label class="check"><input name="mkt_email" type="checkbox" /> <span data-i18n="mkt.email">{CONSENT_WORDING.email}</span></label>}
+          {!consent.sms && <label class="check"><input name="mkt_sms" type="checkbox" /> <span data-i18n="mkt.sms">{CONSENT_WORDING.sms}</span></label>}
+        </fieldset>
+      )}
+      <button class="btn" type="submit" id="buyBtn" data-i18n="ship.continue" hidden={!me}>Continue</button>
     </form>
   </section>
+
+  <!-- The hazardous materials guide: a window over the page, closed with the button or Escape. Written for the store from USPS Publication 52. -->
+  <dialog id="hzDialog" class="hz-dialog" aria-labelledby="hzTitle">
+    <h2 id="hzTitle" data-i18n="ship.hz.title">Shipping hazardous materials</h2>
+    <p data-i18n="ship.hz.intro">Everyday things like perfume, nail polish, hair spray and used phones count as hazardous materials. Most can still be mailed in the US, with the right box, the right service and the Hazardous materials box ticked.</p>
+    <p class="muted" data-i18n="ship.hz.resp">You, the sender, are responsible for following the USPS rules (Publication 52). This is a short summary, not legal advice. If you are not sure, ask us at the counter.</p>
+    <h3 data-i18n="ship.hz.common.h">Common hazardous items</h3>
+    <p data-i18n="ship.hz.common">Aerosols such as hair spray; cleaners and solvents; lighter fluid and fuels; lithium batteries; inks and paint; matches; nail polish; perfume and cologne; used or damaged electronics with lithium batteries.</p>
+    <h3 data-i18n="ship.hz.pack.h">Packing</h3>
+    <p data-i18n="ship.hz.pack">Use a sturdy cardboard box with cushioning around the item. No envelopes or poly mailers. The one exception: a new device with its battery inside, in its own retail box, may go in a padded envelope by USPS.</p>
+    <h3 data-i18n="ship.hz.svc.h">Service and label</h3>
+    <p data-i18n="ship.hz.svc">Tick Hazardous materials before you buy the label. Only USPS Ground Advantage is offered, because these items cannot fly. USPS can charge the sender a fine when hazardous items are not declared on the label. Put a Limited Quantity mark on the label side of the box, and remove old labels and hazmat marks from reused boxes.</p>
+    <h3 data-i18n="ship.hz.elec.h">Phones, laptops and other electronics</h3>
+    <p data-i18n="ship.hz.elec">New, sealed electronics with the battery inside: don't tick the box; any service works. Used or damaged ones: tick the box, ship them in their own package, and write "Restricted Electronic Device – Surface Transportation Only" on the box.</p>
+    <h3 data-i18n="ship.hz.where.h">Where it can go</h3>
+    <p data-i18n="ship.hz.where">Online, hazardous packages ship only between addresses in the lower 48 states and DC. For Alaska, Hawaii, the US territories and military addresses, bring the package to the counter. Some items cannot be mailed at all; if in doubt, bring it in and we will check.</p>
+    <p><a href="https://pe.usps.com/text/pub52/welcome.htm" target="_blank" rel="noopener">USPS Publication 52</a></p>
+    <form method="dialog"><button class="btn" data-i18n="ship.hz.close">Got it, back to my shipment</button></form>
+  </dialog>
 
   <script type="application/json" id="savedJson" set:html={JSON.stringify(saved)} />
   <script>
     import { t } from '../../i18n';
+    import { insuranceFee, termsFor } from '../../lib/insurance';
+    import { PACKAGING, DEFAULT_PACKAGING, packagingById } from '../../lib/packaging';
     const f = document.getElementById('quote') as HTMLFormElement;
     const err = document.getElementById('err')!;
     const results = document.getElementById('results')!;
@@ -95,38 +210,45 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
     // Address autofill (v1.73.0): a five-digit US ZIP fills the city and state through /api/zip; the
     // autocomplete attributes above let the browser offer its saved addresses for the rest.
     const zipEl = f.querySelector('[name=postal_code]') as HTMLInputElement, cityEl = f.querySelector('[name=city]') as HTMLInputElement, stateEl = f.querySelector('[name=state]') as HTMLInputElement;
-    // Street typeahead (v1.74.0): what is typed in the street box goes to /api/address-suggest; picking a
+    // Street typeahead (v1.74.0): what is typed in a street box goes to /api/address-suggest; picking a
     // suggestion fills street, city, state and ZIP. Arrow keys and Enter work; Escape closes.
-    const streetEl = f.querySelector('[name=line_1]') as HTMLInputElement, list = document.getElementById('addrList') as HTMLUListElement;
-    let items: any[] = [], active = -1, timer = 0, seq = 0;
-    const close = () => { list.hidden = true; list.innerHTML = ''; items = []; active = -1; streetEl.setAttribute('aria-expanded', 'false'); };
-    const choose = (i: number) => { const s = items[i]; if (!s) return; streetEl.value = s.line_1; if (s.city) cityEl.value = s.city; if (s.state) stateEl.value = s.state; if (s.postal_code) zipEl.value = s.postal_code; lastZip = zipEl.value.slice(0, 5); close(); (f.querySelector('[name=line_2]') as HTMLInputElement).focus(); };
-    const paint = () => { list.querySelectorAll('li').forEach((li, i) => li.setAttribute('aria-selected', String(i === active))); };
-    streetEl.addEventListener('input', () => {
-      const q = streetEl.value.trim();
-      clearTimeout(timer);
-      if (q.length < 4 || /^\d+\s?$/.test(q)) { close(); return; }
-      timer = window.setTimeout(async () => {
-        const mine = ++seq;
-        try {
-          const j = await (await fetch(`/api/address-suggest?q=${encodeURIComponent(q)}&country=US`)).json();
-          if (mine !== seq) return;
-          items = j.suggestions ?? [];
-          if (!items.length) { close(); return; }
-          list.innerHTML = items.map((s: any, i: number) => `<li role="option" data-i="${i}" aria-selected="false">${s.label.replace(/</g, '&lt;')}</li>`).join('');
-          list.hidden = false; active = -1; streetEl.setAttribute('aria-expanded', 'true');
-        } catch { close(); }
-      }, 250);
-    });
-    list.addEventListener('mousedown', (e) => { const li = (e.target as HTMLElement).closest('li'); if (li) { e.preventDefault(); choose(Number(li.dataset.i)); } });
-    streetEl.addEventListener('keydown', (e) => {
-      if (list.hidden) return;
-      if (e.key === 'ArrowDown') { e.preventDefault(); active = Math.min(active + 1, items.length - 1); paint(); }
-      else if (e.key === 'ArrowUp') { e.preventDefault(); active = Math.max(active - 1, 0); paint(); }
-      else if (e.key === 'Enter' && active >= 0) { e.preventDefault(); choose(active); }
-      else if (e.key === 'Escape') close();
-    });
-    streetEl.addEventListener('blur', () => setTimeout(close, 150));
+    // Both the return address and the recipient get one (the return address since Nov 14 2026, for Peter).
+    function typeahead(prefix: '' | 'from_', listId: string, picked: (zip: string) => void) {
+      const field = (n: string) => f.querySelector(`[name=${prefix}${n}]`) as HTMLInputElement;
+      const streetEl = field('line_1'), cityBox = field('city'), stateBox = field('state'), zipBox = field('postal_code');
+      const list = document.getElementById(listId) as HTMLUListElement;
+      let items: any[] = [], active = -1, timer = 0, seq = 0;
+      const close = () => { list.hidden = true; list.innerHTML = ''; items = []; active = -1; streetEl.setAttribute('aria-expanded', 'false'); };
+      const choose = (i: number) => { const s = items[i]; if (!s) return; streetEl.value = s.line_1; if (s.city) cityBox.value = s.city; if (s.state) stateBox.value = s.state; if (s.postal_code) zipBox.value = s.postal_code; picked(zipBox.value.slice(0, 5)); close(); field('line_2').focus(); };
+      const paint = () => { list.querySelectorAll('li').forEach((li, i) => li.setAttribute('aria-selected', String(i === active))); };
+      streetEl.addEventListener('input', () => {
+        const q = streetEl.value.trim();
+        clearTimeout(timer);
+        if (q.length < 4 || /^\d+\s?$/.test(q)) { close(); return; }
+        timer = window.setTimeout(async () => {
+          const mine = ++seq;
+          try {
+            const j = await (await fetch(`/api/address-suggest?q=${encodeURIComponent(q)}&country=US`)).json();
+            if (mine !== seq) return;
+            items = j.suggestions ?? [];
+            if (!items.length) { close(); return; }
+            list.innerHTML = items.map((s: any, i: number) => `<li role="option" data-i="${i}" aria-selected="false">${s.label.replace(/</g, '&lt;')}</li>`).join('');
+            list.hidden = false; active = -1; streetEl.setAttribute('aria-expanded', 'true');
+          } catch { close(); }
+        }, 250);
+      });
+      list.addEventListener('mousedown', (e) => { const li = (e.target as HTMLElement).closest('li'); if (li) { e.preventDefault(); choose(Number(li.dataset.i)); } });
+      streetEl.addEventListener('keydown', (e) => {
+        if (list.hidden) return;
+        if (e.key === 'ArrowDown') { e.preventDefault(); active = Math.min(active + 1, items.length - 1); paint(); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); active = Math.max(active - 1, 0); paint(); }
+        else if (e.key === 'Enter' && active >= 0) { e.preventDefault(); choose(active); }
+        else if (e.key === 'Escape') close();
+      });
+      streetEl.addEventListener('blur', () => setTimeout(close, 150));
+    }
+    typeahead('', 'addrList', (z) => { lastZip = z; });
+    typeahead('from_', 'fromAddrList', (z) => { lastFromZip = z; });
     let lastZip = '';
     zipEl.addEventListener('input', async () => {
       const z = zipEl.value.trim().slice(0, 5);
@@ -156,20 +278,129 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
     let payload: any = null;
     let picked: string | null = null;
     let pickedPrice = 0;
+    let pickedReturn = 0; // the return label's price with "Return label included"
+    let pickedService = ''; // the picked rate's service: its included insurance cover depends on it (none with Media Mail)
     let extras: any = null;
-    const insBox = buy.querySelector('[name=insure]') as HTMLInputElement;
+    const insBox = f.querySelector('[name=insure]') as HTMLInputElement;
+    const INS_TERMS = JSON.parse(document.getElementById('insTermsJson')?.textContent || 'null');
+    const insTerms = () => { const base = extras?.insurance ?? INS_TERMS; return base ? termsFor(base, pickedService) : null; };
     function total() {
-      const ins = insBox.checked && extras && !extras.insurance.covered ? extras.insurance.fee : 0;
+      const ins = insBox.checked && insTerms() ? insuranceFee(insTerms(), declared()).fee : 0;
       const smsOn = (buy.querySelector('[name=sms]') as HTMLInputElement).checked;
       const text = smsOn && extras?.text_updates_price ? extras.text_updates_price : 0;
-      const subtotal = pickedPrice + ins + text;
+      // Signature confirmation is charged at the catalog price when it was ticked for these rates (the server adds the
+      // same add-on from the options sent with the order). Changing it after Get rates clears the rates (staleRates).
+      const sigOn = !!payload?.parcel?.options?.signature;
+      const sig = sigOn ? (extras?.addons?.find((x: any) => x.code === 'signature')?.price ?? 0) : 0;
+      const subtotal = pickedPrice + ins + text + sig + pickedReturn;
       const f = extras?.online_fee && (extras.online_fee.percent || extras.online_fee.flat) ? Math.round((subtotal * extras.online_fee.percent / 100 + extras.online_fee.flat) * 100) / 100 : 0;
       const feeRow = document.getElementById('feeRow')!;
       feeRow.hidden = !f;
       if (f) feeRow.textContent = t('ship.fee').replace('{fee}', f.toFixed(2)).replace('{pct}', String(extras.online_fee.percent));
       document.getElementById('totalAmt')!.textContent = `$${(subtotal + f).toFixed(2)}`;
     }
-    insBox.addEventListener('change', total);
+    // Insurance: ticking the box opens the declared value; the fee updates as it is typed.
+    const insValueRow = document.getElementById('insValueRow') as HTMLElement, declEl = f.querySelector('[name=declared_usd]') as HTMLInputElement;
+    const insCovered = document.getElementById('insCovered') as HTMLElement, insFeeEl = document.getElementById('insFee') as HTMLElement;
+    const declared = () => Math.max(0, Number(declEl.value) || 0);
+    function insPaint() {
+      insValueRow.hidden = !insBox.checked;
+      declEl.required = insBox.checked;
+      const descRow = document.getElementById('insDescRow') as HTMLElement, descEl = f.querySelector('[name=description]') as HTMLInputElement;
+      descRow.hidden = !insBox.checked;
+      descEl.required = insBox.checked;
+      const q = insTerms() && insBox.checked && declared() > 0 ? insuranceFee(insTerms(), declared()) : null;
+      insFeeEl.textContent = q && !q.covered ? t('ship.insfee').replace('{fee}', q.fee.toFixed(2)).replace('{value}', String(q.declared_usd)) : '';
+      insCovered.hidden = !(q && q.covered);
+      if (q && q.covered) insCovered.textContent = t('ship.inscovered').replace('{n}', String(insTerms().included_usd));
+      total();
+    }
+    insBox.addEventListener('change', () => { insPaint(); if (insBox.checked) declEl.focus(); });
+    declEl.addEventListener('input', insPaint);
+
+    // Extra services (Peter, Nov 14 2026): the ticked boxes travel on the parcel as options.
+    const OPTS = ['signature', 'media_mail', 'irregular', 'hazmat'] as const;
+    const optBox = (k: string) => f.querySelector(`[name=opt_${k}]`) as HTMLInputElement;
+    const retBox = f.querySelector('[name=opt_return]') as HTMLInputElement, retModes = document.getElementById('retModes') as HTMLElement;
+    const retMode = () => (f.querySelector('[name=opt_return_mode]:checked') as HTMLInputElement | null)?.value ?? 'only';
+    const readOptions = (): Record<string, unknown> => ({ ...Object.fromEntries(OPTS.filter((k) => optBox(k).checked && !optBox(k).disabled).map((k) => [k, true])), ...(retBox.checked ? { return_label: retMode() } : {}) });
+    const retPaint = () => { retModes.hidden = !retBox.checked; };
+    retBox.addEventListener('change', retPaint);
+    // Rates are priced for the choices sent with Get rates. Changing a choice that changes them (an extra service,
+    // the return label, the packaging) clears the shown rates and asks for Get rates again, so what is shown is what
+    // is charged. Insurance is priced live from the same terms the server uses, so it stays.
+    const requote = document.getElementById('requote') as HTMLElement;
+    function staleRates() {
+      if (!payload) return;
+      payload = null; picked = null; pickedPrice = 0; pickedReturn = 0; pickedService = '';
+      results.hidden = true; buy.hidden = true; ratesEl.innerHTML = '';
+      requote.hidden = false;
+      insPaint();
+    }
+    f.querySelectorAll<HTMLInputElement>('[name^=opt_]:not([name=opt_save]), [name=packaging]').forEach((el) => el.addEventListener('change', staleRates));
+    const hzNote = document.getElementById('hzNote') as HTMLElement, hzDialog = document.getElementById('hzDialog') as HTMLDialogElement;
+    const hzPaint = () => { hzNote.hidden = !optBox('hazmat').checked; };
+    optBox('hazmat').addEventListener('change', hzPaint);
+    document.getElementById('hzLink')!.addEventListener('click', () => hzDialog.showModal());
+    hzDialog.addEventListener('click', (e) => { if (e.target === hzDialog) hzDialog.close(); }); // a click on the dimmed backdrop closes it
+
+    // Packaging picker (Peter, Nov 14 2026). Picking an item shows it in the summary and closes the list. Carrier
+    // packaging has a known size: the size boxes are filled and hidden, so only the weight is typed. A tube or
+    // irregular package ticks Irregular package; the server applies the same rules (lib/validate.ts).
+    const pkgPicker = document.getElementById('pkgPicker') as HTMLDetailsElement, pkgSized = document.getElementById('pkgSized') as HTMLElement;
+    const pkgValue = () => (f.querySelector('[name=packaging]:checked') as HTMLInputElement | null)?.value ?? DEFAULT_PACKAGING;
+    const dimInputs = ['length_in', 'width_in', 'height_in'].map((n) => f.querySelector(`[name=${n}]`) as HTMLInputElement);
+    function pkgPaint() {
+      const pk = packagingById(pkgValue()) ?? PACKAGING[0];
+      (document.getElementById('pkgImg') as HTMLImageElement).src = pk.img;
+      const nameEl = document.getElementById('pkgName')!, descEl = document.getElementById('pkgDesc')!;
+      if (pk.nameKey) { nameEl.dataset.i18n = pk.nameKey; nameEl.textContent = t(pk.nameKey); } else { delete nameEl.dataset.i18n; nameEl.textContent = pk.name; }
+      descEl.dataset.i18n = pk.descKey; descEl.textContent = t(pk.descKey);
+      const sized = !!pk.dims;
+      pkgSized.hidden = !sized;
+      f.querySelectorAll<HTMLElement>('label.dim').forEach((el) => { el.hidden = sized; });
+      dimInputs.forEach((el, i) => { el.required = !sized; if (sized) el.value = String(pk.dims![i]); });
+      if (pk.id === 'tube') { optBox('irregular').checked = true; (document.querySelector('details.extras') as HTMLDetailsElement).open = true; } // show the customer it was ticked
+    }
+    f.querySelectorAll<HTMLInputElement>('[name=packaging]').forEach((el) => el.addEventListener('change', () => { pkgPaint(); pkgPicker.open = false; }));
+    // The list's own descriptions are filled from the strings, so they follow the language picker.
+    const pkgFillDescs = () => f.querySelectorAll<HTMLElement>('.pkg-opt [data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n!); });
+    pkgFillDescs(); document.addEventListener('langchange', () => { pkgFillDescs(); pkgPaint(); });
+
+    // Saved packages: size, weight, contents and options, kept on this device only (localStorage), up to 5.
+    const PKG_KEY = 'gp-saved-packages';
+    const PKG_FIELDS = ['weight_lb', 'length_in', 'width_in', 'height_in', 'description'] as const;
+    type SavedPkg = { label: string; fields: Record<string, string>; options: Record<string, any>; packaging?: string };
+    const loadPkgs = (): SavedPkg[] => { try { return JSON.parse(localStorage.getItem(PKG_KEY) || '[]'); } catch { return []; } };
+    const storePkgs = (list: SavedPkg[]) => { try { localStorage.setItem(PKG_KEY, JSON.stringify(list)); } catch {} };
+    const pkgRow = document.getElementById('savedPkgRow') as HTMLElement, pkgSel = document.getElementById('savedPkg') as HTMLSelectElement;
+    function paintPkgs() {
+      const list = loadPkgs();
+      pkgRow.hidden = !list.length;
+      pkgSel.innerHTML = '<option value="">…</option>' + list.map((p, i) => `<option value="${i}">${p.label.replace(/</g, '&lt;')}</option>`).join('');
+    }
+    function savePkg() {
+      const fields = Object.fromEntries(PKG_FIELDS.map((k) => [k, (f.querySelector(`[name=${k}]`) as HTMLInputElement).value.trim()]));
+      const label = `${fields.length_in}×${fields.width_in}×${fields.height_in} in · ${fields.weight_lb} lb${fields.description ? ` · ${fields.description}` : ''}`;
+      const pk = packagingById(pkgValue());
+      const shown = pk && pk.group !== 'own' ? `${pk.name} · ${fields.weight_lb} lb${fields.description ? ` · ${fields.description}` : ''}` : label;
+      const list = [{ label: shown, fields, options: readOptions(), packaging: pkgValue() }, ...loadPkgs().filter((p) => p.label !== shown)].slice(0, 5);
+      storePkgs(list); paintPkgs();
+    }
+    pkgSel.addEventListener('change', () => {
+      const p = loadPkgs()[Number(pkgSel.value)];
+      if (!pkgSel.value || !p) return;
+      for (const k of PKG_FIELDS) (f.querySelector(`[name=${k}]`) as HTMLInputElement).value = p.fields[k] ?? '';
+      for (const k of OPTS) optBox(k).checked = !!p.options?.[k];
+      retBox.checked = !!p.options?.return_label;
+      const mode = f.querySelector(`[name=opt_return_mode][value="${p.options?.return_label ?? 'only'}"]`) as HTMLInputElement | null;
+      if (mode) mode.checked = true;
+      const pkRadio = f.querySelector(`[name=packaging][value="${p.packaging ?? DEFAULT_PACKAGING}"]`) as HTMLInputElement | null;
+      if (pkRadio) pkRadio.checked = true;
+      pkgPaint(); retPaint(); hzPaint(); staleRates();
+    });
+    document.getElementById('forgetPkg')!.addEventListener('click', () => { storePkgs([]); paintPkgs(); });
+    paintPkgs();
 
     function read() {
       const d = Object.fromEntries(new FormData(f).entries()) as Record<string, string>;
@@ -177,7 +408,7 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
         online: true,
         origin: { contact_name: d.from_contact_name, line_1: d.from_line_1, line_2: d.from_line_2, city: d.from_city, state: d.from_state, postal_code: d.from_postal_code, country_alpha2: 'US' },
         destination: { contact_name: d.contact_name, line_1: d.line_1, line_2: d.line_2, city: d.city, state: d.state, postal_code: d.postal_code, country_alpha2: 'US' },
-        parcel: { weight_lb: d.weight_lb, length_in: d.length_in, width_in: d.width_in, height_in: d.height_in, description: d.description, value_usd: d.value_usd },
+        parcel: { weight_lb: d.weight_lb, length_in: d.length_in, width_in: d.width_in, height_in: d.height_in, description: insBox.checked ? d.description : '', options: readOptions(), packaging: pkgValue() }, // contents only with insurance
       };
     }
 
@@ -192,16 +423,15 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
     savedSel?.addEventListener('change', fillSaved); if (savedSel?.value) fillSaved();
     f.addEventListener('submit', async (e) => {
       e.preventDefault();
-      err.hidden = true; results.hidden = true; buy.hidden = true; picked = null;
+      err.hidden = true; results.hidden = true; buy.hidden = true; picked = null; pickedService = ''; requote.hidden = true;
       payload = read();
+      if ((f.querySelector('[name=opt_save]') as HTMLInputElement).checked) savePkg();
       const res = await fetch('/api/rates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const j = await res.json();
       if (!res.ok) { err.textContent = j.error; err.hidden = false; return; }
       extras = j.extras;
       document.getElementById('smsFee')!.textContent = extras?.text_updates_price ? t('ship.textfee').replace('{fee}', extras.text_updates_price.toFixed(2)) : '';
-      const insRow = document.getElementById('insRow')!, insCovered = document.getElementById('insCovered')!;
-      if (extras?.insurance.covered) { insRow.hidden = true; insBox.checked = false; insCovered.hidden = false; insCovered.textContent = t('ship.inscovered').replace('{n}', String(extras.insurance.included_usd)); }
-      else { insRow.hidden = false; insCovered.hidden = true; document.getElementById('insFee')!.textContent = t('ship.insfee').replace('{fee}', extras.insurance.fee.toFixed(2)).replace('{value}', String(extras.insurance.declared_usd)); }
+      insPaint();
       const an = document.getElementById('addrNote')!, ad = j.address;
       if (ad && (ad.errors.length || ad.warnings.length)) { an.textContent = [...ad.errors, ...ad.warnings].join(' '); an.className = ad.errors.length ? 'err' : 'card'; an.hidden = false; } else an.hidden = true;
       const pk = j.packing, pn = document.getElementById('packNote')!;
@@ -219,8 +449,8 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
           <span class="carrier">${r.carrier}</span>
           <span class="service">${r.service}</span>
           <span class="days">${r.min_days ?? '?'}–${r.max_days ?? '?'} ${t('ship.days')}</span>
-          <span class="price">$${r.total_charge.toFixed(2)}</span>`;
-        el.querySelector('input')!.addEventListener('change', () => { picked = r.id; pickedPrice = r.total_charge; buy.hidden = false; total(); });
+          <span class="price">$${r.total_charge.toFixed(2)}${r.return_charge != null ? `<small class="ret-plus">${t('ship.x.ret.plus').replace('{price}', r.return_charge.toFixed(2))}</small>` : ''}</span>`;
+        el.querySelector('input')!.addEventListener('change', () => { picked = r.id; pickedPrice = r.total_charge; pickedReturn = r.return_charge ?? 0; pickedService = r.service; buy.hidden = false; insPaint(); });
         ratesEl.appendChild(el);
       }
       const bench = document.getElementById('bench')!;
@@ -232,15 +462,51 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
     const smsBox = buy.querySelector('[name=sms]') as HTMLInputElement;
     const phoneRow = document.getElementById('phoneRow') as HTMLElement;
     smsBox.addEventListener('change', () => { phoneRow.hidden = !smsBox.checked; if (smsBox.checked) (buy.querySelector('[name=phone]') as HTMLInputElement).focus(); total(); });
+    // Sign in to buy (Peter, Nov 14 2026): keep the whole form on this device, email the link with next=/ship?resume=1,
+    // and when the customer comes back signed in, fill everything in again and show the rates.
+    const DRAFT = 'gp-ship-draft';
+    function saveDraft() {
+      const fields: Record<string, string | boolean> = {};
+      f.querySelectorAll<HTMLInputElement>('input[name], select[name]').forEach((el) => {
+        if (el.type === 'radio') { if (el.checked) fields[el.name] = el.value; }
+        else if (el.type === 'checkbox') fields[el.name] = el.checked;
+        else fields[el.name] = el.value;
+      });
+      try { localStorage.setItem(DRAFT, JSON.stringify({ at: Date.now(), fields })); } catch {}
+    }
+    function restoreDraft() {
+      let d: any = null;
+      try { d = JSON.parse(localStorage.getItem(DRAFT) || 'null'); localStorage.removeItem(DRAFT); } catch {}
+      if (!d || Date.now() - d.at > 24 * 3600_000) return false;
+      for (const [name, v] of Object.entries(d.fields)) {
+        f.querySelectorAll<HTMLInputElement>(`[name="${name}"]`).forEach((el) => {
+          if (el.type === 'radio') el.checked = el.value === v;
+          else if (el.type === 'checkbox') el.checked = v === true;
+          else el.value = String(v);
+        });
+      }
+      pkgPaint(); retPaint(); hzPaint(); insPaint();
+      return true;
+    }
+    // Sign in or create an account on the account page; the whole form is kept on this device and comes back after.
+    document.querySelectorAll<HTMLAnchorElement>('[data-gate]').forEach((a) => a.addEventListener('click', () => saveDraft()));
+    if (new URLSearchParams(location.search).has('resume') && restoreDraft()) f.requestSubmit();
+
     buy.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!picked) return;
       buyBtn.setAttribute('disabled', '');
       const email = (buy.querySelector('[name=email]') as HTMLInputElement).value;
       const sms = (buy.querySelector('[name=sms]') as HTMLInputElement).checked;
-      const phone = (buy.querySelector('[name=phone]') as HTMLInputElement).value;
+      const acctPhone = (buy.querySelector('[name=acct_phone]') as HTMLInputElement | null)?.value ?? '';
+      const phone = (buy.querySelector('[name=phone]') as HTMLInputElement).value || acctPhone;
+      const mkt_email = (buy.querySelector('[name=mkt_email]') as HTMLInputElement | null)?.checked === true;
+      const mkt_sms = (buy.querySelector('[name=mkt_sms]') as HTMLInputElement | null)?.checked === true;
+      const lang = document.documentElement.lang;
       const insure = insBox.checked;
-      const res = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, email, sms, phone, rate_id: picked, insure, save_address: (buy.querySelector('[name=save_address]') as HTMLInputElement | null)?.checked === true }) });
+      // The declared value travels with the parcel only when insured; the server prices the insurance from it.
+      const parcel = { ...payload.parcel, ...(insure ? { value_usd: declared() } : {}) };
+      const res = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, parcel, email, sms, phone, acct_phone: acctPhone, mkt_email, mkt_sms, lang, rate_id: picked, insure, save_address: (buy.querySelector('[name=save_address]') as HTMLInputElement | null)?.checked === true }) });
       const j = await res.json();
       if (!res.ok) { err.textContent = j.error; err.hidden = false; buyBtn.removeAttribute('disabled'); return; }
       location.href = j.next;

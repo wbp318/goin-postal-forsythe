@@ -1,0 +1,104 @@
+---
+export const prerender = false;
+import Base from '../layouts/Base.astro';
+import { store } from '../data/store';
+import { env } from '../lib/env';
+import { readSession } from '../lib/session';
+import { getCustomer, waitingReservation, mailboxesFor } from '../shipping/store';
+import { SIZES, addressFor } from '../lib/mailbox';
+
+// Physical mailboxes (Peter, Nov 15 2026): sizes and prices, what a box gives you, what to bring, and Reserve.
+// A reservation is finished at the counter (two IDs and USPS Form 1583); staff then assign the box, and the
+// holder sees it on their account.
+const meId = await readSession(env, Astro.request.headers.get('cookie')).catch(() => null);
+const me = meId ? await getCustomer(env, meId) : null;
+const mine = me ? await mailboxesFor(env, me.id) : [];
+const res = me ? await waitingReservation(env, me.id) : null;
+const sample = addressFor(SIZES[0].from + 5);
+const money = (n: number) => `$${n.toFixed(0)}`;
+---
+<Base title={`Mailboxes · ${store.name}`} description="Rent a mailbox at Goin' Postal in Monroe: a real street address, packages from every carrier, and a text when mail arrives. 6 months or a year.">
+  <section class="hero">
+    <h1 data-i18n="mb.h1">Rent a mailbox</h1>
+    <p class="lead" data-i18n="mb.lead">A real street address for your mail and packages, from every carrier. Reserve online, then finish at the counter.</p>
+  </section>
+
+  {mine.length > 0 && <p class="card"><span data-i18n="mb.have">You have a mailbox with us:</span> <strong>#{mine.map((x) => x.box_no).join(', #')}</strong> · <a href="/account#mailbox" data-i18n="mb.see">See it on your account</a></p>}
+
+  <div class="mb-sizes">
+    {SIZES.map((s) => (
+      <div class="card mb-size">
+        <h2 data-i18n={`mb.size.${s.id}`}>{s.name}</h2>
+        <p class="mb-price"><strong>{money(s.price6)}</strong> <span data-i18n="mb.per6">for 6 months</span></p>
+        <p class="mb-price"><strong>{money(s.price12)}</strong> <span data-i18n="mb.per12">for a year</span></p>
+        <p class="muted" data-i18n={`mb.fits.${s.id}`}>{s.id === 'small' ? 'Letters and magazines' : s.id === 'medium' ? 'Letters, magazines and small packages' : 'Lots of mail and bigger packages'}</p>
+      </div>
+    ))}
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3 data-i18n="mb.get">What you get</h3>
+      <ul>
+        <li data-i18n="mb.get1">A real street address, not a P.O. Box</li>
+        <li data-i18n="mb.get2">Packages from USPS, UPS, FedEx and DHL</li>
+        <li data-i18n="mb.get3">A text or email reminder before it's time to renew</li>
+        <li data-i18n="mb.get4">See your box and its renewal date on your account</li>
+      </ul>
+      <p><span data-i18n="mb.addr">Your address will look like:</span><br /><strong>{sample}</strong></p>
+    </div>
+    <div class="card">
+      <h3 data-i18n="mb.bring">What to bring to the counter</h3>
+      <ul>
+        <li data-i18n="mb.bring1">A photo ID (driver's license, state ID, passport or military ID)</li>
+        <li data-i18n="mb.bring2">A second ID that shows your current address (a lease, a utility bill, vehicle registration)</li>
+        <li data-i18n="mb.bring3">USPS Form 1583. We have blank ones, or print it at home and fill it in, but sign it at the counter.</li>
+        <li data-i18n="mb.bring4">Payment for 6 months or a year</li>
+      </ul>
+    </div>
+  </div>
+
+  <section class="card mb-reserve" id="reserve">
+    <h3 data-i18n="mb.reserve.h">Reserve a mailbox</h3>
+    {res ? (
+      <div>
+        <p><span data-i18n="mb.reserved">Reserved:</span> <strong data-i18n={`mb.size.${res.size}`}>{SIZES.find((s) => s.id === res.size)?.name}</strong> · {res.term === 12 ? <span data-i18n="mb.year">1 year</span> : <span data-i18n="mb.six">6 months</span>} · <span data-i18n="mb.code">code</span> <strong>{res.code}</strong></p>
+        <p data-i18n="mb.reserved.p">Bring your two IDs to the counter and we'll get your box ready. We'll call you if we have questions.</p>
+        <p><button type="button" class="linkish" id="mbCancel" data-i18n="mb.cancel">Cancel this reservation</button></p>
+      </div>
+    ) : me ? (
+      <form id="mbForm" class="mb-form">
+        <fieldset><legend data-i18n="mb.pick.size">Size</legend>
+          {SIZES.map((s, i) => <label class="check"><input type="radio" name="size" value={s.id} checked={i === 0} /> <span data-i18n={`mb.size.${s.id}`}>{s.name}</span></label>)}
+        </fieldset>
+        <fieldset><legend data-i18n="mb.pick.term">How long</legend>
+          <label class="check"><input type="radio" name="term" value="6" checked /> <span data-i18n="mb.six">6 months</span></label>
+          <label class="check"><input type="radio" name="term" value="12" /> <span data-i18n="mb.year">1 year</span></label>
+        </fieldset>
+        <p class="mb-total"><span data-i18n="done.total">Total</span>: <strong id="mbTotal"></strong> <span class="muted" data-i18n="mb.paycounter">(you pay at the counter)</span></p>
+        <button class="btn" type="submit" data-i18n="mb.reserve">Reserve my mailbox</button>
+        <p class="err" id="mbErr" hidden></p>
+      </form>
+    ) : (
+      <p><span data-i18n="mb.signin">Sign in or create a free account to reserve a mailbox.</span> <a class="btn small" href="/account?next=%2Fmailbox%23reserve" data-i18n="acct.signin">Sign in</a></p>
+    )}
+  </section>
+
+  <script define:vars={{ prices: Object.fromEntries(SIZES.map((s) => [s.id, { 6: s.price6, 12: s.price12 }])) }}>
+    const form = document.getElementById('mbForm');
+    const pick = (n) => form?.querySelector(`input[name=${n}]:checked`)?.value;
+    const paint = () => { if (form) document.getElementById('mbTotal').textContent = `$${prices[pick('size')][pick('term')]}`; };
+    form?.addEventListener('change', paint); paint();
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const res = await fetch('/api/mailbox', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'reserve', size: pick('size'), term: Number(pick('term')) }) });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) { const err = document.getElementById('mbErr'); err.textContent = j.error || 'Try again'; err.hidden = false; return; }
+      location.hash = 'reserve'; location.reload();
+    });
+    document.getElementById('mbCancel')?.addEventListener('click', async () => {
+      await fetch('/api/mailbox', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'cancel_reservation' }) });
+      location.reload();
+    });
+  </script>
+</Base>

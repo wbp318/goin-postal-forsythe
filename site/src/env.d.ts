@@ -15,6 +15,9 @@ interface Env {
   STORE_ID?: string;          // short slug of this deployment's store: forsythe, west-carroll
   STORE_JSON?: string;        // this store's facts (site/stores/<slug>.json) for a second store; blank keeps the Forsythe defaults
   COUNTER_PIN?: string;
+  ANTHROPIC_API_KEY?: string; // "Design with AI" on business cards (Peter, Nov 15 2026); blank means demo mode, no AI and no cost
+  AI_DAILY_LIMIT?: string;    // designs a customer may ask the AI for per day (default 10)
+  AI_SITE_DAILY_LIMIT?: string; // AI designs for the whole site per day (default 200), a ceiling on the bill
   SESSION_SECRET?: string;    // signs customer login cookies (T20); any long random string. Without it the dev server uses a fixed one
   OWNER_PIN?: string;         // optional second PIN that alone may save price rules; blank means COUNTER_PIN may
   PRINTER_KEY?: string;       // shared secret the counter printer agent sends to /api/print

@@ -1,0 +1,149 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+
+// Staff page: mailboxes on the website (Peter, Nov 15 2026). Reservations made online wait here until the customer
+// comes in with two IDs and the PS Form 1583; then staff assign a box number, and the holder sees it on their
+// account. Boxes in use show their paid-through date and status; Renew adds 6 or 12 months; Send due reminders
+// texts and emails everyone whose box is due (each reminder goes out once). The counter's register is still where
+// the IDs, the 1583 and the payments are kept.
+---
+<Base title="Counter · Mailboxes">
+  <section class="hero">
+    <h1 data-i18n="st.mb.h1">Mailboxes</h1>
+    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/batch" data-i18n="st.nav.batch">Batch</a> · <a href="/counter/fulfillment" data-i18n="st.nav.fulfillment">Fulfillment</a> · <a href="/counter/pickups" data-i18n="st.nav.pickups">Pickups</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/accounts" data-i18n="st.nav.accounts">Accounts</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/scan" data-i18n="st.nav.scan">Scan a QR</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/claims" data-i18n="st.nav.claims">Claims</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/close" data-i18n="st.nav.close">End of day</a> · <a href="/counter/invoices" data-i18n="st.nav.invoices">Invoices</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a> · <a href="/counter/staff" data-i18n="st.nav.staff">Staff</a> · <a href="/counter/settings" data-i18n="st.nav.settings">Settings</a> · <a href="/counter/mailboxes" data-i18n="st.nav.mailboxes">Mailboxes</a> · <a href="/counter/export" data-i18n="st.nav.export">Export</a></p>
+    <p class="lead" data-i18n="st.mb.lead">Online reservations, the boxes assigned to website accounts, renewals and reminders. IDs, the 1583 and payments still go in the register.</p>
+  </section>
+
+  <div class="card">
+    <p class="btnrow">
+      <label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
+      <button class="btn" id="load" data-i18n="st.show">Show</button>
+    </p>
+    <p id="msg" role="alert"></p>
+  </div>
+
+  <div id="mbMain" class="hidden">
+    <div class="card">
+      <h3 data-i18n="st.mb.free">Free boxes</h3>
+      <p id="free"></p>
+      <p class="btnrow"><button class="btn" id="sendDue" data-i18n="st.mb.senddue">Send due reminders</button> <span class="muted" data-i18n="st.mb.senddue.p">Texts and emails everyone whose box is due within 30 or 7 days, or lapsed. Each reminder goes out once.</span></p>
+      <ul id="sentList"></ul>
+    </div>
+
+    <div class="card">
+      <h3 data-i18n="st.mb.res">Reservations waiting</h3>
+      <p class="muted" data-i18n="st.mb.res.p">When they come in with two IDs and the 1583, type the box number and press Assign.</p>
+      <table class="list" id="resTable"><thead><tr><th data-i18n="st.mb.code">Code</th><th data-i18n="st.c.th.name">Name</th><th data-i18n="st.mb.contact">Contact</th><th data-i18n="st.mb.size">Size</th><th data-i18n="st.mb.term">Term</th><th data-i18n="st.mb.box">Box #</th><th></th></tr></thead><tbody></tbody></table>
+      <p class="muted" id="noRes" hidden data-i18n="st.mb.nores">No reservations waiting.</p>
+    </div>
+
+    <div class="card">
+      <h3 data-i18n="st.mb.boxes">Boxes on the website</h3>
+      <table class="list" id="boxTable"><thead><tr><th data-i18n="st.mb.box">Box #</th><th data-i18n="st.mb.holder">Holder</th><th data-i18n="st.mb.contact">Contact</th><th data-i18n="st.mb.size">Size</th><th data-i18n="st.mb.paidthru">Paid through</th><th data-i18n="st.mb.status">Status</th><th></th></tr></thead><tbody></tbody></table>
+      <p class="muted" id="noBoxes" hidden data-i18n="st.mb.noboxes">No boxes assigned on the website yet.</p>
+    </div>
+
+    <div class="card">
+      <h3 data-i18n="st.mb.assign.h">Assign a box to an account</h3>
+      <p class="muted" data-i18n="st.mb.assign.p">For a customer who signed up at the counter: find their website account, then give them their box.</p>
+      <p class="btnrow"><input id="findQ" data-i18n-ph="st.mb.find.ph" placeholder="Name, email or phone" /> <button class="btn small" id="findBtn" data-i18n="st.mb.find">Find</button></p>
+      <ul id="found" class="mb-found"></ul>
+      <form id="assignForm" class="hidden mb-assign">
+        <p><span data-i18n="st.mb.for">For:</span> <strong id="assignWho"></strong></p>
+        <label><span data-i18n="st.mb.box">Box #</span> <input name="box_no" inputmode="numeric" required /></label>
+        <label><span data-i18n="st.mb.term">Term</span> <select name="term"><option value="6" data-i18n="st.mb.six">6 months</option><option value="12" data-i18n="st.mb.year">1 year</option></select></label>
+        <label><span data-i18n="st.mb.start">Start date</span> <input name="start_date" type="date" /></label>
+        <button class="btn small" type="submit" data-i18n="st.mb.assign">Assign</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    import { t, tf } from '../../i18n';
+    const $ = (id: string) => document.getElementById(id)!;
+    const pin = () => ($('pin') as HTMLInputElement).value;
+    const msg = $('msg');
+    const say = (text: string, err = false) => { msg.className = err ? 'err' : 'ok-msg'; msg.textContent = text; };
+    async function api(extra: Record<string, unknown>) {
+      const res = await fetch('/api/mailbox', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin(), ...extra }) });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error ?? 'Try again');
+      return j;
+    }
+    const cell = (tr: HTMLElement, text: string) => { const td = document.createElement('td'); td.textContent = text; tr.appendChild(td); return td; };
+    const btn = (label: string, cls: string, fn: () => void) => { const b = document.createElement('button'); b.type = 'button'; b.className = `btn small ${cls}`; b.textContent = label; b.addEventListener('click', fn); return b; };
+    const sizeName = (id: string) => t(`mb.size.${id}`);
+    const termName = (n: number) => (n === 12 ? t('st.mb.year') : t('st.mb.six'));
+    const contact = (c: any) => [c.phone, c.email].filter(Boolean).join(' · ');
+
+    async function load() {
+      try {
+        const j = await api({ action: 'list' });
+        $('mbMain').classList.remove('hidden');
+        $('free').textContent = j.sizes.map((s: any) => `${sizeName(s.id)} (#${s.from}–${s.to}): ${s.free}`).join('   ·   ');
+        const rb = $('resTable').querySelector('tbody')!; rb.innerHTML = '';
+        $('noRes').hidden = j.reservations.length > 0;
+        for (const r of j.reservations) {
+          const tr = document.createElement('tr');
+          cell(tr, r.code); cell(tr, r.customer.name); cell(tr, contact(r.customer)); cell(tr, sizeName(r.size)); cell(tr, `${termName(r.term)} · $${r.price}`);
+          const input = document.createElement('input'); input.inputMode = 'numeric'; input.size = 6; input.placeholder = String(j.sizes.find((s: any) => s.id === r.size)?.from ?? '');
+          cell(tr, '').appendChild(input);
+          cell(tr, '').appendChild(btn(t('st.mb.assign'), '', async () => {
+            try { await api({ action: 'assign', customer_id: r.customer_id, box_no: Number(input.value), term: r.term, reservation_code: r.code }); say(tf('st.mb.assigned', { box: input.value, name: r.customer.name })); load(); }
+            catch (e: any) { say(e.message, true); }
+          }));
+          rb.appendChild(tr);
+        }
+        const bb = $('boxTable').querySelector('tbody')!; bb.innerHTML = '';
+        $('noBoxes').hidden = j.boxes.length > 0;
+        for (const x of j.boxes) {
+          const tr = document.createElement('tr');
+          cell(tr, `#${x.box_no}`); cell(tr, x.customer.name); cell(tr, contact(x.customer)); cell(tr, sizeName(x.size)); cell(tr, x.paid_through);
+          const st = cell(tr, ''); const badge = document.createElement('span'); badge.className = `acct-status mb-${x.state}`; badge.textContent = t(`mb.state.${x.state}`); st.appendChild(badge);
+          const act = cell(tr, '');
+          act.append(
+            btn(t('st.mb.renew6'), '', async () => { try { const r = await api({ action: 'renew', id: x.id, term: 6 }); say(tf('st.mb.renewed', { box: x.box_no, date: r.paid_through })); load(); } catch (e: any) { say(e.message, true); } }), ' ',
+            btn(t('st.mb.renew12'), '', async () => { try { const r = await api({ action: 'renew', id: x.id, term: 12 }); say(tf('st.mb.renewed', { box: x.box_no, date: r.paid_through })); load(); } catch (e: any) { say(e.message, true); } }), ' ',
+            btn(t('st.mb.remind'), 'kraft', async () => { try { const r = await api({ action: 'remind', id: x.id }); say(tf('st.mb.reminded', { box: x.box_no, how: [r.sms ? t('st.mb.text') : '', r.email ? t('st.mb.email') : ''].filter(Boolean).join(' + ') || '—' })); } catch (e: any) { say(e.message, true); } }), ' ',
+            btn(t('st.mb.close'), 'kraft', async () => { if (!confirm(tf('st.mb.closeq', { box: x.box_no }))) return; try { await api({ action: 'close', id: x.id }); load(); } catch (e: any) { say(e.message, true); } }),
+          );
+          bb.appendChild(tr);
+        }
+      } catch (e: any) { say(e.message, true); }
+    }
+    $('load').addEventListener('click', load);
+    $('pin').addEventListener('keydown', (e) => { if ((e as KeyboardEvent).key === 'Enter') load(); });
+
+    $('sendDue').addEventListener('click', async () => {
+      try {
+        const j = await api({ action: 'send_due' });
+        const ul = $('sentList'); ul.innerHTML = '';
+        if (!j.sent.length) { say(t('st.mb.nonedue')); return; }
+        say(tf('st.mb.sentn', { n: j.sent.length }));
+        for (const s of j.sent) { const li = document.createElement('li'); li.textContent = `#${s.box_no} ${s.name} · ${s.key.split(':')[1] === 'over' ? t('st.mb.lapsed') : tf('st.mb.daysleft', { n: s.key.split(':')[1] })}`; ul.appendChild(li); }
+        load();
+      } catch (e: any) { say(e.message, true); }
+    });
+
+    let chosen: { id: string; name: string } | null = null;
+    $('findBtn').addEventListener('click', async () => {
+      try {
+        const j = await api({ action: 'find', q: ($('findQ') as HTMLInputElement).value });
+        const ul = $('found'); ul.innerHTML = '';
+        if (!j.customers.length) { const li = document.createElement('li'); li.className = 'muted'; li.textContent = t('st.mb.nofound'); ul.appendChild(li); }
+        for (const c of j.customers) {
+          const li = document.createElement('li');
+          li.append(btn(t('st.mb.pick'), 'kraft', () => { chosen = { id: c.id, name: c.name }; $('assignWho').textContent = `${c.name} · ${contact(c)}`; $('assignForm').classList.remove('hidden'); }), ` ${c.name} · ${contact(c)}`);
+          ul.appendChild(li);
+        }
+      } catch (e: any) { say(e.message, true); }
+    });
+    $('assignForm').addEventListener('submit', async (ev) => {
+      ev.preventDefault(); if (!chosen) return;
+      const f = ev.target as HTMLFormElement; const d = Object.fromEntries(new FormData(f).entries()) as Record<string, string>;
+      try { await api({ action: 'assign', customer_id: chosen.id, box_no: Number(d.box_no), term: Number(d.term), start_date: d.start_date || undefined }); say(tf('st.mb.assigned', { box: d.box_no, name: chosen.name })); f.reset(); f.classList.add('hidden'); $('found').innerHTML = ''; load(); }
+      catch (e: any) { say(e.message, true); }
+    });
+  </script>
+</Base>

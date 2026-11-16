@@ -4,6 +4,8 @@
 import type { Provider, Address, Parcel, Rate, Label } from '../types';
 import { callJson, oauthToken, money } from '../http';
 import { billableWeightLb } from '../dim';
+import { fedexPackageExtras } from '../../lib/labelExtras';
+import { fedexPackagingType } from '../../lib/packaging';
 
 const base = (env: Env) => (env.FEDEX_SANDBOX ? 'https://apis-sandbox.fedex.com' : 'https://apis.fedex.com');
 
@@ -32,7 +34,7 @@ export const fedex: Provider = {
       rateRequestControlParameters: { returnTransitTimes: true },
       requestedShipment: {
         shipper: { address: addr(origin).address }, recipient: { address: addr(destination).address },
-        pickupType: 'DROPOFF_AT_FEDEX_LOCATION', rateRequestType: ['ACCOUNT', 'LIST'], requestedPackageLineItems: [pkg(parcel)],
+        pickupType: 'DROPOFF_AT_FEDEX_LOCATION', rateRequestType: ['ACCOUNT', 'LIST'], packagingType: fedexPackagingType(parcel.packaging), requestedPackageLineItems: [pkg(parcel)],
       },
     };
     const json = await callJson<any>('fedex', `${base(env)}/rate/v1/rates/quotes`, { method: 'POST', headers: { Authorization: `Bearer ${t}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -51,10 +53,10 @@ export const fedex: Provider = {
       labelResponseOptions: 'LABEL',
       requestedShipment: {
         shipper: addr(origin), recipients: [addr(destination)],
-        serviceType: serviceCode, packagingType: 'YOUR_PACKAGING', pickupType: 'DROPOFF_AT_FEDEX_LOCATION',
+        serviceType: serviceCode, packagingType: fedexPackagingType(parcel.packaging), pickupType: 'DROPOFF_AT_FEDEX_LOCATION', // FedEx packaging: lib/packaging.ts
         shippingChargesPayment: { paymentType: 'SENDER' },
         labelSpecification: { imageType: opts.zpl ? 'ZPL' : 'PDF', labelStockType: opts.zpl ? 'STOCK_4X6' : 'PAPER_4X6' },
-        requestedPackageLineItems: [{ ...pkg(parcel), itemDescription: parcel.description || 'Merchandise' }],
+        requestedPackageLineItems: [{ ...pkg(parcel), itemDescription: parcel.description || 'Merchandise', ...fedexPackageExtras(parcel) }], // declared value and signature: lib/labelExtras.ts
       },
     };
     const json = await callJson<any>('fedex', `${base(env)}/ship/v1/shipments`, { method: 'POST', headers: { Authorization: `Bearer ${t}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });

@@ -302,7 +302,7 @@ export const PRICES: Record<number, number> = { 100: 24.99, 250: 39.99, 500: 59.
 // browser sends. The order form shows the same table so the customer sees the total before paying.
 // TODO owners: confirm these prices (issue 9).
 
-export type OptionGroup = 'stock' | 'finish' | 'corners' | 'speed';
+export type OptionGroup = 'stock' | 'finish' | 'corners' | 'speed' | 'help';
 export interface CardOption { group: OptionGroup; code: string; name: string; price: number; default?: boolean }
 export const CARD_OPTIONS: CardOption[] = [
   { group: 'stock', code: 'standard', name: 'Standard 14 pt', price: 0, default: true },
@@ -315,8 +315,12 @@ export const CARD_OPTIONS: CardOption[] = [
   { group: 'corners', code: 'rounded', name: 'Rounded corners', price: 6 },
   { group: 'speed', code: 'normal', name: 'Ready in 3 business days', price: 0, default: true },
   { group: 'speed', code: 'rush', name: 'Rush, next business day', price: 10 },
+  // Let us design it for you (Peter, Nov 15 2026): staff design the card from the customer's notes and send a proof.
+  // Placeholder price like the others; the owners set the real one (TODO P9).
+  { group: 'help', code: 'self', name: "I'll design it myself", price: 0, default: true },
+  { group: 'help', code: 'designhelp', name: 'Let us design it for you', price: 20 },
 ];
-export const OPTION_GROUPS: OptionGroup[] = ['stock', 'finish', 'corners', 'speed'];
+export const OPTION_GROUPS: OptionGroup[] = ['stock', 'finish', 'corners', 'speed', 'help'];
 export interface CardOptionLine { group: OptionGroup; code: string; name: string; price: number }
 
 /** The option a customer picked in each group. Unknown codes fall back to the group's free default; only paid picks become lines. */

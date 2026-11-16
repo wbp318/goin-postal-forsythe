@@ -7,6 +7,7 @@ export interface CardOrder {
   stripe_session_id?: string;
   paid_at?: string;
   customer: { name: string; email: string; phone: string };
+  customer_id?: string;   // the signed-in account that ordered (Peter, Nov 15 2026); older orders have none
   quantity: number;
   price: number;          // the cards
   options?: CardOptionLine[]; // paid upsells: stock, finish, corners, rush (older orders have none)
@@ -39,3 +40,19 @@ export async function getCardOrder(env: Env, id: string): Promise<CardOrder | nu
   const raw = await kv(env).get(KEY(id.toUpperCase()));
   return raw ? JSON.parse(raw) : null;
 }
+
+// My orders on the account page (Peter, Nov 15 2026): each customer's card order numbers, newest first, kept
+// beside the orders in KV. Orders placed before this have no entry and don't show there.
+const MINE = (customerId: string) => `cardsof:${customerId}`;
+export async function indexCardOrder(env: Env, customerId: string, id: string) {
+  const ids: string[] = JSON.parse((await kv(env).get(MINE(customerId))) ?? '[]');
+  if (!ids.includes(id)) ids.unshift(id);
+  await kv(env).put(MINE(customerId), JSON.stringify(ids.slice(0, 100)), { expirationTtl: 60 * 60 * 24 * 180 });
+}
+export async function listCardOrdersFor(env: Env, customerId: string): Promise<CardOrder[]> {
+  const ids: string[] = JSON.parse((await kv(env).get(MINE(customerId))) ?? '[]');
+  const all = await Promise.all(ids.slice(0, 50).map((id) => getCardOrder(env, id)));
+  // Only orders that still exist and really belong to this customer.
+  return all.filter((o): o is CardOrder => !!o && o.customer_id === customerId);
+}
+

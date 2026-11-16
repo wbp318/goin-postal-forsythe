@@ -32,6 +32,7 @@ export async function createCheckout(env: Env, order: Order): Promise<string> {
           },
         },
       },
+      ...(order.return_rate ? [{ quantity: 1, price_data: { currency: 'usd', unit_amount: Math.round(order.return_rate.total_charge * 100), product_data: { name: `Return label, ${order.return_rate.service}`, description: `From ${order.destination.city}, ${order.destination.state} back to ${order.origin.city}, ${order.origin.state}.` } } }] : []),
       ...(order.addons ?? []).map((l) => ({ quantity: l.qty, price_data: { currency: 'usd', unit_amount: Math.round(l.unit_price * 100), product_data: { name: l.name } } })),
       ...(order.insurance ? [{ quantity: 1, price_data: { currency: 'usd', unit_amount: Math.round(order.insurance.fee * 100), product_data: { name: `Insurance to $${order.insurance.declared_usd}` } } }] : []),
       ...(order.tax ? [{ quantity: 1, price_data: { currency: 'usd', unit_amount: Math.round(order.tax.amount * 100), product_data: { name: `Sales tax ${order.tax.percent}%` } } }] : []),
@@ -62,7 +63,7 @@ export async function createCardCheckout(env: Env, order: CardOrder): Promise<st
     ...(order.tax ? [{ quantity: 1, price_data: { currency: 'usd', unit_amount: Math.round(order.tax.amount * 100), product_data: { name: `Sales tax ${order.tax.percent}%` } } }] : []),
     ...(order.fee ? [{ quantity: 1, price_data: { currency: 'usd', unit_amount: Math.round(order.fee.amount * 100), product_data: { name: 'Online convenience fee' } } }] : [])],
     success_url: `${site}/cards/done?order=${order.id}`,
-    cancel_url: `${site}/cards?cancelled=${order.id}`,
+    cancel_url: `${site}/cards/design?cancelled=${order.id}`,
   });
   return session.url!;
 }

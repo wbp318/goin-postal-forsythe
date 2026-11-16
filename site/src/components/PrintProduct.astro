@@ -1,0 +1,37 @@
+---
+import Base from '../layouts/Base.astro';
+import StoreInfo from './StoreInfo.astro';
+import { store } from '../data/store';
+
+// One printing product that is ordered in the store for now (Peter, Nov 14 2026): banners and yard
+// signs, custom t-shirts, pens and promo items. The online "request a quote" form (TODO P7 step 3)
+// will replace the "ordered in the store for now" note on these pages.
+interface Props { k: string; title: string; lead: string; ideas: string[] }
+const { k, title, lead, ideas } = Astro.props;
+const tel = store.phone.replace(/\D/g, '');
+---
+<Base title={`${title} · ${store.name}`} description={lead}>
+  <section class="hero">
+    <p class="ps-kicker"><a href="/printing" data-i18n="nav.printing">Printing</a></p>
+    <h1 data-i18n={`${k}.h1`}>{title}</h1>
+    <p class="lead" data-i18n={`${k}.lead`}>{lead}</p>
+  </section>
+  <div class="grid">
+    <div class="card">
+      <h3 data-i18n="print.ideas">Popular uses</h3>
+      <ul>{ideas.map((x, i) => <li data-i18n={`${k}.i${i + 1}`}>{x}</li>)}</ul>
+      <h3 data-i18n="print.how">How it works</h3>
+      <ol>
+        <li data-i18n="print.s1">Tell us what you need: call, email or stop by. Bring your logo or design, or we help you make one.</li>
+        <li data-i18n="print.s2">We send you a price and a proof to approve.</li>
+        <li data-i18n="print.s3">Pick it up at the store.</li>
+      </ol>
+      <p class="muted" data-i18n="print.soon">Ordered in the store for now. Online ordering is coming soon.</p>
+      <p class="btnrow"><a class="btn" href={`tel:${tel}`}><span data-i18n="print.call">Call us</span> {store.phone}</a> <a class="btn kraft" href="/contact" data-i18n="print.ask">Send us a message</a></p>
+    </div>
+    <div class="card">
+      <h3 data-i18n="home.hours">Hours and directions</h3>
+      <StoreInfo />
+    </div>
+  </div>
+</Base>

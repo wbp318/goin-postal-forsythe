@@ -1,0 +1,44 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+import StoreInfo from '../../components/StoreInfo.astro';
+import { store } from '../../data/store';
+import { env } from '../../lib/env';
+import { onlineLabelsOn } from '../../lib/siteSettings';
+
+// What /ship shows while the owners' switch is Off (/counter/settings, Peter Nov 14 2026): no prices
+// online, just why and how to ship with us in the store. /ship rewrites to this page; opened directly
+// while the switch is On, it sends the customer to the real Ship page.
+if (await onlineLabelsOn(env)) return Astro.redirect('/ship');
+const maps = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(store.address)}`;
+import CarrierBadges from '../../components/CarrierBadges.astro';
+---
+<Base title={`Ship a package · ${store.name}`} description="Ship USPS, UPS, FedEx and DHL at our counter in Monroe. We weigh, compare, pack and print the label while you wait.">
+  <section class="hero">
+    <h1 data-i18n="instore.h1">Ship with us in the store</h1>
+    <p class="lead" data-i18n="instore.lead">Bring your package to the counter. We weigh it, compare USPS, UPS, FedEx and DHL for you, pack it if you need, and print the label while you wait.</p>
+  </section>
+
+  <!-- The carriers, big (Peter, Nov 15 2026). -->
+  <section class="carrier-band" aria-labelledby="carrH">
+    <h2 id="carrH" data-i18n="carr.band">Authorized for every major carrier</h2>
+    <CarrierBadges size="lg" />
+  </section>
+
+  <div class="grid">
+    <div class="card">
+      <h3 data-i18n="instore.why">What we do for you</h3>
+      <ul>
+        <li data-i18n="instore.w1">Every carrier in one place: USPS, UPS, FedEx and DHL</li>
+        <li data-i18n="instore.w2">Boxes, packing and bubble wrap if you need them</li>
+        <li data-i18n="instore.w3">Insurance and signature confirmation on request</li>
+        <li data-i18n="instore.w4">A receipt with tracking for every package</li>
+      </ul>
+      <p class="btnrow"><a class="btn" href={maps} target="_blank" rel="noopener" data-i18n="instore.directions">Get directions</a> <a class="btn kraft" href="/track" data-i18n="instore.track">Track a package</a></p>
+    </div>
+    <div class="card">
+      <h3 data-i18n="home.hours">Hours and directions</h3>
+      <StoreInfo />
+    </div>
+  </div>
+</Base>

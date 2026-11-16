@@ -11,6 +11,8 @@
 export const prerender = false;
 import type { APIRoute } from 'astro';
 import { env } from '../../lib/env';
+import { store } from '../../data/store';
+import { withoutPlace } from '../../lib/address';
 
 export interface Suggestion { label: string; line_1: string; city: string; state: string; postal_code: string; country_alpha2: string }
 
@@ -42,6 +44,12 @@ async function censusOne(address: string): Promise<Suggestion[]> {
 async function census(q: string): Promise<Suggestion[]> {
   const out: Suggestion[] = [];
   for (const s of await censusOne(q)) if (!out.some((o) => o.label === s.label)) out.push(s);
+  // A bare street ("1800 Forsythe Ave") gets nothing from Census, so try it in the store's own city
+  // too: most senders and many recipients are local, and a match there is better than no list.
+  // Only when no city or ZIP was typed (no comma, no five-digit number after the house number). Peter, Nov 14 2026.
+  if (!out.length && withoutPlace(q)) {
+    for (const s of await censusOne(`${q}, ${store.origin.city}, ${store.origin.state}`)) if (!out.some((o) => o.label === s.label)) out.push(s);
+  }
   return out.slice(0, 5);
 }
 

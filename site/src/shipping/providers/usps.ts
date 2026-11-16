@@ -6,6 +6,8 @@
 import type { Provider, Address, Parcel, Rate, Label } from '../types';
 import { callJson, oauthToken, money } from '../http';
 import { billableWeightLb } from '../dim';
+import { uspsExtras } from '../../lib/labelExtras';
+import { uspsRateIndicator } from '../../lib/packaging';
 
 const base = (env: Env) => (env.USPS_SANDBOX ? 'https://apis-tem.usps.com' : 'https://apis.usps.com');
 
@@ -13,6 +15,7 @@ const SERVICES: Record<string, string> = {
   USPS_GROUND_ADVANTAGE: 'USPS Ground Advantage',
   PRIORITY_MAIL: 'USPS Priority Mail',
   PRIORITY_MAIL_EXPRESS: 'USPS Priority Mail Express',
+  MEDIA_MAIL: 'USPS Media Mail', // offered only when the customer ticks Media Mail (lib/options.ts)
   FIRST_CLASS_PACKAGE_INTERNATIONAL_SERVICE: 'USPS First-Class Package International',
   PRIORITY_MAIL_INTERNATIONAL: 'USPS Priority Mail International',
   PRIORITY_MAIL_EXPRESS_INTERNATIONAL: 'USPS Priority Mail Express International',
@@ -28,8 +31,8 @@ function pkg(parcel: Parcel) {
     length: parcel.length_in,
     width: parcel.width_in,
     height: parcel.height_in,
-    processingCategory: parcel.length_in > 22 || parcel.width_in > 18 || parcel.height_in > 15 ? 'NONSTANDARD' : 'MACHINABLE',
-    rateIndicator: 'SP',
+    processingCategory: parcel.options?.irregular || parcel.length_in > 22 || parcel.width_in > 18 || parcel.height_in > 15 ? 'NONSTANDARD' : 'MACHINABLE',
+    rateIndicator: uspsRateIndicator(parcel.packaging), // flat rate boxes and envelopes: lib/packaging.ts
     priceType: 'COMMERCIAL',
     mailingDate: new Date().toISOString().slice(0, 10),
   };
@@ -78,7 +81,7 @@ export const usps: Provider = {
     const body = {
       imageInfo: { imageType: opts.zpl ? 'ZPL' : 'PDF', labelType: '4X6LABEL', receiptOption: 'NONE' },
       toAddress: addr(destination), fromAddress: addr(origin),
-      packageDescription: { mailClass: serviceCode, ...pkg(parcel), destinationEntryFacilityType: 'NONE', packageOptions: { containsHazmat: false } },
+      packageDescription: { mailClass: serviceCode, ...pkg(parcel), destinationEntryFacilityType: 'NONE', ...uspsExtras(parcel) }, // signature, insurance and hazardous materials: lib/labelExtras.ts
     };
     const json = await callJson<any>('usps', `${base(env)}/labels/v3/label`, {
       method: 'POST', headers: { Authorization: `Bearer ${t}`, 'Content-Type': 'application/json', 'X-Payment-Authorization-Token': pay.paymentAuthorizationToken },

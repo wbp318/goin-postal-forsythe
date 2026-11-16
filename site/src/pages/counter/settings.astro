@@ -1,0 +1,72 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+
+// Owner page: the site's switches (Peter, Nov 14 2026). Any staff PIN can see them; only an owner
+// PIN can flip one, and every change goes in the audit log with the name that did it.
+// Online shipping: On = customers see prices and buy labels on the Ship page; Off = the website shows no
+// shipping prices at all and /ship shows the in-store page. Staff quotes on the Queue page work either way.
+---
+<Base title="Counter · Settings">
+  <section class="hero">
+    <h1 data-i18n="st.set.h1">Settings</h1>
+    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/batch" data-i18n="st.nav.batch">Batch</a> · <a href="/counter/fulfillment" data-i18n="st.nav.fulfillment">Fulfillment</a> · <a href="/counter/pickups" data-i18n="st.nav.pickups">Pickups</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/accounts" data-i18n="st.nav.accounts">Accounts</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/scan" data-i18n="st.nav.scan">Scan a QR</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/claims" data-i18n="st.nav.claims">Claims</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/close" data-i18n="st.nav.close">End of day</a> · <a href="/counter/invoices" data-i18n="st.nav.invoices">Invoices</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a> · <a href="/counter/staff" data-i18n="st.nav.staff">Staff</a> · <a href="/counter/settings" data-i18n="st.nav.settings">Settings</a> · <a href="/counter/mailboxes" data-i18n="st.nav.mailboxes">Mailboxes</a> · <a href="/counter/export" data-i18n="st.nav.export">Export</a></p>
+    <p class="lead" data-i18n="st.set.lead">Switches for the website. Anyone on staff can look; only an owner PIN can change them, and every change is in the audit log.</p>
+  </section>
+
+  <div class="card">
+    <p class="btnrow">
+      <label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
+      <button class="btn" id="load" data-i18n="st.show">Show</button>
+      <span id="who" class="muted"></span>
+    </p>
+    <p id="msg" role="alert"></p>
+  </div>
+
+  <div id="panel" class="hidden">
+    <div class="card setting">
+      <h3 data-i18n="st.set.labels">Online shipping: prices and labels</h3>
+      <p data-i18n="st.set.labels.p">On: customers see shipping prices on the website and buy labels by card. Off: the website shows no shipping prices at all; the Ship page tells customers to bring their package to the store. Your quotes on the Queue page work either way.</p>
+      <p class="btnrow">
+        <strong id="state"></strong>
+        <button class="btn" id="turnOn" type="button" data-i18n="st.set.turnon">Turn on</button>
+        <button class="btn kraft" id="turnOff" type="button" data-i18n="st.set.turnoff">Turn off</button>
+      </p>
+      <p class="muted" id="changed"></p>
+      <p class="muted" id="ownerOnly" hidden data-i18n="st.set.owneronly">Only an owner PIN can change this.</p>
+    </div>
+  </div>
+
+  <script>
+    import { t, tf } from '../../i18n';
+    const $ = (id: string) => document.getElementById(id)!;
+    const pin = () => ($('pin') as HTMLInputElement).value;
+    const msg = $('msg');
+    const fmt = (iso: string) => new Date(iso).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    async function api(extra: Record<string, unknown>) {
+      const res = await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin(), ...extra }) });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error);
+      return j;
+    }
+    function render(j: any) {
+      const s = j.settings.online_labels;
+      $('state').textContent = s.on ? t('st.set.on') : t('st.set.off');
+      $('state').className = 'set-state ' + (s.on ? 'on' : 'off');
+      ($('turnOn') as HTMLButtonElement).hidden = s.on || !j.can_change;
+      ($('turnOff') as HTMLButtonElement).hidden = !s.on || !j.can_change;
+      $('ownerOnly').hidden = j.can_change;
+      $('changed').textContent = s.updated_at ? tf('st.set.changed', { who: s.updated_by, when: fmt(s.updated_at) }) : t('st.set.never');
+      $('panel').classList.remove('hidden');
+    }
+    async function run(extra: Record<string, unknown>, saved = false) {
+      msg.textContent = '';
+      try { render(await api(extra)); if (saved) { msg.className = ''; msg.textContent = t('st.s.saved'); } }
+      catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
+    }
+    $('load').addEventListener('click', () => run({ action: 'get' }));
+    $('pin').addEventListener('keydown', (e) => { if ((e as KeyboardEvent).key === 'Enter') run({ action: 'get' }); });
+    $('turnOn').addEventListener('click', () => { if (window.confirm(t('st.set.confirmon'))) run({ action: 'online_labels', on: true }, true); });
+    $('turnOff').addEventListener('click', () => { if (window.confirm(t('st.set.confirmoff'))) run({ action: 'online_labels', on: false }, true); });
+  </script>
+</Base>

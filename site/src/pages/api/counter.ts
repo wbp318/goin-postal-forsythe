@@ -2,7 +2,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { env } from '../../lib/env';
 import { getOrder, saveOrder } from '../../lib/orders';
-import { fulfil } from '../../lib/fulfil';
+import { fulfil, voidReturnLabel, returnLabelForEmail } from '../../lib/fulfil';
 import { json } from '../../lib/validate';
 import { authenticate, CAN } from '../../lib/auth';
 import { logAudit } from '../../shipping/store';
@@ -47,10 +47,12 @@ export const POST: APIRoute = async ({ request }) => {
     if ((b.action === 'void' || b.action === 'cancel') && !reason) return json({ error: 'A reason is needed' }, 400);
     if (b.action === 'void' && (order.status === 'labeled' || order.status === 'printed') && order.label) {
       await voidLabel(env, order.label.id);
+      // "Return label included": its return label (shipment code + "-R") is voided too (lib/fulfil.ts).
+      const warning = await voidReturnLabel(env, order, user, reason);
       await saveOrder(env, { ...order, status: 'voided', voided_at: new Date().toISOString(), void_reason: reason });
       await setShipmentStatus(env, order.id, 'voided');
       await logAudit(env, user, 'label.void', order.id, `${reason}. ${order.rate.carrier} ${order.label.tracking_number ?? ''}, paid $${(order.total ?? order.rate.total_charge).toFixed(2)} via ${order.paid_at ? (order.international || order.source === 'counter' ? 'POS' : 'Stripe') : 'nothing'}`);
-      return json({ status: 'voided' });
+      return json({ status: 'voided', ...(warning ? { warning } : {}) });
     }
     if (b.action === 'email' && order.label) {
       const email = String(b.email ?? order.email ?? '').trim();
@@ -58,12 +60,15 @@ export const POST: APIRoute = async ({ request }) => {
       const l = order.label;
       const abs = (u: string | null | undefined) => (u ? (u.startsWith('/') ? `${env.SITE_URL}${u}` : u) : null);
       const isReturn = order.kind === 'return';
+      // "Return label included": the return label goes with it, attached as a PDF or as its link (lib/fulfil.ts).
+      const ret = returnLabelForEmail(order, env.SITE_URL);
       const lines = [
         isReturn ? `Here is your prepaid return label from ${store.name}.` : `Here is your shipping label from ${store.name}.`,
         '',
         (order.rate.service.toLowerCase().startsWith(order.rate.carrier.toLowerCase()) ? order.rate.service : `${order.rate.carrier} ${order.rate.service}`) + (l.tracking_number ? `, tracking number ${l.tracking_number}` : ''),
         abs(l.label_url) ? `Label (print on plain paper and tape it flat to the box): ${abs(l.label_url)}` : null,
         abs(l.qr_url) ? `No printer? Show this code at any ${order.rate.carrier} location and they print it: ${abs(l.qr_url)}` : null,
+        ret.line,
         '',
         isReturn
           ? `Pack the item, attach the label and hand the box to ${order.rate.carrier} or bring it to any ${order.rate.carrier} drop-off. It comes to ${order.destination.contact_name}, ${order.destination.city}, ${order.destination.state}.`
@@ -72,7 +77,7 @@ export const POST: APIRoute = async ({ request }) => {
         '',
         `${store.name}, ${store.address}, ${store.phone}. Pickup code ${order.id}.`,
       ].filter((x) => x !== null);
-      const mock = await sendEmail(env, email, `${isReturn ? 'Your return label' : 'Your shipping label'} ${order.id}`, lines.join('\n'));
+      const mock = await sendEmail(env, email, `${isReturn ? 'Your return label' : 'Your shipping label'} ${order.id}`, lines.join('\n'), ret.attachment ? [ret.attachment] : undefined);
       // Emailing a label to someone (a return's sender, say) doesn't make them the walk-up's customer: a new address
       // here is no longer staff-typed customer details, so it never joins the walk-up's record.
       const next = { ...order, email, emailed_at: new Date().toISOString(), staff_entry: email === order.email ? order.staff_entry : false };

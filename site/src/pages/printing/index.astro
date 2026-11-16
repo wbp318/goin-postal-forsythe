@@ -1,0 +1,29 @@
+---
+import Base from '../../layouts/Base.astro';
+import { store } from '../../data/store';
+
+// The Printing section's front page (Peter, Nov 14 2026): every printing product, each with its own
+// page. Business cards are ordered online; the rest are ordered in the store for now (TODO P7).
+const items = [
+  { href: '/cards', k: 'pcards', title: 'Business Cards', blurb: 'Design your cards online in minutes, pay online and pick them up at the store.', cta: 'print.design', ctaText: 'Design your cards', online: true },
+  { href: '/printing/banners', k: 'pbanner', title: 'Banners & Yard Signs', blurb: 'Vinyl banners and yard signs for openings, sales, events and campaigns.', cta: 'print.more', ctaText: 'Learn more' },
+  { href: '/printing/t-shirts', k: 'pshirt', title: 'Custom T-Shirts', blurb: 'Shirts with your logo or design for your business, team, church or family.', cta: 'print.more', ctaText: 'Learn more' },
+  { href: '/printing/promo', k: 'ppromo', title: 'Pens & Promo Items', blurb: 'Pens and giveaways with your business name and logo on them.', cta: 'print.more', ctaText: 'Learn more' },
+];
+---
+<Base title={`Printing · ${store.name}`} description="Business cards, banners, yard signs, custom t-shirts, pens and promo items, picked up at Goin' Postal Forsythe in Monroe.">
+  <section class="hero">
+    <h1 data-i18n="print.h1">Printing</h1>
+    <p class="lead" data-i18n="print.lead">Business cards, banners, yard signs, custom t-shirts and promo items, made for you and picked up at the store.</p>
+  </section>
+  <div class="grid print-tiles">
+    {items.map((x) => (
+      <a class="card print-tile" href={x.href}>
+        <h2 data-i18n={`${x.k}.h1`}>{x.title}</h2>
+        <p data-i18n={`${x.k}.blurb`}>{x.blurb}</p>
+        {x.online ? <p class="print-tag on" data-i18n="print.tag.online">Order online</p> : <p class="print-tag" data-i18n="print.tag.store">Order in the store</p>}
+        <span class="btn small" data-i18n={x.cta}>{x.ctaText}</span>
+      </a>
+    ))}
+  </div>
+</Base>

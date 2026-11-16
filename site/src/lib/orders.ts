@@ -50,6 +50,10 @@ export interface Order {
   account_id?: number;
   account_name?: string;
   discount_percent?: number;
+  // "Return label included" (Peter, Nov 14 2026): the return label's rate, charged with the order, and
+  // the label itself once bought (from the destination back to the origin). See lib/options.ts.
+  return_rate?: Rate;
+  return_label?: Label;
   // Batch shipping (T11): the batch this label was bought in and the seller's own order number.
   batch?: string;
   reference?: string;

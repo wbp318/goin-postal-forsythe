@@ -5,24 +5,58 @@ import { store } from '../data/store';
 import pkg from '../../package.json';
 // The badge shows the release the site is running; bump site/package.json with every tag (CLAUDE.md release flow).
 const version = 'v' + pkg.version;
+// The owners' switch (/counter/settings, Peter Nov 14 2026): Off means the hero talks about shipping in the store, not
+// online. Reading the switch means the home page is built on each visit instead of once at deploy.
+export const prerender = false;
+import { env } from '../lib/env';
+import { onlineLabelsOn } from '../lib/siteSettings';
+const online = await onlineLabelsOn(env);
+import CarrierBadges from '../components/CarrierBadges.astro';
 ---
 <Base title={store.name}>
+  <!-- Track a package: the first thing on the home page, like ups.com (Peter, Nov 14 2026). A plain form, so it works
+       without JavaScript: it opens /track?q=..., which looks the code or tracking number up straight away. -->
+  <section class="track-hero" aria-labelledby="track-h">
+    <h2 id="track-h" data-i18n="track.title">Track a package</h2>
+    <form class="track-form" action="/track" method="get" role="search">
+      <label class="sr-only" for="home-q" data-i18n="track.field">Pickup code or tracking number</label>
+      <input id="home-q" name="q" required minlength="4" maxlength="40" autocomplete="off" autocapitalize="characters" placeholder="Pickup code or tracking number" data-i18n-ph="track.field" />
+      <button class="btn kraft" type="submit" data-i18n="track.button">Track</button>
+    </form>
+    <div class="track-carriers"><span class="muted" data-i18n="carr.track">Tracking numbers from</span><CarrierBadges /></div>
+    <p class="track-links">
+      <a href="/ship" data-i18n="home.cta">Ship a package</a>
+      <a href="#hours" data-i18n="home.hours">Hours and directions</a>
+      <a href="/contact" data-i18n="nav.contact">Contact</a>
+    </p>
+  </section>
   <div class="home">
     <div class="home-main">
       <section class="ps-hero" aria-labelledby="ps-h1">
         <span class="ps-badge">{version}</span>
         <p class="ps-kicker" data-i18n="home.ps.kicker">PeterShip, our shipping counter on the web</p>
         <p class="ps-mark" aria-hidden="true">Peter<span>Ship</span></p>
+        {online ? <>
         <h1 id="ps-h1" data-i18n="home.ps.h1">Compare every carrier and buy your label online.</h1>
         <p class="lead" data-i18n="home.ps.lead">Enter the address and the box, see USPS, UPS, FedEx and DHL side by side, pay by card, then print at home or show us the QR code at the counter.</p>
+        </> : <>
+        <h1 id="ps-h1" data-i18n="home.store.h1">Every carrier, one counter.</h1>
+        <p class="lead" data-i18n="home.store.lead">Bring your package in. We compare USPS, UPS, FedEx and DHL for you, pack it if you need, and print the label while you wait.</p>
+        </>}
         <div class="ps-cta">
           <a class="btn big kraft" href="/ship" data-i18n="home.cta">Ship a package</a>
           <a class="plain" href="/petership" data-i18n="home.ps.more">Everything PeterShip does</a>
         </div>
         <ol class="ps-steps">
+          {online ? <>
           <li class="ps-step"><b>1</b><span data-i18n="home.ps.s1">Type the address and the box size</span></li>
           <li class="ps-step"><b>2</b><span data-i18n="home.ps.s2">Pick the carrier and the price you like</span></li>
           <li class="ps-step"><b>3</b><span data-i18n="home.ps.s3">Print at home, or show the QR code at the counter</span></li>
+          </> : <>
+          <li class="ps-step"><b>1</b><span data-i18n="home.store.s1">Bring your package, or we box it for you</span></li>
+          <li class="ps-step"><b>2</b><span data-i18n="home.store.s2">We compare every carrier for the best price</span></li>
+          <li class="ps-step"><b>3</b><span data-i18n="home.store.s3">We print the label and you get tracking</span></li>
+          </>}
         </ol>
       </section>
 
@@ -52,7 +86,7 @@ const version = 'v' + pkg.version;
         </nav>
       </div>
       <div>
-        <h2 class="side-title" data-i18n="home.hours">Hours and directions</h2>
+        <h2 class="side-title" id="hours" data-i18n="home.hours">Hours and directions</h2>
         <div class="side-box"><StoreInfo /></div>
       </div>
       <div>

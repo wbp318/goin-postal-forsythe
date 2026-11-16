@@ -1,0 +1,122 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+import { store } from '../../data/store';
+import { env } from '../../lib/env';
+import { readSession } from '../../lib/session';
+import { getCustomer } from '../../shipping/store';
+// Review your order (Peter, Nov 14 2026): the second step for business cards. The design and choices come from
+// the designer on this device (localStorage); prices come from the server, so they match the charge. Confirm and
+// pay opens Stripe's own secure page, which takes the card details; this site never sees the card number.
+// Signed-out customers sign in here, and the design waits on their device while they open the email link.
+const meId = await readSession(env, Astro.request.headers.get('cookie')).catch(() => null);
+const me = meId ? await getCustomer(env, meId) : null;
+const needName = !!me && (!me.name || me.name === 'Customer');
+---
+<Base title={`Review your order · ${store.name}`} description="Check your business cards and the total, then pay on Stripe's secure page.">
+  <section class="hero">
+    <h1 data-i18n="cardsrev.title">Review your order</h1>
+    <p class="lead" data-i18n="cardsrev.lead">Check your cards before you pay. They're printed exactly as shown.</p>
+  </section>
+
+  <div id="none" class="card" hidden>
+    <p data-i18n="cardsrev.none">There's no card order to review yet.</p>
+    <p><a class="btn" href="/cards/design" data-i18n="cardsrev.design">Design your cards</a></p>
+  </div>
+
+  <div id="review" class="review-grid" hidden>
+    <div class="review-cards">
+      <!-- 3D look (Peter, Nov 14 2026): drag to turn, Front and Back buttons; the flat pictures below are the exact proof. -->
+      <h3 data-i18n="c3d.title">See it in 3D</h3>
+      <div id="card3d"></div>
+      <h3 data-i18n="cards.front">Front</h3>
+      <div class="card-wrap" id="front"></div>
+      <h3 data-i18n="cards.back">Back</h3>
+      <div class="card-wrap" id="back"></div>
+      <p><a href="/cards/design" data-i18n="cardsrev.edit">Back to the design</a></p>
+    </div>
+
+    <div class="card review-side">
+      <h3 data-i18n="cardsrev.summary">Your order</h3>
+      <ul id="lines" class="lines"></ul>
+      <p class="price"><span data-i18n="done.total">Total</span>: <strong id="total"></strong></p>
+      <p id="notesRow" class="muted" hidden><span data-i18n="cards.notes">Notes</span>: <span id="notes"></span></p>
+
+      {me ? (
+        <form id="confirm" class="confirm">
+          <h3 data-i18n="cardsrev.pickup">Pickup</h3>
+          <p>{needName ? '' : `${me.name} · `}{me.email}{me.phone ? ` · ${me.phone}` : ''}</p>
+          {needName && <label><span data-i18n="cards.yourname">Your name</span> <input name="cname" required maxlength="60" autocomplete="name" /></label>}
+          {!me.phone && <label><span data-i18n="cards.phone">Phone (we text when ready)</span> <input name="cphone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="318 555 0100" /></label>}
+          <label class="check"><input name="proofed" type="checkbox" required /> <span data-i18n="cardsrev.proof">I checked the spelling, phone numbers and layout. The cards are printed exactly as shown.</span></label>
+          <button class="btn big" type="submit" id="payBtn" data-i18n="cardsrev.pay">Confirm and pay</button>
+          <p class="muted secure" data-i18n="cardsrev.secure">Secure payment by Stripe. Your card number goes straight to Stripe; we never see or keep it.</p>
+        </form>
+      ) : (
+        <div id="signinGate" class="gate">
+          <h3 data-i18n="cardsrev.gate.h">Sign in to order your cards</h3>
+          <p data-i18n="cardsrev.gate.p">Card orders are kept on your free account, with your pickup code. Your design waits here while you open the link in your email.</p>
+          <p class="btnrow"><a class="btn" href="/account?next=%2Fcards%2Freview" data-i18n="acct.signin">Sign in</a> <a class="btn kraft" href="/account?next=%2Fcards%2Freview" data-i18n="acct.create">Create an account</a></p>
+        </div>
+      )}
+      <p id="err" class="err" role="alert"></p>
+    </div>
+  </div>
+
+  <script>
+    import { t } from '../../i18n';
+    import { renderCard, sanitizeDesign } from '../../lib/cards';
+    import { mountCard3D } from '../../lib/card3d';
+    const $ = (id: string) => document.getElementById(id)!;
+    const DRAFT = 'gp-card-order';
+    let order: any = null;
+    try { order = JSON.parse(localStorage.getItem(DRAFT) || 'null'); } catch {}
+    if (!order?.design) { $('none').hidden = false; }
+    else {
+      $('review').hidden = false;
+      const design = sanitizeDesign(order.design);
+      $('front').innerHTML = renderCard(design, 'front');
+      $('back').innerHTML = renderCard(design, 'back');
+      const show3d = () => mountCard3D($('card3d'), renderCard(design, 'front'), renderCard(design, 'back'), order.options ?? {}, { front: t('cards.front'), back: t('cards.back'), hint: t('c3d.hint') });
+      show3d(); document.addEventListener('langchange', show3d);
+      if (order.notes) { $('notesRow').hidden = false; $('notes').textContent = order.notes; }
+      // Design help (Peter, Nov 15 2026): we design it, so the box the customer ticks says a proof comes first.
+      const proofSpan = document.querySelector<HTMLElement>('[data-i18n="cardsrev.proof"]');
+      if (order.options?.help === 'designhelp' && proofSpan) { proofSpan.dataset.i18n = 'help.proof'; proofSpan.textContent = t('help.proof'); }
+      // Prices from the server, the same table the order is charged from.
+      const paintLines = (j: any) => {
+        const ul = $('lines'); ul.innerHTML = '';
+        for (const l of j.lines) {
+          const li = document.createElement('li');
+          const name = document.createElement('span'); name.textContent = l.qty ? `${l.qty} ${t('cards.unit')}` : (t(l.key) !== l.key ? t(l.key) : l.label);
+          const amt = document.createElement('span'); amt.textContent = `$${Number(l.amount).toFixed(2)}`;
+          li.append(name, amt); ul.appendChild(li);
+        }
+        $('total').textContent = `$${Number(j.total).toFixed(2)}`;
+      };
+      let priced: any = null;
+      fetch('/api/cards', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'preview', quantity: order.quantity, options: order.options }) })
+        .then((r) => r.json()).then((j) => { if (j.error) throw new Error(j.error); priced = j; paintLines(j); })
+        .catch((e) => { $('err').textContent = e.message; });
+      document.addEventListener('langchange', () => { if (priced) paintLines(priced); });
+
+      // Signed out: the Sign in and Create an account buttons go to the account page; the design waits on this device.
+
+      // Signed in: Confirm and pay opens Stripe's secure page; after paying, Stripe returns to the confirmation page.
+      document.getElementById('confirm')?.addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        const f = ev.target as HTMLFormElement, btn = $('payBtn');
+        btn.setAttribute('disabled', ''); $('err').textContent = '';
+        const val = (n: string) => (f.querySelector(`[name=${n}]`) as HTMLInputElement | null)?.value ?? '';
+        const res = await fetch('/api/cards', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+          design: order.design, quantity: order.quantity, options: order.options, notes: order.notes, saved_id: order.saved_id ?? null,
+          proofed: (f.querySelector('[name=proofed]') as HTMLInputElement).checked, customer: { name: val('cname'), phone: val('cphone') },
+        }) });
+        const j = await res.json().catch(() => ({}));
+        if (!res.ok) { $('err').textContent = j.error ?? 'Try again'; btn.removeAttribute('disabled'); return; }
+        try { localStorage.removeItem(DRAFT); localStorage.removeItem('gp-card-design'); localStorage.removeItem('gp-card-saved-id'); } catch {}
+        location.href = j.next;
+      });
+    }
+  </script>
+</Base>

@@ -53,7 +53,7 @@ export const POST: APIRoute = async ({ request }) => {
       const account = b.account_id ? await getAccount(env, Number(b.account_id)) : null;
       if (b.account_id && (!account || !account.active)) throw new Error('That account is closed');
       const rate = account && account.discount_percent ? { ...found, total_charge: Math.round(found.total_charge * (1 - account.discount_percent / 100) * 100) / 100 } : found;
-      const extras = priceExtras(await effectiveAddons(env), b.addons, parcel.value_usd, b.insure === true || b.insure === 'on');
+      const extras = priceExtras(await effectiveAddons(env), b.addons, parcel.value_usd, b.insure === true || b.insure === 'on', rate.service);
       const total = Math.round((rate.total_charge + extras.extras_total) * 100) / 100;
       const order: Order = {
         id: newOrderId(), status: 'reserved', created_at: new Date().toISOString(),

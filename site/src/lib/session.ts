@@ -22,11 +22,32 @@ export async function createLoginToken(env: Env, email: string): Promise<string>
 }
 /** The email a token was made for, and the token is burnt. Null when unknown or used. */
 export async function consumeLoginToken(env: Env, token: string): Promise<string | null> {
-  if (!/^[0-9a-f]{48}$/.test(token)) return null;
-  const email = await kv(env).get(`login:${token}`);
-  if (email) await kv(env).delete(`login:${token}`);
-  return email;
+  return (await consumeLoginTokenFull(env, token))?.email ?? null;
 }
+
+/** A sign-up or set-password link (Peter, Nov 14 2026): the email, plus the password hash and name to apply only
+ *  once the link is opened, so nobody can put a password on an email they don't own. Thirty minutes. */
+export async function createSignupToken(env: Env, email: string, pending: { pw: { hash: string; salt: string; iter: number }; name?: string; phone?: string; mkt?: { email: boolean; sms: boolean; lang?: string } }): Promise<string> {
+  const token = hex(crypto.getRandomValues(new Uint8Array(24)).buffer);
+  await kv(env).put(`login:${token}`, JSON.stringify({ email: email.trim().toLowerCase(), ...pending }), { expirationTtl: 30 * 60 });
+  return token;
+}
+export interface LinkData { email: string; pw?: { hash: string; salt: string; iter: number }; name?: string; phone?: string; mkt?: { email: boolean; sms: boolean; lang?: string } }
+/** What a link carries, without using it up: the account page shows sign-up links a Confirm button first. */
+export async function peekLoginToken(env: Env, token: string): Promise<LinkData | null> {
+  if (!/^[0-9a-f]{48}$/.test(token)) return null;
+  const v = await kv(env).get(`login:${token}`);
+  if (!v) return null;
+  if (v.startsWith('{')) { try { const j = JSON.parse(v); return j?.email ? j : null; } catch { return null; } }
+  return { email: v };
+}
+/** What a link carries: always the email; a pending password and name for sign-up links. Burnt on use. */
+export async function consumeLoginTokenFull(env: Env, token: string): Promise<LinkData | null> {
+  const t = await peekLoginToken(env, token);
+  if (t) await kv(env).delete(`login:${token}`);
+  return t;
+}
+
 
 // A customer's session number (Nov 15 2026): every cookie carries it, and a password change moves it on, which
 // signs out every cookie made before. Cookies from before this have no number and count as 0.
@@ -61,3 +82,10 @@ export async function readSession(env: Env, cookieHeader: string | null, now = D
 }
 export const sessionCookie = (value: string, secure: boolean) => `${COOKIE}=${encodeURIComponent(value)}; Path=/; Max-Age=${DAYS * 86_400}; HttpOnly; SameSite=Lax${secure ? '; Secure' : ''}`;
 export const clearCookie = () => `${COOKIE}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax`;
+
+/** Where to send a customer after the sign-in link: a path on this site only (Peter, Nov 14 2026).
+ *  Anything else (another site, "//evil.com", a backslash trick) falls back to the account page. */
+export function safeNext(next: unknown): string {
+  const n = String(next ?? '');
+  return /^\/(?![\/\\])[^\s]*$/.test(n) && n.length <= 200 ? n : '/account';
+}

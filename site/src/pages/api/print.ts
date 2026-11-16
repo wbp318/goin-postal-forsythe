@@ -58,13 +58,16 @@ export const POST: APIRoute = async ({ request }) => {
     const user = await authenticate(env, b.pin);
     if (!user) return json({ error: 'Wrong PIN' }, 403);
     const order = await getOrder(env, String(b.order ?? ''));
-    if (!order?.label) return json({ error: 'No label to print yet' }, 400);
-    const l = order.label;
+    // which: "return" prints the order's return label ("Return label included", a PDF) instead of the outgoing one.
+    const ret = b.which === 'return';
+    const l = ret ? order?.return_label : order?.label;
+    if (!order || !l) return json({ error: ret ? 'No return label to print yet' : 'No label to print yet' }, 400);
     const pdf = l.label_url && l.label_url.startsWith('/') ? `${env.SITE_URL}${l.label_url}` : l.label_url; // the agent fetches it from outside
     const job = l.label_zpl ? { kind: 'label_zpl' as const, payload: l.label_zpl } : pdf ? { kind: 'label_pdf' as const, payload: pdf } : null;
     if (!job) return json({ error: 'Label has no printable file' }, 400);
+    // The job hangs off the order's own shipment row, like the outgoing label's; the audit names the return one.
     const id = await queuePrint(env, { shipment_id: order.id, ...job, printer: String(b.printer ?? 'counter') });
-    await logAudit(env, user, 'label.print', order.id, job.kind);
+    await logAudit(env, user, 'label.print', ret ? `${order.id}-R` : order.id, job.kind);
     return json({ ok: true, id, kind: job.kind, agent: !!env.PRINTER_KEY });
   }
   return json({ error: 'Unknown action' }, 400);

@@ -4,6 +4,7 @@
 // on the server from the catalog, never taken from the browser.
 import fileAddons from '../data/addons.json';
 import { loadAddons, type AddonRow } from '../shipping/store';
+import { insuranceFee, termsFor } from './insurance';
 
 export interface Insurance { included_usd: number; per_100_usd: number; minimum_usd: number; max_declared_usd: number }
 export interface OnlineFee { percent: number; flat: number }
@@ -29,16 +30,12 @@ export async function effectiveAddons(env: Env): Promise<AddonsConfig & { source
   return saved ? { ...saved, source: 'table' } : { ...addonsFromFile(), source: 'file' };
 }
 
-/** Insurance fee for a declared value. Zero while the carrier's included cover is enough. */
-export function insuranceFee(ins: Insurance, declared: number): { declared_usd: number; fee: number; covered: boolean } {
-  const d = Math.min(Math.max(0, declared || 0), ins.max_declared_usd);
-  if (d <= ins.included_usd) return { declared_usd: d, fee: 0, covered: true };
-  const hundreds = Math.ceil((d - ins.included_usd) / 100);
-  return { declared_usd: d, fee: round2(Math.max(ins.minimum_usd, hundreds * ins.per_100_usd)), covered: false };
-}
+/** Insurance fee for a declared value. Zero while the carrier's included cover is enough. Lives in lib/insurance.ts so the ship page can use it too. */
+export { insuranceFee } from './insurance';
 
-/** Price the extras a customer or staff member picked. Unknown or inactive codes are ignored, quantities capped at 20. */
-export function priceExtras(cfg: AddonsConfig, picks: { code: string; qty: number }[] | undefined, declared: number, insure: boolean): Extras {
+/** Price the extras a customer or staff member picked. Unknown or inactive codes are ignored, quantities capped at 20.
+ *  `service` is the label's service: the carrier's included cover depends on it (none with Media Mail, lib/insurance.ts). */
+export function priceExtras(cfg: AddonsConfig, picks: { code: string; qty: number }[] | undefined, declared: number, insure: boolean, service?: string): Extras {
   const addons: AddonLine[] = [];
   for (const p of picks ?? []) {
     const item = cfg.items.find((i) => i.active && i.code === String(p.code));
@@ -46,7 +43,7 @@ export function priceExtras(cfg: AddonsConfig, picks: { code: string; qty: numbe
     if (!item || !qty) continue;
     addons.push({ code: item.code, kind: item.kind, name: item.name, qty, unit_price: item.price, total: round2(item.price * qty) });
   }
-  const ins = insure ? insuranceFee(cfg.insurance, declared) : null;
+  const ins = insure ? insuranceFee(termsFor(cfg.insurance, service), declared) : null;
   const insurance = ins && ins.fee > 0 ? { declared_usd: ins.declared_usd, fee: ins.fee } : undefined;
   const extras_total = round2(addons.reduce((a, l) => a + l.total, 0) + (insurance?.fee ?? 0));
   return { addons, insurance, extras_total };
@@ -82,12 +79,34 @@ export function textUpdatesPrice(cfg: AddonsConfig): number | null {
   const i = cfg.items.find((x) => x.active && x.code === TEXT_UPDATES);
   return i ? i.price : null;
 }
+/** The code of the signature confirmation add-on; ticking Signature confirmation on the ship page charges it. */
+export const SIGNATURE = 'signature';
+export const SIGNATURE_OFF = 'Signature confirmation is not offered right now. Untick it, or ask us at the counter.';
+/** The signature add-on's price when it is in the catalog and active. */
+export function signaturePrice(cfg: AddonsConfig): number | null {
+  const i = cfg.items.find((x) => x.active && x.code === SIGNATURE);
+  return i ? i.price : null;
+}
+/** The add-on lines a ship page order is charged. Signature confirmation and text updates come from the customer's
+ *  choices (one line each, at the catalog price), never from lines the browser sent; other lines count only with a
+ *  quantity of one or more. Signature ticked while its add-on is off is refused, so it never goes on a label unpaid. */
+export function shipPagePicks(cfg: AddonsConfig, sent: unknown, chosen: { signature: boolean; sms: boolean }): { code: string; qty: number }[] {
+  const picks = (Array.isArray(sent) ? sent : [])
+    .map((p: any) => ({ code: String(p?.code ?? ''), qty: Math.floor(Number(p?.qty)) }))
+    .filter((p) => p.code !== TEXT_UPDATES && p.code !== SIGNATURE && p.qty >= 1);
+  if (chosen.sms && textUpdatesPrice(cfg) != null) picks.push({ code: TEXT_UPDATES, qty: 1 });
+  if (chosen.signature) {
+    if (signaturePrice(cfg) == null) throw new Error(SIGNATURE_OFF);
+    picks.push({ code: SIGNATURE, qty: 1 });
+  }
+  return picks;
+}
 
 /** What /api/rates hands the pages so they can show the fee and the catalog before anything is bought. */
 export function extrasOffer(cfg: AddonsConfig, declared: number) {
   const ins = insuranceFee(cfg.insurance, declared);
   return {
-    insurance: { ...ins, included_usd: cfg.insurance.included_usd, max_declared_usd: cfg.insurance.max_declared_usd },
+    insurance: { ...ins, included_usd: cfg.insurance.included_usd, per_100_usd: cfg.insurance.per_100_usd, minimum_usd: cfg.insurance.minimum_usd, max_declared_usd: cfg.insurance.max_declared_usd },
     addons: cfg.items.filter((i) => i.active).sort((a, b) => a.sort - b.sort).map(({ code, kind, name, price }) => ({ code, kind, name, price })),
     online_fee: cfg.online_fee,
     sales_tax: cfg.sales_tax,

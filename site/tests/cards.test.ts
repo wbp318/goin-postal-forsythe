@@ -14,7 +14,12 @@ describe('card options', () => {
     const r = priceCardOptions({ stock: 'linen', finish: 'gloss', corners: 'nope', speed: 'rush', bogus: 'thick' });
     expect(r.lines.map((l) => [l.code, l.price])).toEqual([['linen', 8], ['gloss', 4], ['rush', 10]]);
     expect(r.total).toBe(22);
-    expect(r.chosen).toEqual({ stock: 'linen', finish: 'gloss', corners: 'square', speed: 'rush' });
+    expect(r.chosen).toEqual({ stock: 'linen', finish: 'gloss', corners: 'square', speed: 'rush', help: 'self' });
+  });
+  it('design help is a paid option of its own (Peter, Nov 15 2026)', () => {
+    const r = priceCardOptions({ help: 'designhelp' });
+    expect(r.lines.map((l) => [l.code, l.price])).toEqual([['designhelp', 20]]);
+    expect(r.chosen.help).toBe('designhelp');
   });
   it('no picks means no lines', () => {
     expect(priceCardOptions(undefined)).toMatchObject({ lines: [], total: 0 });
@@ -39,8 +44,8 @@ describe('priceCards', () => {
 
 describe('chosenOptions', () => {
   it('fills defaults for groups with no paid line, including old orders with no lines', () => {
-    expect(chosenOptions(undefined).map((o) => o.code)).toEqual(['standard', 'matte', 'square', 'normal']);
-    expect(chosenOptions([{ group: 'finish', code: 'softtouch', name: 'Soft touch', price: 6 }]).map((o) => o.code)).toEqual(['standard', 'softtouch', 'square', 'normal']);
+    expect(chosenOptions(undefined).map((o) => o.code)).toEqual(['standard', 'matte', 'square', 'normal', 'self']);
+    expect(chosenOptions([{ group: 'finish', code: 'softtouch', name: 'Soft touch', price: 6 }]).map((o) => o.code)).toEqual(['standard', 'softtouch', 'square', 'normal', 'self']);
   });
 });
 

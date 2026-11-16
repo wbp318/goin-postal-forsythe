@@ -24,6 +24,12 @@ export interface Parcel {
   height_in: number;
   description: string;
   value_usd: number;
+  /** Extra services the customer ticked: signature, Media Mail, irregular, hazardous materials (lib/options.ts). */
+  options?: import('../lib/options').ShipOptions;
+  /** Insurance the customer bought, in dollars: added to the label as the carrier's own insurance (lib/labelExtras.ts). Set at label time from the order. */
+  insured_usd?: number;
+  /** The packaging it ships in (lib/packaging.ts): own box, envelope or tube, or a carrier's branded packaging. Undefined is a plain box. */
+  packaging?: string;
 }
 
 /** One service a customer can pick. `id` is "<carrier>:<service code>" and is the only thing the browser sends back. */
