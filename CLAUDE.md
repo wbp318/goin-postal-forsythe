@@ -74,6 +74,12 @@ One folder per idea, each a README with Mermaid charts, costs, sources and a "De
 
 These are plans: nothing in them is built or bought until the owners decide. Prices and third-party rules in them are dated; re-check them before quoting them as current.
 
+## Security review on every code change
+
+Every code change gets a security review before it is committed, whoever makes it: William, Peter, or anyone working for them. Run the `security-review` skill (`/security-review`) on the pending changes, fix every high and medium finding in the same change, and end the commit message body with one line giving the outcome: `Security review: no findings`, or `Security review: fixed <what>; open <what> (#N)`. Anything left open gets a GitHub issue. Code means any change under `site/` (other than images and `.md` files), `scripts/`, `shipping-client/**/*.mjs` and `physical-mailbox/tools/`. Plans, READMEs and charts on their own need no review.
+
+Peter works on the `peter` branch of his fork, `Petoria-ai/goin-postal-forsythe`. On that branch the same outcome line also goes in the edit's `peter/EDIT-LOG.md` entry. Before his branch is merged into `main`, the whole branch is reviewed again (`/security-review` against `main`), and the merge waits until its high findings are fixed.
+
 ## Releases and docs
 
 Every finished piece of work gets a tag and a GitHub release with full detail, and the docs are updated in the same commit: the `AGENDA.md` to-do row and dated log line, `site/README.md` feature list, the relevant `shipping-client/*/README.md`, and Mermaid charts where the flow changed (validate with `npx -y @mermaid-js/mermaid-cli@11`). Release flow:
