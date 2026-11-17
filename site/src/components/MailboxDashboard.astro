@@ -1,0 +1,203 @@
+---
+// The holder's mailbox dashboard on /account#mailbox (Peter, Nov 16 2026), laid out like the mock-up he sent:
+// box number and status, mail and package counts, how full the box is, plan, renewal, card on file, balance,
+// then rows that open: Request mail forwarding, Manage subscription, Billing history, Notification preferences,
+// Recent mail. Every button calls /api/mailbox with the session cookie; the page reloads to show the result.
+import type { MailboxRow, MailboxItem, MailboxSettings, MailboxCharge, MailboxRenewal, MailboxForward } from '../shipping/store';
+import { addressFor, fullness, OVERAGE_FEE, priceFor, money, boxStatus, day, PKG, packageState, pendingClaim } from '../lib/mailbox';
+import { store } from '../data/store';
+
+interface Props {
+  box: MailboxRow & { sizeName: string };
+  firstName: string;
+  counts: { letters: number; packages: number; last: string | null };
+  items: MailboxItem[];
+  settings: MailboxSettings;
+  balance: { due: number; pieces: number; declined: boolean; charges: MailboxCharge[] };
+  renewals: MailboxRenewal[];
+  forwards: MailboxForward[];
+  renewOptions: { term: 6 | 12; price: number | null; until: string }[];
+  longDate: (ymd: string) => string;
+  photos: Record<number, string>;
+}
+const { box: b, firstName, counts, items, settings: st, balance, renewals, forwards, renewOptions, longDate, photos } = Astro.props;
+const photoUrl = (itemId: number) => (photos[itemId] ? `/api/mailbox-photo?id=${photos[itemId]}` : null);
+const state = boxStatus(b, day(new Date()));
+// Letters fill the box; packages have their own rules (2 free at a time, 5 free days, then $1 a day up to $10).
+const f = fullness(counts.letters, b.size);
+const claim = pendingClaim(JSON.parse(b.reminders));
+const today = day(new Date());
+const pkgs = items.filter((x) => x.kind === 'package' && x.status === 'in').sort((a, c) => a.arrived_at.localeCompare(c.arrived_at) || a.id - c.id).map((x, i) => ({ ...x, ...packageState(x, i, today) }));
+const level = f.pct >= 100 ? 'over' : f.pct >= 80 ? 'near' : 'ok';
+const price = priceFor(b.size as any, b.term as any);
+const hasCard = !!st.payment_method_id;
+const fee = money(OVERAGE_FEE);
+// Billing history: online renewals and charges (automatic renewals, overages), newest first.
+const history = [
+  ...renewals.map((r) => ({ at: r.paid_at ?? r.created_at, what: 'online', label: `${r.term === 12 ? '1 year' : '6 months'}`, amount: r.amount, status: 'paid' })),
+  ...balance.charges.filter((c) => c.mailbox_id === b.id).map((c) => ({ at: c.paid_at ?? c.created_at, what: c.kind, label: c.description.replace(/ \(piece \d+\)$/, ''), amount: c.amount, status: c.status })),
+].sort((x, y) => y.at.localeCompare(x.at)).slice(0, 30);
+const icon = {
+  bell: '<path d="M6 9a6 6 0 1 1 12 0c0 5 2 6.5 2 6.5H4S6 14 6 9Z"/><path d="M10 19a2 2 0 0 0 4 0"/>',
+  mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+  box: '<path d="M21 8 12 3 3 8v8l9 5 9-5V8Z"/><path d="m3 8 9 5 9-5M12 13v8"/>',
+  truck: '<path d="M3 6h11v10H3zM14 9h4l3 3v4h-7"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/>',
+  card: '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/>',
+  receipt: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z"/><path d="M9 8h6M9 12h6"/>',
+  gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
+  list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+};
+const svg = (k: keyof typeof icon) => `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icon[k]}</svg>`;
+---
+<div class="card mbd" data-box={b.id}>
+  <header class="mbd-head">
+    <div>
+      <h3 class="mbd-title">{store.name} <span data-i18n="mbd.mailbox">Mailbox</span></h3>
+      <p class="muted"><span data-i18n="mbd.welcome">Welcome to your mailbox dashboard</span>, {firstName}</p>
+    </div>
+    <button type="button" class="mbd-bell" data-open="notify" aria-label="Notification preferences" set:html={svg('bell')} />
+  </header>
+
+  <div class="mbd-box">
+    <div>
+      <p class="muted" data-i18n="mbd.yourbox">Your mailbox</p>
+      <p class="mbd-no">#{b.box_no}</p>
+    </div>
+    <span class={`acct-status mb-${state}`} data-i18n={`mb.state.${state}`}>{state}</span>
+  </div>
+  <p class="mbd-addr"><span class="muted" data-i18n="mb.youraddr">Your address:</span> <strong>{addressFor(b.box_no)}</strong> <button type="button" class="linkish" data-copy={addressFor(b.box_no)} data-i18n="mb.copy">Copy</button></p>
+
+  <div class="mbd-tiles">
+    <div class="mbd-tile"><span set:html={svg('mail')} /><strong>{counts.letters}</strong><span data-i18n="mbd.letters">Mail pieces</span></div>
+    <div class="mbd-tile"><span set:html={svg('box')} /><strong>{counts.packages}</strong><span data-i18n="mbd.packages">Packages</span></div>
+  </div>
+
+  <div class="mbd-cap">
+    <p class="mbd-row-line"><span class="muted" data-i18n="mbd.capacity">Mailbox capacity</span> <strong>{f.pct}%</strong></p>
+    <div class={`mbd-bar mbd-${level}`} role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow={Math.min(100, f.pct)}><span style={`width:${Math.min(100, f.pct)}%`}></span></div>
+    {counts.letters > 0 && claim && <p class="mbd-emptied muted mbd-small" data-i18n="mbd.claimed">Thanks! We'll confirm next time we check your box, and update your count.</p>}
+    {counts.letters > 0 && !claim && <p class="mbd-emptied"><button type="button" class="btn small kraft" data-emptied={b.id} data-i18n="mbd.emptied">I picked up my mail</button> <span class="muted mbd-small" data-i18n="mbd.emptied.p">Tap after you empty your box so the count stays right.</span></p>}
+    <p class="muted mbd-small"><span data-i18n="mbd.ofcap" data-i18n-vars={JSON.stringify({ n: f.pieces, max: f.capacity })}>{f.pieces} of {f.capacity} pieces</span>
+      {counts.last ? <> · <span data-i18n="mbd.updated">Last mail:</span> <time data-local={counts.last}>{counts.last.slice(0, 16).replace('T', ' ')}</time></> : <> · <span data-i18n="mbd.nomail">No mail waiting.</span></>}</p>
+    {pkgs.length > 0 && <ul class="mbd-pkgs">{pkgs.map((p) => (
+      <li class={p.rts ? 'rts' : p.late ? 'late' : ''}>
+        {photoUrl(p.id) && <a href={photoUrl(p.id)} target="_blank" rel="noopener" class="mbd-thumb"><img src={photoUrl(p.id)} alt="Package photo" loading="lazy" /></a>}
+        <strong data-i18n="mbd.k.package">Package</strong> <span class="muted">{p.note ?? ''}</span>
+        <span>{p.rts ? <span data-i18n="mbd.pk.rts">Being returned to the sender. Call us today if you still want it.</span>
+          : p.held >= PKG.returnNoticeDay ? <span data-i18n="mbd.pk.final" data-i18n-vars={JSON.stringify({ date: longDate(p.return_on) })}>Final notice: pick it up by {longDate(p.return_on)} or it goes back to the sender.</span>
+          : p.late ? <span data-i18n="mbd.pk.storage" data-i18n-vars={JSON.stringify({ amount: money(p.storage), cap: money(PKG.storageCap) })}>Storage so far: {money(p.storage)} (stops at {money(PKG.storageCap)}).</span>
+          : <span data-i18n="mbd.pk.free" data-i18n-vars={JSON.stringify({ date: longDate(p.free_until) })}>Free until {longDate(p.free_until)}.</span>}
+          {p.extra > 0 && <> <span data-i18n="mbd.pk.extra" data-i18n-vars={JSON.stringify({ amount: money(p.extra) })}>Extra package fee: {money(p.extra)}.</span></>}</span>
+      </li>
+    ))}</ul>}
+    <p class="muted mbd-small" data-i18n="mbd.pk.rule" data-i18n-vars={JSON.stringify({ n: PKG.freeCount, fee: money(PKG.fee), after: PKG.feeAfterDays, days: PKG.freeDays, per: money(PKG.storagePerDay), cap: money(PKG.storageCap), ret: PKG.returnNoticeDay })}>Packages: up to {PKG.freeCount} at a time are free; each one past that is {money(PKG.fee)} if it's still here after {PKG.feeAfterDays} days. Each package is free for {PKG.freeDays} days, then {money(PKG.storagePerDay)} a day, {money(PKG.storageCap)} at most. After {PKG.returnNoticeDay} days we send a final notice, then return it to the sender.</p>
+    {level === 'over' && <p class="mbd-warn over" data-i18n="mbd.over" data-i18n-vars={JSON.stringify({ fee })}>Your box is over its limit: {fee} for each extra piece. Please pick up soon.</p>}
+    {level === 'near' && <p class="mbd-warn" data-i18n="mbd.nearfull" data-i18n-vars={JSON.stringify({ fee, max: f.capacity })}>Almost full. Pick up soon to avoid overage fees ({fee} a piece over {f.capacity}).</p>}
+  </div>
+
+  <dl class="mbd-facts">
+    <div><dt data-i18n="mbd.plan">Plan</dt><dd><span data-i18n={`mb.size.${b.size}`}>{b.sizeName}</span> · {b.term === 12 ? <span data-i18n="mb.year">1 year</span> : <span data-i18n="mb.six">6 months</span>}{price != null && <> · {money(price)}</>}</dd></div>
+    <div><dt data-i18n="mbd.nextrenew">Next renewal</dt><dd>{longDate(b.paid_through)}</dd></div>
+    <div><dt data-i18n="mbd.auto">Automatic renewal</dt><dd class={st.autorenew ? 'mbd-on' : 'mbd-off'}>{st.autorenew ? <span data-i18n="mbd.on">On</span> : <span data-i18n="mbd.off">Off</span>}</dd></div>
+    <div><dt data-i18n="mbd.card">Card on file</dt><dd>{hasCard ? <>{(st.card_brand ?? '').toUpperCase()} •••• {st.card_last4} <span class="muted">({st.card_exp})</span></> : <span class="muted" data-i18n="mbd.nocard">No card</span>}</dd></div>
+    {balance.due > 0 && <div class="mbd-due"><dt data-i18n="mbd.balance">Balance due</dt><dd>{money(balance.due)}</dd></div>}
+  </dl>
+  {balance.declined && <p class="mbd-warn over" data-i18n="mbd.declined">Your card was declined. Please add a new card or pay at the counter.</p>}
+  {balance.due > 0 && !balance.declined && <p class="muted mbd-small" data-i18n={hasCard ? 'mbd.balance.card' : 'mbd.balance.counter'}>{hasCard ? 'Charged to your card soon.' : 'Pay at the counter, or add a card.'}</p>}
+
+  <div class="mbd-menu">
+    <details data-row="forward">
+      <summary><span set:html={svg('truck')} /><span data-i18n="mbd.forward">Request mail forwarding</span></summary>
+      <div class="mbd-panel">
+        <p class="muted" data-i18n="mbd.forward.p">Tell us where to send the mail in your box. We'll contact you about postage before we send it.</p>
+        {forwards.map((x) => <p class="mbd-req"><span data-i18n="mbd.forward.open">Waiting:</span> {x.address} <button type="button" class="linkish" data-fwd-cancel={x.id} data-i18n="mbd.forward.cancel">Cancel</button></p>)}
+        <form class="mbd-form" data-forward={b.id}>
+          <label><span data-i18n="mbd.forward.addr">Forward to (full address)</span><textarea name="address" rows="3" required minlength="10" maxlength="300"></textarea></label>
+          <label><span data-i18n="mbd.forward.note">Note (optional)</span><input name="note" maxlength="300" /></label>
+          <button type="submit" class="btn small" data-i18n="mbd.forward.send">Send request</button>
+        </form>
+      </div>
+    </details>
+    <details data-row="manage">
+      <summary><span set:html={svg('card')} /><span data-i18n="mbd.manage">Manage subscription</span></summary>
+      <div class="mbd-panel">
+        <p class="mbd-row-line"><span data-i18n="mbd.auto">Automatic renewal</span>
+          {hasCard ? <button type="button" class="btn small kraft" data-auto={st.autorenew ? 'off' : 'on'} data-i18n={st.autorenew ? 'mbd.turnoff' : 'mbd.turnon'}>{st.autorenew ? 'Turn off' : 'Turn on'}</button> : <span class="muted" data-i18n="mbd.needcard">Add a card to use it</span>}</p>
+        <p class="btnrow">
+          <button type="button" class="btn small" data-card-add data-i18n={hasCard ? 'mbd.replacecard' : 'mbd.addcard'}>{hasCard ? 'Replace card' : 'Add a card'}</button>
+          {hasCard && <button type="button" class="linkish mb-danger" data-card-remove data-i18n="mbd.removecard">Remove card</button>}
+        </p>
+        <p class="muted mbd-small" data-i18n="mbd.cardnote">Saving a card turns on automatic renewal: we charge your mailbox price each time your term ends, until you turn it off, plus 45 cents for each piece of mail over your box's limit. We remind you 2 months, 1 month and 1 week before each renewal.</p>
+        <div class="mb-renew">
+          <h4 data-i18n="mb.renewonline">Renew online</h4>
+          <p class="btnrow">
+            {renewOptions.map((o) => (
+              <button type="button" class="btn small" data-renew={b.id} data-term={o.term}><span data-i18n={o.term === 12 ? 'mb.addyear' : 'mb.addsix'}>{o.term === 12 ? 'Add 1 year' : 'Add 6 months'}</span> · ${o.price}</button>
+            ))}
+          </p>
+          {renewOptions.map((o) => <p class="muted mb-until"><span data-i18n={o.term === 12 ? 'mb.addyear' : 'mb.addsix'}>{o.term === 12 ? 'Add 1 year' : 'Add 6 months'}</span>: <span data-i18n="mb.newdate">New paid-through date:</span> {longDate(o.until)}</p>)}
+          <p class="err" data-renew-err hidden></p>
+        </div>
+      </div>
+    </details>
+    <details data-row="history">
+      <summary><span set:html={svg('receipt')} /><span data-i18n="mbd.history">Billing history</span></summary>
+      <div class="mbd-panel">
+        {history.length ? <ul class="mbd-list">{history.map((h) => (
+          <li><time>{h.at.slice(0, 10)}</time><span><span data-i18n={`mbd.ch.${h.what}`}>{h.what}</span> <span class="muted">{h.label}</span></span><strong>{money(h.amount)}</strong><span class={`mbd-st mbd-st-${h.status}`} data-i18n={`mbd.ch.${h.status}`}>{h.status}</span></li>
+        ))}</ul> : <p class="muted" data-i18n="mbd.nohistory">No payments yet.</p>}
+      </div>
+    </details>
+    <details data-row="notify">
+      <summary><span set:html={svg('gear')} /><span data-i18n="mbd.notify">Notification preferences</span></summary>
+      <div class="mbd-panel">
+        <p data-i18n="mbd.notify.p">When mail arrives (once a day):</p>
+        <label class="check"><input type="checkbox" data-pref="notify_sms" checked={!!st.notify_sms} /> <span data-i18n="mbd.notify.sms">Text me</span></label>
+        <label class="check"><input type="checkbox" data-pref="notify_email" checked={!!st.notify_email} /> <span data-i18n="mbd.notify.email">Email me</span></label>
+        <p class="muted mbd-small" data-i18n="mbd.notify.always">Renewal reminders and receipts always come by email.</p>
+      </div>
+    </details>
+    <details data-row="recent">
+      <summary><span set:html={svg('list')} /><span data-i18n="mbd.recent">Recent mail</span></summary>
+      <div class="mbd-panel">
+        {items.length ? <ul class="mbd-list">{items.map((x) => (
+          <li>{photoUrl(x.id) && <a href={photoUrl(x.id)} target="_blank" rel="noopener" class="mbd-thumb"><img src={photoUrl(x.id)} alt="Photo" loading="lazy" /></a>}<time data-local={x.arrived_at}>{x.arrived_at.slice(0, 10)}</time><span data-i18n={`mbd.k.${x.kind}`}>{x.kind}</span><span class="muted">{x.note ?? ''}</span><span class={`mbd-st mbd-st-${x.status}`} data-i18n={`mbd.st.${x.status}`}>{x.status}</span></li>
+        ))}</ul> : <p class="muted" data-i18n="mbd.nomail">No mail waiting.</p>}
+      </div>
+    </details>
+  </div>
+  <p class="err" data-mbd-err hidden></p>
+</div>
+
+<script>
+  import { t } from '../i18n';
+  const post = async (body: Record<string, unknown>) => {
+    const res = await fetch('/api/mailbox', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(j.error || 'Try again');
+    return j;
+  };
+  document.querySelectorAll<HTMLElement>('.mbd').forEach((card) => {
+    const err = card.querySelector<HTMLElement>('[data-mbd-err]')!;
+    const fail = (e: any) => { err.textContent = e.message; err.hidden = false; };
+    const run = (fn: () => Promise<unknown>) => async () => { err.hidden = true; try { await fn(); } catch (e) { fail(e); } };
+    // Times in the holder's own clock.
+    card.querySelectorAll<HTMLElement>('time[data-local]').forEach((el) => {
+      const d = new Date(el.dataset.local!);
+      if (!Number.isNaN(d.getTime())) el.textContent = d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    });
+    card.querySelector('[data-open="notify"]')?.addEventListener('click', () => {
+      const d = card.querySelector<HTMLDetailsElement>('details[data-row="notify"]')!; d.open = true; d.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    card.querySelectorAll<HTMLButtonElement>('[data-card-add]').forEach((b) => b.addEventListener('click', run(async () => { b.disabled = true; const j = await post({ action: 'card_setup' }); location.href = j.url; })));
+    card.querySelector('[data-card-remove]')?.addEventListener('click', run(async () => { if (!confirm(t('mbd.removeq'))) return; await post({ action: 'card_remove' }); location.reload(); }));
+    card.querySelectorAll<HTMLButtonElement>('[data-auto]').forEach((b) => b.addEventListener('click', run(async () => { await post({ action: 'set_prefs', autorenew: b.dataset.auto === 'on' }); location.reload(); })));
+    card.querySelectorAll<HTMLInputElement>('[data-pref]').forEach((c) => c.addEventListener('change', run(async () => { await post({ action: 'set_prefs', [c.dataset.pref!]: c.checked }); })));
+    card.querySelectorAll<HTMLFormElement>('form[data-forward]').forEach((f) => f.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      await run(async () => { await post({ action: 'forward_request', id: Number(f.dataset.forward), address: (f.elements.namedItem('address') as HTMLTextAreaElement).value, note: (f.elements.namedItem('note') as HTMLInputElement).value }); location.reload(); })();
+    }));
+    card.querySelectorAll<HTMLButtonElement>('[data-emptied]').forEach((b) => b.addEventListener('click', run(async () => { await post({ action: 'emptied', id: Number(b.dataset.emptied) }); location.reload(); })));
+    card.querySelectorAll<HTMLButtonElement>('[data-fwd-cancel]').forEach((b) => b.addEventListener('click', run(async () => { await post({ action: 'forward_cancel', id: Number(b.dataset.fwdCancel) }); location.reload(); })));
+  });
+</script>

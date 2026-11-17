@@ -1,0 +1,157 @@
+---
+// The Documents window for a mailbox holder (Peter, Nov 16 2026): their photo IDs and PS Form 1583, with Upload.
+// Used on /counter/mailboxes and /counter/customers. Any button with data-mbdocs="<customer id>" opens it; the
+// page's own #pin box supplies the staff PIN. Files are encrypted when stored (lib/mailboxDocs.ts); only a manager
+// or owner can view or delete them, and each view is in the audit log. Viewing shows the file inside this window
+// from memory: it never has a web address of its own.
+---
+<dialog id="mbDocs" class="hz-dialog mb-docs" aria-labelledby="mbDocsH">
+  <h2 id="mbDocsH"></h2>
+  <p id="mbDocsWho" class="muted"></p>
+  <p id="mbDocsKeep" class="mb-docs-keep" hidden></p>
+  <p id="mbDocsNotReady" class="err" hidden data-i18n="st.doc.notready">Documents aren't set up on the live site yet (DOCS_KEY). Ask William.</p>
+  <p class="err" id="mbDocsErr" hidden></p>
+
+  <ul id="mbDocsList" class="mb-docs-list"></ul>
+  <p id="mbDocsNone" class="muted" hidden data-i18n="st.doc.none">No documents yet.</p>
+  <p id="mbDocsLocked" class="muted" hidden data-i18n="st.doc.locked">Only a manager or owner can open these.</p>
+
+  <div id="mbDocsView" class="mb-docs-view" hidden>
+    <p class="btnrow"><strong id="mbDocsViewName"></strong> <a id="mbDocsFull" target="_blank" rel="noopener" data-i18n="st.doc.full">Open full size</a> <button type="button" class="linkish" id="mbDocsViewClose" data-i18n="st.doc.hide">Hide</button></p>
+    <div id="mbDocsViewBody"></div>
+  </div>
+
+  <form id="mbDocsForm" class="mb-docs-form">
+    <h3 data-i18n="st.doc.upload.h">Add a document</h3>
+    <label><span data-i18n="st.doc.kind">What is it?</span>
+      <select name="kind">
+        <option value="photo_id" data-i18n="st.doc.kind.photo_id">Photo ID</option>
+        <option value="second_id" data-i18n="st.doc.kind.second_id">Second ID (shows their address)</option>
+        <option value="form_1583" data-i18n="st.doc.kind.form_1583">PS Form 1583</option>
+        <option value="other" data-i18n="st.doc.kind.other">Other</option>
+      </select>
+    </label>
+    <label><span data-i18n="st.doc.file">Photo or PDF</span> <input type="file" name="file" accept="image/*,application/pdf" required /></label>
+    <label><span data-i18n="st.doc.note">Note (optional)</span> <input name="note" maxlength="200" data-i18n-ph="st.doc.note.ph" placeholder="Louisiana driver's license, expires 2029" /></label>
+    <p class="btnrow"><button type="submit" class="btn small" data-i18n="st.doc.upload">Upload</button> <span id="mbDocsBusy" class="muted"></span></p>
+    <p class="muted mb-docs-safe" data-i18n="st.doc.safe">Files are locked (encrypted) when stored. Every time someone opens one, it's logged.</p>
+  </form>
+
+  <p class="btnrow mb-edit-foot"><span></span><button type="button" class="btn small" id="mbDocsDone" data-i18n="st.mb.done">Done</button></p>
+</dialog>
+
+<script>
+  import { t, tf } from '../i18n';
+  const $ = (id: string) => document.getElementById(id)!;
+  const dlg = $('mbDocs') as HTMLDialogElement;
+  const err = $('mbDocsErr');
+  const pin = () => (document.getElementById('pin') as HTMLInputElement | null)?.value ?? '';
+  let customerId = '';
+  let viewUrl = '';
+
+  async function api(body: Record<string, unknown>) {
+    const res = await fetch('/api/mailbox-docs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin(), ...body }) });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(j.error ?? 'Try again');
+    return j;
+  }
+  const showErr = (m: string) => { err.textContent = m; err.hidden = !m; };
+  const size = (n: number) => (n > 1_000_000 ? `${(n / 1_000_000).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1000))} KB`);
+  const hideView = () => { $('mbDocsView').hidden = true; $('mbDocsViewBody').innerHTML = ''; if (viewUrl) URL.revokeObjectURL(viewUrl); viewUrl = ''; };
+
+  async function load() {
+    const j = await api({ action: 'list', customer_id: customerId });
+    $('mbDocsH').textContent = `${t('st.doc.h')} · ${j.customer.name}`;
+    $('mbDocsWho').textContent = [j.boxes.length ? j.boxes.map((n: number) => `#${n}`).join(', ') : '', j.customer.phone, j.customer.email].filter(Boolean).join(' · ');
+    const keep = $('mbDocsKeep');
+    keep.hidden = !j.delete_after;
+    if (j.delete_after) {
+      const past = j.delete_after < new Date().toISOString().slice(0, 10);
+      keep.className = `mb-docs-keep${past ? ' past' : ''}`;
+      keep.textContent = past ? tf('st.doc.overdue', { ended: j.last_ended }) : tf('st.doc.keep', { ended: j.last_ended, date: j.delete_after });
+    }
+    $('mbDocsNotReady').hidden = j.ready;
+    ($('mbDocsForm') as HTMLFormElement).hidden = !j.ready;
+    $('mbDocsLocked').hidden = j.can_open || !j.docs.length;
+    $('mbDocsNone').hidden = j.docs.length > 0;
+    const ul = $('mbDocsList'); ul.innerHTML = '';
+    for (const d of j.docs) {
+      const li = document.createElement('li');
+      const info = document.createElement('div');
+      info.innerHTML = '<strong></strong> <span class="muted"></span><br /><span class="muted small"></span>';
+      info.querySelector('strong')!.textContent = t(`st.doc.kind.${d.kind}`);
+      (info.querySelectorAll('.muted')[0] as HTMLElement).textContent = `${d.name} · ${size(d.bytes)}`;
+      (info.querySelectorAll('.muted')[1] as HTMLElement).textContent = [tf('st.doc.addedby', { who: d.by_name, date: d.at.slice(0, 10) }), d.note].filter(Boolean).join(' · ');
+      li.appendChild(info);
+      if (j.can_open) {
+        const v = document.createElement('button'); v.type = 'button'; v.className = 'btn small kraft'; v.textContent = t('st.doc.view');
+        v.addEventListener('click', () => view(d.id));
+        const del = document.createElement('button'); del.type = 'button'; del.className = 'linkish mb-danger'; del.textContent = t('st.doc.delete');
+        del.addEventListener('click', async () => {
+          if (!confirm(t('st.doc.deleteq'))) return;
+          try { await api({ action: 'delete', id: d.id }); hideView(); await load(); } catch (e: any) { showErr(e.message); }
+        });
+        li.append(v, del);
+      }
+      ul.appendChild(li);
+    }
+  }
+
+  async function view(id: string) {
+    showErr('');
+    try {
+      const f = await api({ action: 'open', id });
+      hideView();
+      const bin = atob(f.data); const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      viewUrl = URL.createObjectURL(new Blob([bytes], { type: f.content_type }));
+      const body = $('mbDocsViewBody');
+      if (f.content_type === 'application/pdf') { const fr = document.createElement('iframe'); fr.src = viewUrl; fr.title = f.name; body.appendChild(fr); }
+      else { const img = document.createElement('img'); img.src = viewUrl; img.alt = f.name; body.appendChild(img); }
+      $('mbDocsViewName').textContent = f.name;
+      ($('mbDocsFull') as HTMLAnchorElement).href = viewUrl;
+      $('mbDocsView').hidden = false;
+    } catch (e: any) { showErr(e.message); }
+  }
+
+  // Big phone photos are shrunk to 2400 px (still sharp enough to read an ID) so uploads stay quick and small.
+  async function readFile(file: File): Promise<string> {
+    const raw = await new Promise<string>((ok, no) => { const r = new FileReader(); r.onload = () => ok(String(r.result)); r.onerror = () => no(new Error('Could not read the file')); r.readAsDataURL(file); });
+    if (!file.type.startsWith('image/')) return raw;
+    const img = new Image();
+    await new Promise((ok, no) => { img.onload = ok; img.onerror = () => no(new Error('That photo could not be opened. Try a JPEG or PNG.')); img.src = raw; });
+    const scale = Math.min(1, 2400 / Math.max(img.naturalWidth, img.naturalHeight));
+    if (scale === 1 && file.size < 2_000_000 && /^data:image\/(jpeg|png|webp);/.test(raw)) return raw;
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.naturalWidth * scale); c.height = Math.round(img.naturalHeight * scale);
+    c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height);
+    return c.toDataURL('image/jpeg', 0.88);
+  }
+
+  $('mbDocsForm').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const f = ev.target as HTMLFormElement;
+    const file = (f.elements.namedItem('file') as HTMLInputElement).files?.[0];
+    if (!file) return;
+    showErr(''); $('mbDocsBusy').textContent = t('st.doc.uploading');
+    try {
+      const data = await readFile(file);
+      await api({ action: 'add', customer_id: customerId, kind: (f.elements.namedItem('kind') as HTMLSelectElement).value, name: file.name, note: (f.elements.namedItem('note') as HTMLInputElement).value, data });
+      f.reset(); $('mbDocsBusy').textContent = t('st.doc.uploaded');
+      await load();
+      window.dispatchEvent(new CustomEvent('mbdocs:changed', { detail: { customer_id: customerId } }));
+    } catch (e: any) { $('mbDocsBusy').textContent = ''; showErr(e.message); }
+  });
+
+  // Any [data-mbdocs] button on the page opens the window for that customer (buttons are added as lists load).
+  document.addEventListener('click', async (ev) => {
+    const b = (ev.target as HTMLElement).closest<HTMLElement>('[data-mbdocs]');
+    if (!b) return;
+    customerId = b.dataset.mbdocs!;
+    showErr(''); hideView(); $('mbDocsBusy').textContent = '';
+    try { await load(); if (!dlg.open) dlg.showModal(); } catch (e: any) { alert(e.message); }
+  });
+  $('mbDocsViewClose').addEventListener('click', hideView);
+  $('mbDocsDone').addEventListener('click', () => dlg.close());
+  dlg.addEventListener('close', () => { hideView(); window.dispatchEvent(new CustomEvent('mbdocs:changed', { detail: { customer_id: customerId } })); });
+</script>

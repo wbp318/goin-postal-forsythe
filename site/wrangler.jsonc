@@ -5,6 +5,9 @@
   "name": "goin-postal-forsythe",
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
+  // Our own entry (Astro's handler plus the daily jobs) and when the daily jobs run (Peter, Nov 17 2026).
+  "main": "./src/worker.ts",
+  "triggers": { "crons": ["0 15 * * *"] },
   "kv_namespaces": [
     // Orders: quote -> paid -> labeled. Create the real namespace with
     // `npx wrangler kv namespace create ORDERS` and paste its id here.

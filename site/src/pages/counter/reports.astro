@@ -26,6 +26,9 @@ const monthStart = today.slice(0, 8) + '01';
       <button class="btn kraft" type="button" data-preset="today" data-i18n="st.p.today">Today</button>
       <button class="btn kraft" type="button" data-preset="week" data-i18n="st.p.week">Last 7 days</button>
       <button class="btn kraft" type="button" data-preset="month" data-i18n="st.p.month">This month</button>
+      <button class="btn kraft" type="button" data-preset="lastmonth" data-i18n="st.p.lastmonth">Last month</button>
+      <button class="btn kraft" type="button" data-preset="quarter" data-i18n="st.p.quarter">This quarter</button>
+      <button class="btn kraft" type="button" data-preset="year" data-i18n="st.p.year">This year</button>
       <button class="btn kraft" type="button" id="csv" data-i18n="st.p.csv">Download CSV</button>
     </p>
     <p id="msg" role="alert"></p>
@@ -93,6 +96,17 @@ const monthStart = today.slice(0, 8) + '01';
         <table class="list"><thead><tr><th data-i18n="st.p.th.status">Status</th><th data-i18n="st.p.shipments">Shipments</th></tr></thead><tbody id="status"></tbody></table>
       </div>
     </div>
+    <div class="card mb-report" id="mbReport">
+      <h3 data-i18n="st.r.h">Mailboxes</h3>
+      <p class="muted" data-i18n="st.r.p">Boxes, money taken through the website, and mail handled, for the dates above. Renewals paid at the register only count if staff used the Edit buttons.</p>
+      <div class="grid mb-r-tiles">
+        <div class="card"><h4 data-i18n="st.r.boxes">Boxes in use</h4><p class="big" id="r-boxes"></p><p class="muted" id="r-boxes-p"></p></div>
+        <div class="card"><h4 data-i18n="st.r.money">Taken through the website</h4><p class="big" id="r-money"></p><p class="muted" id="r-money-p"></p></div>
+        <div class="card"><h4 data-i18n="st.r.mail">Mail handled</h4><p class="big" id="r-mail"></p><p class="muted" id="r-mail-p"></p></div>
+      </div>
+      <table class="list"><tbody id="r-rows"></tbody></table>
+      <p class="btnrow"><button class="btn kraft" type="button" id="mbCsv" data-i18n="st.r.csv">Download mailbox report (CSV)</button></p>
+    </div>
   </div>
 
   <script>
@@ -122,7 +136,37 @@ const monthStart = today.slice(0, 8) + '01';
       }
     }
 
+    // The mailbox report (Peter, Nov 16 2026), for the same dates.
+    async function runMailboxes() {
+      const res = await fetch('/api/mailbox', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin(), action: 'report', from: field('from').value, to: field('to').value }) });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) return;
+      const r = j.report; const m = r.money;
+      document.getElementById('r-boxes')!.textContent = String(r.boxes.at_end);
+      document.getElementById('r-boxes-p')!.textContent = tf('st.r.boxes.p', { start: r.boxes.at_start, n: r.boxes.new, closed: r.boxes.closed, expired: r.boxes.expired });
+      document.getElementById('r-money')!.textContent = usd(m.total);
+      document.getElementById('r-money-p')!.textContent = tf('st.r.money.p', { owed: usd(m.owed_now), waived: usd(m.waived), declined: usd(m.declined) });
+      document.getElementById('r-mail')!.textContent = String(r.mail.letters_in + r.mail.packages_in);
+      document.getElementById('r-mail-p')!.textContent = tf('st.r.mail.p', { letters: r.mail.letters_in, packages: r.mail.packages_in, wait: r.mail.avg_package_wait_days ?? '–' });
+      const rows: [string, string][] = [
+        ...r.boxes.by_size.map((s: any) => [tf('st.r.size', { size: t(`mb.size.${s.size}`) }), `${s.rented} / ${s.total}`] as [string, string]),
+        [t('st.r.online'), `${m.online_renewals.n} · ${usd(m.online_renewals.amount)}`], [t('st.r.auto'), `${m.auto_renewals.n} · ${usd(m.auto_renewals.amount)}`],
+        [t('st.r.overage'), `${m.letter_overage.n} · ${usd(m.letter_overage.amount)}`], [t('st.r.pkgfee'), `${m.package_fees.n} · ${usd(m.package_fees.amount)}`],
+        [t('st.r.storage'), `${m.storage_fees.n} · ${usd(m.storage_fees.amount)}`], [t('st.r.counter'), usd(m.fees_paid_at_counter)],
+        [t('st.r.out'), tf('st.r.out.v', { picked: r.mail.picked_up, fwd: r.mail.forwarded, rts: r.mail.returned })],
+        [t('st.r.people'), tf('st.r.people.v', { res: r.people.reservations, fwd: r.people.forward_requests, hold: r.people.on_hold_now, rts: r.people.return_to_sender_now })],
+      ];
+      const tb = document.getElementById('r-rows')!; tb.innerHTML = '';
+      for (const [k, v] of rows) { const tr = document.createElement('tr'); const a = document.createElement('td'); a.textContent = k; const b = document.createElement('td'); b.textContent = v; tr.append(a, b); tb.appendChild(tr); }
+    }
+    document.getElementById('mbCsv')!.addEventListener('click', async () => {
+      const res = await fetch('/api/mailbox', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin(), action: 'report', format: 'csv', from: field('from').value, to: field('to').value }) });
+      if (!res.ok) return;
+      const url = URL.createObjectURL(await res.blob());
+      const a = document.createElement('a'); a.href = url; a.download = `mailboxes-${field('from').value}-to-${field('to').value}.csv`; a.click(); URL.revokeObjectURL(url);
+    });
     async function run() {
+      runMailboxes();
       msg.textContent = '';
       const res = await fetch('/api/reports', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin(), from: field('from').value, to: field('to').value }) });
       const r = await res.json();
@@ -170,9 +214,12 @@ const monthStart = today.slice(0, 8) + '01';
 
     form.addEventListener('submit', (e) => { e.preventDefault(); run(); });
     document.querySelectorAll<HTMLButtonElement>('[data-preset]').forEach((b) => b.addEventListener('click', () => {
-      const now = new Date(); const to = iso(now); let from = to;
+      const now = new Date(); let to = iso(now); let from = to;
       if (b.dataset.preset === 'week') from = iso(new Date(now.getTime() - 6 * 86_400_000));
       if (b.dataset.preset === 'month') from = to.slice(0, 8) + '01';
+      if (b.dataset.preset === 'lastmonth') { const first = new Date(Date.UTC(now.getFullYear(), now.getMonth() - 1, 1)); from = iso(first); to = iso(new Date(Date.UTC(now.getFullYear(), now.getMonth(), 0))); }
+      if (b.dataset.preset === 'quarter') from = iso(new Date(Date.UTC(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1)));
+      if (b.dataset.preset === 'year') from = `${now.getFullYear()}-01-01`;
       field('from').value = from; field('to').value = to; run();
     }));
     document.getElementById('csv')!.addEventListener('click', async () => {

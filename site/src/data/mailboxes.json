@@ -1,10 +1,28 @@
 {
-  "_note": "Physical mailboxes on the website (Peter, Nov 15 2026). Owners edit prices, box number ranges and the address here. Terms are 6 months or a year. reminder_days: how many days before the paid-through date a renewal reminder goes out; one more goes out the day after it lapses.",
+  "_note": "Physical mailboxes on the website (Peter, Nov 15 2026). Owners edit prices, box number ranges and the address here. Terms are 6 months or a year. reminder_days: how many days before the paid-through date a renewal reminder goes out (60 = the last two months, 30 = the last month, 7 = the last week, Peter Nov 17 2026); one more goes out the day after it lapses. They go out by text and email every morning on the live site (src/worker.ts), or when staff press Send due reminders.",
   "sizes": [
-    { "id": "small", "name": "Small", "from": 1100, "to": 1220, "price6": 90, "price12": 180 },
-    { "id": "medium", "name": "Medium", "from": 1221, "to": 1284, "price6": 120, "price12": 240 },
-    { "id": "large", "name": "Large", "from": 1300, "to": 1323, "price6": 180, "price12": 360 }
+    { "id": "small", "name": "Small", "from": 1100, "to": 1220, "price6": 90, "price12": 180, "capacity": 20 },
+    { "id": "medium", "name": "Medium", "from": 1221, "to": 1284, "price6": 120, "price12": 240, "capacity": 50 },
+    { "id": "large", "name": "Large", "from": 1300, "to": 1323, "price6": 180, "price12": 360, "capacity": 115 }
   ],
   "address": "1800 Forsythe Ave, Suite 2 #{box}, Monroe, LA 71201",
-  "reminder_days": [30, 7]
+  "reminder_days": [60, 30, 7],
+  "_hold_note": "After a box ends (it expired, or staff closed it), keep the holder's mail for hold_months, then return it to sender. Ended boxes stay on the staff Expired list for keep_months; search finds them after that too (Peter, Nov 16 2026).",
+  "hold_months": 6,
+  "keep_months": 12,
+  "_mail_note": "Mail log (Peter, Nov 16 2026): capacity is how many pieces (letters and packages) a box holds before each extra piece costs overage_fee. Overages are charged to the card on file once they reach min_charge (Stripe's smallest charge is 50 cents); without a card they are paid at the counter.",
+  "overage_fee": 0.45,
+  "_package_note": "Packages (Peter, Nov 16 2026) don't count toward capacity (that's letters). Up to package_free_count packages at a time are free; each one past that costs package_fee if it's still here package_fee_after_days days after it came in. Every package is free for package_free_days days, then storage_fee_per_day each day until it's picked up, never more than storage_cap per package. On day package_return_notice_day the holder gets a final notice; package_return_after_notice_days later staff see Return to sender. A pickup reminder goes out package_remind_day days after it came in.",
+  "package_free_count": 2,
+  "package_fee": 2,
+  "package_fee_after_days": 2,
+  "package_free_days": 5,
+  "storage_fee_per_day": 1,
+  "storage_cap": 10,
+  "package_return_notice_day": 30,
+  "package_return_after_notice_days": 3,
+  "_check_note": "Boxes whose letters have sat check_every_days without anyone checking go on the staff Check these boxes list (Peter, Nov 16 2026).",
+  "check_every_days": 14,
+  "package_remind_day": 4,
+  "min_charge": 0.5
 }

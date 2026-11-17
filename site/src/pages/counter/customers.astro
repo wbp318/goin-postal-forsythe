@@ -1,6 +1,7 @@
 ---
 export const prerender = false;
 import Base from '../../layouts/Base.astro';
+import MailboxDocs from '../../components/MailboxDocs.astro';
 
 // Staff page: customer lookup. Type any part of a name, an email or a phone number; pick the person;
 // see every shipment they have made, their address book, and whether they are a returning customer.
@@ -46,6 +47,12 @@ import Base from '../../layouts/Base.astro';
         <p class="muted hidden" id="cnonotes" data-i18n="st.n.none">No notes yet.</p>
         <p><input id="cnote" maxlength="500" data-i18n-ph="st.n.ph" placeholder="Fragile pottery, call before delivery…" /> <button type="button" class="btn small kraft" id="caddnote" data-i18n="st.n.add">Add note</button></p>
       </div>
+      <div class="card mb-cust">
+        <h3 data-i18n="st.mb.h1">Mailboxes</h3>
+        <ul id="cboxes" class="mb-check-out"></ul>
+        <p class="muted" id="cnobox" hidden data-i18n="st.c.nobox">No mailbox with us.</p>
+        <p class="btnrow"><button type="button" class="btn small" id="cdocs" data-i18n="st.doc.btn">Documents</button> <a class="btn small kraft" href="/counter/mailboxes" data-i18n="st.c.tomailboxes">Mailboxes page</a></p>
+      </div>
       <div class="card">
         <h3 data-i18n="st.c.addresses">Addresses</h3>
         <p class="muted" data-i18n="st.c.addresses.lead">Most recent first. Ship here again fills the walk-up form in the queue.</p>
@@ -57,6 +64,8 @@ import Base from '../../layouts/Base.astro';
       <table class="list" id="history"><thead><tr><th data-i18n="st.q.th.when">When</th><th data-i18n="st.q.th.code">Code</th><th data-i18n="st.q.th.to">To</th><th data-i18n="st.q.th.service">Service</th><th data-i18n="st.c.th.paid">Paid</th><th data-i18n="st.q.th.status">Status</th><th></th></tr></thead><tbody></tbody></table>
     </div>
   </div>
+
+  <MailboxDocs />
 
   <script>
     import { t, tf } from '../../i18n';
@@ -139,11 +148,34 @@ import Base from '../../layouts/Base.astro';
         }
         currentCustomer = id;
         await loadNotes();
+        await loadBoxes(id);
         detail.classList.remove('hidden');
         detail.scrollIntoView({ behavior: 'smooth' });
       } catch (e: any) { msg.className = 'err'; msg.textContent = e.message; }
     }
     let currentCustomer: string | null = null;
+
+    // Mailboxes (Peter, Nov 16 2026): every box this person has had, what to do with their mail, and Documents.
+    async function loadBoxes(id: string) {
+      const res = await fetch('/api/mailbox', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin(), action: 'for_customer', customer_id: id }) });
+      const j = await res.json().catch(() => ({ boxes: [], docs: 0 }));
+      const ul = $('cboxes'); ul.innerHTML = '';
+      for (const x of j.boxes ?? []) {
+        const li = document.createElement('li');
+        const who = document.createElement('div');
+        who.innerHTML = '<strong></strong> <span class="muted"></span>';
+        who.querySelector('strong')!.textContent = `#${x.box_no} · ${t(`mb.size.${x.size}`)}`;
+        who.querySelector('.muted')!.textContent = `${t(`mb.state.${x.state}`)} · ${t('st.mb.paidthru')} ${x.paid_through}`;
+        const badge = document.createElement('span'); badge.className = `mb-mail mb-mail-${x.mail.do}`;
+        badge.textContent = x.mail.do === 'box' ? t('st.mb.do.box') : x.mail.do === 'hold' ? tf('st.mb.do.hold', { date: x.mail.until }) : tf('st.mb.do.rts', { date: x.mail.since });
+        li.append(who, badge);
+        ul.appendChild(li);
+      }
+      if (j.reservation) { const li = document.createElement('li'); li.textContent = `${t('mb.reserved')} ${t(`mb.size.${j.reservation.size}`)} · ${j.reservation.code}`; ul.appendChild(li); }
+      $('cnobox').hidden = (j.boxes ?? []).length > 0 || !!j.reservation;
+      const d = $('cdocs'); d.dataset.mbdocs = id; d.textContent = `${t('st.doc.btn')}${j.docs ? ` (${j.docs})` : ''}`;
+    }
+    window.addEventListener('mbdocs:changed', () => { if (currentCustomer) loadBoxes(currentCustomer); });
     async function notesApi(body: Record<string, unknown>) {
       const res = await fetch('/api/notes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin(), kind: 'customer', target: currentCustomer, ...body }) });
       const j = await res.json(); if (!res.ok) throw new Error(j.error); return j;

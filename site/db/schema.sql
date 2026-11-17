@@ -616,3 +616,113 @@ CREATE TABLE IF NOT EXISTS counters (
   n INTEGER NOT NULL,
   expires_at INTEGER NOT NULL            -- epoch milliseconds
 );
+-- A holder renewing their own box online (Peter, Nov 17 2026): one row per Stripe checkout. The box is
+-- extended once, when the row goes from pending to paid (the Stripe webhook, or /api/mock-paid in demo mode).
+CREATE TABLE IF NOT EXISTS mailbox_renewals (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT NOT NULL UNIQUE,            -- MRN-XXXXX, Stripe's client_reference_id
+  mailbox_id INTEGER NOT NULL,
+  customer_id TEXT NOT NULL,
+  term INTEGER NOT NULL,                -- 6 or 12 months
+  amount REAL NOT NULL,                 -- dollars charged
+  status TEXT NOT NULL DEFAULT 'pending', -- pending, paid
+  stripe_session_id TEXT,
+  paid_through TEXT,                    -- the box's new paid-through date, once paid
+  created_at TEXT NOT NULL,
+  paid_at TEXT
+);
+CREATE INDEX IF NOT EXISTS mailbox_renewals_box ON mailbox_renewals(mailbox_id);
+
+-- Mailbox holders' documents (Peter, Nov 16 2026): photo IDs and the PS Form 1583, uploaded by staff on
+-- /counter/mailboxes or /counter/customers. This row is the label; the file itself is encrypted (AES-GCM, key
+-- DOCS_KEY) and kept in the ORDERS KV namespace under mbdoc:<id>. Any staff PIN can upload and list; only a
+-- manager or owner can open or delete, and every open is in the audit log.
+CREATE TABLE IF NOT EXISTS mailbox_documents (
+  id TEXT PRIMARY KEY,                  -- 32 random hex characters
+  customer_id TEXT NOT NULL,
+  kind TEXT NOT NULL,                   -- photo_id, second_id, form_1583, other
+  name TEXT NOT NULL,                   -- the file's name as uploaded
+  content_type TEXT NOT NULL,           -- image/jpeg, image/png, image/webp, application/pdf
+  bytes INTEGER NOT NULL,
+  note TEXT,
+  by_name TEXT NOT NULL,
+  at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS mailbox_documents_customer ON mailbox_documents(customer_id, at);
+
+-- The mail log (Peter, Nov 16 2026): every letter and package staff put in a box, until it's picked up.
+-- The pieces still in the box count against the size's capacity (src/data/mailboxes.json).
+CREATE TABLE IF NOT EXISTS mailbox_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  mailbox_id INTEGER NOT NULL,
+  customer_id TEXT NOT NULL,
+  box_no INTEGER NOT NULL,
+  kind TEXT NOT NULL,                   -- letter, package
+  note TEXT,                            -- e.g. "Amazon", "certified letter"
+  status TEXT NOT NULL DEFAULT 'in',    -- in, picked_up, forwarded, returned
+  over INTEGER NOT NULL DEFAULT 0,      -- 1 when it arrived with the box already full (an overage was charged)
+  by_name TEXT NOT NULL,
+  arrived_at TEXT NOT NULL,
+  out_at TEXT
+);
+CREATE INDEX IF NOT EXISTS mailbox_items_box ON mailbox_items(mailbox_id, status);
+
+-- A photo of a piece when it came in (Peter, Nov 16 2026): the package label, or a certified letter. The row is
+-- the label; the JPEG is in the ORDERS KV namespace under mbphoto:<id> and deletes itself after 90 days.
+CREATE TABLE IF NOT EXISTS mailbox_photos (
+  id TEXT PRIMARY KEY,                  -- 32 random hex characters
+  item_id INTEGER NOT NULL,
+  mailbox_id INTEGER NOT NULL,
+  customer_id TEXT NOT NULL,
+  bytes INTEGER NOT NULL,
+  by_name TEXT NOT NULL,
+  at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS mailbox_photos_item ON mailbox_photos(item_id);
+CREATE INDEX IF NOT EXISTS mailbox_photos_box ON mailbox_photos(mailbox_id);
+
+-- A holder's settings: card on file (Stripe; only the brand, last 4 and expiry are kept here), automatic renewal,
+-- and how they want to hear about new mail. One row per customer.
+CREATE TABLE IF NOT EXISTS mailbox_settings (
+  customer_id TEXT PRIMARY KEY,
+  stripe_customer_id TEXT,
+  payment_method_id TEXT,
+  card_brand TEXT,
+  card_last4 TEXT,
+  card_exp TEXT,                        -- MM/YY
+  card_added_by TEXT,                   -- "customer" or the staff member's name
+  card_added_at TEXT,
+  autorenew INTEGER NOT NULL DEFAULT 0,
+  notify_sms INTEGER NOT NULL DEFAULT 1,
+  notify_email INTEGER NOT NULL DEFAULT 1,
+  updated_at TEXT NOT NULL
+);
+
+-- Money a holder owes or paid besides online renewals: overage fees (one row per extra piece) and automatic
+-- renewals. Unbilled rows are charged together to the card on file, or marked paid at the counter.
+CREATE TABLE IF NOT EXISTS mailbox_charges (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id TEXT NOT NULL,
+  mailbox_id INTEGER NOT NULL,
+  kind TEXT NOT NULL,                   -- overage (letters over capacity), package (more than 2 at a time), storage (package kept past its free days), renewal
+  amount REAL NOT NULL,
+  description TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'unbilled', -- unbilled, paid, failed, paid_counter, waived
+  payment_ref TEXT,                     -- Stripe PaymentIntent id, or who took it at the counter
+  created_at TEXT NOT NULL,
+  paid_at TEXT
+);
+CREATE INDEX IF NOT EXISTS mailbox_charges_customer ON mailbox_charges(customer_id, status);
+
+-- A holder asking the store to forward their mail (from their dashboard); staff mark it done.
+CREATE TABLE IF NOT EXISTS mailbox_forwards (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id TEXT NOT NULL,
+  mailbox_id INTEGER NOT NULL,
+  address TEXT NOT NULL,
+  note TEXT,
+  status TEXT NOT NULL DEFAULT 'open',  -- open, done, cancelled
+  created_at TEXT NOT NULL,
+  done_at TEXT,
+  done_by TEXT
+);

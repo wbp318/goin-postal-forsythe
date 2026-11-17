@@ -76,3 +76,8 @@ ANTHROPIC_API_KEY=
 AI_DAILY_LIMIT=10
 # AI designs for the whole site per day, whoever asks (a ceiling on the bill).
 AI_SITE_DAILY_LIMIT=200
+
+# Locks mailbox holders' ID and Form 1583 files (Counter > Mailboxes > Documents). On the live site set a long random
+# secret once (wrangler secret put DOCS_KEY) and never change it: files stored with one key can't be opened with another.
+# Blank on the local dev server uses a fixed dev-only key.
+DOCS_KEY=

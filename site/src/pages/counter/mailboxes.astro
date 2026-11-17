@@ -1,11 +1,13 @@
 ---
 export const prerender = false;
 import Base from '../../layouts/Base.astro';
+import MailboxDocs from '../../components/MailboxDocs.astro';
 
 // Staff page: mailboxes on the website (Peter, Nov 15 2026). Reservations made online wait here until the customer
 // comes in with two IDs and the PS Form 1583; then staff assign a box number, and the holder sees it on their
-// account. Boxes in use show their paid-through date and status; Renew adds 6 or 12 months; Send due reminders
-// texts and emails everyone whose box is due (each reminder goes out once). The counter's register is still where
+// account. Boxes in use show their paid-through date and status; Edit opens a pop-up to add or take off time, set
+// the date, send a reminder or close the box (Peter, Nov 17 2026). Send due reminders texts and emails everyone whose
+// box is due (each reminder goes out once); the live site also does it every morning (src/worker.ts). The counter's register is still where
 // the IDs, the 1583 and the payments are kept.
 ---
 <Base title="Counter · Mailboxes">
@@ -24,11 +26,61 @@ import Base from '../../layouts/Base.astro';
   </div>
 
   <div id="mbMain" class="hidden">
+    <div class="card mb-in">
+      <h3 data-i18n="st.mi.h">Mail in</h3>
+      <p class="muted" data-i18n="st.mi.p">Putting mail in a box? Type the box number and tap Letter or Package for each piece. The holder gets one "You've got mail" text and email a day.</p>
+      <form id="inForm" class="mb-in-row" autocomplete="off">
+        <label><span data-i18n="st.mb.box">Box #</span> <input id="inBox" inputmode="numeric" size="6" required /></label>
+        <label><span data-i18n="st.mi.note">Note (optional)</span> <input id="inNote" maxlength="120" data-i18n-ph="st.mi.note.ph" placeholder="Amazon, certified letter" /></label>
+        <button type="button" class="btn" data-in="letter" data-i18n="st.mi.letter">+ Letter</button>
+        <button type="button" class="btn kraft" data-in="package" data-i18n="st.mi.package">+ Package</button>
+        <label class="btn small kraft mb-cam"><input type="file" id="inPhoto" accept="image/*" capture="environment" hidden /><span aria-hidden="true">📷</span> <span data-i18n="st.mi.photo">Photo</span></label>
+        <span id="inPhotoWrap" class="mb-cam-prev" hidden><img id="inPhotoPrev" alt="" /> <button type="button" class="linkish" id="inPhotoClear" aria-label="Remove photo">×</button></span>
+      </form>
+      <p class="muted mb-small" data-i18n="st.mi.photo.p">Take a photo before tapping + Package (the label side). For letters, only certified or important ones. Photos show on the customer's dashboard and delete themselves after 90 days.</p>
+      <div id="inAsk" class="mb-in-ask" hidden>
+        <p id="inAskQ"></p>
+        <p class="btnrow"><button type="button" class="btn small" id="inAskEmpty" data-i18n="st.mi.empty">Empty (picked up)</button> <button type="button" class="btn small kraft" id="inAskStill" data-i18n="st.mi.still">Mail still there</button></p>
+      </div>
+      <p id="inOut" class="mb-in-out" hidden></p>
+    </div>
+
+    <div class="card mb-bill">
+      <h3 data-i18n="st.bl.h">Billing</h3>
+      <p class="muted" data-i18n="st.bl.p">The live site charges these by itself every morning. Nothing here is charged unless a manager or owner presses Charge now on one row and says yes.</p>
+      <h4 data-i18n="st.bl.due">Waiting to be charged</h4>
+      <ul id="blDue" class="mb-check-out"></ul>
+      <h4 data-i18n="st.bl.renew">Renewing in the next 7 days</h4>
+      <ul id="blRenew" class="mb-check-out"></ul>
+      <details class="mb-bl-recent"><summary data-i18n="st.bl.recent">Recent charges (30 days)</summary><ul id="blRecent" class="mbd-list"></ul></details>
+    </div>
+
+    <div class="card" id="chkCard">
+      <h3 data-i18n="st.chk.h">Check these boxes</h3>
+      <p class="muted" data-i18n="st.chk.p">Open each box and tap what you see. Boxes show up here when letters have sat 2 weeks without a check, or when the holder says they picked up.</p>
+      <ul id="chkList" class="mb-check-out"></ul>
+    </div>
+
+    <div class="card" id="fwdCard" hidden>
+      <h3 data-i18n="st.fw.h">Forwarding requests</h3>
+      <ul id="fwdList" class="mb-check-out"></ul>
+    </div>
+
+    <div class="card mb-check">
+      <h3 data-i18n="st.mb.check.h">Mail check</h3>
+      <p class="muted" data-i18n="st.mb.check.p">Got mail for a box? Type the box number or the name on the mail to see whether it goes in the box, gets held, or goes back to the sender.</p>
+      <form id="checkForm" class="btnrow"><input id="checkQ" data-i18n-ph="st.mb.check.ph" placeholder="Box # or name" autocomplete="off" /> <button class="btn small" type="submit" data-i18n="st.mb.check">Check</button></form>
+      <ul id="checkOut" class="mb-check-out"></ul>
+    </div>
+
+    <p id="rtsAlert" class="mb-rts-alert" hidden></p>
+
     <div class="card">
       <h3 data-i18n="st.mb.free">Free boxes</h3>
       <p id="free"></p>
-      <p class="btnrow"><button class="btn" id="sendDue" data-i18n="st.mb.senddue">Send due reminders</button> <span class="muted" data-i18n="st.mb.senddue.p">Texts and emails everyone whose box is due within 30 or 7 days, or lapsed. Each reminder goes out once.</span></p>
+      <p class="btnrow"><button class="btn" id="sendDue" data-i18n="st.mb.senddue">Send due reminders</button> <span class="muted" data-i18n="st.mb.senddue.p2">They also go out by themselves every morning on the live site: 2 months, 1 month and 1 week before, and the day after a box expires. Each reminder goes out once.</span></p>
       <ul id="sentList"></ul>
+
     </div>
 
     <div class="card">
@@ -40,8 +92,15 @@ import Base from '../../layouts/Base.astro';
 
     <div class="card">
       <h3 data-i18n="st.mb.boxes">Boxes on the website</h3>
-      <table class="list" id="boxTable"><thead><tr><th data-i18n="st.mb.box">Box #</th><th data-i18n="st.mb.holder">Holder</th><th data-i18n="st.mb.contact">Contact</th><th data-i18n="st.mb.size">Size</th><th data-i18n="st.mb.paidthru">Paid through</th><th data-i18n="st.mb.status">Status</th><th></th></tr></thead><tbody></tbody></table>
+      <table class="list" id="boxTable"><thead><tr><th data-i18n="st.mb.box">Box #</th><th data-i18n="st.mb.holder">Holder</th><th data-i18n="st.mb.contact">Contact</th><th data-i18n="st.mb.size">Size</th><th data-i18n="st.mb.paidthru">Paid through</th><th data-i18n="st.mb.status">Status</th><th data-i18n="st.mi.inbox">In box</th><th></th></tr></thead><tbody></tbody></table>
       <p class="muted" id="noBoxes" hidden data-i18n="st.mb.noboxes">No boxes assigned on the website yet.</p>
+    </div>
+
+    <div class="card">
+      <h3 data-i18n="st.mb.ended.h">Expired and closed boxes</h3>
+      <p class="muted" id="endedP"></p>
+      <table class="list" id="endedTable"><thead><tr><th data-i18n="st.mb.box">Box #</th><th data-i18n="st.mb.holder">Holder</th><th data-i18n="st.mb.contact">Contact</th><th data-i18n="st.mb.endedon">Ended</th><th data-i18n="st.mb.mail">Mail</th><th></th></tr></thead><tbody></tbody></table>
+      <p class="muted" id="noEnded" hidden data-i18n="st.mb.noended">No expired or closed boxes.</p>
     </div>
 
     <div class="card">
@@ -51,13 +110,65 @@ import Base from '../../layouts/Base.astro';
       <ul id="found" class="mb-found"></ul>
       <form id="assignForm" class="hidden mb-assign">
         <p><span data-i18n="st.mb.for">For:</span> <strong id="assignWho"></strong></p>
-        <label><span data-i18n="st.mb.box">Box #</span> <input name="box_no" inputmode="numeric" required /></label>
+        <label><span data-i18n="st.mb.box">Box #</span> <input name="box_no" id="assignBoxNo" inputmode="numeric" required /></label>
+        <button type="button" class="btn small kraft" id="assignPick" data-i18n="st.pick.btn">Choose a box</button>
         <label><span data-i18n="st.mb.term">Term</span> <select name="term"><option value="6" data-i18n="st.mb.six">6 months</option><option value="12" data-i18n="st.mb.year">1 year</option></select></label>
         <label><span data-i18n="st.mb.start">Start date</span> <input name="start_date" type="date" /></label>
         <button class="btn small" type="submit" data-i18n="st.mb.assign">Assign</button>
       </form>
     </div>
   </div>
+
+  <MailboxDocs />
+
+  <dialog id="mbPick" class="hz-dialog mb-pick" aria-labelledby="mbPickH">
+    <h2 id="mbPickH" data-i18n="st.pick.h">Choose a free box</h2>
+    <p class="btnrow mb-pick-tabs"><button type="button" class="btn small" data-size="all" data-i18n="st.pick.all">All</button> <button type="button" class="btn small kraft" data-size="small" data-i18n="mb.size.small">Small</button> <button type="button" class="btn small kraft" data-size="medium" data-i18n="mb.size.medium">Medium</button> <button type="button" class="btn small kraft" data-size="large" data-i18n="mb.size.large">Large</button></p>
+    <p class="muted" id="mbPickCount"></p>
+    <div class="mb-pick-scroll"><table class="list"><thead><tr><th data-i18n="st.mb.box">Box #</th><th data-i18n="st.mb.size">Size</th><th></th></tr></thead><tbody id="mbPickRows"></tbody></table></div>
+    <p class="btnrow mb-edit-foot"><span></span><button type="button" class="btn small" id="mbPickClose" data-i18n="st.mb.done">Done</button></p>
+  </dialog>
+
+  <dialog id="mbEdit" class="hz-dialog mb-edit" aria-labelledby="mbEditH">
+    <h2 id="mbEditH"></h2>
+    <p id="mbEditWho" class="muted"></p>
+    <p><span data-i18n="st.mb.paidthru">Paid through</span>: <strong id="mbEditDate"></strong> <span id="mbEditState"></span></p>
+    <p id="mbEditMail"></p>
+    <div class="mb-edit-sec">
+      <h3 data-i18n="st.mi.inbox">In box</h3>
+      <p id="mbEditIn"></p>
+      <ul id="mbEditPkgs" class="mb-pkgs"></ul>
+      <div id="mbEditPhoto" class="mb-photo-view" hidden><img alt="" /> <button type="button" class="linkish" data-i18n="st.doc.hide">Hide</button></div>
+      <p class="btnrow"><button type="button" class="btn small" data-out="picked_up" data-i18n="st.mi.pickedup">All picked up</button> <button type="button" class="btn small kraft" data-out="forwarded" data-i18n="st.mi.forwarded">Forwarded</button> <button type="button" class="btn small kraft" data-out="returned" data-i18n="st.mi.returned">Returned to sender</button></p>
+    </div>
+    <div class="mb-edit-sec">
+      <h3 data-i18n="st.card.h">Card and automatic renewal</h3>
+      <p id="mbEditCard"></p>
+      <p class="btnrow"><span id="mbEditAuto"></span> <button type="button" class="btn small kraft" id="mbEditAutoBtn"></button></p>
+      <label class="check"><input type="checkbox" id="mbEditAgree" /> <span data-i18n="st.card.agree">The customer read and agreed: automatic renewal at their price each term until they turn it off, and 45 cents per piece over the box's limit.</span></label>
+      <p class="btnrow"><button type="button" class="btn small" id="mbEditCardBtn" data-i18n="st.card.add">Add card (Stripe's secure page)</button></p>
+      <p class="muted mb-small" data-i18n="st.card.p">The card is typed on Stripe's page, never on ours. Hand the screen to the customer, or type it with them.</p>
+    </div>
+    <div class="mb-edit-sec">
+      <h3 data-i18n="st.bill.h">Balance</h3>
+      <p id="mbEditBal"></p>
+      <p class="btnrow" id="mbEditBalBtns"><button type="button" class="btn small" id="mbEditCharge" data-i18n="st.bill.charge">Charge card now</button> <button type="button" class="btn small kraft" id="mbEditCounter" data-i18n="st.bill.counter">Paid at the counter</button> <button type="button" class="linkish" id="mbEditWaive" data-i18n="st.bill.waive">Waive</button></p>
+    </div>
+    <p class="err" id="mbEditErr" hidden></p>
+    <h3 data-i18n="st.mb.addtime">Add time</h3>
+    <p class="btnrow"><button type="button" class="btn small" data-months="6" data-i18n="st.mb.renew6">+6 months</button> <button type="button" class="btn small" data-months="12" data-i18n="st.mb.renew12">+1 year</button></p>
+    <h3 data-i18n="st.mb.taketime">Take time off (to undo a mistake)</h3>
+    <p class="btnrow"><button type="button" class="btn small kraft" data-months="-6" data-i18n="st.mb.minus6">−6 months</button> <button type="button" class="btn small kraft" data-months="-12" data-i18n="st.mb.minus12">−1 year</button></p>
+    <h3 data-i18n="st.mb.setdate">Or set the paid-through date</h3>
+    <p class="btnrow"><input type="date" id="mbEditNew" /> <button type="button" class="btn small kraft" id="mbEditSave" data-i18n="st.mb.save">Save</button></p>
+    <hr />
+    <p class="btnrow mb-edit-foot">
+      <button type="button" class="btn small kraft" id="mbEditRemind" data-i18n="st.mb.remindnow">Send a reminder now</button>
+      <button type="button" class="btn small" id="mbEditDocs" data-i18n="st.doc.btn">Documents</button>
+      <button type="button" class="linkish mb-danger" id="mbEditClose" data-i18n="st.mb.closebox">Close this box</button>
+      <button type="button" class="btn small" id="mbEditDone" data-i18n="st.mb.done">Done</button>
+    </p>
+  </dialog>
 
   <script>
     import { t, tf } from '../../i18n';
@@ -75,12 +186,48 @@ import Base from '../../layouts/Base.astro';
     const btn = (label: string, cls: string, fn: () => void) => { const b = document.createElement('button'); b.type = 'button'; b.className = `btn small ${cls}`; b.textContent = label; b.addEventListener('click', fn); return b; };
     const sizeName = (id: string) => t(`mb.size.${id}`);
     const termName = (n: number) => (n === 12 ? t('st.mb.year') : t('st.mb.six'));
+    const stageName = (st: string) => (st === 'over' ? t('st.mb.lapsed') : ['60', '30', '7'].includes(st) ? t(`st.mb.stage.${st}`) : tf('st.mb.daysleft', { n: st }));
+    // What to do with mail for a box today: in the box, hold until a date, or return to sender.
+    const mailText = (m: any) => (m.do === 'box' ? t('st.mb.do.box') : m.do === 'hold' ? tf('st.mb.do.hold', { date: m.until }) : tf('st.mb.do.rts', { date: m.since }));
+    const mailBadge = (m: any) => { const b = document.createElement('span'); b.className = `mb-mail mb-mail-${m.do}`; b.textContent = mailText(m); return b; };
+    // Documents (IDs, Form 1583): opens the shared window in components/MailboxDocs.astro.
+    const docBtn = (x: any) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn small'; b.dataset.mbdocs = x.customer_id; b.textContent = `${t('st.doc.btn')}${x.docs ? ` (${x.docs})` : ''}`; return b; };
+    window.addEventListener('mbdocs:changed', () => { if (!$('mbMain').classList.contains('hidden')) load(); });
+    // Choose a box: every free number with its size, filtered by size; Pick fills in the Box # field.
+    let sizesInfo: any[] = []; let usedNos = new Set<number>();
+    let pickTarget: HTMLInputElement | null = null;
+    const pickDlg = () => document.getElementById('mbPick') as HTMLDialogElement;
+    function paintPicker(size: string) {
+      document.querySelectorAll<HTMLButtonElement>('#mbPick [data-size]').forEach((b) => (b.className = `btn small${b.dataset.size === size ? '' : ' kraft'}`));
+      const rows = document.getElementById('mbPickRows')!; rows.innerHTML = '';
+      let n = 0;
+      for (const s of sizesInfo) {
+        if (size !== 'all' && s.id !== size) continue;
+        for (let no = s.from; no <= s.to; no++) {
+          if (usedNos.has(no)) continue;
+          n++;
+          const tr = document.createElement('tr');
+          const a = document.createElement('td'); a.textContent = `#${no}`;
+          const b = document.createElement('td'); b.textContent = t(`mb.size.${s.id}`);
+          const c = document.createElement('td');
+          const pick = document.createElement('button'); pick.type = 'button'; pick.className = 'btn small'; pick.textContent = t('st.mb.pick');
+          pick.addEventListener('click', () => { if (pickTarget) { pickTarget.value = String(no); pickTarget.dispatchEvent(new Event('input')); } pickDlg().close(); });
+          c.appendChild(pick); tr.append(a, b, c); rows.appendChild(tr);
+        }
+      }
+      document.getElementById('mbPickCount')!.textContent = tf('st.pick.count', { n });
+    }
+    function openPicker(target: HTMLInputElement, size = 'all') { pickTarget = target; paintPicker(size); pickDlg().showModal(); }
+    document.querySelectorAll<HTMLButtonElement>('#mbPick [data-size]').forEach((b) => b.addEventListener('click', () => paintPicker(b.dataset.size!)));
+    document.getElementById('mbPickClose')!.addEventListener('click', () => pickDlg().close());
+    document.getElementById('assignPick')!.addEventListener('click', () => openPicker(document.getElementById('assignBoxNo') as HTMLInputElement));
     const contact = (c: any) => [c.phone, c.email].filter(Boolean).join(' · ');
 
     async function load() {
       try {
         const j = await api({ action: 'list' });
         $('mbMain').classList.remove('hidden');
+        loadBilling();
         $('free').textContent = j.sizes.map((s: any) => `${sizeName(s.id)} (#${s.from}–${s.to}): ${s.free}`).join('   ·   ');
         const rb = $('resTable').querySelector('tbody')!; rb.innerHTML = '';
         $('noRes').hidden = j.reservations.length > 0;
@@ -88,7 +235,7 @@ import Base from '../../layouts/Base.astro';
           const tr = document.createElement('tr');
           cell(tr, r.code); cell(tr, r.customer.name); cell(tr, contact(r.customer)); cell(tr, sizeName(r.size)); cell(tr, `${termName(r.term)} · $${r.price}`);
           const input = document.createElement('input'); input.inputMode = 'numeric'; input.size = 6; input.placeholder = String(j.sizes.find((s: any) => s.id === r.size)?.from ?? '');
-          cell(tr, '').appendChild(input);
+          const pc = cell(tr, ''); pc.append(input, ' ', btn(t('st.pick.btn'), 'kraft', () => openPicker(input, r.size)));
           cell(tr, '').appendChild(btn(t('st.mb.assign'), '', async () => {
             try { await api({ action: 'assign', customer_id: r.customer_id, box_no: Number(input.value), term: r.term, reservation_code: r.code }); say(tf('st.mb.assigned', { box: input.value, name: r.customer.name })); load(); }
             catch (e: any) { say(e.message, true); }
@@ -101,19 +248,295 @@ import Base from '../../layouts/Base.astro';
           const tr = document.createElement('tr');
           cell(tr, `#${x.box_no}`); cell(tr, x.customer.name); cell(tr, contact(x.customer)); cell(tr, sizeName(x.size)); cell(tr, x.paid_through);
           const st = cell(tr, ''); const badge = document.createElement('span'); badge.className = `acct-status mb-${x.state}`; badge.textContent = t(`mb.state.${x.state}`); st.appendChild(badge);
-          const act = cell(tr, '');
-          act.append(
-            btn(t('st.mb.renew6'), '', async () => { try { const r = await api({ action: 'renew', id: x.id, term: 6 }); say(tf('st.mb.renewed', { box: x.box_no, date: r.paid_through })); load(); } catch (e: any) { say(e.message, true); } }), ' ',
-            btn(t('st.mb.renew12'), '', async () => { try { const r = await api({ action: 'renew', id: x.id, term: 12 }); say(tf('st.mb.renewed', { box: x.box_no, date: r.paid_through })); load(); } catch (e: any) { say(e.message, true); } }), ' ',
-            btn(t('st.mb.remind'), 'kraft', async () => { try { const r = await api({ action: 'remind', id: x.id }); say(tf('st.mb.reminded', { box: x.box_no, how: [r.sms ? t('st.mb.text') : '', r.email ? t('st.mb.email') : ''].filter(Boolean).join(' + ') || '—' })); } catch (e: any) { say(e.message, true); } }), ' ',
-            btn(t('st.mb.close'), 'kraft', async () => { if (!confirm(tf('st.mb.closeq', { box: x.box_no }))) return; try { await api({ action: 'close', id: x.id }); load(); } catch (e: any) { say(e.message, true); } }),
-          );
+          const ib = cell(tr, `${x.inbox.pieces}/${x.inbox.capacity}`); ib.className = x.inbox.pct >= 100 ? 'mb-cap-over' : x.inbox.pct >= 80 ? 'mb-cap-near' : '';
+          if (x.inbox.packages) { const pk = document.createElement('span'); pk.className = `mb-pk${x.inbox.pkg_rts ? ' rts' : x.inbox.pkg_late ? ' late' : ''}`; pk.textContent = `${tf('st.pk.n', { n: x.inbox.packages })}${x.inbox.pkg_rts ? ` · ${t('st.pk.rts')}` : x.inbox.pkg_late ? ` · ${t('st.pk.late')}` : ''}`; ib.append(' ', pk); }
+          const act = cell(tr, ''); act.className = 'mb-acts';
+          act.append(btn(t('st.mb.edit'), 'kraft', () => openEdit(x)), docBtn(x));
           bb.appendChild(tr);
+        }
+        // Expired and closed: what to do with their mail, return-to-sender first.
+        $('endedP').textContent = tf('st.mb.ended.p', { hold: j.hold_months, keep: j.keep_months });
+        const eb = $('endedTable').querySelector('tbody')!; eb.innerHTML = '';
+        $('noEnded').hidden = j.ended.length > 0;
+        for (const x of j.ended) {
+          const tr = document.createElement('tr');
+          cell(tr, `#${x.box_no}`); cell(tr, x.customer.name); cell(tr, contact(x.customer));
+          cell(tr, `${x.mail.ended} · ${t(x.status === 'closed' ? 'mb.state.closed' : 'mb.state.overdue')}`);
+          cell(tr, '').appendChild(mailBadge(x.mail));
+          const act = cell(tr, '');
+          act.className = 'mb-acts';
+          if (x.status === 'active') act.appendChild(btn(t('st.mb.edit'), 'kraft', () => openEdit(x)));
+          act.appendChild(docBtn(x));
+          eb.appendChild(tr);
+        }
+        const rts = j.ended.filter((x: any) => x.mail.do === 'rts');
+        $('rtsAlert').hidden = !rts.length;
+        $('rtsAlert').textContent = rts.length ? `${tf('st.mb.rtsn', { n: rts.length })} ${rts.map((x: any) => `#${x.box_no} ${x.customer.name}`).join(' · ')}` : '';
+        boxes = [...j.boxes, ...j.ended.filter((x: any) => x.status === 'active')];
+        sizesInfo = j.sizes; usedNos = new Set(j.used);
+        // Boxes to look at: the holder says they emptied it, or letters have sat 2 weeks unchecked.
+        const cl = $('chkList'); cl.innerHTML = '';
+        if (!j.to_check.length) { const li = document.createElement('li'); li.className = 'muted'; li.textContent = t('st.chk.none'); cl.appendChild(li); }
+        for (const c of j.to_check) {
+          const li = document.createElement('li');
+          const who = document.createElement('div'); who.innerHTML = '<strong></strong> <span class="muted"></span>';
+          who.querySelector('strong')!.textContent = `#${c.box_no} · ${c.customer.name}`;
+          who.querySelector('.muted')!.textContent = c.why === 'claim' ? tf('st.chk.claim', { date: c.since, n: c.letters }) : tf('st.chk.quiet', { date: c.since, n: c.letters });
+          const ans = (empty: boolean) => async () => { try { await api({ action: 'box_checked', box_no: c.box_no, empty }); say(empty ? tf('st.chk.cleared', { box: c.box_no }) : tf('st.chk.kept', { box: c.box_no })); load(); } catch (e: any) { say(e.message, true); } };
+          li.append(who, btn(t('st.mi.empty'), '', ans(true)), btn(t('st.mi.still'), 'kraft', ans(false)));
+          cl.appendChild(li);
+        }
+        // Forwarding requests from holders' dashboards.
+        const fl = $('fwdList'); fl.innerHTML = '';
+        $('fwdCard').hidden = !j.forwards.length;
+        for (const f of j.forwards) {
+          const li = document.createElement('li');
+          const who = document.createElement('div'); who.innerHTML = '<strong></strong><br /><span></span> <span class="muted"></span>';
+          who.querySelector('strong')!.textContent = `#${f.box_no ?? '?'} · ${f.customer.name} · ${f.created_at.slice(0, 10)}`;
+          who.querySelectorAll('span')[0].textContent = f.address; who.querySelectorAll('span')[1].textContent = f.note ?? '';
+          li.append(who,
+            btn(t('st.fw.done'), '', async () => { try { await api({ action: 'forward_set', id: f.id, status: 'done' }); load(); } catch (e: any) { say(e.message, true); } }),
+            btn(t('st.fw.cancel'), 'kraft', async () => { try { await api({ action: 'forward_set', id: f.id, status: 'cancelled' }); load(); } catch (e: any) { say(e.message, true); } }));
+          fl.appendChild(li);
+        }
+        if (editing) { const fresh = boxes.find((x: any) => x.id === editing!.id); if (fresh) paintEdit(fresh); else dlg.close(); }
+      } catch (e: any) { say(e.message, true); }
+    }
+
+    // The Edit pop-up for one box: add or take off time, set the date, remind, close.
+    const dlg = $('mbEdit') as HTMLDialogElement;
+    const editErr = $('mbEditErr');
+    let boxes: any[] = [];
+    let editing: any = null;
+    function paintEdit(x: any) {
+      editing = x;
+      $('mbEditH').textContent = `${t('st.mb.box').replace(/\s*#$/, '')} #${x.box_no} · ${sizeName(x.size)}`;
+      $('mbEditWho').textContent = `${x.customer.name} · ${contact(x.customer)}`;
+      $('mbEditDate').textContent = x.paid_through;
+      const st = $('mbEditState'); st.className = `acct-status mb-${x.state}`; st.textContent = t(`mb.state.${x.state}`);
+      ($('mbEditNew') as HTMLInputElement).value = x.paid_through;
+      ($('mbEditDocs') as HTMLElement).dataset.mbdocs = x.customer_id;
+      const mm = $('mbEditMail'); mm.innerHTML = ''; if (x.mail && x.mail.do !== 'box') mm.appendChild(mailBadge(x.mail));
+      loadDetail(x);
+    }
+    function openEdit(x: any) { editErr.hidden = true; ($('mbEditAgree') as HTMLInputElement).checked = false; paintEdit(x); dlg.showModal(); }
+    // The Edit window's lower half: what's in the box, the card, the balance (loaded each time it's painted).
+    const money = (n: number) => `$${Number(n).toFixed(2)}`;
+    async function loadDetail(x: any) {
+      try {
+        const d = await api({ action: 'box_detail', id: x.id });
+        const letters = d.items.filter((i: any) => i.kind === 'letter').length, packages = d.items.length - letters;
+        $('mbEditIn').textContent = tf('st.mi.counts', { letters, packages, n: letters, max: x.inbox?.capacity ?? '' });
+        const pl = $('mbEditPkgs'); pl.innerHTML = ''; $('mbEditPhoto').hidden = true;
+        const photoBtn = (id: string) => btn(t('st.mi.photo'), 'kraft', () => showPhoto(id));
+        // Every piece in the box (packages first), so a wrong one can be found and moved or removed.
+        const pkgInfo = new Map(d.packages.map((p: any) => [p.id, p]));
+        const pieces = [...d.items].sort((a: any, b: any) => (a.kind === b.kind ? b.id - a.id : a.kind === 'package' ? -1 : 1));
+        for (const i of pieces) {
+          const p: any = pkgInfo.get(i.id);
+          const li = document.createElement('li'); li.className = p?.rts ? 'rts' : p?.late ? 'late' : '';
+          const txt = document.createElement('span');
+          txt.textContent = [`${t(`mbd.k.${i.kind}`)} · ${i.arrived_at.slice(0, 10)}${i.note ? ` · ${i.note}` : ''}`,
+            ...(p ? [tf('st.pk.held', { n: p.held }), p.rts ? t('st.pk.rts') : p.late ? tf('st.pk.storage', { amount: money(p.storage) }) : tf('st.pk.freeuntil', { date: p.free_until }), p.extra ? tf('st.pk.extrafee', { amount: money(p.extra) }) : ''] : []),
+            tf('st.it.by', { who: i.by_name })].filter(Boolean).join(' · ');
+          li.append(txt);
+          if (i.photo_id) li.append(photoBtn(i.photo_id));
+          li.append(btn(t('st.it.move'), 'kraft', async () => {
+            const to = prompt(tf('st.it.moveq', { what: t(`mbd.k.${i.kind}`) }));
+            if (!to) return;
+            await editDo({ action: 'item_move', item_id: i.id, box_no: to.trim() }, (r) => tf('st.it.moved', { box: r.box_no, name: r.customer.name }));
+          }));
+          li.append(btn(t('st.it.remove'), 'kraft', async () => {
+            if (!confirm(t('st.it.removeq'))) return;
+            await editDo({ action: 'mail_undo', item_id: i.id }, () => t('st.mi.undone'));
+          }));
+          pl.appendChild(li);
+        }
+        if (!pieces.length) { const li = document.createElement('li'); li.className = 'muted'; li.textContent = t('mbd.nomail'); pl.appendChild(li); }
+        $('mbEditCard').textContent = d.card ? `${String(d.card.brand ?? '').toUpperCase()} •••• ${d.card.last4} (${d.card.exp}) · ${tf('st.card.addedby', { who: d.card.added_by ?? '', date: String(d.card.added_at ?? '').slice(0, 10) })}` : t('st.card.none');
+        $('mbEditAuto').textContent = `${t('mbd.auto')}: ${d.autorenew ? t('mbd.on') : t('mbd.off')}`;
+        const ab = $('mbEditAutoBtn') as HTMLButtonElement; ab.hidden = !d.card; ab.textContent = d.autorenew ? t('mbd.turnoff') : t('mbd.turnon'); ab.dataset.on = d.autorenew ? '0' : '1';
+        ($('mbEditCardBtn') as HTMLButtonElement).textContent = d.card ? t('st.card.replace') : t('st.card.add');
+        $('mbEditBal').textContent = d.balance.due > 0 ? `${money(d.balance.due)} · ${tf('st.bill.pieces', { n: d.balance.pieces })}${d.balance.declined ? ` · ${t('st.bill.declined')}` : ''}` : t('st.bill.none');
+        $('mbEditBalBtns').hidden = !(d.balance.due > 0);
+        $('mbEditCharge').hidden = !d.can_charge || !d.card; $('mbEditWaive').hidden = !d.can_charge;
+      } catch (e: any) { editErr.textContent = e.message; editErr.hidden = false; }
+    }
+    // A piece's photo, shown inside the Edit window.
+    let photoUrl = '';
+    async function showPhoto(id: string) {
+      try {
+        const r = await api({ action: 'photo', photo_id: id });
+        const bin = atob(r.data); const bytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        if (photoUrl) URL.revokeObjectURL(photoUrl);
+        photoUrl = URL.createObjectURL(new Blob([bytes], { type: r.type }));
+        const v = $('mbEditPhoto'); v.querySelector('img')!.src = photoUrl; v.hidden = false; v.scrollIntoView({ block: 'nearest' });
+      } catch (e: any) { editErr.textContent = e.message; editErr.hidden = false; }
+    }
+    $('mbEditPhoto').querySelector('button')!.addEventListener('click', () => { $('mbEditPhoto').hidden = true; });
+    dlg.querySelectorAll<HTMLButtonElement>('[data-out]').forEach((b) => b.addEventListener('click', () =>
+      editDo({ action: 'pickup', how: b.dataset.out }, (r) => tf('st.mi.out', { n: r.n, box: editing.box_no }))));
+    $('mbEditAutoBtn').addEventListener('click', () => editDo({ action: 'set_autorenew', customer_id: editing.customer_id, on: ($('mbEditAutoBtn') as HTMLElement).dataset.on === '1' }, () => t('mbd.saved')));
+    $('mbEditCardBtn').addEventListener('click', async () => {
+      editErr.hidden = true;
+      if (!($('mbEditAgree') as HTMLInputElement).checked) { editErr.textContent = t('st.card.mustagree'); editErr.hidden = false; return; }
+      try { const r = await api({ action: 'card_link', customer_id: editing.customer_id, agreed: true }); location.href = r.url; }
+      catch (e: any) { editErr.textContent = e.message; editErr.hidden = false; }
+    });
+    $('mbEditCharge').addEventListener('click', () => editDo({ action: 'charge_now', customer_id: editing.customer_id }, (r) => r.status === 'paid' ? tf('st.bill.charged', { amount: money(r.charged) }) : r.status === 'too_small' ? t('st.bill.toosmall') : r.status === 'failed' ? `${t('st.bill.declined')}: ${r.error}` : t('st.bill.none')));
+    $('mbEditCounter').addEventListener('click', () => editDo({ action: 'paid_counter', customer_id: editing.customer_id }, (r) => tf('st.bill.paidcounter', { amount: money(r.total) })));
+    $('mbEditWaive').addEventListener('click', () => { if (confirm(t('st.bill.waiveq'))) editDo({ action: 'waive', customer_id: editing.customer_id }, (r) => tf('st.bill.waived', { amount: money(r.total) })); });
+
+    // Mail in: one tap per piece; the last one can be undone.
+    let lastItem: { id: number; box: string } | null = null;
+    // The photo for the next piece: shrunk on the tablet to 1280 px JPEG, shown as a small preview until it's used.
+    let photo: string | null = null;
+    async function shrink(file: File): Promise<string> {
+      const raw = await new Promise<string>((ok, no) => { const r = new FileReader(); r.onload = () => ok(String(r.result)); r.onerror = () => no(new Error('Could not read the photo')); r.readAsDataURL(file); });
+      const img = new Image(); await new Promise((ok, no) => { img.onload = ok; img.onerror = () => no(new Error('That photo could not be opened')); img.src = raw; });
+      const k = Math.min(1, 1280 / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+      c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height);
+      for (const q of [0.8, 0.65, 0.5]) { const u = c.toDataURL('image/jpeg', q); if (u.length * 0.75 < 590_000) return u; }
+      return c.toDataURL('image/jpeg', 0.4);
+    }
+    const clearPhoto = () => { photo = null; ($('inPhoto') as HTMLInputElement).value = ''; $('inPhotoWrap').hidden = true; };
+    $('inPhoto').addEventListener('change', async () => {
+      const f = ($('inPhoto') as HTMLInputElement).files?.[0]; if (!f) return;
+      try { photo = await shrink(f); ($('inPhotoPrev') as HTMLImageElement).src = photo; $('inPhotoWrap').hidden = false; } catch (e: any) { say(e.message, true); clearPhoto(); }
+    });
+    $('inPhotoClear').addEventListener('click', clearPhoto);
+    // The first piece of the day for a box that should still hold letters: one glance, "empty or not?"
+    let pendingKind: string | null = null;
+    async function answer(empty: boolean) {
+      $('inAsk').hidden = true;
+      try { await api({ action: 'box_checked', box_no: ($('inBox') as HTMLInputElement).value.trim(), empty }); } catch (e: any) { say(e.message, true); return; }
+      const k = pendingKind; pendingKind = null; if (k) mailIn(k, true);
+    }
+    $('inAskEmpty').addEventListener('click', () => answer(true));
+    $('inAskStill').addEventListener('click', () => answer(false));
+    $('inBox').addEventListener('input', () => { $('inAsk').hidden = true; pendingKind = null; });
+    async function mailIn(kind: string, checked = false) {
+      const boxNo = ($('inBox') as HTMLInputElement).value.trim();
+      const out = $('inOut');
+      if (!boxNo) { ($('inBox') as HTMLInputElement).focus(); return; }
+      if (kind === 'package' && !photo && !checked && !confirm(t('st.mi.nophoto'))) return;
+      if (!checked && kind === 'letter') {
+        try {
+          const pk = await api({ action: 'box_peek', box_no: boxNo });
+          if (pk.ask) { pendingKind = kind; $('inAskQ').textContent = pk.claim ? tf('st.mi.askclaim', { box: pk.box_no, date: pk.claim, n: pk.letters }) : tf('st.mi.ask', { box: pk.box_no, n: pk.letters }); $('inAsk').hidden = false; return; }
+        } catch (e: any) { out.hidden = false; out.className = 'mb-in-out over'; out.textContent = e.message; return; }
+      }
+      try {
+        const r = await api({ action: 'mail_in', box_no: boxNo, kind, note: ($('inNote') as HTMLInputElement).value, ...(photo ? { photo } : {}) });
+        clearPhoto();
+        lastItem = { id: r.item.id, box: boxNo };
+        out.hidden = false; out.className = `mb-in-out${r.over ? ' over' : ''}`; out.innerHTML = '';
+        const line = document.createElement('span');
+        line.textContent = `#${r.box_no} ${r.customer.name}: ${tf('st.mi.ofcap', { n: r.pieces, max: r.capacity })} · ${tf('st.pk.n', { n: r.packages })}${r.over ? ` · ${t('st.mi.overcharged')}` : ''}${r.extra_package ? ` · ${t('st.pk.extra')}` : ''}${r.photo ? ` · ${t('st.mi.photosaved')}` : ''}${r.notified ? ` · ${t('st.mi.notified')}` : ''}`;
+        if (r.extra_package) out.className = 'mb-in-out near';
+        out.append(line, ' ', btn(t('st.mi.undo'), 'kraft', async () => {
+          if (!lastItem) return;
+          try { await api({ action: 'mail_undo', item_id: lastItem.id }); out.textContent = t('st.mi.undone'); lastItem = null; load(); } catch (e: any) { say(e.message, true); }
+        }));
+        ($('inNote') as HTMLInputElement).value = '';
+        load();
+      } catch (e: any) { out.hidden = false; out.className = 'mb-in-out over'; out.textContent = e.message; }
+    }
+    document.querySelectorAll<HTMLButtonElement>('[data-in]').forEach((b) => b.addEventListener('click', () => mailIn(b.dataset.in!)));
+    $('inForm').addEventListener('submit', (ev) => { ev.preventDefault(); mailIn('letter'); });
+
+    // Billing: a list to look at, and Charge now one customer at a time, after a yes.
+    const cardText = (c: any) => (c ? `${String(c.brand ?? '').toUpperCase()} •••• ${c.last4}` : t('st.bl.nocard'));
+    const none = (ul: HTMLElement) => { const li = document.createElement('li'); li.className = 'muted'; li.textContent = t('st.bl.none'); ul.appendChild(li); };
+    async function loadBilling() {
+      try {
+        const j = await api({ action: 'billing' });
+        const du = $('blDue'); du.innerHTML = '';
+        if (!j.due.length) none(du);
+        for (const d of j.due) {
+          const li = document.createElement('li');
+          const who = document.createElement('div'); who.innerHTML = '<strong></strong><br /><span class="muted"></span>';
+          who.querySelector('strong')!.textContent = `${d.customer.name} · #${d.boxes.join(', #')} · ${money(d.total)}${d.declined ? ` · ${t('st.bill.declined')}` : ''}`;
+          who.querySelector('.muted')!.textContent = `${d.items.map((i: any) => `${i.what} ${money(i.amount)}`).join('; ')} · ${cardText(d.card)}`;
+          li.append(who);
+          if (j.can_charge && d.card && d.total >= 0.5) li.append(btn(t('st.bl.charge'), '', async () => {
+            if (!confirm(tf('st.bl.confirm', { name: d.customer.name, amount: money(d.total), last4: d.card.last4 }))) return;
+            try { const r = await api({ action: 'charge_now', customer_id: d.customer_id }); say(r.status === 'paid' ? tf('st.bill.charged', { amount: money(r.charged) }) : r.status === 'failed' ? `${t('st.bill.declined')}: ${r.error}` : t('st.bill.toosmall')); loadBilling(); load(); }
+            catch (e: any) { say(e.message, true); }
+          }));
+          du.appendChild(li);
+        }
+        const rn = $('blRenew'); rn.innerHTML = '';
+        if (!j.renewals.length) none(rn);
+        for (const r of j.renewals) {
+          const li = document.createElement('li');
+          const who = document.createElement('div'); who.innerHTML = '<strong></strong><br /><span class="muted"></span>';
+          who.querySelector('strong')!.textContent = `#${r.box_no} · ${r.customer.name} · ${money(r.amount ?? 0)} (${r.term === 12 ? t('st.mb.year') : t('st.mb.six')})`;
+          who.querySelector('.muted')!.textContent = `${r.failed ? t('st.bill.declined') : r.due_now ? t('st.bl.duetoday') : tf('st.bl.on', { date: r.date })} · ${cardText(r.card)}`;
+          li.append(who);
+          if (j.can_charge && r.due_now && !r.failed) li.append(btn(t('st.bl.charge'), '', async () => {
+            if (!confirm(tf('st.bl.confirm', { name: r.customer.name, amount: money(r.amount ?? 0), last4: r.card.last4 }))) return;
+            try { const x = await api({ action: 'renew_now', id: r.id }); say(x.ok && x.paid_through ? tf('st.mb.dated', { box: r.box_no, date: x.paid_through }) : `${t('st.bill.declined')}: ${x.error ?? ''}`); loadBilling(); load(); }
+            catch (e: any) { say(e.message, true); }
+          }));
+          rn.appendChild(li);
+        }
+        const rc = $('blRecent'); rc.innerHTML = '';
+        if (!j.recent.length) none(rc);
+        for (const c of j.recent) {
+          const li = document.createElement('li');
+          li.innerHTML = '<time></time><span></span><strong></strong><span class="mbd-st"></span>';
+          li.querySelector('time')!.textContent = c.at.slice(0, 10);
+          li.querySelectorAll('span')[0].textContent = `${c.customer.name}${c.box_no ? ` #${c.box_no}` : ''} · ${c.what}`;
+          li.querySelector('strong')!.textContent = money(c.amount);
+          const st = li.querySelector('.mbd-st')!; st.className = `mbd-st mbd-st-${c.status}`; st.textContent = t(`mbd.ch.${c.status}`);
+          rc.appendChild(li);
         }
       } catch (e: any) { say(e.message, true); }
     }
+    if (new URLSearchParams(location.search).get('card') === '1') setTimeout(() => say(t('st.card.saved')), 0);
+    async function editDo(body: Record<string, unknown>, done: (r: any) => string) {
+      editErr.hidden = true;
+      try { const r = await api({ id: editing.id, ...body }); say(done(r)); await load(); }
+      catch (e: any) { editErr.textContent = e.message; editErr.hidden = false; }
+    }
+    dlg.querySelectorAll<HTMLButtonElement>('[data-months]').forEach((b) => b.addEventListener('click', () =>
+      editDo({ action: 'adjust', months: Number(b.dataset.months) }, (r) => tf('st.mb.dated', { box: editing.box_no, date: r.paid_through }))));
+    $('mbEditSave').addEventListener('click', () =>
+      editDo({ action: 'set_paid_through', date: ($('mbEditNew') as HTMLInputElement).value }, (r) => tf('st.mb.dated', { box: editing.box_no, date: r.paid_through })));
+    $('mbEditRemind').addEventListener('click', () =>
+      editDo({ action: 'remind' }, (r) => tf('st.mb.reminded', { box: editing.box_no, how: [r.sms ? t('st.mb.text') : '', r.email ? t('st.mb.email') : ''].filter(Boolean).join(' + ') || '—' })));
+    $('mbEditClose').addEventListener('click', async () => {
+      if (!confirm(tf('st.mb.closeq', { box: editing.box_no }))) return;
+      await editDo({ action: 'close' }, () => '');
+      if (!boxes.some((x) => x.id === editing?.id)) { editing = null; dlg.close(); }
+    });
+    $('mbEditDone').addEventListener('click', () => { editing = null; dlg.close(); });
+    dlg.addEventListener('close', () => { editing = null; });
     $('load').addEventListener('click', load);
     $('pin').addEventListener('keydown', (e) => { if ((e as KeyboardEvent).key === 'Enter') load(); });
+
+    // Mail check: a box number or a name; current holder first, then past holders of that box.
+    $('checkForm').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const ul = $('checkOut'); ul.innerHTML = '';
+      try {
+        const j = await api({ action: 'search', q: ($('checkQ') as HTMLInputElement).value });
+        if (!j.boxes.length) { const li = document.createElement('li'); li.className = 'muted'; li.textContent = t('st.mb.nomatch'); ul.appendChild(li); return; }
+        for (const x of j.boxes) {
+          const li = document.createElement('li');
+          const who = document.createElement('div');
+          who.innerHTML = '<strong></strong> <span class="muted"></span>';
+          who.querySelector('strong')!.textContent = `#${x.box_no} · ${x.customer.name}`;
+          who.querySelector('.muted')!.textContent = `${t(`mb.state.${x.state}`)} · ${t('st.mb.paidthru')} ${x.paid_through}`;
+          li.append(who, mailBadge(x.mail));
+          if (x.status === 'active') li.append(btn(t('st.mb.edit'), 'kraft', () => openEdit(x)));
+          li.append(docBtn(x));
+          ul.appendChild(li);
+        }
+      } catch (e: any) { say(e.message, true); }
+    });
 
     $('sendDue').addEventListener('click', async () => {
       try {
@@ -121,7 +544,7 @@ import Base from '../../layouts/Base.astro';
         const ul = $('sentList'); ul.innerHTML = '';
         if (!j.sent.length) { say(t('st.mb.nonedue')); return; }
         say(tf('st.mb.sentn', { n: j.sent.length }));
-        for (const s of j.sent) { const li = document.createElement('li'); li.textContent = `#${s.box_no} ${s.name} · ${s.key.split(':')[1] === 'over' ? t('st.mb.lapsed') : tf('st.mb.daysleft', { n: s.key.split(':')[1] })}`; ul.appendChild(li); }
+        for (const s of j.sent) { const li = document.createElement('li'); li.textContent = `#${s.box_no} ${s.name} · ${stageName(s.key.split(':')[1])}`; ul.appendChild(li); }
         load();
       } catch (e: any) { say(e.message, true); }
     });

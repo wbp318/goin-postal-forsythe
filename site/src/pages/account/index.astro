@@ -11,8 +11,10 @@ import { recordConsent } from '../../shipping/store';
 import { listSavedDesigns } from '../../shipping/store';
 import { renderCard, sanitizeDesign, CARD_OPTIONS } from '../../lib/cards';
 import { listCardOrdersFor, cardTotal } from '../../lib/cardOrders';
-import { mailboxesFor, waitingReservation } from '../../shipping/store';
-import { sizeById, addressFor, boxStatus, day } from '../../lib/mailbox';
+import { mailboxesFor, waitingReservation, getRenewal, countItemsIn, listMailboxItems, getMailboxSettings, paidRenewalsFor, listMailboxForwards, photosForBox } from '../../shipping/store';
+import MailboxDashboard from '../../components/MailboxDashboard.astro';
+import { sizeById, addressFor, boxStatus, day, priceFor } from '../../lib/mailbox';
+import { extendedDate, balanceFor } from '../../lib/mailboxJobs';
 import { findCustomer, getCustomer, customerQuotes, listCustomerAddresses, accountForContact, accountOpenShipments, accountOpenFees, listStatements, pickupsForAccount, listReturnLinks, listProducts, listFulfillmentOrders, listApiKeys } from '../../shipping/store';
 
 // Customer account (T20): sign in by magic link, see saved addresses and past orders, ship again.
@@ -73,6 +75,20 @@ const savedDesigns = me ? await listSavedDesigns(env, me.id) : [];
 // Mailboxes (Peter, Nov 15 2026): the holder's boxes once the store assigns them, and a reservation still waiting.
 const myBoxes = me ? (await mailboxesFor(env, me.id)).map((b) => ({ ...b, sizeName: sizeById(b.size)?.name ?? b.size, address: addressFor(b.box_no), state: boxStatus(b, day(new Date())) })) : [];
 const myRes = me ? await waitingReservation(env, me.id) : null;
+// Back from paying for a renewal online (Peter, Nov 17 2026): ?renewed=MRN-XXXXX. Paid shows the new date; still
+// pending means Stripe's webhook hasn't arrived yet.
+const renewedCode = Astro.url.searchParams.get('renewed');
+const renewal = me && renewedCode ? await getRenewal(env, renewedCode).then((r) => (r && r.customer_id === me.id ? r : null)) : null;
+const renewOptions = (b: { size: string; paid_through: string }) => ([6, 12] as const).map((term) => ({ term, price: priceFor(b.size as any, term), until: extendedDate(b, term) })).filter((o) => o.price != null);
+// The mailbox dashboard (Peter, Nov 16 2026): what's in the box, capacity, card, automatic renewal, history.
+const mbCounts = myBoxes.length ? await countItemsIn(env) : new Map();
+const mbSettings = me && myBoxes.length ? await getMailboxSettings(env, me.id) : null;
+const mbBalance = me && myBoxes.length ? await balanceFor(env, me.id) : null;
+const mbRenewals = me && myBoxes.length ? await paidRenewalsFor(env, me.id) : [];
+const mbForwards = me && myBoxes.length ? await listMailboxForwards(env, { customer_id: me.id, status: 'open' }) : [];
+const mbItems = new Map(await Promise.all(myBoxes.map(async (b) => [b.id, await listMailboxItems(env, b.id, false, 10)] as const)));
+const mbPhotos = new Map(await Promise.all(myBoxes.map(async (b) => [b.id, Object.fromEntries(await photosForBox(env, b.id))] as const)));
+const cardSaved = Astro.url.searchParams.get('card') === '1';
 const longDate = (ymd: string) => new Date(ymd + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 // Business card orders on this account (newest first), for My orders.
 const cardOrders = me ? await listCardOrdersFor(env, me.id) : [];
@@ -226,17 +242,14 @@ const savedCards = savedDesigns.filter((d) => d.product === 'card').map((d) => {
       </div>
     </section>
     {(myBoxes.length > 0 || myRes) && <section class="acct-panel" id="mailbox" data-panel="mailbox" role="tabpanel">
+      {renewal && (renewal.status === 'paid' && renewal.paid_through
+        ? <p class="ok-msg mb-thanks" data-i18n="mb.renewed.ok" data-i18n-vars={JSON.stringify({ date: longDate(renewal.paid_through) })}>Thank you! Your mailbox is now paid through {longDate(renewal.paid_through)}.</p>
+        : <p class="ok-msg mb-thanks" data-i18n="mb.renewed.wait">Thank you! We are confirming your payment. Your new date will show here in a minute.</p>)}
+      {cardSaved && <p class="ok-msg mb-thanks" data-i18n="mbd.cardsaved">Card saved. Automatic renewal is on.</p>}
       {myBoxes.map((b) => (
-        <div class="card mb-mine">
-          <h3><span data-i18n="mb.box">Mailbox</span> #{b.box_no} <span class={`acct-status mb-${b.state}`} data-i18n={`mb.state.${b.state}`}>{b.state}</span></h3>
-          <p><span data-i18n="mb.youraddr">Your address:</span><br /><strong class="mb-address">{b.address}</strong> <button type="button" class="linkish" data-copy={b.address} data-i18n="mb.copy">Copy</button></p>
-          <dl class="mb-facts">
-            <dt data-i18n="mb.pick.size">Size</dt><dd data-i18n={`mb.size.${b.size}`}>{b.sizeName}</dd>
-            <dt data-i18n="mb.paidthru">Paid through</dt><dd>{longDate(b.paid_through)}</dd>
-            <dt data-i18n="mb.term">Term</dt><dd>{b.term === 12 ? <span data-i18n="mb.year">1 year</span> : <span data-i18n="mb.six">6 months</span>}</dd>
-          </dl>
-          <p class="muted" data-i18n="mb.renew.p">Renew at the counter for 6 months or a year. We'll text and email you before it's due.</p>
-        </div>
+        <MailboxDashboard box={b} firstName={me!.name.split(' ')[0]} counts={mbCounts.get(b.id) ?? { letters: 0, packages: 0, last: null }} items={mbItems.get(b.id) ?? []}
+          settings={mbSettings!} balance={mbBalance!} renewals={mbRenewals.filter((r) => r.mailbox_id === b.id)} forwards={mbForwards.filter((f) => f.mailbox_id === b.id)}
+          renewOptions={renewOptions(b)} longDate={longDate} photos={mbPhotos.get(b.id) ?? {}} />
       ))}
       {myRes && <div class="card">
         <h3 data-i18n="mb.reserve.h">Reserve a mailbox</h3>
@@ -318,6 +331,17 @@ const savedCards = savedDesigns.filter((d) => d.product === 'card').map((d) => {
     // My mailbox: copy the address.
     document.querySelectorAll<HTMLElement>('[data-copy]').forEach((b) => b.addEventListener('click', async () => {
       try { await navigator.clipboard.writeText(b.dataset.copy!); b.textContent = t('mb.copied'); } catch {}
+    }));
+    // My mailbox: Renew online goes to Stripe Checkout (or straight to "paid" in demo mode).
+    document.querySelectorAll<HTMLButtonElement>('[data-renew]').forEach((b) => b.addEventListener('click', async () => {
+      const err = b.closest('.mb-renew')!.querySelector<HTMLElement>('[data-renew-err]')!;
+      err.hidden = true; b.disabled = true;
+      try {
+        const res = await fetch('/api/mailbox', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'renew_checkout', id: Number(b.dataset.renew), term: Number(b.dataset.term) }) });
+        const j = await res.json().catch(() => ({}));
+        if (!res.ok || !j.url) throw new Error(j.error || 'Try again');
+        location.href = j.url;
+      } catch (e: any) { err.textContent = e.message; err.hidden = false; b.disabled = false; }
     }));
     // My designs: filter by product.
     document.querySelectorAll<HTMLElement>('.saved-filters [data-filter]').forEach((b) => b.addEventListener('click', () => {

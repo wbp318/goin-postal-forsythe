@@ -50,7 +50,10 @@ export function apply(lang: Lang = currentLang(), root: ParentNode = document) {
   root.querySelectorAll<HTMLElement>('[data-i18n]').forEach((el) => {
     const key = el.dataset.i18n!;
     if (!STRINGS[key]) return;
-    if ('i18nHtml' in el.dataset) el.innerHTML = codeHtml(t(key, lang)); else el.textContent = t(key, lang);
+    // data-i18n-vars='{"date":"May 1, 2027"}' fills {date} in the translated text (Peter, Nov 17 2026).
+    const vars = el.dataset.i18nVars ? (() => { try { return JSON.parse(el.dataset.i18nVars!); } catch { return null; } })() : null;
+    const text = vars ? tf(key, vars, lang) : t(key, lang);
+    if ('i18nHtml' in el.dataset) el.innerHTML = codeHtml(text); else el.textContent = text;
   });
   root.querySelectorAll<HTMLElement>('[data-i18n-ph]').forEach((el) => {
     const key = el.dataset.i18nPh!;
