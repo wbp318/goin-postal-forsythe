@@ -2,6 +2,14 @@
 
 Every release of the Goin' Postal Forsythe repository, newest first, rebuilt from the GitHub releases by `python scripts/changelog.py`. Each release page carries the full notes and, from v1.63.0 on, a file-by-file changelog with links. The agenda's log in [AGENDA.md](AGENDA.md) tells the same story by date with the item numbers.
 
+## [v1.95.0] - 2026-11-17
+
+**Peter's mailbox work (renew online, documents, mail log, billing, package rules)**
+
+Peter's second batch, all mailboxes, from his fork ([Petoria-ai/goin-postal-forsythe](https://github.com/Petoria-ai/goin-postal-forsythe), branch `peter`, 9 commits on November 16 and 17). It was reviewed, tested and merged into `main` as one commit in his name. His notes are in [`peter/`](https://github.com/wbp318/goin-postal-forsythe/tree/v1.95.0/peter): the edit log, to-do items P12 to P15, and [`FOR-WILLIAM.md`](https://github.com/wbp318/goin-postal-forsythe/blob/v1.95.0/peter/FOR-WILLIAM.md) with decisions D25 to D27.
+
+[release](https://github.com/wbp318/goin-postal-forsythe/releases/tag/v1.95.0) · [tree](https://github.com/wbp318/goin-postal-forsythe/tree/v1.95.0) · [compare](https://github.com/wbp318/goin-postal-forsythe/compare/v1.94.0...v1.95.0)
+
 ## [v1.94.0] - 2026-11-16
 
 **Peter's work: Ship page extras, accounts, card shop, mailboxes, Theme B**
